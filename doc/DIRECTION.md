@@ -337,6 +337,9 @@ Decisions made:
   matches the attestation model — signed claims are already immutable events.
 ## Infrastructure (~$30/mo all-in)
 
+- **Domain: monsterpaws.org** — registered at Cloudflare Registrar
+  (2026-07-29). DNS, CDN, and R2 all live in the same Cloudflare account.
+
 - **DigitalOcean droplet** (2vCPU/4GB, ~$12/mo) running Docker Compose:
   Caddy (auto-HTTPS reverse proxy), the Next.js app, and the worker process
   (pg-boss jobs, Shelterluv poller, image gen). Deploys via a small GitHub
