@@ -13,10 +13,14 @@ pin dogfood findings and deferred sub-tasks to items as carry-ins.
       Carry-in → item 1: schema needs `source` tags + set-deletion path.
       Carry-in → item 2: apply for the RescueGroups API key early — approval
       latency is on the critical path.
-- [ ] **1. Scaffold.** Next.js + TypeScript + Drizzle + Postgres + pg-boss
-      monorepo shape per ADR-0001/0003; docker-compose for local dev;
-      CLAUDE.md Commands section filled in the same commit; vitest +
-      Playwright wired with one passing test each.
+- [x] **1. Scaffold.** Done 2026-07-29. Next.js 16 (App Router, src/, TS,
+      Tailwind) + Drizzle schema stub (append-only raw_payloads/event_log
+      with source tags per ADR-0006 carry-in, animals with provenance JSONB,
+      embeddings with embedding_model) + pg-boss worker stub + vitest
+      (trust-hierarchy unit, 5 passing ×2) + Playwright (landing spec,
+      passing) + docker-compose.dev.yml (pgvector/pg16) + Commands filled.
+      Carry-in → item 2: run first migration + pgvector `vector` column when
+      ingestion lands; `npm audit` shows 12 high (dev-chain) — triage then.
 - [ ] **2. Ingest v0.** RescueGroups adapter (v5 preferred, v2 fallback) →
       raw append-only payloads (source-tagged) → normalizer → canonical
       animal records; golden fixtures from real payloads; Tracker pixel on

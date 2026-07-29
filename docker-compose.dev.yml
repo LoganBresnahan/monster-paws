@@ -1,0 +1,16 @@
+# Local dev database. pgvector image = same extension set as production
+# (DO Managed Postgres supports pgvector — ADR-0003).
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_USER: monsterpaws
+      POSTGRES_PASSWORD: monsterpaws
+      POSTGRES_DB: monsterpaws
+    ports:
+      - "5432:5432"
+    volumes:
+      - dbdata:/var/lib/postgresql/data
+
+volumes:
+  dbdata:

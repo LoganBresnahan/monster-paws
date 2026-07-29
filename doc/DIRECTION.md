@@ -6,6 +6,14 @@ survive. Tech stack is deliberately left open — it will be chosen fresh.*
 
 ---
 
+## Mission
+
+**Inspire joy.** The guiding principle and tiebreaker: when two choices tie
+on function, ship the one that inspires more joy — in donors opening a card,
+in shelters seeing support arrive, in anyone watching an adoption "evolve."
+(It's also the test the bright lines protect: dark patterns, ads, and rarity
+tiers all fail it.)
+
 ## What this is now
 
 **Verified sponsorship with provenance, not "buy a slice of a dog."**

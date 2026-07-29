@@ -4,6 +4,7 @@ Verified animal-shelter sponsorship: donors pick a real shelter animal, donate
 (100% to the shelter via Every.org), and collect the animal's story — signed
 care-event attestations, AI keepsake card art, an adoption-day "evolution."
 Sponsorship with provenance, never "buy a slice of a dog."
+**Mission: inspire joy** — the tiebreaker for every product decision.
 
 **`doc/DIRECTION.md` is the source of truth for product intent** — the
 collector loop, the aggregator growth model, money rails, bright lines, and
@@ -77,6 +78,16 @@ only — do not build from it.
 
 ## Commands
 
-Pre-scaffold — no code yet. When the repo is scaffolded, fill this section in
-the same commit (dev server, `npm test`, `npm run typecheck`, `npm run e2e`,
-build, migrate) and keep it exact: stale commands here are worse than none.
+- `npm run dev` — Next.js dev server (port 3000)
+- `npm test` — vitest units in `tests/` (run twice for the ship bar)
+- `npm run typecheck` — tsc, no emit
+- `npm run e2e` — Playwright specs in `e2e/` (boots the dev server itself);
+  `npm run e2e:prod` reuses the specs against an already-running
+  production server via `PW_BASE_URL`
+- `npm run build` / `npm start` — production build / serve
+- `npm run worker` — the pg-boss worker process (needs `DATABASE_URL`)
+- `npm run db:up` — local Postgres via `docker-compose.dev.yml`
+  (pgvector/pg16 image — same extensions as production)
+- `npm run db:generate` / `npm run db:migrate` — Drizzle migrations
+- Env: copy `.env.example` → `.env`; keys are commented with the roadmap
+  item that needs them.
