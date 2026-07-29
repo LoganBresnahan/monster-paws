@@ -9,7 +9,7 @@ the deployment shape.
 
 | Tool | For | Install | Auth |
 | --- | --- | --- | --- |
-| `doctl` | DigitalOcean: droplet, firewall, managed PG, snapshots | `cd ~ && wget -qO- https://github.com/digitalocean/doctl/releases/latest/download/doctl-$(curl -s https://api.github.com/repos/digitalocean/doctl/releases/latest \| grep -Po '"tag_name": "v\K[^"]*')-linux-amd64.tar.gz \| tar xz && sudo mv doctl /usr/local/bin` (or `sudo snap install doctl`) | `doctl auth init` (API token from cloud.digitalocean.com/account/api) |
+| `doctl` | DigitalOcean: droplet, firewall, managed PG, snapshots | **installed 2026-07-29** (v1.164.0): release binary → `~/.local/bin` (chosen over snap — WSL2, no systemd dependency). Upgrade = re-download latest tarball to the same path | `doctl auth init` (API token from cloud.digitalocean.com/account/api, scoped: read + droplet/firewall/database write) |
 | `wrangler` | Cloudflare R2: buckets, objects, spot-checks | `npm i -g wrangler` | `wrangler login` (or `CLOUDFLARE_API_TOKEN`) |
 | Cloudflare API (`curl`) | DNS records, SSL mode, cache — wrangler doesn't do DNS | — | scoped API token (Zone.DNS edit) in `CF_API_TOKEN` |
 | `rclone` | Shipping pg_dumps + attestation mirror to R2 (S3-compatible) | `sudo apt install rclone` | `rclone config` → S3 provider, R2 endpoint |
