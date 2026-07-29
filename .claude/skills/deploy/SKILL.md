@@ -49,8 +49,11 @@ accidents permanent.
 ## 3. Roll onto the droplet, with rollback
 
 ```sh
-ssh <droplet> 'cd monsterpaws && docker compose pull && docker compose up -d'
+ssh <droplet> 'cd monsterpaws && git pull && docker compose -f docker-compose.prod.yml up -d --build'
 ```
+
+(No registry in v1 — the droplet builds from the repo, ADR-0007. Rollback is
+`git checkout <prev sha>` + the same compose command.)
 
 Before switching: record the currently-running image tags (that *is* the
 rollback). After switching: keep the previous images — never prune in the

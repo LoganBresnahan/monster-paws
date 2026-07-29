@@ -21,6 +21,11 @@ pin dogfood findings and deferred sub-tasks to items as carry-ins.
       passing) + docker-compose.dev.yml (pgvector/pg16) + Commands filled.
       Carry-in → item 2: run first migration + pgvector `vector` column when
       ingestion lands; `npm audit` shows 12 high (dev-chain) — triage then.
+- [ ] **1b. Landing live on monsterpaws.org.** DO droplet (Docker Compose:
+      Caddy/app/worker per ADR-0007), Cloudflare DNS → droplet, SSL Full
+      (strict). Unblocks the RescueGroups application (reviewer sees a real
+      site) — then submit `doc/rescuegroups-application.md`.
+      Human steps: create droplet, point DNS, `git clone` + `.env` + compose up.
 - [ ] **2. Ingest v0.** RescueGroups adapter (v5 preferred, v2 fallback) →
       raw append-only payloads (source-tagged) → normalizer → canonical
       animal records; golden fixtures from real payloads; Tracker pixel on

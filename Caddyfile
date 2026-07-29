@@ -1,0 +1,10 @@
+# Caddy fronts the app with automatic HTTPS (ADR-0007).
+# Cloudflare sits in front (orange cloud); set Cloudflare SSL mode to
+# "Full (strict)" once the origin cert is issued.
+monsterpaws.org {
+	reverse_proxy app:3000
+}
+
+www.monsterpaws.org {
+	redir https://monsterpaws.org{uri} permanent
+}

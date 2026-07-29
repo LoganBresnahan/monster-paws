@@ -1,0 +1,36 @@
+# Production stack on the droplet (ADR-0007): Caddy → app; worker alongside.
+# Postgres is DO Managed (ADR-0003) — DATABASE_URL points at it, not a container.
+# Deploy: git pull && docker compose -f docker-compose.prod.yml up -d --build
+services:
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - app
+
+  app:
+    build:
+      context: .
+      target: app
+    restart: unless-stopped
+    env_file: .env
+    expose:
+      - "3000"
+
+  worker:
+    build:
+      context: .
+      target: worker
+    restart: unless-stopped
+    env_file: .env
+
+volumes:
+  caddy_data:
+  caddy_config:
