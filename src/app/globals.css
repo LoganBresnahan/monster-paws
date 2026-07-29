@@ -1,26 +1,53 @@
 @import "tailwindcss";
 
+/*
+ * Monster Paws design tokens — the "cuddly" palette (brown/yellow/green).
+ * Warm cream ground, bark-brown text, honey accent, leaf green for actions.
+ * All UI color goes through these tokens; don't hardcode hex in components.
+ */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #faf4e8; /* cream */
+  --foreground: #4a3728; /* bark */
+  --muted: #8a715c; /* driftwood — secondary text */
+  --card: #fffbf2; /* lighter cream for surfaces */
+  --honey: #f2b134; /* yellow accent — badges, sparkle, highlights */
+  --honey-deep: #d99a17; /* hover / borders on honey */
+  --leaf: #6a994e; /* green — primary actions */
+  --leaf-deep: #55803d; /* hover on leaf */
+  --paw: #a97c50; /* warm brown — borders, illustrations */
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #2b2118; /* cocoa night */
+    --foreground: #f3e9d8;
+    --muted: #c2ab93;
+    --card: #362a1f;
+    --honey: #f2b134;
+    --honey-deep: #ffcf66;
+    --leaf: #7fb35e;
+    --leaf-deep: #96c877;
+    --paw: #c49a6c;
+  }
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-card: var(--card);
+  --color-honey: var(--honey);
+  --color-honey-deep: var(--honey-deep);
+  --color-leaf: var(--leaf);
+  --color-leaf-deep: var(--leaf-deep);
+  --color-paw: var(--paw);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --radius-cuddly: 1.5rem; /* big soft corners everywhere */
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans), Arial, Helvetica, sans-serif;
 }
