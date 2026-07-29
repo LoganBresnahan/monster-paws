@@ -45,11 +45,20 @@ ToS review of the three candidate listing sources (2026-07-29):
    this is the one sanctioned, source-scoped exception, exercised only on
    ToS termination.
 5. **Art-rights gate (amends ADR-0004):** AI keepsake art generates only
-   from photos we hold rights to — i.e., verified (Tier 1) shelters. For
-   unverified-shelter donations, the card displays the animal's real photo
-   (display is licensed) in the Monster Paws frame; the AI "monster art"
-   **unlocks when the shelter verifies** — the constraint becomes a donor
-   incentive for shelters to claim their listing.
+   from photos we hold rights to. **Consent and verification are separate
+   gates**: photo consent (a shelter's written permission — one email
+   suffices) unlocks AI art; verification (attestation signing) is the
+   deeper tier. For no-consent shelters, the card displays the animal's
+   real photo in the Monster Paws frame; the monster art unlocks when the
+   shelter consents — the constraint becomes the claim incentive.
+   Consent is **credited on the card**: *"Permission to digify <pet> given
+   by <shelter>"* — provenance as brand, and an advertisement to every
+   other shelter that permission is grantable.
+6. **Production rule:** the AI pipeline is built and exercised internally
+   (dev/fixtures/private demos) from day one, but **no generated art ships
+   in production without shelter consent on record**. Local shelters are
+   the first targets — at local scale, consent is an email, and the first
+   goal is proving real donations reach a real shelter.
 
 ## Consequences
 - Single aggregator dependency; its per-service revocability is mitigated by

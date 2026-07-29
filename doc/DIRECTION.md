@@ -261,10 +261,13 @@ and inference; pennies per image). Locked-in design consequences:
    zero value — and the card being created *for you* at sponsorship is the
    pack-opening moment.
    **Art-rights gate (ADR-0006):** generation uses only photos we hold
-   rights to — verified shelters. Unverified-shelter cards show the real
-   photo in the Monster Paws frame; the AI monster art **unlocks when the
-   shelter verifies**, turning the legal constraint into donor pressure to
-   claim.
+   rights to. Photo **consent** (one email of written permission) unlocks
+   AI art — separate from, and cheaper than, **verification** (attestation
+   signing). No-consent cards show the real photo in the Monster Paws
+   frame; monster art unlocks at consent, and the card credits it:
+   *"Permission to digify <pet> given by <shelter>."* The AI pipeline is
+   built and run internally from day one, but **no generated art ships in
+   production without consent on record**.
 2. **Auto-QC via embedding check:** generate 3–4 candidates, score against
    real photos with CLIP-style similarity, serve the best, flag low scorers.
    This is a small automated eval harness for a generative pipeline — the

@@ -26,11 +26,16 @@ pin dogfood findings and deferred sub-tasks to items as carry-ins.
 
 ## Next
 
-- [ ] **4. Donation flow.** Every.org integration + donor accounts; instant
-      keepsake card on donate (ADR-0004 pipeline v0: style-prompted, QC loop);
-      collection page.
-- [ ] **5. Outreach.** Pitch a local shelter for the verified tier (warmed by
-      any aggregator donations). Goal: demo meeting + Shelterluv API request.
+- [ ] **4. Donation flow.** Every.org integration + donor accounts; card on
+      donate — framed real photo by default; AI art (ADR-0004 pipeline v0,
+      built and exercised internally) ships in production **only for
+      consented shelters**, credited "Permission to digify <pet> given by
+      <shelter>". Collection page.
+- [ ] **5. Local consent outreach.** Permission emails to 3–5 local
+      shelters: display + digify consent (one email = the ADR-0006 gate).
+      **Milestone: one real donation reaches one real shelter.** Verified-
+      tier pitch (Shelterluv key, attestations) follows with whichever
+      shelter warms up first.
 - [ ] **6. Shelterluv integration.** Approval → poller → care-event diffing.
 - [ ] **7. Attestation pipeline.** Shelter keys, weekly batch-confirm
       dashboard, hash anchoring, R2 flat-file mirror, public verification page.
