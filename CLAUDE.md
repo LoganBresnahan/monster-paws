@@ -49,6 +49,13 @@ only — do not build from it.
   tradeable ever, no dark-pattern pressure, no programmatic ads, generated
   donor text never claims care that isn't attested.
 
+## Infra ops
+
+`doc/infra.md` is the runbook: CLI roster (doctl / wrangler / CF API /
+rclone / gh), provisioning commands, recurring ops, and the ASCII deployment
+diagrams. Change the deployment shape → update the diagrams in the same
+commit.
+
 ## Conventions
 
 - Documentation lives in `doc/`. `doc/roadmap.md` tracks build order
