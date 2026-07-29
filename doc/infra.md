@@ -9,9 +9,9 @@ the deployment shape.
 
 | Tool | For | Install | Auth |
 | --- | --- | --- | --- |
-| `doctl` | DigitalOcean: droplet, firewall, managed PG, snapshots | **installed 2026-07-29** (v1.164.0): release binary → `~/.local/bin` (chosen over snap — WSL2, no systemd dependency). Upgrade = re-download latest tarball to the same path | `doctl auth init` (API token from cloud.digitalocean.com/account/api, scoped: read + droplet/firewall/database write) |
-| `wrangler` | Cloudflare R2: buckets, objects, spot-checks | `npm i -g wrangler` | `wrangler login` (or `CLOUDFLARE_API_TOKEN`) |
-| Cloudflare API (`curl`) | DNS records, SSL mode, cache — wrangler doesn't do DNS | — | scoped API token (Zone.DNS edit) in `CF_API_TOKEN` |
+| `doctl` | DigitalOcean: droplet, firewall, managed PG, snapshots | **installed 2026-07-29** (v1.164.0): release binary → `~/.local/bin` (chosen over snap — WSL2, no systemd dependency). Upgrade = re-download latest tarball to the same path | token lives in `pass` only (no `auth init`, no plaintext config): `DIGITALOCEAN_ACCESS_TOKEN=$(pass show digitalocean/api-token) doctl ...` — verified working 2026-07-29 |
+| `wrangler` | Cloudflare R2: buckets, objects, spot-checks | **no install** — `npx wrangler@latest` (rare ops; keep it out of package.json) | `CLOUDFLARE_API_TOKEN=$(pass show cloudflare/r2-token)` — token scoped Account·R2·Edit |
+| Cloudflare API (`curl`) | DNS records, SSL mode, cache — wrangler doesn't do DNS | — | `CF_API_TOKEN=$(pass show cloudflare/dns-token)` — token scoped Zone·DNS·Edit |
 | `rclone` | Shipping pg_dumps + attestation mirror to R2 (S3-compatible) | `sudo apt install rclone` | `rclone config` → S3 provider, R2 endpoint |
 | `gh` | repo, Actions runs, CI watch (already installed) | — | `gh auth login` |
 
