@@ -1,3 +1,5 @@
+import Image from "next/image";
+
 const LOOP = [
   {
     emoji: "🔍",
@@ -19,13 +21,17 @@ const LOOP = [
 export default function Home() {
   return (
     <main className="flex flex-1 flex-col items-center px-6 py-20 text-center">
-      <span aria-hidden className="text-7xl">
-        🐾
-      </span>
-      <h1 className="mt-4 text-5xl font-bold tracking-tight sm:text-6xl">
-        Monster Paws
+      <h1>
+        <Image
+          src="/brand/wordmark.png"
+          alt="Monster Paws"
+          width={582}
+          height={326}
+          priority
+          className="h-auto w-64 sm:w-80"
+        />
       </h1>
-      <p className="mt-2 text-lg font-medium text-honey-deep">
+      <p className="mt-4 text-lg font-medium text-honey-deep">
         every monster deserves a happy ending
       </p>
       <p className="mt-6 max-w-xl text-lg text-muted">
