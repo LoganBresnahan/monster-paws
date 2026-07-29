@@ -14,6 +14,8 @@ attestations of real care events ("Biscuit received a dental on March 14"),
 so donors see exactly what their support did — verifiable without trusting
 us or our database. Sponsorship with receipts, never "buy a slice of a dog."
 
+[![CI](https://github.com/LoganBresnahan/monster-paws/actions/workflows/ci.yml/badge.svg)](https://github.com/LoganBresnahan/monster-paws/actions/workflows/ci.yml)
+
 ## Status
 
 Pre-launch, building in public. `doc/roadmap.md` is the build order;
