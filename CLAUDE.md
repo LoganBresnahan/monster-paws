@@ -29,6 +29,12 @@ only — do not build from it.
 - Image pipeline: style LoRA × per-image identity conditioning (IP-Adapter /
   Flux Kontext) on Replicate behind a provider interface. Generate **only on
   donation**, never per listing. CLIP-similarity auto-QC picks best of 3–4.
+- Client state: **Zustand** (Logan's preference, proven on Carton-Fit) for
+  interactive client islands (dashboard queue, donation-flow UI) — server
+  data lives in Server Components, not client stores. Next.js caveat: no
+  module-level stores for per-user state (module scope is cross-request on
+  the server) — instantiate via a context provider. Dependency ADR lands
+  with the first store.
 
 ## Non-negotiable domain rules
 
