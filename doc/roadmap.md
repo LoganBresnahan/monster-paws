@@ -5,16 +5,22 @@ pin dogfood findings and deferred sub-tasks to items as carry-ins.
 
 ## Now
 
-- [ ] **0. ToS research (blocking).** Read Petfinder, RescueGroups.org, and
-      Adopt-a-Pet API terms; pick the aggregation backbone; record the
-      verdict as an update to ADR-0005.
+- [x] **0. ToS research (blocking).** Done 2026-07-29 → **ADR-0006**:
+      Petfinder API dead, Adopt-a-Pet closed; RescueGroups is the sole
+      aggregator backbone (Tracker pixel, candid key application, purge
+      exception); shelter-issued keys are Tier 1; AI art gated on verified
+      shelters (photo unlocks → monster art at verification).
+      Carry-in → item 1: schema needs `source` tags + set-deletion path.
+      Carry-in → item 2: apply for the RescueGroups API key early — approval
+      latency is on the critical path.
 - [ ] **1. Scaffold.** Next.js + TypeScript + Drizzle + Postgres + pg-boss
       monorepo shape per ADR-0001/0003; docker-compose for local dev;
       CLAUDE.md Commands section filled in the same commit; vitest +
       Playwright wired with one passing test each.
-- [ ] **2. Ingest v0.** One listing-API adapter (the ToS winner) → raw
-      append-only payloads → normalizer → canonical animal records; golden
-      fixtures from real payloads.
+- [ ] **2. Ingest v0.** RescueGroups adapter (v5 preferred, v2 fallback) →
+      raw append-only payloads (source-tagged) → normalizer → canonical
+      animal records; golden fixtures from real payloads; Tracker pixel on
+      detail pages.
 - [ ] **3. Animal pages.** ISR public pages (browse + detail) rendering real
       local shelters' animals — this is the demo *and* the v1 supply side.
 

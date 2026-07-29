@@ -164,8 +164,10 @@ the ending of.
 ## Growth model: the aggregator flip
 
 Don't wait for shelter partnerships to have supply. Seed the site with every
-shelter's **public adoptable listings** (Petfinder API / RescueGroups.org /
-Adopt-a-Pet — shelters already syndicate this data deliberately), and let
+shelter's **public adoptable listings** via **RescueGroups.org** — the sole
+viable aggregator (ADR-0006: Petfinder's API died 2025-12, Adopt-a-Pet is
+partner-contract-only; RescueGroups is free, syndication-friendly, per-org
+opt-in), and let
 donors browse and give to *any* animal from day one: Every.org can route a
 donation to essentially any US 501(c)(3) without that shelter having heard of
 us. Donations work before partnerships exist.
@@ -182,11 +184,14 @@ distribution.
 
 Known risks, with mitigations:
 
-1. **Listing-API terms of service** (blocking research task before building).
-   Petfinder's API is meant for adoption promotion and can be revoked;
-   RescueGroups.org is explicitly friendlier to third-party apps and may be
-   the better backbone. Read the ToS for all three before this becomes the
-   strategy — the supply side rides on someone else's API goodwill.
+1. **Listing-API terms** (RESOLVED — ADR-0006). RescueGroups conditions:
+   candid API-key application describing the donation/keepsake model,
+   Tracker pixel on pet detail pages, ≥weekly refresh, per-org/per-animal
+   opt-outs honored, and on termination a purge of all derived data —
+   hence source-tagged, set-deletable RescueGroups rows (the one exception
+   to append-only). Petfinder's 2025 API shutdown is the standing case
+   study: aggregators are expendable enrichment; shelter relationships are
+   the foundation.
 2. **Consent optics.** A shelter finding its animals on a donation site it
    never agreed to can read as exploitation. Mitigations: 100% of every
    donation goes to the shelter — Monster Paws never takes a cut (ops funded by
@@ -203,11 +208,14 @@ Known risks, with mitigations:
 If the aggregator is viable, the "demo" and product v1 collapse into the same
 build.
 
-### Data ingestion: multi-source with a trust hierarchy
+### Data ingestion: tiered sources with a trust hierarchy
 
-Ingest **all** the listing APIs (Petfinder, RescueGroups, Adopt-a-Pet), each
-as an adapter writing raw payloads append-only. Multiple sources mean the
-same animal appears in several feeds → a normalizer with **entity
+Two source tiers (ADR-0006): **Tier 1 — shelter-issued keys**
+(Shelterluv, Petango/PetPoint), obtained through the shelter relationship
+with art/data rights in our direct agreement; **Tier 2 — RescueGroups**,
+the sole aggregator. Each source is an adapter writing raw payloads
+append-only (RescueGroups rows source-tagged and set-deletable per its
+ToS). An animal can appear in both tiers → a normalizer with **entity
 resolution** (fuzzy match on shelter + name + breed + photo similarity)
 produces one canonical animal record with per-field provenance.
 
@@ -252,6 +260,11 @@ and inference; pennies per image). Locked-in design consequences:
    pre-generating art for hundreds of thousands of animals is real money for
    zero value — and the card being created *for you* at sponsorship is the
    pack-opening moment.
+   **Art-rights gate (ADR-0006):** generation uses only photos we hold
+   rights to — verified shelters. Unverified-shelter cards show the real
+   photo in the Monster Paws frame; the AI monster art **unlocks when the
+   shelter verifies**, turning the legal constraint into donor pressure to
+   claim.
 2. **Auto-QC via embedding check:** generate 3–4 candidates, score against
    real photos with CLIP-style similarity, serve the best, flag low scorers.
    This is a small automated eval harness for a generative pipeline — the

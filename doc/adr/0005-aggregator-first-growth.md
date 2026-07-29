@@ -1,5 +1,8 @@
 # ADR-0005: Aggregator-first growth; verification as the claimed upgrade tier
 
+> ToS research resolved by ADR-0006 (2026-07-29): Petfinder API is dead,
+> Adopt-a-Pet is closed — RescueGroups.org is the sole aggregator backbone.
+
 ## Context
 Waiting on shelter partnerships caps supply at hand-onboarded shelters.
 Shelters already syndicate adoptable listings publicly (Petfinder,

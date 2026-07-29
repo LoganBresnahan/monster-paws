@@ -1,5 +1,9 @@
 # ADR-0004: Keepsake art = style LoRA × identity conditioning; generate on donation only
 
+> Amended by ADR-0006: art generates only from photos we hold rights to
+> (verified shelters). Unverified-shelter cards show the framed real photo;
+> AI art unlocks at verification.
+
 ## Context
 The collector loop needs card art that is (a) unmistakably one set — the
 "Monster Paws look" — and (b) recognizably *that specific animal*: a donor knows

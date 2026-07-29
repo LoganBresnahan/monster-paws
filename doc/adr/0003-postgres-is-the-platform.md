@@ -1,5 +1,9 @@
 # ADR-0003: Postgres is the platform (data, queue, search, vector index)
 
+> Amended by ADR-0006: RescueGroups-derived rows are source-tagged and
+> set-deletable (ToS purge obligation) — the one sanctioned exception to
+> append-only.
+
 ## Context
 The corpus — listings across sources, care events, attestations, donations —
 is the long-term asset and future RAG substrate, collected before the AI use
