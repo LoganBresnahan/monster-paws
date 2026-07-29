@@ -48,9 +48,20 @@ curl -X PATCH "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/settings/ssl"
   -H "Authorization: Bearer $CF_API_TOKEN" -H "Content-Type: application/json" \
   --data '{"value":"strict"}'
 
-# 5. R2 buckets — images + attestation mirror + db copies
-wrangler r2 bucket create monsterpaws-media
-wrangler r2 bucket create monsterpaws-vault   # attestation flat files + pg_dumps
+# 5. R2 buckets — DONE 2026-07-29 (monsterpaws-media, monsterpaws-vault;
+#    S3 round-trip verified). Created via rclone (S3 CreateBucket) — no
+#    wrangler needed. Env-only rclone pattern (no config file, keys stay
+#    in pass; on the droplet the same RCLONE_CONFIG_R2_* come from .env):
+rclone_r2() {
+  RCLONE_CONFIG_R2_TYPE=s3 RCLONE_CONFIG_R2_PROVIDER=Cloudflare \
+  RCLONE_CONFIG_R2_ACCESS_KEY_ID=$(pass show cloudflare/r2-access-key-id) \
+  RCLONE_CONFIG_R2_SECRET_ACCESS_KEY=$(pass show cloudflare/r2-secret-access-key) \
+  RCLONE_CONFIG_R2_ENDPOINT=$(pass show cloudflare/r2-endpoint) \
+  rclone "$@"
+}
+# e.g. rclone_r2 lsd r2:   ·   rclone_r2 mkdir r2:<bucket>
+# Gotcha hit during setup: a freshly-activated R2 account returns TLS
+# handshake failures on its S3 endpoint for a few minutes — wait, don't debug.
 
 # 6. Managed Postgres — DEFERRED until ingest (roadmap item 2). When needed:
 doctl databases create monsterpaws-pg --engine pg --version 16 \
