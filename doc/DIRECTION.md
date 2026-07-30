@@ -359,12 +359,17 @@ Decisions made:
   Storage is ~free at this volume, and this immutable history is the future
   RAG corpus; you can't retroactively collect data you overwrote. It also
   matches the attestation model — signed claims are already immutable events.
-## Infrastructure (~$30/mo all-in)
+## Infrastructure (~$40/mo all-in at full build-out)
 
 - **Domain: monsterpaws.org** — registered at Cloudflare Registrar
   (2026-07-29). DNS, CDN, and R2 all live in the same Cloudflare account.
 
-- **DigitalOcean droplet** (2vCPU/4GB, ~$12/mo) running Docker Compose:
+- **DigitalOcean droplet** (2vCPU/4GB, $24/mo — sized for on-droplet Docker
+  builds and worker headroom, not traffic; DO can't downsize in place, and
+  the cheap path if it ever chafes is ADR-0007's revisit trigger: CI+GHCR
+  builds on an $18 box. No DO auto-backups: the droplet is cattle,
+  rebuildable from the runbook; sacred data lives in managed PG + R2)
+  running Docker Compose:
   Caddy (auto-HTTPS reverse proxy), the Next.js app, and the worker process
   (pg-boss jobs, Shelterluv poller, image gen). Deploys via a small GitHub
   Action (SSH + `docker compose up -d --build`).
