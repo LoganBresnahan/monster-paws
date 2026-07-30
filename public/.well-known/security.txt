@@ -1,0 +1,5 @@
+Contact: mailto:loganbbres@gmail.com
+Expires: 2027-07-30T00:00:00.000Z
+Preferred-Languages: en
+Canonical: https://monsterpaws.org/.well-known/security.txt
+Policy: https://github.com/LoganBresnahan/monster-paws/blob/topdog/CONTRIBUTING.md
