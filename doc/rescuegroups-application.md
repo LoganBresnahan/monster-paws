@@ -15,7 +15,7 @@ and re-describe before shipping the change.
 project, operating as a free public-benefit service; no cut is taken from
 any donation.
 
-**Contact:** loganbbres@gmail.com
+**Contact:** hello@monsterpaws.org (forwards are live; personal: loganbbres@gmail.com)
 
 **Service URL:** https://monsterpaws.org
 

@@ -1,4 +1,4 @@
-Contact: mailto:loganbbres@gmail.com
+Contact: mailto:security@monsterpaws.org
 Expires: 2027-07-30T00:00:00.000Z
 Preferred-Languages: en
 Canonical: https://monsterpaws.org/.well-known/security.txt
