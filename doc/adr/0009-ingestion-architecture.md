@@ -83,3 +83,57 @@ subject ids so retrieval joins back to structured truth).
 - A platform tier site adds anti-bot measures beyond polite-crawler norms.
 - LLM extraction cost or error rate at long-tail volume stops being noise.
 - The R2 HTML archive needs lifecycle/retention policy.
+
+## Amendment (2026-07-30): v1 collapses the platform tier into the long-tail tier
+
+**Decision.** For v1, every scraped source is treated as long-tail: runtime
+LLM extraction (vaulted HTML → schema-validated JSON) is the *only* scraping
+mechanism. The declarative scraper engine and the LLM selector-repair loop
+(Decision 2's declarative-extraction bullet and Decision 3's platform/repair
+tiers) are **deferred, not deleted** — they activate when a platform-tier
+volume trigger fires (roughly: one platform's uniform widgets exceeding
+~50–100 pages/day, or LLM extraction cost/error leaving noise territory).
+
+**Why.** The tier boundary was volume-based, and v1 volume (3–5 consented
+local shelters, tens of pages/day) is long-tail-sized on every axis the ADR
+cared about. At list prices the entire daily poll costs cents (batched Haiku
+≈ $2.50/mo; DeepSeek-class models less), so the rejected-alternative
+reasoning ("cost/nondeterminism at platform-tier volume") does not yet
+apply. Pages rarely changing argues *for* runtime LLM here: redesign
+immunity comes free instead of via a repair pipeline built to service
+selector fragility.
+
+**What is unchanged** (the load-bearing parts, extraction-method-agnostic):
+raw HTML is vaulted to R2 and hashed *before* extraction, making the LLM
+extractor a **replayable normalizer** over the sacred corpus — a bad
+extraction is fixed by prompt repair + corpus replay, never lost. Schema
+validation, golden fixtures, and health gates remain the hallucination
+bounds.
+
+**Two distinct quality loops** (do not conflate):
+1. *Fixture eval* — per onboarded site, a hand-checked golden fixture
+   (saved HTML + expected canonical output, verified by a human). The
+   harness diffs LLM output against truth; runs on prompt/model/provider
+   changes AND as a cheap canary on the daily cron tick. Proves the
+   mechanism; says nothing about today's live pages.
+2. *Live-run gates* — every real ingest: schema validation, items-found and
+   required-field coverage, plus sanity invariants on fresh output (counts
+   don't crater, species don't flip, names non-empty). Fail loud into the
+   event log (ADR-0010 boring alerts). Police each run.
+
+**Provider choice is empirical, not aesthetic.** Extraction sits behind a
+provider interface (`extract(html, schema) → json`, same pattern as the
+ADR-0004 image pipeline). The fixture harness scores candidate models
+(DeepSeek-class, batched Haiku, one larger model as ceiling); the cheapest
+passing model wins. Cost differences at this volume are dollars/year —
+accuracy and ops simplicity decide. Note: DeepSeek's API terms permit
+using inputs to improve services; acceptable here (public shelter
+listings), revisit if inputs ever include non-public data.
+
+**Consequences.** v1 build drops two slices (declarative-scraper-engine,
+llm-selector-repair): 13 → 11. The extractor moves from the last phase to
+the source edge. The extraction-accuracy harness is still the project's
+first eval harness to ship — now also the model-selection mechanism, and a
+dry run for the item-8 text-faithfulness harness (same shape: LLM output
+diffed against ground truth). New revisit trigger: the platform-tier
+volume threshold above re-activates the deferred declarative tier.
