@@ -82,6 +82,11 @@ ssh root@$IP 'sed -i "s/^#\?PasswordAuthentication.*/PasswordAuthentication no/;
 #   be addressed directly.
 # - Secrets live in pass (dev) / droplet .env (prod) / GH Actions secrets
 #   (CI). Architecture is public; keys are the perimeter.
+# - Cloudflare bot settings (2026-07-30): Bot Fight Mode ON (retest the
+#   Every.org flow when it lands). AI crawlers deliberately ALLOWED — being
+#   in AI assistants' answers is donor acquisition, and we aggregate public
+#   listings ourselves; do not flip in a settings cleanup. AI Labyrinth off
+#   (moot without blocks). security.txt served from public/.well-known/.
 
 # 7. First deploy, on the droplet
 ssh root@$IP 'git clone <repo-url> monsterpaws && cd monsterpaws &&
