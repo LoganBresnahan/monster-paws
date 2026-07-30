@@ -57,8 +57,12 @@ rclone_r2() {
   RCLONE_CONFIG_R2_ACCESS_KEY_ID=$(pass show cloudflare/r2-access-key-id) \
   RCLONE_CONFIG_R2_SECRET_ACCESS_KEY=$(pass show cloudflare/r2-secret-access-key) \
   RCLONE_CONFIG_R2_ENDPOINT=$(pass show cloudflare/r2-endpoint) \
+  RCLONE_S3_NO_CHECK_BUCKET=true \
   rclone "$@"
 }
+# NO_CHECK_BUCKET is required since 2026-07-30: the R2 token is BUCKET-scoped
+# (media+vault only), so rclone's bucket-exists probe 403s and it wrongly
+# falls back to CreateBucket. Same flag needed by any S3 client we configure.
 # e.g. rclone_r2 lsd r2:   ·   rclone_r2 mkdir r2:<bucket>
 # Gotcha hit during setup: a freshly-activated R2 account returns TLS
 # handshake failures on its S3 endpoint for a few minutes — wait, don't debug.
