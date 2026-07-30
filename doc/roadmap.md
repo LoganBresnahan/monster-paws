@@ -26,10 +26,12 @@ pin dogfood findings and deferred sub-tasks to items as carry-ins.
       via Caddy + SSL Full (strict) + anti-spoof TXTs + security.txt; all
       tokens least-privilege in pass. **Next human step: submit
       `doc/rescuegroups-application.md` — the site is live.**
-- [ ] **2. Ingest v0.** RescueGroups adapter (v5 preferred, v2 fallback) →
-      raw append-only payloads (source-tagged) → normalizer → canonical
-      animal records; golden fixtures from real payloads; Tracker pixel on
-      detail pages.
+- [ ] **2. Ingest v0.** Build per **ADR-0009** and
+      `doc/plans/adr-0009-ingestion-build-plan.md` (13 slices, 7 phases;
+      critical path runs through entity-resolution-merge — the lone
+      Fable+verify slice). RescueGroups key pending (applied 2026-07-30);
+      adapter is off the critical path, so build proceeds on fixtures.
+      Tracker pixel on detail pages when listings render.
 - [ ] **3. Animal pages.** ISR public pages (browse + detail) rendering real
       local shelters' animals — this is the demo *and* the v1 supply side.
 
