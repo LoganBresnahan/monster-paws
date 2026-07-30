@@ -114,7 +114,7 @@ gh run watch <run-id> --exit-status
 curl -X POST "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/purge_cache" \
   -H "Authorization: Bearer $(pass show cloudflare/dns-token)" \
   -H "Content-Type: application/json" \
-  --data '{"files":["https://monsterpaws.org/brand/wordmark.png"]}'
+  --data '{"files":["https://monsterpaws.org/brand/wordmark-v1.png"]}'
 # NOTE: requires Zone · Cache Purge · Purge permission — add it to the DNS
 # token (or make a dedicated one) the first time this is actually needed.
 ```

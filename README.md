@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="public/brand/wordmark.png" alt="Monster Paws" width="360" />
+  <img src="public/brand/wordmark-v1.png" alt="Monster Paws" width="360" />
 </p>
 
 <p align="center"><em>every monster deserves a happy ending</em></p>

@@ -23,7 +23,7 @@ export default function Home() {
     <main className="flex flex-1 flex-col items-center px-6 py-20 text-center">
       <h1>
         <Image
-          src="/brand/wordmark.png"
+          src="/brand/wordmark-v1.png"
           alt="Monster Paws"
           width={582}
           height={326}
