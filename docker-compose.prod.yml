@@ -4,9 +4,18 @@
 # Deploy: git pull && docker compose -f docker-compose.prod.yml pull && \
 #         docker compose -f docker-compose.prod.yml up -d
 # (build: targets remain for local e2e:prod use — CI and local pass --build.)
+# Log rotation (ADR-0010): stdout JSON captured by docker, bounded on disk.
+x-logging: &logging
+  logging:
+    driver: json-file
+    options:
+      max-size: "10m"
+      max-file: "3"
+
 services:
   caddy:
     image: caddy:2-alpine
+    <<: *logging
     restart: unless-stopped
     ports:
       - "80:80"
@@ -23,6 +32,7 @@ services:
     build:
       context: .
       target: app
+    <<: *logging
     restart: unless-stopped
     env_file: .env
     expose:
@@ -33,6 +43,7 @@ services:
     build:
       context: .
       target: worker
+    <<: *logging
     restart: unless-stopped
     env_file: .env
 

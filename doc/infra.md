@@ -85,6 +85,18 @@ ssh root@$IP 'sed -i "s/^#\?PasswordAuthentication.*/PasswordAuthentication no/;
   systemctl reload ssh && apt-get install -y -q unattended-upgrades &&
   dpkg-reconfigure -f noninteractive unattended-upgrades'
 
+# 6c. Monitoring (ADR-0010) — DONE 2026-07-30 on current droplet:
+#     DO metrics agent + alert policies (CPU>80%, mem>90%, disk>85%, 10m
+#     windows → account email). Recreate on any droplet rebuild:
+#   ssh root@$IP 'curl -sSL https://repos.insights.digitalocean.com/install.sh | bash'
+#   doctl monitoring alert create --type "v1/insights/droplet/cpu" --compare GreaterThan \
+#     --value 80 --window 10m --entities <droplet-id> --emails <ACCOUNT email> --description "..."
+#   # (emails must be DO account members — hello@ silently fails)
+#     Logs: docker json-file rotation set in compose (10m×3); read via
+#     `ssh <droplet> docker logs monsterpaws-app-1 --since 1h`.
+#     Health: /api/health (ok + sha + uptime) — point external uptime check
+#     here; extended with DB + poller-age at ingest.
+
 # RULES (public repo):
 # - The droplet IP NEVER appears in the repo, docs, or CI logs — placeholders
 #   only. Cloudflare's proxy/DDoS protection only helps if the origin can't
