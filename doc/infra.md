@@ -91,6 +91,12 @@ ssh root@$IP 'sed -i "s/^#\?PasswordAuthentication.*/PasswordAuthentication no/;
 #   in AI assistants' answers is donor acquisition, and we aggregate public
 #   listings ourselves; do not flip in a settings cleanup. AI Labyrinth off
 #   (moot without blocks). security.txt served from public/.well-known/.
+# - More deliberate OFFs (2026-07-30) — posture: we hold no payments and
+#   WANT our images spread. Script monitoring off (no payment forms ever —
+#   card entry is Every.org's PCI scope). Hotlink Protection off (hotlinked
+#   cards = viral loop; R2 zero egress makes it free). Leaked-credentials
+#   detection off until donor accounts exist — and prefer passwordless
+#   (magic links/OAuth) at that point, which moots it permanently.
 
 # 7. First deploy, on the droplet
 ssh root@$IP 'git clone <repo-url> monsterpaws && cd monsterpaws &&
