@@ -30,3 +30,29 @@ jobs:
             sleep 1
           done
           npm run e2e:prod
+
+  images:
+    # Build + push production images after verification (ADR-0007 amended:
+    # droplet pulls from GHCR; no on-droplet builds — 1GB box can't).
+    needs: verify
+    if: github.event_name == 'push' && github.ref == 'refs/heads/topdog'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Login to GHCR
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+      - name: Build and push app image
+        run: |
+          docker build --target app \
+            -t ghcr.io/loganbresnahan/monster-paws-app:latest \
+            -t ghcr.io/loganbresnahan/monster-paws-app:${{ github.sha }} .
+          docker push --all-tags ghcr.io/loganbresnahan/monster-paws-app
+      - name: Build and push worker image
+        run: |
+          docker build --target worker \
+            -t ghcr.io/loganbresnahan/monster-paws-worker:latest \
+            -t ghcr.io/loganbresnahan/monster-paws-worker:${{ github.sha }} .
+          docker push --all-tags ghcr.io/loganbresnahan/monster-paws-worker

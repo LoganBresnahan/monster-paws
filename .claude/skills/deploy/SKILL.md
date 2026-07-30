@@ -49,11 +49,14 @@ accidents permanent.
 ## 3. Roll onto the droplet, with rollback
 
 ```sh
-ssh <droplet> 'cd monsterpaws && git pull && docker compose -f docker-compose.prod.yml up -d --build'
+# Images come from GHCR, built by CI after verify (ADR-0007 amended) —
+# confirm the images job for this sha is green BEFORE rolling:
+gh run list --workflow=CI --limit 1
+ssh <droplet> 'cd monsterpaws && git pull && docker compose -f docker-compose.prod.yml pull && docker compose -f docker-compose.prod.yml up -d'
 ```
 
-(No registry in v1 — the droplet builds from the repo, ADR-0007. Rollback is
-`git checkout <prev sha>` + the same compose command.)
+Rollback = pin the previous sha tag (images are tagged `latest` + sha):
+edit the compose image tags to `<prev sha>` and `up -d`, or retag in GHCR.
 
 Before switching: record the currently-running image tags (that *is* the
 rollback). After switching: keep the previous images — never prune in the

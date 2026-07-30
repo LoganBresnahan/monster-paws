@@ -22,12 +22,17 @@ not needed; the droplet has a public IP behind the proxy.
 ## Provisioning (one-time, in order)
 
 ```sh
-# 1. Droplet — Docker preinstalled via marketplace image, NYC3, 2vCPU/4GB
+# 1. Droplet — Docker preinstalled via marketplace image, NYC3.
+#    s-1vcpu-1gb ($6/mo) while traffic ~zero (ADR-0007 amended: it PULLS
+#    images from GHCR, never builds). Upsize in place when load arrives —
+#    downsizing is impossible, so start small.
 doctl compute droplet create monsterpaws \
-  --image docker-20-04 --size s-2vcpu-4gb --region nyc3 \
+  --image docker-20-04 --size s-1vcpu-1gb --region nyc3 \
   --ssh-keys "$(doctl compute ssh-key list --format ID --no-header | head -1)" \
   --wait
 IP=$(doctl compute droplet get monsterpaws --format PublicIPv4 --no-header)
+# 1c. Swap file (1GB box): keeps pulls/npm hiccups from OOMing
+ssh root@$IP 'fallocate -l 1G /swapfile && chmod 600 /swapfile && mkswap /swapfile && swapon /swapfile && echo "/swapfile none swap sw 0 0" >> /etc/fstab'
 
 # 2. Firewall — only 22/80/443 in
 doctl compute firewall create --name monsterpaws-fw \
@@ -107,8 +112,8 @@ ssh root@$IP 'git clone <repo-url> monsterpaws && cd monsterpaws &&
 ## Recurring ops
 
 ```sh
-# Deploy (also in /deploy skill)
-ssh <droplet> 'cd monsterpaws && git pull && docker compose -f docker-compose.prod.yml up -d --build'
+# Deploy (also in /deploy skill) — images from GHCR, built by CI
+ssh <droplet> 'cd monsterpaws && git pull && docker compose -f docker-compose.prod.yml pull && docker compose -f docker-compose.prod.yml up -d'
 
 # Weekly DB copy outside DO (ADR-0003 belt-and-suspenders) — cron on droplet
 pg_dump "$DATABASE_URL" | gzip | rclone rcat r2:monsterpaws-vault/pgdump/$(date +%F).sql.gz

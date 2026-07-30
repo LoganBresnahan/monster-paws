@@ -1,6 +1,9 @@
-# Production stack on the droplet (ADR-0007): Caddy → app; worker alongside.
-# Postgres is DO Managed (ADR-0003) — DATABASE_URL points at it, not a container.
-# Deploy: git pull && docker compose -f docker-compose.prod.yml up -d --build
+# Production stack on the droplet (ADR-0007, amended): Caddy → app; worker
+# alongside. Images are BUILT IN CI and pulled from GHCR — the $6 droplet
+# doesn't build. Postgres is DO Managed (ADR-0003) — external DATABASE_URL.
+# Deploy: git pull && docker compose -f docker-compose.prod.yml pull && \
+#         docker compose -f docker-compose.prod.yml up -d
+# (build: targets remain for local e2e:prod use — CI and local pass --build.)
 services:
   caddy:
     image: caddy:2-alpine
@@ -16,6 +19,7 @@ services:
       - app
 
   app:
+    image: ghcr.io/loganbresnahan/monster-paws-app:latest
     build:
       context: .
       target: app
@@ -25,6 +29,7 @@ services:
       - "3000"
 
   worker:
+    image: ghcr.io/loganbresnahan/monster-paws-worker:latest
     build:
       context: .
       target: worker

@@ -24,7 +24,7 @@ only — do not build from it.
   flat-file mirror (DB stores keys only). **Every.org API** for donations —
   we never process payments or take a cut.
 - Infra: DigitalOcean droplet (Docker Compose: Caddy / app / worker) + DO
-  Managed Postgres (PITR) + Cloudflare free CDN. ~$40/mo. Serverless hosts
+  Managed Postgres (PITR) + Cloudflare free CDN. ~$22/mo. Serverless hosts
   are disqualified — the poller/queue need an always-on process.
 - Image pipeline: style LoRA × per-image identity conditioning (IP-Adapter /
   Flux Kontext) on Replicate behind a provider interface. Generate **only on

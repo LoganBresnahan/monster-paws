@@ -1,5 +1,15 @@
 # ADR-0007: GitHub Actions CI; droplet deploys by compose build
 
+> **Amended 2026-07-30** (the revisit trigger fired early, from cost not
+> build-time): while traffic is ~zero the droplet is the cheapest tier
+> (s-1vcpu-1gb, $6/mo), which cannot build images. CI now builds and pushes
+> `monster-paws-app` / `monster-paws-worker` to GHCR after the verify job
+> (public packages, free); the droplet deploy is `git pull && compose pull
+> && up -d`. Rollback improved as a side effect: images are sha-tagged, so
+> rolling back = pinning the previous sha tag. Local e2e:prod still builds
+> via the retained `build:` targets. Upsize the droplet in place when real
+> traffic or worker load arrives (upsizing works; downsizing never does).
+
 ## Context
 Need CI (typecheck, unit ×2, e2e vs production build — the /shipshape
 machine half on a clean machine) and a deploy shape for the droplet. GitLab
