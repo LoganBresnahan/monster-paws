@@ -43,3 +43,6 @@ next-env.d.ts
 # playwright
 /test-results/
 /playwright-report/
+
+# dev logs (ADR-0010 agentic feedback loop)
+/.logs/

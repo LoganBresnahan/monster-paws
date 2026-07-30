@@ -28,6 +28,31 @@ zero new infrastructure to babysit, free tiers only.
 - Domain history is NOT logs: it lives in event_log (ADR-0009) — logs are
   disposable operations data, the event log is sacred product data.
 
+**Dev/prod parity — logs are the agentic-development feedback loop.**
+- One schema, two sinks: pino emits JSON in every environment; pretty
+  output is a pipe (`| pino-pretty`), never a format switch. Dev tees to
+  `.logs/dev.log` (gitignored) — the agent reads/greps/jqs that file with
+  the same queries that work on `docker logs` in prod.
+- Machine-keyed events over prose: `event: "ingest.run.completed"` with
+  typed fields; `msg` is for humans, structure carries the facts.
+- The strongest parity is Postgres: ingest_runs / job tables / event_log
+  answer identical SQL in dev and prod — verification queries written
+  during development ARE the production diagnostics.
+
+**Log hygiene — redaction over encryption.**
+- At-rest log encryption is the wrong lever (a compromised box reads
+  encrypted logs; the platform layer covers stolen-disk). The right lever:
+  secrets and PII never enter logs. pino `redact` kills authorization/
+  key/token-shaped fields at the serializer; convention: **log
+  identifiers, never identities** (donorId, never email/name). Clean logs
+  stay shareable — with the agent, contributors, bug reports.
+
+**Retention rationale.** Size-bounds the box (20MB × 3/container — a disk
+safety valve whose time-window floats with traffic); time-bounds the
+archive (14–30 days, arriving with the aggregation tier when the revisit
+trigger fires). Long-term value never lives in logs — that's the
+sacred/derived split doing retention policy for us.
+
 **Metrics: Postgres is the metrics warehouse (ADR-0003 doctrine).**
 - Operational counters live as queryable rows: pg-boss job tables +
   `ingest_runs` (per-run summary written by the pipeline). Dashboards are
