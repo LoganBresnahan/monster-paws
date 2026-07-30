@@ -10,7 +10,13 @@ const DATABASE_URL = process.env.DATABASE_URL;
 
 async function main() {
   if (!DATABASE_URL) {
-    throw new Error("DATABASE_URL is not set (see .env.example)");
+    // Pre-database deploys (landing only): idle instead of crash-looping so
+    // `compose up` stays green. The worker becomes real with roadmap item 2.
+    console.warn(
+      "[worker] DATABASE_URL not set — idling (no jobs to run before ingest exists)",
+    );
+    setInterval(() => {}, 1 << 30);
+    return;
   }
 
   const boss = new PgBoss(DATABASE_URL);
