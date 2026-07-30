@@ -90,7 +90,18 @@ wrangler r2 object get monsterpaws-vault/attestations/<id>.json --pipe
 doctl compute droplet-action snapshot <droplet-id> --snapshot-name pre-<change>
 
 # Watch CI
-gh run watch --exit-status
+gh run watch <run-id> --exit-status
+
+# Cloudflare cache purge — ONLY needed when a public/ file changed in place
+# (same filename, new bytes). HTML isn't edge-cached and /_next/static is
+# content-hashed, so normal deploys need no purge. Prefer renaming the file
+# (busts browser caches too); purge as fallback:
+curl -X POST "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/purge_cache" \
+  -H "Authorization: Bearer $(pass show cloudflare/dns-token)" \
+  -H "Content-Type: application/json" \
+  --data '{"files":["https://monsterpaws.org/brand/wordmark.png"]}'
+# NOTE: requires Zone · Cache Purge · Purge permission — add it to the DNS
+# token (or make a dedicated one) the first time this is actually needed.
 ```
 
 ## Deployment architecture
