@@ -68,6 +68,21 @@ doctl databases create monsterpaws-pg --engine pg --version 16 \
   --size db-s-1vcpu-1gb --region nyc3
 doctl databases connection monsterpaws-pg   # → DATABASE_URL for .env
 
+# 6b. SSH hardening — part of provisioning, not a later chore. The repo is
+#     public: architecture is documented, so the security budget goes to the
+#     things that actually admit attackers (keys, tokens, the origin).
+ssh root@$IP 'sed -i "s/^#\?PasswordAuthentication.*/PasswordAuthentication no/;
+  s/^#\?PermitRootLogin.*/PermitRootLogin prohibit-password/" /etc/ssh/sshd_config &&
+  systemctl reload ssh && apt-get install -y -q unattended-upgrades &&
+  dpkg-reconfigure -f noninteractive unattended-upgrades'
+
+# RULES (public repo):
+# - The droplet IP NEVER appears in the repo, docs, or CI logs — placeholders
+#   only. Cloudflare's proxy/DDoS protection only helps if the origin can't
+#   be addressed directly.
+# - Secrets live in pass (dev) / droplet .env (prod) / GH Actions secrets
+#   (CI). Architecture is public; keys are the perimeter.
+
 # 7. First deploy, on the droplet
 ssh root@$IP 'git clone <repo-url> monsterpaws && cd monsterpaws &&
   cp .env.example .env && $EDITOR .env &&
