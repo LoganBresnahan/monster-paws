@@ -66,6 +66,30 @@ commit.
   dependency, changed contract or algorithm, pattern adopted or rejected —
   that's a decision. Implementation detail is not. Supersede rather than
   rewrite. Build plans derived from ADRs live in `doc/plans/`.
+- **`ADR-NNNN` is the link between `doc/` and everything else.** Write it in
+  that exact form — never "per the ingestion ADR" — in code comments, commit
+  subjects, test names, and plan docs. It only works as a grep target if it's
+  uniform. That makes both directions one command: `grep -rn "ADR-0009" src/`
+  finds the code a decision governs; `git log --grep 'ADR-0009'` finds the
+  commits that shipped it. Don't maintain SHA lists inside ADRs — a SHA is
+  fine as *provenance* (a thing that happened once: a superseding decision, an
+  incident, a workflow run), never as an *index* that must stay current.
+- **Comments state what the code can't show, and cite the decision.** A
+  comment earns its place only if it carries one of: an **invariant** and its
+  `(ADR-NNNN)`; the **trap** (what silently breaks if this changes); a
+  **sanctioned exception** where code appears to violate a house rule but is
+  allowed (e.g. the `last_seen` touch on an append-only table); or **fixture
+  provenance** (who hand-checked this expected output, when, from which
+  snapshot — an unattributed golden fixture is unfalsifiable). Write
+  invariants as prohibitions ("never UPDATE — corrections are new rows"), not
+  labels; they survive being read out of context in a diff or grep hit. Put
+  them at the point of temptation, not in a file header — readers, human and
+  agent alike, arrive mid-file. Keep to one sentence plus the citation: the
+  ADR is the source of truth, and a comment that restates its reasoning
+  becomes a second copy that drifts. No narration of what the next line does,
+  no change-log prose ("now also handles X"), no restating the type, no
+  section banners, no bare `TODO` — deferred work is a roadmap carry-in.
+  `src/db/schema.ts` is the reference example.
 - Test pyramid: **vitest** for units (entity resolution, attestation
   sign/verify, trust-hierarchy merge, eval scorers), **Playwright** e2e for
   the donor and shelter flows, **dogfooding** after every deploy — real

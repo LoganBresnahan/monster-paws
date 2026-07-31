@@ -1,6 +1,6 @@
 ---
 name: shipshape
-description: Verify Monster Paws is shipshape — tests cover the public surface (suite green twice), docs (DIRECTION/roadmap/ADRs/CLAUDE.md) match the code, and the domain conventions hold (append-only corpus, derived embeddings, trust hierarchy, R2-keys-not-blobs, no unattested claims in generated text). Use after substantive changes, before commits, or when asked whether the project is in order.
+description: Verify Monster Paws is shipshape — tests cover the public surface (suite green twice), docs (DIRECTION/roadmap/ADRs/CLAUDE.md) match the code, and the domain conventions hold (append-only corpus, derived embeddings, trust hierarchy, R2-keys-not-blobs, uniform ADR-NNNN citations, no unattested claims in generated text). Use after substantive changes, before commits, or when asked whether the project is in order.
 ---
 
 # /shipshape — repo verification pass
@@ -120,6 +120,53 @@ countdown/streak/scarcity UI copy:
 grep -rni "rarity\|legendary\|streak\|only [0-9]* left" src
 # expect: no hits
 ```
+
+**Comment standard** (CLAUDE.md Conventions) — comments carry invariants,
+traps, sanctioned exceptions, and fixture provenance; nothing else.
+
+*Malformed ADR citations* — `ADR-NNNN` is only a grep target if it's uniform,
+so prose references and stray formats are violations:
+
+```bash
+grep -rniE "adr[ _-]?[0-9]" src doc .claude --include='*.ts' --include='*.md' \
+  | grep -v "ADR-[0-9][0-9][0-9][0-9]" | grep -vE "adr-[0-9]{4}-" \
+  | grep -v "shipshape/SKILL.md"
+# expect: no hits. Violations are spaced, lowercased, short-numbered, or
+# prose references. The hyphen in the first class is load-bearing — without
+# it `adr-0009` never reaches the case-sensitive filter and a lowercase
+# citation passes. The trailing-hyphen filter spares lowercase *filenames*
+# (`doc/plans/adr-0009-ingestion-build-plan.md`), which are kebab by
+# convention; the last drops this file's own examples.
+```
+
+*Escaped carry-ins* — deferred work belongs in `doc/roadmap.md`, not in code:
+
+```bash
+grep -rn "TODO\|FIXME\|XXX\|HACK" src --include='*.ts'
+# expect: no hits — each one is a roadmap carry-in that never got pinned
+```
+
+*Change narration* — comments written to the reviewer, noise after merge:
+
+```bash
+grep -rniE "^[[:space:]]*(//|\*).*\b(no longer|used to|updated to|changed to|we now|now also|renamed|previously)\b" \
+  src --include='*.ts'
+# review each hit: does it state a standing invariant, or narrate a past edit?
+```
+
+*Fixture provenance* — every golden fixture's expected output names who
+hand-checked it, when, and from which snapshot (an unattributed fixture is an
+unfalsifiable assertion, and these gate the LLM extractor per **ADR-0009**):
+
+```bash
+ls tests/fixtures 2>/dev/null && grep -rLn "hand-checked" tests/fixtures
+# expect: no files listed — every fixture carries provenance
+```
+
+Judgment calls the greps can't make, spot-check by reading: an invariant
+stated without its `(ADR-NNNN)`; a comment that restates the ADR's reasoning
+in a paragraph rather than pointing at it; a rule sitting in a file header
+instead of at the line where it would be violated.
 
 ## 4. Report
 
