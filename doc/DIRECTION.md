@@ -239,6 +239,12 @@ stored with source + fetched_at):
 shelter's own system via API (verified partners) > platform-widget/site
 scrape > aggregator APIs.
 
+A source never states a fact, only a **claim**: one source's assertion about
+one field at one time. A claim becomes a canonical fact by winning resolution
+against competing claims — which is why provenance is per field, not per
+record. The rule that falls out: the higher tier wins any field it asserts,
+and lower tiers only fill gaps the higher tier left empty.
+
 ### The data corpus
 
 The aggregator also answers where RAG data comes from: **organize and index
@@ -248,6 +254,24 @@ shelters. Collect and index first; figure out how to act on it (almost
 certainly via AI) once the corpus exists. This is the same append-only,
 never-overwrite discipline as the event log: the corpus is the asset even
 before the use case is chosen.
+
+**The long game: a historical record of rescued animals.** Append-only raw
+payloads, a permanent event log, and adoption inferred from disappearance
+already add up to a longitudinal record — where an animal was, how its
+listing changed, when it went home. That record is a goal, not a byproduct:
+it is what makes the corpus worth more each year, and it is the ground truth
+any future AI surface reasons over.
+
+**But permanence is not uniform, and that decides what the aggregator is
+for.** RescueGroups' ToS requires purging all derived data on termination
+(ADR-0006), so aggregator-sourced records can never be part of a permanent
+archive. Consented-shelter data — scrapes of a shelter's own site, Tier 1
+API data — is fully sacred and keeps forever. The asymmetry is the strategy:
+**RescueGroups is a discovery and distribution tool, not an archive.** It
+tells us an animal exists and lets a donation reach its shelter today; the
+consented relationships are what actually accumulate. Every shelter that
+consents converts perishable listing data into permanent record, which is a
+second reason the outreach in Sequencing matters beyond the verified badge.
 
 ## Image pipeline: likeness × style
 
