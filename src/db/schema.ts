@@ -28,7 +28,15 @@ export const rawPayloads = pgTable(
     source: text("source").$type<Source>().notNull(),
     externalId: text("external_id").notNull(), // the source system's id
     payload: jsonb("payload").notNull(), // verbatim, never normalized here
+    /** canonical-JSON digest of `payload` — the dedup key (ADR-0009) */
+    contentHash: text("content_hash").notNull(),
     fetchedAt: timestamp("fetched_at", { withTimezone: true }).notNull(),
+    /**
+     * The one sanctioned UPDATE on this table (ADR-0009): an unchanged payload
+     * touches last_seen instead of writing a duplicate row. Never widen this
+     * exception — any other column mutated here destroys the corpus.
+     */
+    lastSeen: timestamp("last_seen", { withTimezone: true }).notNull().defaultNow(),
     insertedAt: timestamp("inserted_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
