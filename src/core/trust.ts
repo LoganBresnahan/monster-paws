@@ -12,7 +12,12 @@ const TIER_RANK: Record<Source, number> = {
   manual: 2,
 };
 
-export interface Fact<T = unknown> {
+/**
+ * One source's assertion about one field at one time — never trusted on its
+ * own (ADR-0006). A value only becomes canonical by winning resolution, so
+ * never strip a claim down to its `value` before then.
+ */
+export interface Claim<T = unknown> {
   value: T;
   source: Source;
   fetchedAt: Date;
@@ -23,19 +28,19 @@ export function tierOf(source: Source): number {
 }
 
 /**
- * Pick the winning fact: lowest tier rank wins; within a tier, the most
+ * Pick the winning claim: lowest tier rank wins; within a tier, the most
  * recently fetched wins. Deterministic on ties (first argument wins) so the
  * normalizer is idempotent.
  */
-export function resolveFact<T>(a: Fact<T>, b: Fact<T>): Fact<T> {
+export function resolveClaim<T>(a: Claim<T>, b: Claim<T>): Claim<T> {
   const ra = tierOf(a.source);
   const rb = tierOf(b.source);
   if (ra !== rb) return ra < rb ? a : b;
   return b.fetchedAt.getTime() > a.fetchedAt.getTime() ? b : a;
 }
 
-/** Fold a set of observed facts down to the single trusted value. */
-export function resolveFacts<T>(facts: Fact<T>[]): Fact<T> | undefined {
-  if (facts.length === 0) return undefined;
-  return facts.reduce((winner, next) => resolveFact(winner, next));
+/** Fold a set of observed claims down to the single trusted value. */
+export function resolveClaims<T>(claims: Claim<T>[]): Claim<T> | undefined {
+  if (claims.length === 0) return undefined;
+  return claims.reduce((winner, next) => resolveClaim(winner, next));
 }
