@@ -90,28 +90,74 @@ medium, no verify · shipped `6c31d76`
   only** (a revert A→B→A appends, never matches the older A).
 - The `last_seen` UPDATE is the one sanctioned mutation on the append-only
   table. RescueGroups rows keep the ADR-0006 purge tag; consented-scrape
-  rows stay fully sacred.
+  rows stay fully sacred — *qualified in phase 3*: consent revocation is a
+  second source-scoped purge exception.
 
 ### Phase 3 — scrape source taxonomy + shelter registry
 `scrape-source-taxonomy` + `shelter-registry` · opus, medium, no verify —
 *new critical-path root; decision-heavy*
 
 - **What gets built.** (a) A per-site scrape identity —
-  `scrape:<shelter-slug>` — with a tier rank, replacing the closed
+  `scrape:<shelter-slug>` — mapped to a named tier, replacing the closed
   four-value `SOURCES` union with a scheme that admits per-shelter sources
   without a schema change. (b) A checked-in typed **shelter registry**
-  module: slug, site URL, display consent, digify consent, ToS tier,
-  golden-fixture path. In git, not a table — consent is a legal artifact;
-  a commit records who granted it, when, on what basis. The `shelters`
-  DB table is deliberately deferred to roadmap item 4/7 (whichever first);
-  the registry slug is the natural key that keeps that migration
-  mechanical. `animals.shelter_external_id` starts pointing at the slug.
-- **The decision half.** Where an LLM-read scrape of a shelter's own site
-  ranks vs. the aggregator. ADR-0006 predates LLM-only extraction.
-  Recommendation on record: first-party site beats aggregator — the site
-  is the shelter's own data, the LLM is our bounded read of it (fixtures +
-  gates), while aggregator staleness is unbounded and not ours to fix.
-  Settle as an ADR-0006 amendment in this slice's commit.
+  module: slug, site URL, per-permission consent *grants* (below), ToS
+  tier, golden-fixture path. In git, not a table — consent is a legal
+  artifact; a commit records who granted it, when, on what basis. The
+  `shelters` DB table is deliberately deferred to roadmap item 4/7
+  (whichever first); the registry slug is the natural key that keeps that
+  migration mechanical. `animals.shelter_external_id` starts pointing at
+  the slug.
+- **The decision half — four decisions, all landing as one ADR-0006
+  amendment in this slice's commit.** ADR-0006 predates both LLM-only
+  extraction and the scrape-first cut; it currently reads as forbidding
+  what this phase builds.
+  1. **Scraping legitimacy.** ADR-0006's Alternatives rejects "scraping
+     non-API sources" without qualification, while ADR-0009's Context
+     already presumes consented per-site scrapers — the two ADRs conflict
+     *today*. The amendment separates the acts: scraping an aggregator
+     that bans it in its ToS is not the same act as reading a consented
+     shelter's own public site. Justification is already inside ADR-0006
+     (Adopt-a-Pet's shelter terms: shelters own listing content and
+     license it non-exclusively, so the same content is always obtainable
+     from the shelter directly).
+  2. **What consent licenses.** "Public" governs *access*; copyright
+     governs *republication*, which is what we actually do. Facts (name,
+     species, breed, age, sex, intake date) are uncopyrightable; the
+     description prose and the photos are the shelter's expression.
+     Consent is therefore the display license, not a courtesy — see the
+     phase 5 storage-vs-display note.
+  3. **Tier rank — named ordered tiers, rank derived from position.**
+     First-party consented scrape ranks *above* the aggregator and *below*
+     a shelter-issued key (Tier 1 is defined by key + data-rights
+     agreement; a scrape has neither). Mechanism: one ordered `TIERS`
+     array is the source of truth and rank is its index — inserting a tier
+     is moving a line, with no renumbering and no float precision to
+     budget. **Invariant: persist the tier name, never the rank**, or
+     reordering the hierarchy silently rewrites the meaning of every
+     provenance row already written.
+  4. **Consent revocation as a second sanctioned purge.** ADR-0009 §4
+     calls consented-scrape rows "fully sacred", but email-granted consent
+     is email-revocable. `scrape:<shelter-slug>` as the source identity
+     makes per-shelter set-deletion a `WHERE source = …`. Deletion scope
+     differs by layer (R2 HTML and displayed prose/photos go; the facts
+     are a separate question) — settle it here, alongside the ADR-0006
+     RescueGroups purge exception it parallels.
+- **Consent grants are records, not booleans.** Each permission — scrape,
+  display, digify — carries granter, date, basis, and a pointer to the
+  evidence (the email). A bare boolean asserts consent without evidence:
+  the same unfalsifiable failure mode as an unattributed golden fixture.
+  Revocation is an **append** (a grant gains an end date), never an edit —
+  the registry then reads as the whole history of the relationship, which
+  is what we'd want to produce if a shelter ever asked. Note scrape
+  permission is a third gate distinct from display and digify: a shelter
+  can be glad to be listed and unhappy to be crawled nightly.
+- **Type consequence.** `Record<Source, number>` in `src/core/trust.ts`
+  cannot survive `Source` admitting `scrape:${string}` — an open
+  template-literal key is not exhaustively mappable. `tierOf` becomes
+  `Source → Tier` (prefix branch for `scrape:*`) over a `Record<Tier, …>`
+  that stays exhaustive: **the source union opens, the tier list stays
+  closed.**
 - **Trap.** The scrape payload stored in `raw_payloads.payload` is a
   descriptor `{ url, vaultKey, htmlHash }`, NOT the HTML — nothing
   scrape-specific may enter `observation.ts`/`pipeline.ts`, or "any source
@@ -158,6 +204,11 @@ low, mechanical
   `description` extracted **verbatim** — the fixture eval checks exact
   match on it, never similarity (a paraphrase stored as the shelter's
   words is a corpus lie).
+- **Storing verbatim ≠ displaying verbatim** (phase 3 decision 2). The
+  description is the shelter's copyrighted expression; the corpus keeps it
+  word-for-word for fidelity, but rendering it publicly rides on that
+  shelter's display grant. Without one, a page shows the facts plus our
+  own words — never their prose. Carry to roadmap item 3.
 - **Why no verify.** LLM output can be schema-valid yet wrong, but the ADR
   deliberately bounds that with the harness + health gates rather than a
   perfect first pass — the bounds are the sibling slices.

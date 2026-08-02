@@ -40,12 +40,19 @@ pin dogfood findings and deferred sub-tasks to items as carry-ins.
       Golden fixtures hand-checked per site at onboarding; fixture-eval
       canary on the daily cron tick + live health gates. Former carry-ins
       are folded into the plan itself — taxonomy/registry (phase 3, incl.
-      the ADR-0006 tier-rank amendment), verbatim `description` (phase 5),
+      the **ADR-0006 amendment of 2026-08-02**: consented first-party
+      scraping legitimized and scoped, consent as the display license,
+      named ordered tiers, revocation as a second purge exception),
+      verbatim `description` (phase 5),
       fixture-simulated two-source merge + `sources.conflicted` question
       (phase 7), per-field staleness gating (phase 9). Tracker pixel on
       detail pages when listings render.
 - [ ] **3. Animal pages.** ISR public pages (browse + detail) rendering real
       local shelters' animals — this is the demo *and* the v1 supply side.
+      Carry-in from the ADR-0006 amendment: a page may render a shelter's
+      description prose and photos only under that shelter's **display
+      grant**; without one it shows the facts plus our own words. Storing
+      verbatim and displaying verbatim are different permissions.
 
 ## Next
 
@@ -60,7 +67,11 @@ pin dogfood findings and deferred sub-tasks to items as carry-ins.
       and attestations are signed by. Migration stays mechanical if the
       registry slug is the natural key from day one.
 - [ ] **5. Local consent outreach.** Permission emails to 3–5 local
-      shelters: display + digify consent (one email = the ADR-0006 gate).
+      shelters: **scrape + display + digify are three separate grants**
+      (ADR-0006 as amended), each recorded with granter, date, basis and a
+      pointer to the email. The digify ask carries the ADR-0004 amendment's
+      two additions: photos are processed by third-party AI services, and
+      the shelter confirms it holds or can license the photo.
       **Milestone: one real donation reaches one real shelter.** Verified-
       tier pitch (Shelterluv key, attestations) follows with whichever
       shelter warms up first.

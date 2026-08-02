@@ -43,8 +43,9 @@ only — do not build from it.
 - **Embeddings are derived data**: every vector row carries `embedding_model`;
   the column is rebuildable from raw corpus, never backed up as sacred.
 - **Trust hierarchy** for animal facts: shelter API (verified) >
-  platform-widget scrape > aggregator APIs; conflicts resolve by tier, then
-  recency; every fact stores source + fetched_at.
+  consented first-party scrape > aggregator APIs; conflicts resolve by tier,
+  then recency; every fact stores source + fetched_at. Tiers are named and
+  ordered (ADR-0006 as amended) — persist the tier name, never its rank.
 - **Bright lines** (see DIRECTION.md): no rarity tiers on animals, nothing
   tradeable ever, no dark-pattern pressure, no programmatic ads, generated
   donor text never claims care that isn't attested.

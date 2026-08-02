@@ -58,7 +58,8 @@ subject ids so retrieval joins back to structured truth).
   source at a specific time: the product's provenance model applied to its
   own data.
 - RescueGroups rows carry the ADR-0006 purge tag; consented-scrape rows
-  are fully sacred.
+  are fully sacred — qualified by the ADR-0006 amendment (2026-08-02):
+  consent revocation is a second source-scoped purge exception.
 
 ## Consequences
 - Any source can die (Petfinder-style) without touching the corpus or

@@ -79,3 +79,108 @@ ToS review of the three candidate listing sources (2026-07-29):
 - RescueGroups terms change, or our key/org opt-ins are revoked at scale.
 - Adopt-a-Pet or a Petfinder successor opens a partner API worth a contract.
 - Tier 1 coverage grows enough that the aggregator tier stops mattering.
+
+## Amendment (2026-08-02): consented first-party scraping, named tiers, revocation
+
+Prompted by the ADR-0009 scrape-first re-cut, which promotes consented
+per-site scraping onto the critical path — a path this ADR, read literally,
+forbids. Four decisions.
+
+### 1. Consented first-party scraping is a different act from banned scraping
+
+Decision 3 above bans scraping *Petfinder and Adopt-a-Pet*; the Alternatives
+section states the rejection without qualification ("scraping non-API
+sources: rejected"). That unqualified line is **narrowed here**, not
+reversed: what it rejected was scraping sources whose ToS bans it, over
+content we hold no license to. Reading a consented shelter's own public site
+is a different act on every axis the rejection named.
+
+The justification is already in this ADR's Context: Adopt-a-Pet's shelter
+terms confirm **shelters own their listing content and license it
+non-exclusively** — the same content is always obtainable from the shelter
+directly. The aggregator's ToS binds our relationship with the *aggregator*;
+it was never the shelter's only channel to us.
+
+Scope of the permission: publicly reachable pages of a shelter in the
+registry with a scrape grant on record, fetched at polite-crawler rates,
+honoring robots.txt. Never behind a login, never past a block. A site that
+blocks us has answered.
+
+### 2. Consent is the display license, not a courtesy
+
+Three constraints stack and must not be collapsed: **access** (may we fetch
+— public, unauthenticated pages, broadly yes), **contract** (may we fetch
+given their terms — what killed Petfinder), and **copyright** (may we
+*republish* — what we actually do on animal pages). "It's public" answers
+only the first.
+
+Within copyright: **facts are not copyrightable** — name, species, breed,
+age, sex, weight, intake date, adoption status; compile freely. **Expression
+is** — the description prose and the photographs are the shelter's (or the
+photographer's) authored work. Therefore a shelter's display grant is what
+licenses us to render their prose and photos; without it a page shows the
+facts plus our own words. This aligns with Decision 5's existing photo gate
+rather than replacing it.
+
+**Append-only is a data-integrity rule, not a legal shield.** Recorded
+explicitly because the two are easy to conflate: modification is not the
+regulated act — reproduction is, and a derivative work is an *additional*
+right on top. "We store it unmodified" is not a defense (verbatim
+republication is the harder case to defend, not the easier one). Two
+independent reasons that happen to point the same way; if one moves, do not
+assume the other moved with it.
+
+### 3. Trust tiers become named and ordered; rank is derived
+
+Decisions 1–2 fixed a two-tier hierarchy. A consented first-party scrape
+belongs **above the aggregator** — it is the shelter's own data, read by us
+under fixtures and health gates, while aggregator staleness is unbounded and
+not ours to repair — and **below Tier 1**, which is defined by a
+shelter-issued key plus a data-rights agreement; a scrape has neither.
+
+Mechanism: one ordered tier list is the source of truth and rank is its
+index — `shelter-api` → `first-party-scrape` → `aggregator` → `manual`.
+Inserting a tier is moving a line: no renumbering, no gap budget, no float
+precision to exhaust. **Never persist the rank — persist the tier name.**
+A stored rank freezes the ordering at write time, so reordering the
+hierarchy would silently rewrite the meaning of every provenance row.
+
+Consequence for code: `Source` opens to admit `scrape:<shelter-slug>`, so it
+can no longer key an exhaustive map; the closed **tier** list takes over that
+job (`Source → Tier → rank`).
+
+### 4. Consent revocation is a second source-scoped purge exception
+
+Decision 4's purge exception is RescueGroups-scoped, and ADR-0009 §4 calls
+consented-scrape rows "fully sacred". But consent granted by email is
+revocable by email, so that must be qualified: **revocation of a shelter's
+consent is the second sanctioned, source-scoped exception to append-only.**
+`scrape:<shelter-slug>` as the source identity is what makes it executable
+as a set operation rather than a hunt.
+
+Scope by layer, since the layers differ: vaulted HTML and any displayed
+prose or photos go; uncopyrightable facts are a separate question, decided
+per revocation and on the shelter's terms, not ours.
+
+Consent grants themselves are **records, not booleans** — granter, date,
+basis, and a pointer to the evidence — kept in the checked-in registry so a
+commit records who granted what, when, and on what basis. A bare boolean
+asserts consent without evidence, the same unfalsifiable failure mode as an
+unattributed golden fixture. Revocation is an *append* (a grant gains an end
+date), never an edit, so the registry reads as the whole history of the
+relationship. Scrape, display, and digify are three separate grants: a
+shelter may welcome being listed and object to being crawled nightly.
+
+### Consequences
+- ADR-0009's scrape-first plan is legitimate on paper; phase 3 implements
+  all four decisions in one commit.
+- Animal pages must know a shelter's display grant before rendering prose or
+  photos — carried to roadmap item 3.
+- Two purge exceptions now exist. Append-only remains the rule; both
+  exceptions are source-scoped and exercised only on termination/revocation.
+
+### Revisit triggers (added)
+- A shelter revokes consent — the first real exercise of the purge path.
+- Any tier is inserted, renamed, or reordered (verify no rank was persisted).
+- Scraping expands beyond registry shelters with grants on record — that
+  would leave what this amendment sanctions.
