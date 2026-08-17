@@ -39,8 +39,8 @@ from the run journal. Both re-cuts applied by hand.
    amendment (`c488dda`) settled all four decisions; the code half landed
    `src/core/sources.ts` (open `Source`, closed `TIERS`) and
    `src/core/shelters.ts` (registry + grants).
-4. **r2-html-vault** — `monsterpaws-corpus` bucket via `aws4fetch`
-   (**dependency ADR** lands with this slice); vault-then-extract ordering.
+4. **r2-html-vault** — ✅ shipped: `monsterpaws-corpus` bucket via
+   `aws4fetch` (**ADR-0011**); `vaultThenObserve` enforces the ordering.
 5. **extract + validate** — `llm-extractor`,
    `golden-fixture-eval-harness` ⚠ verify (built together — the harness is
    the model-selection mechanism).
@@ -181,8 +181,28 @@ medium, no verify · shipped `6c31d76`
   scrape-specific may enter `observation.ts`/`pipeline.ts`, or "any source
   can die without touching downstream code" stops being true.
 
-### Phase 4 — r2-html-vault
-low, mechanical
+### Phase 4 — r2-html-vault ✅
+low, mechanical · decisions written up as **ADR-0011**
+
+- **What got built.** `src/core/ingest/vault.ts`: `htmlKey` (content-
+  addressed, slug-sharded), `createR2HtmlVault` (sign-then-injected-fetch so
+  the client is unit-testable), `createMemoryHtmlVault` as the reference
+  implementation, and `vaultThenObserve` — the only sanctioned way to build a
+  scrape observation, which is how the ordering invariant stops being a
+  convention. The scrape payload is `{ url, vaultKey }`, so the key rides the
+  existing JSONB raw row and phase 4 needed **no migration**.
+- **Found in the doing.** Because the key embeds the page hash, the raw row's
+  `content_hash` changes exactly when the page does — stage-1 dedup works
+  without ever reading R2, which the test asserts end-to-end against the
+  in-memory store. Writes are HEAD-then-PUT: a blind PUT would rewrite every
+  page of every quiet shelter daily for no state change. `aws4fetch` has no
+  fetch-injection seam (`client.fetch` dispatches directly), so the vault
+  calls `client.sign()` and dispatches itself.
+- **Still owed (ops, needs a human):** create the bucket
+  (`rclone_r2 mkdir r2:monsterpaws-corpus`) and re-scope the R2 token to
+  corpus+media only. Runbook step 5b + both diagrams are already updated.
+
+- **What was specified.**
 
 - **What gets built.** Scraped HTML archived to the **new
   `monsterpaws-corpus` bucket** (decision 2026-07-31: separate from the
@@ -355,8 +375,8 @@ medium, no verify — *unblocked: key granted 2026-08-02
 
 ## New dependencies this plan implies (each needs an ADR)
 
-- ~~S3-compatible R2 client~~ **decided 2026-07-31: `aws4fetch`** — ADR
-  lands with phase 4, covering client + `monsterpaws-corpus` bucket.
+- ~~S3-compatible R2 client~~ — **ADR-0011** (`aws4fetch` +
+  `monsterpaws-corpus` bucket), shipped with phase 4.
 - zod for LLM-output schema validation — phase 5; likely worth adopting
   for the observation contract too if adopted at all.
 - LLM extraction provider key(s) (DeepSeek and/or Anthropic) — phase 5;

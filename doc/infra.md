@@ -57,20 +57,62 @@ curl -X PATCH "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/settings/ssl"
 #    S3 round-trip verified). Created via rclone (S3 CreateBucket) — no
 #    wrangler needed. Env-only rclone pattern (no config file, keys stay
 #    in pass; on the droplet the same RCLONE_CONFIG_R2_* come from .env):
-rclone_r2() {
+# TWO credentials since 2026-08-17 (ADR-0011) — never collapse them back into
+# one, or the worker that parses untrusted HTML every day regains write access
+# to the attestation mirror and the pg_dumps that are our last line of defence.
+#   worker key (pass cloudflare/r2-access-key-id / -secret-access-key):
+#                                              corpus + media
+#   vault  key (pass cloudflare/r2-vault-access-key-id / -secret-access-key):
+#                                              vault only
+rclone_r2() { # $1 = worker|vault, rest = rclone args
+  local id sec role=$1; shift
+  case $role in
+    worker) id=cloudflare/r2-access-key-id;       sec=cloudflare/r2-secret-access-key ;;
+    vault)  id=cloudflare/r2-vault-access-key-id; sec=cloudflare/r2-vault-secret-access-key ;;
+    *) echo "usage: rclone_r2 worker|vault ..." >&2; return 2 ;;
+  esac
   RCLONE_CONFIG_R2_TYPE=s3 RCLONE_CONFIG_R2_PROVIDER=Cloudflare \
-  RCLONE_CONFIG_R2_ACCESS_KEY_ID=$(pass show cloudflare/r2-access-key-id) \
-  RCLONE_CONFIG_R2_SECRET_ACCESS_KEY=$(pass show cloudflare/r2-secret-access-key) \
-  RCLONE_CONFIG_R2_ENDPOINT=$(pass show cloudflare/r2-endpoint) \
+  RCLONE_CONFIG_R2_ACCESS_KEY_ID=$(pass show "$id" | head -n1) \
+  RCLONE_CONFIG_R2_SECRET_ACCESS_KEY=$(pass show "$sec" | head -n1) \
+  RCLONE_CONFIG_R2_ENDPOINT=$(pass show cloudflare/r2-endpoint | head -n1) \
   RCLONE_S3_NO_CHECK_BUCKET=true \
   rclone "$@"
 }
-# NO_CHECK_BUCKET is required since 2026-07-30: the R2 token is BUCKET-scoped
-# (media+vault only), so rclone's bucket-exists probe 403s and it wrongly
+# Separation verified 2026-08-17, both directions, read AND write: worker key
+# 403s on vault (list and put), vault key 403s on corpus and media. Re-run that
+# matrix after any token edit — a split only checked one way isn't a split.
+# NO_CHECK_BUCKET is required since 2026-07-30: both tokens are BUCKET-scoped,
+# so rclone's bucket-exists probe 403s and it wrongly
 # falls back to CreateBucket. Same flag needed by any S3 client we configure.
-# e.g. rclone_r2 lsd r2:   ·   rclone_r2 mkdir r2:<bucket>
+# e.g. rclone_r2 worker lsf r2:monsterpaws-corpus
+#      rclone_r2 vault  rcat r2:monsterpaws-vault/<key>
+# (`lsd r2:` and `mkdir` both need account scope — see 5b; with a
+# bucket-scoped key they 403 or, with NO_CHECK_BUCKET, no-op silently.)
 # Gotcha hit during setup: a freshly-activated R2 account returns TLS
 # handshake failures on its S3 endpoint for a few minutes — wait, don't debug.
+
+# 5b. Corpus bucket (ADR-0011) — DONE 2026-08-17 (monsterpaws-corpus;
+#     Standard class, ENA, private; live round-trip verified through
+#     createR2HtmlVault: put → get → same-key re-put → prefix purge).
+#     Scraped HTML only; separate bucket so the worker's daily-exercised
+#     credential cannot reach pg_dumps or the attestation mirror.
+#     TRAP: `rclone_r2 mkdir` CANNOT create a bucket — NO_CHECK_BUCKET=true
+#     suppresses CreateBucket itself, so the command exits 0 having done
+#     nothing; drop the flag and an Object-scoped key 403s. Bucket creation
+#     needs ACCOUNT scope (Workers R2 Storage · Write), which none of our
+#     stored credentials carry — this one was made in the dashboard UI, then
+#     added to the "Monster Paws R2" token's bucket list. Do the same next
+#     time; don't mint an account-wide key for a one-off.
+#     `pass cloudflare/r2-token` is NOT a valid CF API token (verified
+#     2026-08-17: "Invalid API Token" from /user/tokens/verify) — every
+#     working path uses the S3 access-key-id/secret entries instead.
+#     .env: R2_CORPUS_BUCKET / R2_ACCESS_KEY_ID / R2_SECRET_ACCESS_KEY.
+#     Consent revocation (ADR-0006 as amended) is one prefix purge — the keys
+#     are sharded by shelter slug precisely so this stays a single command:
+# rclone_r2 worker purge r2:monsterpaws-corpus/html/<shelter-slug>/
+#     Purge prints a benign 403 on GetBucketVersioning — an Object Read &
+#     Write token cannot read bucket-level config; rclone assumes unversioned
+#     and deletes correctly. Don't chase it; verified 2026-08-17.
 
 # 6. Managed Postgres — DEFERRED until ingest (roadmap item 2). When needed:
 doctl databases create monsterpaws-pg --engine pg --version 16 \
@@ -127,8 +169,13 @@ ssh root@$IP 'git clone <repo-url> monsterpaws && cd monsterpaws &&
 # Deploy (also in /deploy skill) — images from GHCR, built by CI
 ssh <droplet> 'cd monsterpaws && git pull && docker compose -f docker-compose.prod.yml pull && docker compose -f docker-compose.prod.yml up -d'
 
-# Weekly DB copy outside DO (ADR-0003 belt-and-suspenders) — cron on droplet
-pg_dump "$DATABASE_URL" | gzip | rclone rcat r2:monsterpaws-vault/pgdump/$(date +%F).sql.gz
+# Weekly DB copy outside DO (ADR-0003 belt-and-suspenders) — cron on droplet.
+# NOT LIVE YET: waits on Managed Postgres (step 6). Set it up in the same
+# sitting, or the belt-and-suspenders copy is a plan rather than a backup.
+# Uses the VAULT key, not the worker's (ADR-0011) — add R2_VAULT_ACCESS_KEY_ID
+# / R2_VAULT_SECRET_ACCESS_KEY to the droplet .env at that point; today the
+# droplet holds neither, and nothing on it touches R2.
+pg_dump "$DATABASE_URL" | gzip | rclone_r2 vault rcat r2:monsterpaws-vault/pgdump/$(date +%F).sql.gz
 
 # Attestation mirror spot-check
 wrangler r2 object get monsterpaws-vault/attestations/<id>.json --pipe
@@ -174,6 +221,10 @@ curl -X POST "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/purge_cache" \
         │  │ HTTPS │         │ Next  │  │   │   · attestation mirror  │
         │  └───────┘         │  SSR  │  │   │     (flat files)        │
         │                    └───┬───┘  │   │   · weekly pg_dumps     │
+        │                        │      │   │  monsterpaws-corpus     │
+        │                        │      │   │   · scraped HTML,       │
+        │                        │      │   │     content-addressed   │
+        │                        │      │   │     (worker-only)       │
         │  ┌──────────────┐      │      │   └─────────────────────────┘
         │  │    worker    │      │      │         ▲ writes (keys in DB)
         │  │   pg-boss    │      │      │         │
@@ -214,9 +265,10 @@ curl -X POST "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/purge_cache" \
   SACRED (irreplaceable)                 DERIVED (rebuildable)
   ┌──────────────────────────┐           ┌──────────────────────────┐
   │ raw_payloads (JSONB)     │  rebuild  │ animals (canonical)      │
-  │ event_log                ├──────────►│ embeddings (+model tag)  │
-  │ attestations + R2 mirror │           │ FTS indexes              │
-  │ donor accounts           │           │ ISR page cache           │
+  │ scraped HTML (R2 corpus) ├──────────►│ embeddings (+model tag)  │
+  │ event_log                │           │ FTS indexes              │
+  │ attestations + R2 mirror │           │ ISR page cache           │
+  │ donor accounts           │           │                          │
   └───────────┬──────────────┘           └──────────────────────────┘
               │ backed up: DO PITR (continuous)
               │            + weekly pg_dump → R2 vault (off-DO copy)

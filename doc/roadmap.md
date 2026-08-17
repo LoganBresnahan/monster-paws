@@ -36,15 +36,20 @@ pin dogfood findings and deferred sub-tasks to items as carry-ins.
       vault → extractor → normalizers → entity-resolution-merge, the lone
       Fable+verify slice; the RescueGroups adapter is now unblocked but
       stays unscheduled — off the critical path by construction).
-      Phases 1–3 shipped: observation contract + pipeline skeleton
+      Phases 1–4 shipped: observation contract + pipeline skeleton
       (`e713544`), raw-persist-dedup + first migration (`6c31d76`), source
       taxonomy + shelter registry implementing the **ADR-0006 amendment of
       2026-08-02** (consented scraping legitimized and scoped, consent as
       the display license, named ordered tiers with rank derived and never
-      persisted, revocation as a second purge exception). Decisions
-      locked with the re-cut: new `monsterpaws-corpus` bucket for scraped
-      HTML; `aws4fetch` client, chosen — it installs with its
-      **dependency ADR** at phase 4, not before. Golden fixtures hand-checked per site at onboarding;
+      persisted, revocation as a second purge exception), and the R2 corpus
+      vault (**ADR-0011**: `monsterpaws-corpus` bucket, `aws4fetch`,
+      content-addressed slug-sharded keys, `vaultThenObserve` enforcing
+      fetch → vault → hash → raw row).
+      Bucket provisioned and round-tripped live 2026-08-17, and the R2
+      credential split in two the same day — worker key (corpus+media) vs
+      vault key (backups + the future attestation mirror), separation
+      verified both directions, read and write (`doc/infra.md` step 5).
+      Golden fixtures hand-checked per site at onboarding;
       fixture-eval canary on the daily cron tick + live health gates.
       Former carry-ins are folded into the plan itself — verbatim
       `description` (phase 5),
