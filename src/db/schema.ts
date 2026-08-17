@@ -7,19 +7,15 @@ import {
   text,
   timestamp,
 } from "drizzle-orm/pg-core";
-
-/**
- * Source tiers (ADR-0006). Tier 1: shelter-issued keys. Tier 2: aggregator.
- * Every fact carries its source; conflicts resolve by tier, then recency.
- */
-export const SOURCES = ["shelterluv", "petango", "rescuegroups", "manual"] as const;
-export type Source = (typeof SOURCES)[number];
+import type { Source } from "@/core/sources";
 
 /**
  * Append-only (ADR-0003): rows here are never UPDATEd or DELETEd —
- * corrections are new rows. One sanctioned exception (ADR-0006): rows with
- * source = 'rescuegroups' are set-deletable to honor the ToS purge
- * obligation, which is why every row is source-tagged.
+ * corrections are new rows. Two sanctioned exceptions, both source-scoped,
+ * which is why every row is source-tagged: `rescuegroups` rows are
+ * set-deletable on ToS termination (ADR-0006), and a `scrape:<slug>` set is
+ * deletable when that shelter revokes consent (ADR-0006 as amended). Store
+ * the source name — never a tier or a rank, which reordering would rewrite.
  */
 export const rawPayloads = pgTable(
   "raw_payloads",
@@ -76,6 +72,7 @@ export const animals = pgTable(
     species: text("species").notNull(),
     breed: text("breed"),
     status: text("status").notNull().default("available"),
+    /** the registry slug (`src/core/shelters.ts`) — natural key for the future `shelters` table */
     shelterExternalId: text("shelter_external_id"),
     // photo KEYS only — images live in R2, never in the DB (ADR-0003)
     photoKeys: jsonb("photo_keys").$type<string[]>().notNull().default([]),

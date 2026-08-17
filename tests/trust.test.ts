@@ -15,6 +15,20 @@ describe("trust hierarchy (ADR-0006)", () => {
     expect(resolveClaim(aggregator, shelter)).toBe(shelter);
   });
 
+  it("consented scrape beats the aggregator but loses to a shelter key", () => {
+    const scrape = claim("Biscuit", "scrape:happy-tails-rescue", "2026-01-01T00:00:00Z");
+    const aggregator = claim("Bisquit", "rescuegroups", "2026-07-01T00:00:00Z");
+    const shelter = claim("Biscuit Jr", "shelterluv", "2026-01-01T00:00:00Z");
+    expect(resolveClaim(aggregator, scrape)).toBe(scrape);
+    expect(resolveClaim(scrape, shelter)).toBe(shelter);
+  });
+
+  it("ranks two shelters' scrapes as one tier, so recency decides", () => {
+    const older = claim("available", "scrape:happy-tails-rescue", "2026-01-01T00:00:00Z");
+    const newer = claim("adopted", "scrape:second-chance-shelter", "2026-07-01T00:00:00Z");
+    expect(resolveClaim(older, newer)).toBe(newer);
+  });
+
   it("aggregator beats manual entry", () => {
     const agg = claim("terrier mix", "rescuegroups", "2026-01-01T00:00:00Z");
     const manual = claim("terrier", "manual", "2026-07-01T00:00:00Z");

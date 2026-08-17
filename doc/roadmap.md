@@ -11,8 +11,10 @@ pin dogfood findings and deferred sub-tasks to items as carry-ins.
       exception); shelter-issued keys are Tier 1; AI art gated on verified
       shelters (photo unlocks → monster art at verification).
       Carry-in → item 1: schema needs `source` tags + set-deletion path.
-      Carry-in → item 2: apply for the RescueGroups API key early — approval
-      latency is on the critical path.
+      ~~Carry-in → item 2: apply for the RescueGroups API key early~~ —
+      **granted 2026-08-02**, in `pass` at `rescuegroups/api-key`. The
+      adapter is no longer blocked; it stays off the critical path by
+      construction (one adapter + one normalizer, zero pipeline edits).
 - [x] **1. Scaffold.** Done 2026-07-29. Next.js 16 (App Router, src/, TS,
       Tailwind) + Drizzle schema stub (append-only raw_payloads/event_log
       with source tags per ADR-0006 carry-in, animals with provenance JSONB,
@@ -30,20 +32,22 @@ pin dogfood findings and deferred sub-tasks to items as carry-ins.
       LLM-only extraction over vaulted HTML; declarative scraper tier
       deferred behind a volume trigger) and
       `doc/plans/adr-0009-ingestion-build-plan.md` (**re-cut 2026-07-31:
-      scrape-first** — 9 phases; RescueGroups adapter unscheduled until the
-      key lands; critical path runs taxonomy+registry → vault → extractor →
-      normalizers → entity-resolution-merge, the lone Fable+verify slice).
-      Phases 1–2 shipped (`e713544`, `6c31d76`): observation contract +
-      pipeline skeleton, raw-persist-dedup + first migration. Decisions
+      scrape-first** — 9 phases; critical path runs taxonomy+registry →
+      vault → extractor → normalizers → entity-resolution-merge, the lone
+      Fable+verify slice; the RescueGroups adapter is now unblocked but
+      stays unscheduled — off the critical path by construction).
+      Phases 1–3 shipped: observation contract + pipeline skeleton
+      (`e713544`), raw-persist-dedup + first migration (`6c31d76`), source
+      taxonomy + shelter registry implementing the **ADR-0006 amendment of
+      2026-08-02** (consented scraping legitimized and scoped, consent as
+      the display license, named ordered tiers with rank derived and never
+      persisted, revocation as a second purge exception). Decisions
       locked with the re-cut: new `monsterpaws-corpus` bucket for scraped
-      HTML; `aws4fetch` client (dependency ADR lands with phase 4).
-      Golden fixtures hand-checked per site at onboarding; fixture-eval
-      canary on the daily cron tick + live health gates. Former carry-ins
-      are folded into the plan itself — taxonomy/registry (phase 3, incl.
-      the **ADR-0006 amendment of 2026-08-02**: consented first-party
-      scraping legitimized and scoped, consent as the display license,
-      named ordered tiers, revocation as a second purge exception),
-      verbatim `description` (phase 5),
+      HTML; `aws4fetch` client, chosen — it installs with its
+      **dependency ADR** at phase 4, not before. Golden fixtures hand-checked per site at onboarding;
+      fixture-eval canary on the daily cron tick + live health gates.
+      Former carry-ins are folded into the plan itself — verbatim
+      `description` (phase 5),
       fixture-simulated two-source merge + `sources.conflicted` question
       (phase 7), per-field staleness gating (phase 9). Tracker pixel on
       detail pages when listings render.
@@ -69,7 +73,10 @@ pin dogfood findings and deferred sub-tasks to items as carry-ins.
 - [ ] **5. Local consent outreach.** Permission emails to 3–5 local
       shelters: **scrape + display + digify are three separate grants**
       (ADR-0006 as amended), each recorded with granter, date, basis and a
-      pointer to the email. The digify ask carries the ADR-0004 amendment's
+      pointer to the email. Each grant lands as an entry in the checked-in
+      registry (`src/core/shelters.ts`, shipped empty at item 2) with the
+      evidence filed under `doc/consent/` — the commit is the record.
+      The digify ask carries the ADR-0004 amendment's
       two additions: photos are processed by third-party AI services, and
       the shelter confirms it holds or can license the photo.
       **Milestone: one real donation reaches one real shelter.** Verified-

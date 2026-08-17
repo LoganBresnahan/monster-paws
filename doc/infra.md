@@ -221,6 +221,11 @@ curl -X POST "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/purge_cache" \
               │ backed up: DO PITR (continuous)
               │            + weekly pg_dump → R2 vault (off-DO copy)
               ▼
-  purge exception (ADR-0006): rows tagged source='rescuegroups'
-  are set-deletable to honor ToS termination — the ONE carve-out
+  purge exceptions (ADR-0006 as amended): rows tagged
+  source='rescuegroups' (ToS termination) or source='scrape:<slug>'
+  (that shelter revokes consent) are set-deletable — the TWO carve-outs
 ```
+
+Ingest keys: `RESCUEGROUPS_API_KEY=$(pass show rescuegroups/api-key)` —
+granted 2026-08-02, scoped to what the application declared (donations +
+keepsakes); the Tracker pixel obligation rides on it (ADR-0006).

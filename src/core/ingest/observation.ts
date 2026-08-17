@@ -1,4 +1,4 @@
-import type { Source } from "@/db/schema";
+import type { Source } from "@/core/sources";
 
 /**
  * The one contract every source emits (ADR-0009). Adapters implement only

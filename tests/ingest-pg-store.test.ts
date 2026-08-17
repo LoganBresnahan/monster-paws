@@ -1,6 +1,7 @@
-import { sql } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { contentHashOf } from "@/core/ingest/hash";
+import { scrapeSource } from "@/core/sources";
 import type { Observation } from "@/core/ingest/observation";
 import { createPgRawStore, loadStoredObservations } from "@/core/ingest/pg";
 import type { RawStore } from "@/core/ingest/pipeline";
@@ -104,6 +105,33 @@ describe.skipIf(!DATABASE_URL)("ADR-0009 Postgres raw store", () => {
 
     expect(other.inserted).toBe(true);
     expect(await db.select().from(rawPayloads)).toHaveLength(2);
+  });
+
+  it("keeps each shelter's scrape a separately deletable set (ADR-0006 as amended)", async () => {
+    const scraped = (slug: string, payload: Record<string, unknown>) =>
+      store.persist({
+        source: scrapeSource(slug),
+        externalId: "listing-7",
+        payload,
+        fetchedAt: new Date("2026-07-30T12:00:00Z"),
+        contentHash: contentHashOf(payload),
+      });
+
+    await scraped("happy-tails-rescue", { name: "Rex" });
+    await scraped("second-chance-shelter", { name: "Rex" });
+    await store.persist(obs({ name: "Rex" }, "2026-07-30T12:00:00Z"));
+
+    // Revocation must be one WHERE, not a hunt — that is why the source
+    // identity is per-shelter and why the slug can never contain a colon.
+    await db
+      .delete(rawPayloads)
+      .where(eq(rawPayloads.source, scrapeSource("happy-tails-rescue")));
+
+    const survivors = await db.select().from(rawPayloads);
+    expect(survivors.map((r) => r.source).sort()).toEqual([
+      "rescuegroups",
+      "scrape:second-chance-shelter",
+    ]);
   });
 
   it("loads stored observations for replay, oldest first", async () => {

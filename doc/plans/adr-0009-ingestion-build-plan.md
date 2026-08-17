@@ -35,11 +35,10 @@ from the run journal. Both re-cuts applied by hand.
    resolution produces facts).
 2. **raw-persist-dedup** — ✅ shipped `6c31d76` (content_hash + last_seen
    migration, canonical-JSON hashing, Postgres stage-1 store).
-3. **scrape source taxonomy + shelter registry** — new critical-path root
-   for the scrape-first cut. A **decision slice as much as a code slice**:
-   where an LLM-read scrape ranks against the aggregator must be settled
-   here (ADR-0006 amendment or equivalent), because phase 7's merge
-   semantics depend on it.
+3. **scrape source taxonomy + shelter registry** — ✅ shipped: the ADR-0006
+   amendment (`c488dda`) settled all four decisions; the code half landed
+   `src/core/sources.ts` (open `Source`, closed `TIERS`) and
+   `src/core/shelters.ts` (registry + grants).
 4. **r2-html-vault** — `monsterpaws-corpus` bucket via `aws4fetch`
    (**dependency ADR** lands with this slice); vault-then-extract ordering.
 5. **extract + validate** — `llm-extractor`,
@@ -56,8 +55,10 @@ from the run journal. Both re-cuts applied by hand.
 9. **health gates + retrieval** — `ingest-health-gates` (+ fixture-eval
    canary on the daily cron tick), `retrieval-jobs` (parallel).
 
-**Unscheduled:** `rescuegroups-adapter` — any time after phase 2, when the
-key lands. Off the critical path by construction; see Sequencing risks.
+**Unscheduled:** `rescuegroups-adapter` — **key granted 2026-08-02**, so it
+is schedulable at will; still off the critical path by construction (the
+scrape path proves the pipeline end-to-end and needs no external approval).
+See Sequencing risks.
 
 ## Per-phase detail: code choices and why
 
@@ -93,11 +94,28 @@ medium, no verify · shipped `6c31d76`
   rows stay fully sacred — *qualified in phase 3*: consent revocation is a
   second source-scoped purge exception.
 
-### Phase 3 — scrape source taxonomy + shelter registry
+### Phase 3 — scrape source taxonomy + shelter registry ✅
 `scrape-source-taxonomy` + `shelter-registry` · opus, medium, no verify —
 *new critical-path root; decision-heavy*
 
-- **What gets built.** (a) A per-site scrape identity —
+- **What got built.** `src/core/sources.ts` owns the taxonomy (moved off
+  `src/db/schema.ts`, which now imports the type — the schema stopped being
+  the home of domain rules): open `Source = FixedSource | scrape:${string}`,
+  closed ordered `TIERS`, `tierOf` / `rankOf` / `scrapeSource` /
+  `shelterSlugOf`. `src/core/shelters.ts` is the registry: typed entries,
+  grants as records, `hasGrant(shelter, permission, asOf)` default-denying,
+  `registryProblems` as a structural check run from vitest. `SHELTERS` ships
+  **empty** — we hold no grants until roadmap item 5, and an entry without one
+  is a shelter we may not scrape. `resolveClaim` now compares tier ranks.
+- **Found in the doing.** Slug grammar is load-bearing, not cosmetic: a slug
+  containing `:` makes `scrape:<slug>` ambiguous and would split one
+  shelter's corpus in two, so `scrapeSource` validates and throws. `tierOf`
+  throws on an unknown source rather than defaulting — a typo'd source
+  landing in the bottom tier loses every conflict silently, which reads as
+  "no data" instead of "broken ingest". `hasGrant` takes `asOf` so the
+  question "was the page we rendered last month licensed at the time?"
+  stays answerable.
+- **What was specified.** (a) A per-site scrape identity —
   `scrape:<shelter-slug>` — mapped to a named tier, replacing the closed
   four-value `SOURCES` union with a scheme that admits per-shelter sources
   without a schema change. (b) A checked-in typed **shelter registry**
@@ -306,17 +324,19 @@ high effort, hard-reasoning, adversarial verify pass required
   (ADR-0003), so migration-safety weight doesn't apply.
 
 ### Unscheduled — rescuegroups-adapter
-medium, no verify — *slots in any time after phase 2, when the key lands*
+medium, no verify — *unblocked: key granted 2026-08-02
+(`pass show rescuegroups/api-key`); slots in whenever it's wanted*
 
 - **What gets built.** RescueGroups fetcher (v5 preferred, v2 fallback)
   paging the API and emitting observations; register the `ingest.poll`
   pg-boss job in the slot commented in `src/worker/index.ts`; one recorded
   real API response as its golden fixture (inheriting the phase-5 fixture
   pattern).
-- **Why unscheduled.** Key approval is external. The phase-1 seam makes
-  this a drop-in: one adapter + one normalizer + its reserved slot in
-  `SOURCES`/`TIER_RANK`. Failures are loud; raw payloads are verbatim +
-  replayable, so mapping bugs are recoverable.
+- **Why still unscheduled.** The phase-1 seam plus phase 3's taxonomy make
+  this a drop-in: one adapter + one normalizer, with `rescuegroups` already
+  a `FixedSource` mapped to the `aggregator` tier — no taxonomy edit at all.
+  Failures are loud; raw payloads are verbatim + replayable, so mapping bugs
+  are recoverable.
 
 ### Deferred (platform-volume revisit trigger)
 
@@ -363,5 +383,8 @@ medium, no verify — *slots in any time after phase 2, when the key lands*
    how the production model gets picked; shipping the extractor on an
    unmeasured model inverts the amendment's "empirical, not aesthetic"
    rule.
-7. Phase 3's tier-rank decision blocks phase 7's merge semantics — settle
-   it as an ADR-0006 amendment there, not ad hoc inside the merge code.
+7. ~~Phase 3's tier-rank decision blocks phase 7's merge semantics~~ —
+   settled in the ADR-0006 amendment and implemented as the closed `TIERS`
+   list. Live version of this risk: the merge must resolve on the tier
+   **name** it derives per read; persisting a rank anywhere downstream
+   reintroduces exactly what the ordered list was chosen to prevent.

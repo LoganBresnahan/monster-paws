@@ -1,6 +1,6 @@
 import type { Claim } from "@/core/trust";
 import type { Observation, SourceAdapter, StoredObservation } from "@/core/ingest/observation";
-import type { Source } from "@/db/schema";
+import type { Source } from "@/core/sources";
 
 /** The fields of `animals` a normalizer can assert — its whole output surface. */
 export interface AnimalFields {

@@ -11,7 +11,7 @@ import type {
   Normalizer,
   RawStore,
 } from "@/core/ingest/pipeline";
-import type { Source } from "@/db/schema";
+import type { Source } from "@/core/sources";
 
 /**
  * In-memory stage implementations: the reference behaviour the Postgres

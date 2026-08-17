@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { createMemoryStages } from "@/core/ingest/memory";
 import type { Observation, SourceAdapter, StoredObservation } from "@/core/ingest/observation";
 import { replay, runIngest, type AnimalClaims, type Normalizer } from "@/core/ingest/pipeline";
-import type { Source } from "@/db/schema";
+import type { Source } from "@/core/sources";
 
 interface RgPayload {
   id: string;
