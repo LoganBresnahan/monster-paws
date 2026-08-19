@@ -300,6 +300,12 @@ high effort, hard-reasoning, adversarial verify pass required
   do not wait for RescueGroups. Open from phase 1: a losing claim is
   discarded with no record that sources disagreed — decide here whether a
   `sources.conflicted` event is worth emitting.
+- **Carry-in from the live RG run (2026-08-17).** Of 1000 real animals,
+  19 carry no `breedPrimary`, and the normalizer asserts `breed: null`
+  rather than omitting the claim. Absence-as-assertion is defensible
+  within one source, but across sources a fresher same-tier `null` can
+  win on recency and erase a real value. Decide here whether a null claim
+  may ever beat a non-null one; the adversarial pass must cover it.
 - **Scheduling.** The chokepoint — phases 8–9 are blocked behind it.
   Start the moment normalizers land.
 
