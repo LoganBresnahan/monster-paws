@@ -343,9 +343,36 @@ high effort, hard-reasoning, adversarial verify pass required
   sufficient at this volume). Embeddings are derived and rebuildable
   (ADR-0003), so migration-safety weight doesn't apply.
 
-### Unscheduled — rescuegroups-adapter
-medium, no verify — *unblocked: key granted 2026-08-02
-(`pass show rescuegroups/api-key`); slots in whenever it's wanted*
+### Unscheduled — rescuegroups-adapter ✅ shipped 2026-08-17
+medium, no verify — *taken out of order while phase 5's fixtures wait on
+consent outreach; the critical path is unchanged*
+
+- **What got built.** `src/core/ingest/rescuegroups.ts`: v5 adapter (POST
+  `/public/animals/search/available/`, paged, `maxPages` for smoke runs),
+  a deliberately thin normalizer, and `trackerUrlOf` for item 3's pixel
+  obligation. `ingest.poll` registered in the worker on a daily cron,
+  running **stage 1 only** until the Postgres resolver and writer land.
+  Verified against the live API, not just the fixture.
+- **Found in the doing.**
+  - **A wrong API key is undetectable**: the API 401s with *no*
+    `Authorization` header but returns 200 for a bogus one. Key validity
+    cannot be inferred from a status code — phase 9's health gates must
+    watch record counts, not HTTP status.
+  - **JSON:API splits a record in two.** Species and status live in the
+    shared `included` array, so an observation carrying only `data` would
+    be un-normalizable on replay. The payload carries each animal's own
+    resolved sidecar, verbatim.
+  - **v2 fallback proved unnecessary** — v5 answered every call. Not built;
+    build it if v5 ever fails, not before.
+  - Identical fetches return byte-identical records, so dedup needs no
+    exclusion list. Verified rather than assumed.
+  - `trackerimageUrl` is per-animal and **sometimes null** — item 3 must
+    handle its absence rather than assuming a URL shape.
+  - The corpus includes long-stale listings (a 2018 record still marked
+    Available), which is DIRECTION's stale-data problem showing up in real
+    data on day one.
+
+- **Original spec, for reference.**
 
 - **What gets built.** RescueGroups fetcher (v5 preferred, v2 fallback)
   paging the API and emitting observations; register the `ingest.poll`

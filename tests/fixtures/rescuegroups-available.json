@@ -1,0 +1,512 @@
+{
+ "meta": {
+  "count": 64653,
+  "countReturned": 2,
+  "pageReturned": 1,
+  "limit": 2,
+  "pages": 32327
+ },
+ "data": [
+  {
+   "type": "animals",
+   "id": "10013509",
+   "attributes": {
+    "activityLevel": "Moderately Active",
+    "isAdoptionPending": false,
+    "ageGroup": "Adult",
+    "ageString": "12 Years 7 Months",
+    "birthDate": "2010-04-24T00:00:00Z",
+    "isBirthDateExact": false,
+    "breedString": "Domestic Short Hair (short coat)",
+    "breedPrimary": "Domestic Short Hair",
+    "breedPrimaryId": 35,
+    "coatLength": "Short",
+    "isCourtesyListing": false,
+    "descriptionHtml": "<p>Stowaway is a black female adult cat.&nbsp; Her rescuer could no longer keep her.&nbsp;</p>\n\n<p>RETURNED 2/3/18 - They called her Zoey</p><img src=\"https://tracker.rescuegroups.org/pet?10013509\" width=\"0\" height=\"0\" alt=\"\" />",
+    "descriptionText": "Stowaway is a black female adult cat.&nbsp; Her rescuer could no longer keep her.&nbsp;\n\nRETURNED 2/3/18 - They called her Zoey",
+    "energyLevel": "Moderate",
+    "isFound": false,
+    "priority": 10,
+    "indoorOutdoor": "Indoor Only",
+    "name": "Stowaway",
+    "newPeopleReaction": "Friendly",
+    "pictureCount": 3,
+    "pictureThumbnailUrl": "https://cdn.rescuegroups.org/3077/pictures/animals/10013/10013509/56438918.jpg?width=100",
+    "searchString": "Stowaway Zoey  Black Female Medium   Cats Domestic Short Hair (short coat)s",
+    "sex": "Female",
+    "sizeCurrent": 8.199999809265137,
+    "sizeGroup": "Medium",
+    "sizeUOM": "Pounds",
+    "slug": "adopt-stowaway-domestic-short-hair-cat",
+    "isSponsorable": false,
+    "trackerimageUrl": "https://tracker.rescuegroups.org/pet?10013509",
+    "videoCount": 0,
+    "videoUrlCount": 0,
+    "createdDate": "2016-05-17T21:17:53Z",
+    "updatedDate": "2018-04-22T17:49:32Z"
+   },
+   "relationships": {
+    "breeds": {
+     "data": [
+      {
+       "type": "breeds",
+       "id": "35"
+      }
+     ]
+    },
+    "colors": {
+     "data": [
+      {
+       "type": "colors",
+       "id": "1"
+      }
+     ]
+    },
+    "species": {
+     "data": [
+      {
+       "type": "species",
+       "id": "3"
+      }
+     ]
+    },
+    "statuses": {
+     "data": [
+      {
+       "type": "statuses",
+       "id": "1"
+      }
+     ]
+    },
+    "locations": {
+     "data": [
+      {
+       "type": "locations",
+       "id": "1000003077"
+      }
+     ]
+    },
+    "orgs": {
+     "data": [
+      {
+       "type": "orgs",
+       "id": "3077"
+      }
+     ]
+    },
+    "pictures": {
+     "data": [
+      {
+       "type": "pictures",
+       "id": "35712496"
+      },
+      {
+       "type": "pictures",
+       "id": "35712498"
+      },
+      {
+       "type": "pictures",
+       "id": "56438918"
+      }
+     ]
+    }
+   }
+  },
+  {
+   "type": "animals",
+   "id": "10059734",
+   "attributes": {
+    "activityLevel": "Highly Active",
+    "isAdoptionPending": false,
+    "ageString": "10 Years 2 Months",
+    "birthDate": "2016-05-09T00:00:00Z",
+    "isBirthDateExact": false,
+    "breedString": "Domestic Short Hair (short coat)",
+    "breedPrimary": "Domestic Short Hair",
+    "breedPrimaryId": 35,
+    "isCatsOk": true,
+    "coatLength": "Short",
+    "isCourtesyListing": false,
+    "descriptionHtml": "<span style=\"font-family: 'times new roman', times; font-size: 12pt;\">Bettis arrived with his momma and two littermates at three weeks old. He is a bit shy at first, but he warms up for cuddles and play time. Bettis gets along well with other cats, but has never met a dog. He has a sweet disposition and a great personality. Bettis is neutered, feline leukemia negative, and his vaccinations are current. <br />Won't you consider giving this cute&nbsp;cat a forever home?</span>",
+    "descriptionText": "Bettis arrived with his momma and two littermates at three weeks old. He is a bit shy at first, but he warms up for cuddles and play time. Bettis gets along well with other cats, but has never met a dog. He has a sweet disposition and a great personality. Bettis is neutered, feline leukemia negative, and his vaccinations are current. Won't you consider giving this cute&nbsp;cat a forever home?",
+    "isNeedingFoster": false,
+    "isFound": false,
+    "priority": 10,
+    "isHousetrained": true,
+    "indoorOutdoor": "Indoor Only",
+    "isKidsOk": true,
+    "name": "Bettis",
+    "pictureCount": 2,
+    "pictureThumbnailUrl": "https://cdn.rescuegroups.org/27/pictures/animals/10059/10059734/41339662.jpg?width=100",
+    "searchString": "Bettis   Black and White Male    Cats Domestic Short Hair (short coat)s",
+    "sex": "Male",
+    "sizeCurrent": 11.800000190734863,
+    "sizeUOM": "Pounds",
+    "slug": "adopt-bettis-domestic-short-hair-cat",
+    "isSpecialNeeds": false,
+    "isSponsorable": true,
+    "url": "https://www.olivebranchwv.org/animals/detail?AnimalID=10059734",
+    "videoCount": 1,
+    "videoUrlCount": 1,
+    "createdDate": "2016-05-30T16:21:58Z",
+    "updatedDate": "2025-05-22T18:11:18Z"
+   },
+   "relationships": {
+    "breeds": {
+     "data": [
+      {
+       "type": "breeds",
+       "id": "35"
+      }
+     ]
+    },
+    "colors": {
+     "data": [
+      {
+       "type": "colors",
+       "id": "6"
+      }
+     ]
+    },
+    "species": {
+     "data": [
+      {
+       "type": "species",
+       "id": "3"
+      }
+     ]
+    },
+    "statuses": {
+     "data": [
+      {
+       "type": "statuses",
+       "id": "1"
+      }
+     ]
+    },
+    "locations": {
+     "data": [
+      {
+       "type": "locations",
+       "id": "1000000027"
+      }
+     ]
+    },
+    "orgs": {
+     "data": [
+      {
+       "type": "orgs",
+       "id": "27"
+      }
+     ]
+    },
+    "pictures": {
+     "data": [
+      {
+       "type": "pictures",
+       "id": "41339654"
+      },
+      {
+       "type": "pictures",
+       "id": "41339662"
+      }
+     ]
+    },
+    "videos": {
+     "data": [
+      {
+       "type": "videos",
+       "id": "20969823"
+      }
+     ]
+    },
+    "videourls": {
+     "data": [
+      {
+       "type": "videourls",
+       "id": "21041841"
+      }
+     ]
+    }
+   }
+  }
+ ],
+ "included": [
+  {
+   "type": "breeds",
+   "id": "35",
+   "attributes": {
+    "name": "Domestic Short Hair"
+   },
+   "links": {
+    "self": "/public/animals/breeds/35"
+   }
+  },
+  {
+   "type": "colors",
+   "id": "1",
+   "attributes": {
+    "name": "Black"
+   },
+   "links": {
+    "self": "/public/animals/colors/1"
+   }
+  },
+  {
+   "type": "species",
+   "id": "3",
+   "attributes": {
+    "singular": "Cat",
+    "plural": "Cats",
+    "youngSingular": "Kitten",
+    "youngPlural": "Kittens"
+   },
+   "links": {
+    "self": "/public/animals/species/3"
+   }
+  },
+  {
+   "type": "statuses",
+   "id": "1",
+   "attributes": {
+    "name": "Available",
+    "description": "Available for Adoption"
+   },
+   "links": {
+    "self": "/public/animals/statuses/1"
+   }
+  },
+  {
+   "type": "locations",
+   "id": "1000003077",
+   "attributes": {
+    "street": "PO Box 282",
+    "phone": "(732) 340-1199",
+    "lat": 40.5913,
+    "lon": -74.3146,
+    "coordinates": "40.5913, -74.3146"
+   }
+  },
+  {
+   "type": "orgs",
+   "id": "3077",
+   "attributes": {
+    "name": "Angel Pets Animal Welfare Society, Inc",
+    "street": "PO Box 282",
+    "city": "Colonia",
+    "state": "NJ",
+    "postalcode": "07067",
+    "country": "United States",
+    "phone": "(732) 340-1199",
+    "email": "info@angelpaws.org",
+    "type": "Shelter",
+    "lat": 40.59130096435547,
+    "lon": -74.3145980834961,
+    "coordinates": "40.5913, -74.3146",
+    "citystate": "Colonia, NJ"
+   }
+  },
+  {
+   "type": "pictures",
+   "id": "35712496",
+   "attributes": {
+    "original": {
+     "filesize": 505905,
+     "resolutionX": 700,
+     "resolutionY": 890,
+     "url": "https://cdn.rescuegroups.org/3077/pictures/animals/10013/10013509/35712496.jpg"
+    },
+    "large": {
+     "filesize": 505905,
+     "resolutionX": 500,
+     "resolutionY": 636,
+     "url": "https://cdn.rescuegroups.org/3077/pictures/animals/10013/10013509/35712496.jpg?width=500"
+    },
+    "small": {
+     "filesize": 505905,
+     "resolutionX": 100,
+     "resolutionY": 127,
+     "url": "https://cdn.rescuegroups.org/3077/pictures/animals/10013/10013509/35712496.jpg?width=100"
+    },
+    "order": 1,
+    "created": "2016-06-17T19:50:38Z",
+    "updated": "2016-06-17T19:50:42Z"
+   }
+  },
+  {
+   "type": "pictures",
+   "id": "35712498",
+   "attributes": {
+    "original": {
+     "filesize": 625804,
+     "resolutionX": 799,
+     "resolutionY": 915,
+     "url": "https://cdn.rescuegroups.org/3077/pictures/animals/10013/10013509/35712498.jpg"
+    },
+    "large": {
+     "filesize": 625804,
+     "resolutionX": 500,
+     "resolutionY": 573,
+     "url": "https://cdn.rescuegroups.org/3077/pictures/animals/10013/10013509/35712498.jpg?width=500"
+    },
+    "small": {
+     "filesize": 625804,
+     "resolutionX": 100,
+     "resolutionY": 115,
+     "url": "https://cdn.rescuegroups.org/3077/pictures/animals/10013/10013509/35712498.jpg?width=100"
+    },
+    "order": 2,
+    "created": "2016-06-17T19:51:08Z",
+    "updated": "2016-06-17T19:51:08Z"
+   }
+  },
+  {
+   "type": "pictures",
+   "id": "56438918",
+   "attributes": {
+    "original": {
+     "filesize": 758466,
+     "resolutionX": 1014,
+     "resolutionY": 1257,
+     "url": "https://cdn.rescuegroups.org/3077/pictures/animals/10013/10013509/56438918.jpg"
+    },
+    "large": {
+     "filesize": 758466,
+     "resolutionX": 500,
+     "resolutionY": 620,
+     "url": "https://cdn.rescuegroups.org/3077/pictures/animals/10013/10013509/56438918.jpg?width=500"
+    },
+    "small": {
+     "filesize": 758466,
+     "resolutionX": 100,
+     "resolutionY": 124,
+     "url": "https://cdn.rescuegroups.org/3077/pictures/animals/10013/10013509/56438918.jpg?width=100"
+    },
+    "order": 3,
+    "created": "2018-04-22T17:49:32Z",
+    "updated": "2018-04-22T17:49:32Z"
+   }
+  },
+  {
+   "type": "colors",
+   "id": "6",
+   "attributes": {
+    "name": "Black and White"
+   },
+   "links": {
+    "self": "/public/animals/colors/6"
+   }
+  },
+  {
+   "type": "locations",
+   "id": "1000000027",
+   "attributes": {
+    "street": "P.O. Box 183",
+    "city": "Sistersville",
+    "state": "WV",
+    "citystate": "Sistersville, WV",
+    "postalcode": "26175",
+    "country": "United States",
+    "phone": "(304) 652-1010",
+    "lat": 39.5402,
+    "lon": -80.9649,
+    "coordinates": "39.5402, -80.9649"
+   }
+  },
+  {
+   "type": "orgs",
+   "id": "27",
+   "attributes": {
+    "name": "Olive Branch Animal Rescue & Refuge, Inc.",
+    "street": "P.O. Box 183",
+    "city": "Sistersville",
+    "state": "WV",
+    "postalcode": "26175",
+    "country": "United States",
+    "phone": "(304) 652-1010",
+    "email": "olivebranchwv@gmail.com",
+    "services": "Family Assistant Program, TNR for Community cats, and a pet food Pantry for people needing help",
+    "type": "Rescue",
+    "lat": 39.540199279785156,
+    "lon": -80.96489715576172,
+    "coordinates": "39.5402, -80.9649",
+    "citystate": "Sistersville, WV"
+   }
+  },
+  {
+   "type": "pictures",
+   "id": "41339654",
+   "attributes": {
+    "original": {
+     "filesize": 13371,
+     "resolutionX": 235,
+     "resolutionY": 243,
+     "url": "https://cdn.rescuegroups.org/27/pictures/animals/10059/10059734/41339654.jpg"
+    },
+    "large": {
+     "filesize": 13371,
+     "resolutionX": 500,
+     "resolutionY": 517,
+     "url": "https://cdn.rescuegroups.org/27/pictures/animals/10059/10059734/41339654.jpg?width=500"
+    },
+    "small": {
+     "filesize": 13371,
+     "resolutionX": 100,
+     "resolutionY": 103,
+     "url": "https://cdn.rescuegroups.org/27/pictures/animals/10059/10059734/41339654.jpg?width=100"
+    },
+    "order": 1,
+    "created": "2016-12-23T19:27:40Z",
+    "updated": "2016-12-23T19:27:40Z"
+   }
+  },
+  {
+   "type": "pictures",
+   "id": "41339662",
+   "attributes": {
+    "original": {
+     "filesize": 14557,
+     "resolutionX": 235,
+     "resolutionY": 266,
+     "url": "https://cdn.rescuegroups.org/27/pictures/animals/10059/10059734/41339662.jpg"
+    },
+    "large": {
+     "filesize": 14557,
+     "resolutionX": 500,
+     "resolutionY": 566,
+     "url": "https://cdn.rescuegroups.org/27/pictures/animals/10059/10059734/41339662.jpg?width=500"
+    },
+    "small": {
+     "filesize": 14557,
+     "resolutionX": 100,
+     "resolutionY": 113,
+     "url": "https://cdn.rescuegroups.org/27/pictures/animals/10059/10059734/41339662.jpg?width=100"
+    },
+    "order": 2,
+    "created": "2016-12-23T19:29:00Z",
+    "updated": "2016-12-23T19:29:00Z"
+   }
+  },
+  {
+   "type": "videos",
+   "id": "20969823",
+   "attributes": {
+    "fileSize": 36177733,
+    "url": "https://s3.amazonaws.com/videosroot.rescuegroups.org/s27a10059734m20969823.wmv",
+    "created": "2016-07-23T18:09:55Z",
+    "updated": "2016-07-23T18:09:55Z"
+   }
+  },
+  {
+   "type": "videourls",
+   "id": "21041841",
+   "attributes": {
+    "url": "https://www.youtube.com/v/zPL832NHEYo",
+    "videoId": "zPL832NHEYo",
+    "urlThumbnail": "https://img.youtube.com/vi/zPL832NHEYo/default.jpg",
+    "created": "2016-07-23T18:09:04Z",
+    "updated": "2016-12-23T19:27:15Z"
+   }
+  }
+ ]
+}

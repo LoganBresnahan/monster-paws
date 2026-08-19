@@ -1,0 +1,197 @@
+import { contentHashOf } from "@/core/ingest/hash";
+import type { Observation, SourceAdapter } from "@/core/ingest/observation";
+import type { AnimalClaims, Normalizer } from "@/core/ingest/pipeline";
+
+/**
+ * RescueGroups v5 adapter (ADR-0006 decision 2). Tier 2 — discovery, not
+ * archive: everything here is set-deletable on ToS termination, which is why
+ * the corpus's permanent value must never rest on it (DIRECTION).
+ */
+
+const BASE_URL = "https://api.rescuegroups.org/v5";
+const SEARCH_PATH = "/public/animals/search/available/";
+
+interface JsonApiRef {
+  type: string;
+  id: string;
+}
+
+interface JsonApiResource {
+  type: string;
+  id: string;
+  attributes: Record<string, unknown>;
+  relationships?: Record<string, { data: JsonApiRef | JsonApiRef[] | null }>;
+}
+
+/**
+ * One animal plus the `included` resources it actually references. JSON:API
+ * splits a record across `data` and a shared `included` array, so an
+ * observation that kept only the animal would lose species and status and be
+ * un-normalizable on replay — the sidecar is carried verbatim, not flattened.
+ */
+export interface RescueGroupsAnimal {
+  animal: JsonApiResource;
+  included: JsonApiResource[];
+}
+
+interface SearchResponse {
+  meta?: { count?: number; pages?: number; pageReturned?: number };
+  data?: JsonApiResource[];
+  included?: JsonApiResource[];
+}
+
+export interface RescueGroupsConfig {
+  apiKey: string;
+  /** records per request; RescueGroups caps this at 250 */
+  pageLimit?: number;
+  /** stop after N pages — for smoke runs; omit to sync every available animal */
+  maxPages?: number;
+  baseUrl?: string;
+}
+
+function refsOf(resource: JsonApiResource): JsonApiRef[] {
+  const refs: JsonApiRef[] = [];
+  for (const rel of Object.values(resource.relationships ?? {})) {
+    if (!rel?.data) continue;
+    if (Array.isArray(rel.data)) refs.push(...rel.data);
+    else refs.push(rel.data);
+  }
+  return refs;
+}
+
+function sidecarFor(animal: JsonApiResource, included: JsonApiResource[]): JsonApiResource[] {
+  const wanted = new Set(refsOf(animal).map((ref) => `${ref.type}:${ref.id}`));
+  return included.filter((resource) => wanted.has(`${resource.type}:${resource.id}`));
+}
+
+export function createRescueGroupsAdapter(
+  config: RescueGroupsConfig,
+  fetchImpl: typeof fetch = fetch,
+): SourceAdapter<RescueGroupsAnimal> {
+  const base = (config.baseUrl ?? BASE_URL).replace(/\/$/, "");
+  const limit = config.pageLimit ?? 100;
+
+  async function fetchPage(page: number): Promise<SearchResponse> {
+    const res = await fetchImpl(`${base}${SEARCH_PATH}?limit=${limit}&page=${page}`, {
+      method: "POST",
+      headers: {
+        Authorization: config.apiKey,
+        "Content-Type": "application/vnd.api+json",
+      },
+      // An empty body is rejected as malformed JSON; the filterless search is
+      // spelled `{"data":{"filters":[]}}`.
+      body: JSON.stringify({ data: { filters: [] } }),
+    });
+    if (!res.ok) {
+      throw new Error(`rescuegroups page ${page} failed: ${res.status} ${res.statusText}`);
+    }
+    return (await res.json()) as SearchResponse;
+  }
+
+  return {
+    source: "rescuegroups",
+    async *fetch() {
+      let page = 1;
+      let pages = 1;
+
+      do {
+        const body = await fetchPage(page);
+        pages = body.meta?.pages ?? 1;
+        const included = body.included ?? [];
+
+        for (const animal of body.data ?? []) {
+          const payload: RescueGroupsAnimal = {
+            animal,
+            included: sidecarFor(animal, included),
+          };
+          // No exclusion list: identical fetches return byte-identical
+          // records (verified 2026-08-17), so any hash change is a real
+          // change. Add exclusions only against evidence, never pre-emptively.
+          yield {
+            source: "rescuegroups",
+            externalId: animal.id,
+            payload,
+            fetchedAt: new Date(),
+            contentHash: contentHashOf(payload),
+          } satisfies Observation<RescueGroupsAnimal>;
+        }
+
+        if (config.maxPages !== undefined && page >= config.maxPages) return;
+        page += 1;
+      } while (page <= pages);
+    },
+  };
+}
+
+function attributesOf(
+  payload: RescueGroupsAnimal,
+  type: string,
+): Record<string, unknown> | undefined {
+  return payload.included.find((resource) => resource.type === type)?.attributes;
+}
+
+function stringOr(value: unknown, fallback: string | null = null): string | null {
+  return typeof value === "string" && value.length > 0 ? value : fallback;
+}
+
+/**
+ * Their vocabulary, ours. An unmapped status asserts nothing rather than
+ * guessing: the raw row keeps the truth, and a wrong status is worse than a
+ * missing one — it decides whether a donor sees an animal at all.
+ */
+const STATUS_BY_NAME: Record<string, string> = {
+  Available: "available",
+  Adopted: "adopted",
+  "Adoption Pending": "pending",
+  Hold: "hold",
+};
+
+/**
+ * Deliberately thin (ADR-0006 decision 4). Every field promoted here is a
+ * field we must be able to retract on ToS termination, so the aggregator
+ * asserts identity and nothing else: never the shelter's prose, never photos
+ * (which are also gated on the art-rights consent of decision 5). The full
+ * payload stays verbatim in the raw row for whatever we're allowed to do with
+ * it later.
+ */
+export const rescueGroupsNormalizer: Normalizer<RescueGroupsAnimal> = {
+  source: "rescuegroups",
+
+  async normalize(obs) {
+    const { attributes } = obs.payload.animal;
+    const claims: AnimalClaims = {};
+    const stamp = { source: obs.source, fetchedAt: obs.fetchedAt } as const;
+
+    const name = stringOr(attributes.name);
+    if (name) claims.name = { value: name, ...stamp };
+
+    const species = stringOr(attributesOf(obs.payload, "species")?.singular);
+    if (species) claims.species = { value: species.toLowerCase(), ...stamp };
+
+    claims.breed = { value: stringOr(attributes.breedPrimary), ...stamp };
+
+    const statusName = stringOr(attributesOf(obs.payload, "statuses")?.name);
+    const status = statusName ? STATUS_BY_NAME[statusName] : undefined;
+    if (status) claims.status = { value: status, ...stamp };
+
+    // Namespaced, never bare: a bare `27` would be indistinguishable from a
+    // shelter-registry slug, and phase 7 is what maps an org onto a registry
+    // entry (ADR-0009). Until then this is an aggregator handle, not identity.
+    const orgId = refsOf(obs.payload.animal).find((ref) => ref.type === "orgs")?.id;
+    if (orgId) {
+      claims.shelterExternalId = { value: `rescuegroups:org:${orgId}`, ...stamp };
+    }
+
+    return claims;
+  },
+};
+
+/**
+ * The per-animal Adoption Tracker URL (ADR-0006 decision 2) — the pixel every
+ * pet detail page must load. Read it off the raw payload at render time
+ * (roadmap item 3); never synthesize the URL, or the obligation silently
+ * depends on our guess about their URL shape.
+ */
+export function trackerUrlOf(payload: RescueGroupsAnimal): string | null {
+  return stringOr(payload.animal.attributes.trackerimageUrl);
+}

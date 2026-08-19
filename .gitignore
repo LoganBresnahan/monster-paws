@@ -32,6 +32,9 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+# The template carries no values — only var names and the roadmap item each
+# belongs to. Never let it hold a real secret; it is the one env file in git.
+!.env.example
 
 # vercel
 .vercel
