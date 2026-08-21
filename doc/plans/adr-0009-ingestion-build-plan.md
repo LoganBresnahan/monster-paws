@@ -377,6 +377,19 @@ consent outreach; the critical path is unchanged*
   - The corpus includes long-stale listings (a 2018 record still marked
     Available), which is DIRECTION's stale-data problem showing up in real
     data on day one.
+  - **Sidecar order is not information** (measured 2026-08-19, first real
+    re-poll 41h later). JSON:API's `included` is an unordered set and
+    RescueGroups returns it shuffled run to run, so 202 of 1000 animals
+    re-hashed as changed — **198 of them identical once sorted**. Canonical
+    hashing preserves array order by design, so the fix belongs in the
+    adapter, which assembles the sidecar anyway: sort by (type, id). Left
+    unfixed this is ~20% duplicate corpus rows per poll *and* a phantom
+    `animal.updated` in phase 8's append-only event log for each — the
+    idempotency trap, arriving through data rather than code.
+  - Real churn, once the noise is removed, is small: over 41 hours, 17
+    animals changed an attribute (`updatedDate`, descriptions, `ageString`),
+    4 changed relationships, 3 were new. Storage projections should assume
+    single-digit daily churn, not 20%.
 
 - **Original spec, for reference.**
 

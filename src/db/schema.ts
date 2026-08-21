@@ -1,5 +1,6 @@
 import {
   bigserial,
+  boolean,
   index,
   integer,
   jsonb,
@@ -72,6 +73,11 @@ export const animals = pgTable(
     species: text("species").notNull(),
     breed: text("breed"),
     status: text("status").notNull().default("available"),
+    sex: text("sex"),
+    ageGroup: text("age_group"),
+    birthDate: timestamp("birth_date", { withTimezone: true }),
+    /** never render birth_date as exact when this is false — most sources estimate it */
+    isBirthDateExact: boolean("is_birth_date_exact"),
     /** the registry slug (`src/core/shelters.ts`) — natural key for the future `shelters` table */
     shelterExternalId: text("shelter_external_id"),
     // photo KEYS only — images live in R2, never in the DB (ADR-0003)

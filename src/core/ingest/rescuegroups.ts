@@ -59,9 +59,20 @@ function refsOf(resource: JsonApiResource): JsonApiRef[] {
   return refs;
 }
 
+/**
+ * Sorted by (type, id), and that sort is load-bearing: JSON:API's `included`
+ * is an unordered set, and RescueGroups returns it in a different order run to
+ * run. Left as they sent it, ~20% of every re-poll hashes as changed and
+ * appends a duplicate corpus row — and phase 8 would emit an `animal.updated`
+ * event for each, permanently, into an append-only log (ADR-0009). Ordering
+ * within the sidecar is ours to choose; we assemble this array, never them.
+ * Measured 2026-08-19: 198 of 202 apparent changes were this and nothing else.
+ */
 function sidecarFor(animal: JsonApiResource, included: JsonApiResource[]): JsonApiResource[] {
   const wanted = new Set(refsOf(animal).map((ref) => `${ref.type}:${ref.id}`));
-  return included.filter((resource) => wanted.has(`${resource.type}:${resource.id}`));
+  return included
+    .filter((resource) => wanted.has(`${resource.type}:${resource.id}`))
+    .sort((a, b) => (a.type === b.type ? a.id.localeCompare(b.id) : a.type.localeCompare(b.type)));
 }
 
 export function createRescueGroupsAdapter(
@@ -169,6 +180,22 @@ export const rescueGroupsNormalizer: Normalizer<RescueGroupsAnimal> = {
     if (species) claims.species = { value: species.toLowerCase(), ...stamp };
 
     claims.breed = { value: stringOr(attributes.breedPrimary), ...stamp };
+
+    const sex = stringOr(attributes.sex);
+    if (sex) claims.sex = { value: sex, ...stamp };
+
+    const ageGroup = stringOr(attributes.ageGroup);
+    if (ageGroup) claims.ageGroup = { value: ageGroup, ...stamp };
+
+    // The exactness flag is only meaningful alongside a date — asserted
+    // together or not at all, so a later merge can never pair one source's
+    // date with another's confidence about it.
+    const birthDate = stringOr(attributes.birthDate);
+    const parsed = birthDate ? new Date(birthDate) : null;
+    if (parsed && !Number.isNaN(parsed.getTime())) {
+      claims.birthDate = { value: parsed, ...stamp };
+      claims.isBirthDateExact = { value: attributes.isBirthDateExact === true, ...stamp };
+    }
 
     const statusName = stringOr(attributesOf(obs.payload, "statuses")?.name);
     const status = statusName ? STATUS_BY_NAME[statusName] : undefined;

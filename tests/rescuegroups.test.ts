@@ -91,6 +91,21 @@ describe("rescuegroups adapter (ADR-0006 decision 2)", () => {
     );
   });
 
+  it("hashes identically when the API shuffles the included array", async () => {
+    const shuffled = { ...FIXTURE, included: [...FIXTURE.included].reverse() };
+    const shuffledFetch = (async () =>
+      new Response(JSON.stringify({ ...shuffled, meta: { pages: 1 } }), {
+        status: 200,
+      })) as unknown as typeof fetch;
+
+    const ordered = await collect(createRescueGroupsAdapter({ apiKey: "k" }, fixtureFetch().fetchImpl));
+    const reversed = await collect(createRescueGroupsAdapter({ apiKey: "k" }, shuffledFetch));
+
+    // Their sidecar order is not information — treating it as information
+    // appends a duplicate corpus row on ~20% of every real re-poll.
+    expect(reversed.map((o) => o.contentHash)).toEqual(ordered.map((o) => o.contentHash));
+  });
+
   it("hashes identically across identical fetches, so a re-poll dedups", async () => {
     const a = await collect(createRescueGroupsAdapter({ apiKey: "k" }, fixtureFetch().fetchImpl));
     const b = await collect(createRescueGroupsAdapter({ apiKey: "k" }, fixtureFetch().fetchImpl));
@@ -114,6 +129,10 @@ describe("rescuegroups normalizer — thin by design (ADR-0006 decision 4)", () 
     expect(claims.breed?.value).toBe("Domestic Short Hair");
     expect(claims.status?.value).toBe("available");
     expect(claims.shelterExternalId?.value).toBe("rescuegroups:org:3077");
+    expect(claims.sex?.value).toBe("Female");
+    expect(claims.ageGroup?.value).toBe("Adult");
+    expect(claims.birthDate?.value).toEqual(new Date("2010-04-24T00:00:00Z"));
+    expect(claims.isBirthDateExact?.value).toBe(false);
   });
 
   it("namespaces the org so it can never be read as a registry slug", async () => {
@@ -126,8 +145,12 @@ describe("rescuegroups normalizer — thin by design (ADR-0006 decision 4)", () 
 
     expect(claims.photoKeys).toBeUndefined();
     expect(Object.keys(claims).sort()).toEqual([
+      "ageGroup",
+      "birthDate",
       "breed",
+      "isBirthDateExact",
       "name",
+      "sex",
       "shelterExternalId",
       "species",
       "status",
@@ -152,6 +175,32 @@ describe("rescuegroups normalizer — thin by design (ADR-0006 decision 4)", () 
     const claims = await rescueGroupsNormalizer.normalize({ ...obs, rawId: 1 });
     expect(claims.status).toBeUndefined();
     expect(claims.name?.value).toBe("Stowaway");
+  });
+
+  it("never asserts birth-date exactness without the date it qualifies", async () => {
+    const [obs] = await collect(
+      createRescueGroupsAdapter({ apiKey: "k" }, fixtureFetch().fetchImpl),
+    );
+    obs.payload.animal.attributes = {
+      ...obs.payload.animal.attributes,
+      birthDate: null,
+      isBirthDateExact: true,
+    };
+
+    const claims = await rescueGroupsNormalizer.normalize({ ...obs, rawId: 1 });
+    expect(claims.birthDate).toBeUndefined();
+    expect(claims.isBirthDateExact).toBeUndefined();
+  });
+
+  it("omits ageGroup when the source leaves it blank, rather than inventing one", async () => {
+    const observations = await collect(
+      createRescueGroupsAdapter({ apiKey: "k" }, fixtureFetch().fetchImpl),
+    );
+    const bettis = await rescueGroupsNormalizer.normalize({ ...observations[1], rawId: 2 });
+
+    expect(bettis.ageGroup).toBeUndefined();
+    expect(bettis.sex?.value).toBe("Male");
+    expect(bettis.birthDate?.value).toEqual(new Date("2016-05-09T00:00:00Z"));
   });
 
   it("reads the tracker pixel off the payload instead of synthesizing it", async () => {

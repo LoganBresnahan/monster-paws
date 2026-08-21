@@ -8,6 +8,15 @@ export interface AnimalFields {
   species: string;
   breed: string | null;
   status: string;
+  sex: string | null;
+  ageGroup: string | null;
+  birthDate: Date | null;
+  /**
+   * Most sources estimate a birth date rather than knowing it. Never render a
+   * birthDate as exact without consulting this — an estimate presented as fact
+   * is the quiet kind of lie provenance exists to prevent.
+   */
+  isBirthDateExact: boolean | null;
   shelterExternalId: string | null;
   photoKeys: string[];
 }
