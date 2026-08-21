@@ -1,6 +1,6 @@
 ---
 name: shipshape
-description: Verify Monster Paws is shipshape — tests cover the public surface (suite green twice), docs (DIRECTION/roadmap/ADRs/CLAUDE.md) match the code, and the domain conventions hold (append-only corpus, derived embeddings, trust hierarchy, R2-keys-not-blobs, uniform ADR-NNNN citations, no unattested claims in generated text). Use after substantive changes, before commits, or when asked whether the project is in order.
+description: Verify Monster Paws is shipshape — tests cover the public surface (suite green twice), docs (DIRECTION/roadmap/ADRs/flows/CLAUDE.md) match the code, and the domain conventions hold (append-only corpus, derived embeddings, trust hierarchy, R2-keys-not-blobs, uniform ADR-NNNN citations, no unattested claims in generated text). Use after substantive changes, before commits, or when asked whether the project is in order.
 ---
 
 # /shipshape — repo verification pass
@@ -69,6 +69,32 @@ reality; deferred sub-tasks pinned as carry-ins, not dropped.
 money rails, bright lines. Scope changes land here, not just in code.
 
 **CLAUDE.md Commands**: every listed command still exists and runs.
+
+**Flows** (`doc/flows.md`, ADR-0012): every process/data flow diagram's shape
+still matches the code, and every shape change in scope updated its diagram
+in the same commit. Two checks, one mechanical, one read.
+
+Boxed identifiers must still resolve — camelCase symbols and snake_case
+tables inside the fenced blocks are grepped against `src/`:
+
+```bash
+awk '/^```/{f=!f;next} f' doc/flows.md \
+  | grep -oE '\b[a-z][A-Za-z0-9]*[A-Z][A-Za-z0-9]*\b|\b[a-z]+(_[a-z]+)+\b' | sort -u \
+  | while read id; do grep -rqw "$id" src || echo "MISSING: $id"; done
+# expect: no output. A MISSING hit is a renamed or deleted symbol the diagram
+# still boxes — fix the diagram, not the grep. Sanity: drop the `while` to
+# confirm the list is non-empty; an empty list passes vacuously.
+```
+
+Then, for each diagram whose *named files* appear in the diff (`runIngest` →
+`src/core/ingest/pipeline.ts`, the poll → `src/worker/ingest-poll.ts` and
+`rescuegroups.ts`, the vault path → `vault.ts`, the merge → `src/core/trust.ts`,
+consent → `src/core/shelters.ts`), re-read that diagram against the change
+and answer: did a stage, a boundary, or an external call change? If yes and
+the diagram didn't, that is a **docs ✗** with the diagram named. A new
+subsystem with stages and boundaries (donation flow, attestation pipeline)
+and no diagram is the same finding. `(planned, …)` markers must come off in
+the commit that ships the stage.
 
 Drift check, per doc that names code artifacts:
 

@@ -3,7 +3,8 @@
 Operational companion to ADR-0003/0007 and DIRECTION.md §Infrastructure.
 Everything here is CLI-first so provisioning is reproducible and scriptable
 into workflows later. Diagrams at the bottom are the source of truth for
-the deployment shape.
+the deployment shape; what moves *through* it is drawn in `doc/flows.md`
+(ADR-0012).
 
 ## CLI roster
 

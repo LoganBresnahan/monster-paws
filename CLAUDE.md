@@ -62,6 +62,13 @@ commit.
 - Documentation lives in `doc/`. `doc/roadmap.md` tracks build order
   (frontier = first unchecked item); check items off as they ship; dogfood
   findings get pinned there as carry-ins, not left in chat.
+- **Process and data flows are ASCII diagrams in `doc/flows.md`** (ADR-0012),
+  one per flow, each citing its ADR, every box naming a real symbol or table,
+  unbuilt stages marked `(planned, …)`. Change a flow's shape — a stage, a
+  boundary, an external call — and update its diagram in the same commit,
+  exactly as `doc/infra.md` does for the deployment shape. ADRs link to
+  flows.md; they don't embed diagrams. Not every ADR has a flow; draw only
+  what has stages and boundaries.
 - **Every decision gets an ADR** in `doc/adr/NNNN-slug.md` (Nygard style:
   Context / Decision / Consequences / Alternatives / Revisit triggers). New
   dependency, changed contract or algorithm, pattern adopted or rejected —
