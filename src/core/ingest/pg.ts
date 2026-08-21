@@ -25,6 +25,9 @@ export function createPgRawStore(db: Db): RawStore {
           .limit(1);
 
         if (latest && latest.contentHash === obs.contentHash) {
+          // The one sanctioned UPDATE on this append-only table (ADR-0009):
+          // an unchanged payload only moves last_seen — never touch any other
+          // column here, or a correction becomes a mutation.
           await tx
             .update(rawPayloads)
             .set({ lastSeen: obs.fetchedAt })

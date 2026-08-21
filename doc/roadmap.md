@@ -49,13 +49,15 @@ pin dogfood findings and deferred sub-tasks to items as carry-ins.
       credential split in two the same day — worker key (corpus+media) vs
       vault key (backups + the future attestation mirror), separation
       verified both directions, read and write (`doc/infra.md` step 5).
-      The **rescuegroups-adapter** shipped out of order 2026-08-17 (thin
-      claims only: identity, species, breed, status, namespaced org — never
-      prose or photos, since every promoted field must be retractable on ToS
-      termination). It is off the critical path: phases 5–9 are unchanged and
-      the frontier is still phase 5, whose fixtures wait on item 5's consent
-      outreach. Golden fixtures hand-checked per site at onboarding;
-      fixture-eval canary on the daily cron tick + live health gates.
+      The **rescuegroups-adapter** shipped out of order 2026-08-17. Its claim
+      surface is deliberately thin — name, species, breed, status, sex,
+      ageGroup, birthDate, isBirthDateExact, and a namespaced org handle —
+      and never prose or photos, since every promoted field must be
+      retractable on ToS termination. It is off the critical path: phases 5–9
+      are unchanged and the frontier is still phase 5, whose fixtures wait on
+      item 5's consent outreach. Golden fixtures hand-checked per site at
+      onboarding; fixture-eval canary on the daily cron tick + live health
+      gates.
       Former carry-ins are folded into the plan itself — verbatim
       `description` (phase 5),
       fixture-simulated two-source merge + `sources.conflicted` question

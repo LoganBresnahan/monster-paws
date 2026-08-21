@@ -235,7 +235,7 @@ curl -X POST "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/purge_cache" \
               ▼       ▼
   ┌────────────────┐ ┌──────────────────────────────┐
   │  DO Managed    │ │        external APIs         │
-  │  Postgres 16   │ │  RescueGroups (poll ~30m)    │
+  │  Postgres 16   │ │  RescueGroups (poll daily)   │
   │  · PITR        │ │  Every.org   (donations)     │
   │  · pgvector    │ │  Replicate   (image gen)     │
   │  · pg-boss q   │ │  Shelterluv/Petango (tier 1) │
