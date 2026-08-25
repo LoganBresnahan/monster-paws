@@ -78,12 +78,16 @@ Boxed identifiers must still resolve — camelCase symbols and snake_case
 tables inside the fenced blocks are grepped against `src/`:
 
 ```bash
-awk '/^```/{f=!f;next} f' doc/flows.md \
+awk '/^```/{f=!f;first=1;next} f{if(first)skip=($0~/planned/);first=0;if(!skip)print}' doc/flows.md \
   | grep -oE '\b[a-z][A-Za-z0-9]*[A-Z][A-Za-z0-9]*\b|\b[a-z]+(_[a-z]+)+\b' | sort -u \
   | while read id; do grep -rqw "$id" src || echo "MISSING: $id"; done
 # expect: no output. A MISSING hit is a renamed or deleted symbol the diagram
-# still boxes — fix the diagram, not the grep. Sanity: drop the `while` to
-# confirm the list is non-empty; an empty list passes vacuously.
+# still boxes — fix the diagram, not the grep. A fenced block whose FIRST line
+# says "planned" is a whole-diagram plan (its symbols are the ADR's contract,
+# not yet code) and is skipped; a planned marker on a later line exempts
+# nothing — a shipped diagram's stray planned stage still boxes real names.
+# Sanity: drop the `while` to confirm the list is non-empty; an empty list
+# passes vacuously.
 ```
 
 Then, for each diagram whose *named files* appear in the diff (`runIngest` →

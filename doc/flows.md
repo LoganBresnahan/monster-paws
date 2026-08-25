@@ -252,3 +252,42 @@ displaying verbatim are different permissions.
 
 The registry is checked in and empty until item 5; the commit that adds a
 grant is the record, with evidence under `doc/consent/`.
+
+## Animal page render — facts, display layer, visibility (ADR-0015)
+
+Planned: roadmap item 3. Pages read Postgres directly from Server
+Components; nothing here touches `raw_payloads`.
+
+```
+  request /animals/[id]                (planned, item 3; ISR revalidate 1h)
+       │
+       ▼
+  visibleAnimals(db).where(id)         ONE predicate, every page:
+       │                               status = 'available'
+       │                               AND an identity with disappeared_at IS NULL
+       │                               AND its last_seen_at > now() - 8 days
+       ├─ none ──► 404                 (never a stale card)
+       ▼
+  animals row  (facts + provenance)    name, species, breed, sex, ageGroup,
+       │                               birthDate/isBirthDateExact, location
+       ▼
+  animal_display rows for the animal, one per source   (DERIVED, purgeable)
+       │
+       │   pick the LICENSED row, or none:
+       │     source = 'rescuegroups'   → aggregator-display  (held by the key,
+       │                                 ADR-0006 as amended 2026-08-25)
+       │     source = 'scrape:<slug>'  → hasGrant(shelter, "display")
+       │     else                      → facts + our own words, no photo
+       ▼
+  render
+    photos      hotlinked <img src=cdn.rescuegroups.org/…?width=500>  — never R2
+    description verbatim, as a quotation
+    tracker     <img src=tracker_url>  on every RG detail page (API terms)
+    footer      "last updated <last_seen_at>" · listing org, linked by name
+                "Not affiliated — claim or remove your listings"
+                unverified: "your donation goes to <org>"; no update promise
+```
+
+Browse (`/animals`) applies the same `visibleAnimals` predicate, filters by
+species and state, and sorts longest-listed first (first `animal.seen`
+oldest) — never by anything resembling desirability (bright line 1).
