@@ -184,3 +184,100 @@ shelter may welcome being listed and object to being crawled nightly.
 - Any tier is inserted, renamed, or reordered (verify no rank was persisted).
 - Scraping expands beyond registry shelters with grants on record — that
   would leave what this amendment sanctions.
+
+## Amendment (2026-08-25): aggregator listing display is a licensed, named permission
+
+Prompted by roadmap item 3. The 2026-08-02 amendment's rule "consent is the
+display license" was reasoned about **scraped** content — where we hold no
+license without the shelter — and was then read as applying to aggregator
+content too, leaving the animal pages with facts and no photos for every
+RescueGroups-sourced animal. Re-reading the actual terms
+(`doc/rescuegroups-api-terms.md`, fetched 2026-08-25) shows that reading
+was wrong for the aggregator, and that the Context line above, "no
+aggregator grants photo derivative-work rights", was too broad. Three
+decisions.
+
+### 1. Displaying RescueGroups listing content is licensed — by a chain, not by the shelter
+
+The chain: the shelter grants RescueGroups a license "with right of
+sublicense … to display, distribute, create derivative works of, and
+transmit the data and pictures to third parties"; the API terms grant us
+"temporary use and display in your services", scoped to "the API Key
+information"; and our key application, granted 2026-08-02, declared
+"Display adoptable animals (name, photos, breed, age, description, status,
+and organization info) on public pages that link back to the listing
+organization" and cards showing "the animal's actual listing photo with
+attribution and a link back."
+
+Therefore **rendering a RescueGroups-sourced animal's listing photos and
+description on its page and card is inside our license**, with no shelter
+grant required. This is a **new named permission, `aggregator-display`**,
+attached to the `rescuegroups` source as a whole — it is held by the API
+key, not by any shelter, and it is distinct from a shelter's `display`
+grant, which continues to govern scraped prose and photos exactly as §2 of
+the 2026-08-02 amendment says. The two must never be conflated in code or
+copy: an animal page shows RG listing content because the *source* is
+licensed, and shows scraped content because the *shelter* consented.
+
+Obligations that ride on `aggregator-display`, all from the API terms:
+the Pet Adoption Tracker image on every detail page (Decision 2 above,
+unchanged); refresh at least weekly (the daily poll); "temporary" caching,
+which we satisfy by **hotlinking photos from `cdn.rescuegroups.org` and
+storing URLs only — never copying an API photo into R2**; and purge on
+termination (Decision 4 above — the URLs and description text are
+RescueGroups-derived rows and go with the set). Attribution is optional
+under the terms; we keep the declared link-back to the listing
+organization on every page regardless, because we said we would.
+
+### 2. Derivative works from API photos remain forbidden — on three independent grounds
+
+The site terms' "create derivative works of" is the **shelter's grant to
+RescueGroups**. It does not flow to us: the API terms, the specific
+document governing our license, grant "no rights … other than for
+temporary use and display", and specific language governs. Second, our own
+declaration scoped artwork to "the shelter's own authorization and their
+own photos, not on API data", and use "for any service that provides
+features other than those described in the API Key will be considered a
+violation." Third — and this would hold even if the first two moved — the
+photographer's rights sit beneath the shelter's non-exclusive grant, the
+ADR-0004 amendment requires the shelter to warrant it can license the
+photo, and the credited consent line is the product's claim incentive.
+**No keepsake art is ever generated from an API photo.** Decisions 5 and 6
+above are unchanged; this amendment only closes the loophole a reader
+could infer from the site terms.
+
+### 3. The RescueGroups normalizer widens deliberately, and marks what it promotes
+
+Decision 4's thinness rule stands — every promoted field must be
+retractable — but "retractable" was being read as "identity only".
+`aggregator-display` content is retractable too (it purges with the set),
+so the normalizer may promote **listing photo URLs and the description
+text**, and does, under two rules: they are stored as **URLs and text,
+never bytes**; and they are asserted as **display content, not facts** —
+a description is the shelter's expression and never enters trust
+resolution against a shelter-API claim as if it were a breed. How that
+distinction is carried in the claims model is ADR-0015's (item 3) to
+decide; this amendment only licenses the promotion.
+
+### Consequences
+
+- ADR-0006 Decision 5's "framed real photo" for no-consent cards is
+  achievable for RescueGroups-sourced animals — hotlinked, attributed,
+  linking back — which is what the application said.
+- A revoked key empties photos and descriptions from every RG-sourced page
+  on the next poll and leaves the facts; the aggregator stays expendable
+  (DIRECTION §aggregator).
+- `doc/rescuegroups-api-terms.md` is the citable record of the terms as
+  read on 2026-08-25; re-read it before relying on this amendment after
+  RescueGroups revises its API terms.
+
+### Revisit triggers (added)
+
+- RescueGroups revises the API terms' "temporary use and display" language
+  or adds a picture clause — re-derive §1 and §3.
+- A shelter objects to its RG photos appearing here — honor it as a
+  per-org exclusion regardless of the license, and revisit whether
+  `aggregator-display` should be overridable per shelter in the registry.
+- Item 4 wants the listing photo *inside* a generated composition (a
+  frame is display; a composite may be a derivative) — decide the line
+  then, not by analogy.

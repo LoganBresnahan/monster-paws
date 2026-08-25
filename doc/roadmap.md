@@ -81,7 +81,12 @@ pin dogfood findings and deferred sub-tasks to items as carry-ins.
       upstream bug, not an adoption wave) and **pagination drift** — no
       cursor, so records shift between pages and a trickle of false
       disappear/reappear pairs is expected; needs a reappear-rate metric
-      and a sorted search if the API offers one. **Frontier is now phase 9**
+      and a sorted search if the API offers one. Measured on the first
+      complete run 2026-08-25: page 1 promised 64,653, the run delivered
+      64,312 (0.53% short — inside the 1% tolerance) with 2 ids returned
+      twice, so the drift is real and visible on day one; 64,110 canonical
+      animals, 0 failures, 0 null statuses, 1,465 orgs, ~15 min for 643
+      pages, and stage 5 bound all 64k ids in one parameter. **Frontier is now phase 9**
       (health gates + retrieval) — or item 3, since the demo can read
       `animals` now; phases 5–6 still wait on item 5's fixtures.
       Remaining carry-ins live in the plan — verbatim `description`
@@ -89,10 +94,16 @@ pin dogfood findings and deferred sub-tasks to items as carry-ins.
       detail pages when listings render.
 - [ ] **3. Animal pages.** ISR public pages (browse + detail) rendering real
       local shelters' animals — this is the demo *and* the v1 supply side.
-      Carry-in from the ADR-0006 amendment: a page may render a shelter's
-      description prose and photos only under that shelter's **display
-      grant**; without one it shows the facts plus our own words. Storing
-      verbatim and displaying verbatim are different permissions.
+      Carry-in from the ADR-0006 amendments: two distinct display
+      permissions, never conflated — **`aggregator-display`** (held by the
+      RescueGroups key, 2026-08-25 amendment: listing photos hotlinked from
+      RG's CDN + description text, Tracker on every detail page, purgeable)
+      and a shelter's **display grant** (scraped prose and photos). Without
+      either, a page shows the facts plus our own words. Storing verbatim
+      and displaying verbatim are different permissions; no art from API
+      photos, ever. Needs: ADR-0015 for the page shape and how display
+      content is carried in claims; the normalizer widening to promote
+      photo URLs and description.
 
 ## Next
 
