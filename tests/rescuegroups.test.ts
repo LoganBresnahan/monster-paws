@@ -7,7 +7,7 @@ import {
   type RescueGroupsAnimal,
 } from "@/core/ingest/rescuegroups";
 import { createMemoryStages } from "@/core/ingest/memory";
-import { runIngest } from "@/core/ingest/pipeline";
+import { replay, runIngest } from "@/core/ingest/pipeline";
 import type { Observation } from "@/core/ingest/observation";
 
 /**
@@ -183,7 +183,11 @@ describe("rescuegroups normalizer — thin by design (ADR-0006 decision 4)", () 
     const observations = await collect(
       createRescueGroupsAdapter({ apiKey: "k" }, fixtureFetch().fetchImpl),
     );
-    return rescueGroupsNormalizer.normalize({ ...observations[index], rawId: index + 1 });
+    const { claims } = await rescueGroupsNormalizer.normalize({
+      ...observations[index],
+      rawId: index + 1,
+    });
+    return claims;
   }
 
   it("maps the hand-checked fields of animal 10013509 (Stowaway)", async () => {
@@ -205,7 +209,11 @@ describe("rescuegroups normalizer — thin by design (ADR-0006 decision 4)", () 
     expect(claims.shelterExternalId?.value).toBe("rescuegroups:org:27");
   });
 
-  it("never asserts prose or photos, however much the payload carries", async () => {
+  // Superseded by ADR-0015: the description and photo URLs ARE promoted now
+  // (ADR-0006 as amended 2026-08-25), as `display`. What this test still
+  // guards is the line that did not move — they are never CLAIMS, so they
+  // cannot compete in `resolveClaim` or take provenance as facts.
+  it("never asserts prose or photos as claims, however much the payload carries", async () => {
     const claims = await claimsFor(0);
 
     expect(claims.photoKeys).toBeUndefined();
@@ -213,14 +221,36 @@ describe("rescuegroups normalizer — thin by design (ADR-0006 decision 4)", () 
       "ageGroup",
       "birthDate",
       "breed",
+      "city",
       "isBirthDateExact",
       "name",
+      "orgName",
+      "postalCode",
       "sex",
       "shelterExternalId",
       "species",
+      "state",
       "status",
     ]);
     expect(JSON.stringify(claims)).not.toContain("rescuer could no longer keep her");
+    expect(JSON.stringify(claims)).not.toContain("cdn.rescuegroups.org");
+  });
+
+  it("promotes the org address as facts, so browse can filter by state (ADR-0015)", async () => {
+    const stowaway = await claimsFor(0);
+    expect(stowaway.orgName?.value).toBe("Angel Pets Animal Welfare Society, Inc");
+    expect(stowaway.city?.value).toBe("Colonia");
+    expect(stowaway.state?.value).toBe("NJ");
+    expect(stowaway.postalCode?.value).toBe("07067");
+
+    // Animal 10059734's `locations` resource carries a city too — reading
+    // location instead of orgs would disagree with the org on other records
+    // and silently split the same shelter across two cities.
+    const bettis = await claimsFor(1);
+    expect(bettis.orgName?.value).toBe("Olive Branch Animal Rescue & Refuge, Inc.");
+    expect(bettis.city?.value).toBe("Sistersville");
+    expect(bettis.state?.value).toBe("WV");
+    expect(bettis.postalCode?.value).toBe("26175");
   });
 
   it("stamps every claim with the aggregator source, for tiering and for purge", async () => {
@@ -237,7 +267,7 @@ describe("rescuegroups normalizer — thin by design (ADR-0006 decision 4)", () 
     const statuses = obs.payload.included.find((r) => r.type === "statuses")!;
     statuses.attributes = { name: "Some Status We Have Never Seen" };
 
-    const claims = await rescueGroupsNormalizer.normalize({ ...obs, rawId: 1 });
+    const { claims } = await rescueGroupsNormalizer.normalize({ ...obs, rawId: 1 });
     expect(claims.status).toBeUndefined();
     expect(claims.name?.value).toBe("Stowaway");
   });
@@ -252,7 +282,7 @@ describe("rescuegroups normalizer — thin by design (ADR-0006 decision 4)", () 
       isBirthDateExact: true,
     };
 
-    const claims = await rescueGroupsNormalizer.normalize({ ...obs, rawId: 1 });
+    const { claims } = await rescueGroupsNormalizer.normalize({ ...obs, rawId: 1 });
     expect(claims.birthDate).toBeUndefined();
     expect(claims.isBirthDateExact).toBeUndefined();
   });
@@ -261,7 +291,10 @@ describe("rescuegroups normalizer — thin by design (ADR-0006 decision 4)", () 
     const observations = await collect(
       createRescueGroupsAdapter({ apiKey: "k" }, fixtureFetch().fetchImpl),
     );
-    const bettis = await rescueGroupsNormalizer.normalize({ ...observations[1], rawId: 2 });
+    const { claims: bettis } = await rescueGroupsNormalizer.normalize({
+      ...observations[1],
+      rawId: 2,
+    });
 
     expect(bettis.ageGroup).toBeUndefined();
     expect(bettis.sex?.value).toBe("Male");
@@ -279,6 +312,110 @@ describe("rescuegroups normalizer — thin by design (ADR-0006 decision 4)", () 
   });
 });
 
+describe("rescuegroups display promotion (ADR-0015, ADR-0006 as amended 2026-08-25)", () => {
+  async function displayFor(index: number) {
+    const observations = await collect(
+      createRescueGroupsAdapter({ apiKey: "k" }, fixtureFetch().fetchImpl),
+    );
+    return rescueGroupsNormalizer.normalize({ ...observations[index], rawId: index + 1 });
+  }
+
+  it("promotes animal 10013509's description verbatim, entities and all", async () => {
+    const { display } = await displayFor(0);
+
+    // Hand-read off the fixture: `&nbsp;` is theirs, and the normalizer may
+    // drop a description but never edit one — un-escaping here would make the
+    // quotation on the page no longer the shelter's words.
+    expect(display?.description).toBe(
+      "Stowaway is a black female adult cat.&nbsp; Her rescuer could no longer keep her.&nbsp;\n\nRETURNED 2/3/18 - They called her Zoey",
+    );
+    expect(display?.listingOrg).toBe("Angel Pets Animal Welfare Society, Inc");
+    expect(display?.trackerUrl).toBe("https://tracker.rescuegroups.org/pet?10013509");
+  });
+
+  it("takes the 500px URLs RescueGroups publishes, in their `order`, never a synthesized one", async () => {
+    const { display } = await displayFor(0);
+
+    // Picture ids 35712496/35712498/56438918 carry order 1/2/3; the sidecar is
+    // sorted by id for hash stability, so array position is not their order.
+    expect(display?.photoUrls).toEqual([
+      "https://cdn.rescuegroups.org/3077/pictures/animals/10013/10013509/35712496.jpg?width=500",
+      "https://cdn.rescuegroups.org/3077/pictures/animals/10013/10013509/35712498.jpg?width=500",
+      "https://cdn.rescuegroups.org/3077/pictures/animals/10013/10013509/56438918.jpg?width=500",
+    ]);
+  });
+
+  it("orders by `order`, not by the sidecar's id sort", async () => {
+    const [obs] = await collect(createRescueGroupsAdapter({ apiKey: "k" }, fixtureFetch().fetchImpl));
+    const pictures = obs.payload.included.filter((r) => r.type === "pictures");
+    // Reverse their order attribute without moving them in the array.
+    pictures.forEach((p, i) => (p.attributes.order = pictures.length - i));
+
+    const { display } = await rescueGroupsNormalizer.normalize({ ...obs, rawId: 1 });
+    expect(display?.photoUrls.map((u) => u.split("/").pop())).toEqual([
+      "56438918.jpg?width=500",
+      "35712498.jpg?width=500",
+      "35712496.jpg?width=500",
+    ]);
+  });
+
+  it("falls back to the original URL rather than dropping a photo with no 500px variant", async () => {
+    const [obs] = await collect(createRescueGroupsAdapter({ apiKey: "k" }, fixtureFetch().fetchImpl));
+    const first = obs.payload.included.find((r) => r.type === "pictures")!;
+    delete first.attributes.large;
+
+    const { display } = await rescueGroupsNormalizer.normalize({ ...obs, rawId: 1 });
+    expect(display?.photoUrls[0]).toBe(
+      "https://cdn.rescuegroups.org/3077/pictures/animals/10013/10013509/35712496.jpg",
+    );
+  });
+
+  it("carries the observation's fetchedAt, so replay rebuilds the same row", async () => {
+    const [obs] = await collect(createRescueGroupsAdapter({ apiKey: "k" }, fixtureFetch().fetchImpl));
+    const { display } = await rescueGroupsNormalizer.normalize({ ...obs, rawId: 1 });
+
+    expect(display?.fetchedAt).toEqual(obs.fetchedAt);
+  });
+
+  it("promotes an empty display rather than none, so deleted prose clears the row", async () => {
+    const [obs] = await collect(createRescueGroupsAdapter({ apiKey: "k" }, fixtureFetch().fetchImpl));
+    obs.payload.animal.attributes = {
+      ...obs.payload.animal.attributes,
+      descriptionText: null,
+      trackerimageUrl: null,
+    };
+    obs.payload.included = obs.payload.included.filter((r) => r.type !== "pictures");
+
+    const { display } = await rescueGroupsNormalizer.normalize({ ...obs, rawId: 1 });
+    // Omitting `display` here would leave yesterday's description standing on
+    // the page forever — the upsert can only clear what it is handed.
+    expect(display).toEqual({
+      description: null,
+      photoUrls: [],
+      listingOrg: "Angel Pets Animal Welfare Society, Inc",
+      trackerUrl: null,
+      fetchedAt: obs.fetchedAt,
+    });
+  });
+
+  it("handles animal 10059734, whose tracker URL the API omits", async () => {
+    const { display } = await displayFor(1);
+
+    expect(display?.trackerUrl).toBeNull();
+    expect(display?.photoUrls).toEqual([
+      "https://cdn.rescuegroups.org/27/pictures/animals/10059/10059734/41339654.jpg?width=500",
+      "https://cdn.rescuegroups.org/27/pictures/animals/10059/10059734/41339662.jpg?width=500",
+    ]);
+  });
+
+  it("never promotes a video or a thumbnail as a listing photo", async () => {
+    const { display } = await displayFor(1);
+
+    expect(display?.photoUrls.some((u) => u.includes("width=100"))).toBe(false);
+    expect(display?.photoUrls.some((u) => u.includes("videosroot") || u.includes("youtube"))).toBe(false);
+  });
+});
+
 describe("rescuegroups through the pipeline", () => {
   it("persists, normalizes and emits events with no pipeline changes", async () => {
     const { stages, corpus } = createMemoryStages([rescueGroupsNormalizer]);
@@ -292,6 +429,29 @@ describe("rescuegroups through the pipeline", () => {
     expect(report.failures).toEqual([]);
     expect(report.events.map((e) => e.kind)).toEqual(["animal.seen", "animal.seen"]);
     expect(corpus.rawRows).toHaveLength(2);
+  });
+
+  it("lands one display row per animal, and re-polls and replays leave it untouched", async () => {
+    const { stages, corpus } = createMemoryStages([rescueGroupsNormalizer]);
+    await runIngest(createRescueGroupsAdapter({ apiKey: "k" }, fixtureFetch().fetchImpl), stages, {
+      complete: true,
+    });
+    const first = structuredClone([...corpus.display.entries()]);
+
+    expect(first.map(([k]) => k)).toEqual(["1:rescuegroups", "2:rescuegroups"]);
+    expect(corpus.display.get("1:rescuegroups")?.photoUrls).toHaveLength(3);
+
+    const second = await runIngest(
+      createRescueGroupsAdapter({ apiKey: "k" }, fixtureFetch().fetchImpl),
+      stages,
+      { complete: true },
+    );
+    const replayed = await replay("rescuegroups", corpus.stored(), stages);
+
+    // Neither a re-poll nor a replay may emit: an `animal.updated` per poll is
+    // permanent, and display is not a fact that changed (ADR-0003, ADR-0015).
+    expect([second.events, replayed.events]).toEqual([[], []]);
+    expect([...corpus.display.entries()]).toEqual(first);
   });
 
   it("dedups on re-poll: a second identical run appends no raw rows", async () => {

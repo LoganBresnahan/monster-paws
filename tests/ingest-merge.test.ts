@@ -1,7 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { createMemoryStages } from "@/core/ingest/memory";
 import type { Observation, SourceAdapter, StoredObservation } from "@/core/ingest/observation";
-import { replay, runIngest, type AnimalClaims, type Normalizer } from "@/core/ingest/pipeline";
+import {
+  replay,
+  runIngest,
+  type AnimalClaims,
+  type NormalizedAnimal,
+  type Normalizer,
+} from "@/core/ingest/pipeline";
 import { scrapeSource, type Source } from "@/core/sources";
 
 /**
@@ -50,14 +56,14 @@ function adapterOf(source: Source, observations: Observation<Payload>[]): Source
 function normalizerFor(source: Source): Normalizer<Payload> {
   return {
     source,
-    async normalize(o: StoredObservation<Payload>): Promise<AnimalClaims> {
+    async normalize(o: StoredObservation<Payload>): Promise<NormalizedAnimal> {
       const stamp = { source: o.source, fetchedAt: o.fetchedAt };
       const claims: AnimalClaims = {};
       if (o.payload.name !== undefined) claims.name = { value: o.payload.name, ...stamp };
       if (o.payload.species !== undefined) claims.species = { value: o.payload.species, ...stamp };
       if (o.payload.breed !== undefined) claims.breed = { value: o.payload.breed, ...stamp };
       if (o.payload.status !== undefined) claims.status = { value: o.payload.status, ...stamp };
-      return claims;
+      return { claims };
     },
   };
 }
@@ -95,10 +101,12 @@ describe("ADR-0013 merge — tier beats recency", () => {
         async normalize(o: StoredObservation<Payload>) {
           const tier: Source = o.payload.status === "from-shelter" ? SHELTER : AGG;
           return {
-            name: { value: "Rex", source: tier, fetchedAt: o.fetchedAt },
-            species: { value: "dog", source: tier, fetchedAt: o.fetchedAt },
-            breed: { value: o.payload.breed ?? null, source: tier, fetchedAt: o.fetchedAt },
-          } satisfies AnimalClaims;
+            claims: {
+              name: { value: "Rex", source: tier, fetchedAt: o.fetchedAt },
+              species: { value: "dog", source: tier, fetchedAt: o.fetchedAt },
+              breed: { value: o.payload.breed ?? null, source: tier, fetchedAt: o.fetchedAt },
+            } satisfies AnimalClaims,
+          };
         },
       },
     ]);
@@ -194,8 +202,10 @@ describe("ADR-0013 merge — idempotence under replay", () => {
     stages.normalizers.set(AGG, {
       source: AGG,
       async normalize(o: StoredObservation<Payload>) {
-        const base = await normalizerFor(AGG).normalize(o);
-        return { ...base, breed: { ...base.breed!, value: (base.breed!.value as string).toLowerCase() } };
+        const { claims } = await normalizerFor(AGG).normalize(o);
+        return {
+          claims: { ...claims, breed: { ...claims.breed!, value: (claims.breed!.value as string).toLowerCase() } },
+        };
       },
     });
     const report = await replay(AGG, corpus.stored(), stages);

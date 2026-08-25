@@ -78,7 +78,15 @@ pin dogfood findings and deferred sub-tasks to items as carry-ins.
       short-batch throws) and stage 5 (array binding at the 65k-parameter
       ceiling, monotonic run time, one event order). Carry-ins → phase 9:
       the ratio gate (a complete run that disappears more than N% is an
-      upstream bug, not an adoption wave) and **pagination drift** — no
+      upstream bug, not an adoption wave); **duplicate externalIds** — the
+      2026-08-25 run returned 2 ids twice, and stage 1 compares only the
+      LATEST raw row, so two differing payloads under one id re-insert every
+      poll and (since ADR-0015) flap the rendered description and photos;
+      check whether RG's duplicates actually differ before choosing a fix, and
+      note the "a duplicate raw row is inert" comment in `pg.ts` is no longer
+      true; **a backward wall clock** — `createPgLifecycleStore` throws when
+      `at` predates the newest sighting, so an NTP step correction on the
+      droplet fails a whole poll run (ADR-0014); and **pagination drift** — no
       cursor, so records shift between pages and a trickle of false
       disappear/reappear pairs is expected; needs a reappear-rate metric
       and a sorted search if the API offers one. Measured on the first

@@ -7,11 +7,12 @@ import {
   runIngest,
   type AnimalClaims,
   type IngestStages,
+  type NormalizedAnimal,
   type Normalizer,
 } from "@/core/ingest/pipeline";
 import type { Source } from "@/core/sources";
 import { closeDb, getDb, type Db } from "@/db/client";
-import { animalIdentities, animals, eventLog, rawPayloads } from "@/db/schema";
+import { animalDisplay, animalIdentities, animals, eventLog, rawPayloads } from "@/db/schema";
 
 /**
  * Integration: stages 3–4 against real Postgres (ADR-0013). Skipped without
@@ -59,14 +60,14 @@ function adapterOf(source: Source, observations: Observation<Payload>[]): Source
 function normalizerFor(source: Source): Normalizer<Payload> {
   return {
     source,
-    async normalize(o: StoredObservation<Payload>): Promise<AnimalClaims> {
+    async normalize(o: StoredObservation<Payload>): Promise<NormalizedAnimal> {
       const tier: Source = o.payload.status === "from-shelter" ? SHELTER : o.source;
       const stamp = { source: tier, fetchedAt: o.fetchedAt };
       const claims: AnimalClaims = {};
       if (o.payload.name !== undefined) claims.name = { value: o.payload.name, ...stamp };
       if (o.payload.species !== undefined) claims.species = { value: o.payload.species, ...stamp };
       if (o.payload.breed !== undefined) claims.breed = { value: o.payload.breed, ...stamp };
-      return claims;
+      return { claims };
     },
   };
 }
@@ -82,7 +83,7 @@ describe.skipIf(!DATABASE_URL)("ADR-0013 Postgres merge", () => {
 
   beforeEach(async () => {
     await db.execute(
-      sql`truncate table ${rawPayloads}, ${animals}, ${animalIdentities}, ${eventLog} restart identity`,
+      sql`truncate table ${rawPayloads}, ${animals}, ${animalIdentities}, ${animalDisplay}, ${eventLog} restart identity`,
     );
   });
 

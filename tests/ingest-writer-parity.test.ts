@@ -12,13 +12,14 @@ import {
   type IngestEvent,
   type IngestRunReport,
   type IngestStages,
+  type NormalizedAnimal,
   type Normalizer,
 } from "@/core/ingest/pipeline";
 import { createRescueGroupsAdapter, rescueGroupsNormalizer } from "@/core/ingest/rescuegroups";
 import type { Source } from "@/core/sources";
 import type { Claim } from "@/core/trust";
 import { closeDb, getDb, type Db } from "@/db/client";
-import { animalIdentities, animals, eventLog, rawPayloads } from "@/db/schema";
+import { animalDisplay, animalIdentities, animals, eventLog, rawPayloads } from "@/db/schema";
 
 /**
  * The in-memory writer is the reference and the Postgres writer is
@@ -36,6 +37,12 @@ interface Payload {
   species?: string;
   breed?: string | null;
   status?: string;
+  city?: string;
+  state?: string;
+  orgName?: string;
+  postalCode?: string;
+  description?: string;
+  photoUrls?: string[];
   tier?: Source;
 }
 
@@ -68,19 +75,41 @@ function adapterOf(observations: Observation<Payload>[], source: Source = AGG): 
 /** `tier` on the payload stamps the claims as that source — simulates item 10's cross-source merge. */
 const normalizer: Normalizer<Payload> = {
   source: AGG,
-  async normalize(o: StoredObservation<Payload>): Promise<AnimalClaims> {
+  async normalize(o: StoredObservation<Payload>): Promise<NormalizedAnimal> {
     const stamp = { source: o.payload.tier ?? o.source, fetchedAt: o.fetchedAt };
     const claims: AnimalClaims = {};
     if (o.payload.name !== undefined) claims.name = { value: o.payload.name, ...stamp };
     if (o.payload.species !== undefined) claims.species = { value: o.payload.species, ...stamp };
     if (o.payload.breed !== undefined) claims.breed = { value: o.payload.breed, ...stamp };
     if (o.payload.status !== undefined) claims.status = { value: o.payload.status, ...stamp };
-    return claims;
+    if (o.payload.city !== undefined) claims.city = { value: o.payload.city, ...stamp };
+    if (o.payload.state !== undefined) claims.state = { value: o.payload.state, ...stamp };
+    if (o.payload.orgName !== undefined) claims.orgName = { value: o.payload.orgName, ...stamp };
+    if (o.payload.postalCode !== undefined) {
+      claims.postalCode = { value: o.payload.postalCode, ...stamp };
+    }
+    if (o.payload.description === undefined) return { claims };
+    return {
+      claims,
+      display: {
+        description: o.payload.description,
+        photoUrls: o.payload.photoUrls ?? [],
+        listingOrg: o.payload.orgName ?? null,
+        trackerUrl: null,
+        fetchedAt: o.fetchedAt,
+      },
+    };
   },
 };
 
+type DisplaySnapshot = Record<
+  string,
+  { description: string | null; photoUrls: string[]; listingOrg: string | null; trackerUrl: string | null; fetchedAt: string }
+>;
+
 type Snapshot = {
   animals: Record<string, Record<string, { value: unknown; source: string; fetchedAt: string; rawId?: number }>>;
+  display: DisplaySnapshot;
   events: { kind: string; subjectId: string; changed: unknown; occurredAt: string; source: string }[];
 };
 
@@ -103,7 +132,17 @@ function memorySnapshot(corpus: MemoryCorpus): Snapshot {
       if (c) out[id][field] = { value: c.value, source: c.source, fetchedAt: c.fetchedAt.toISOString(), rawId: c.rawId };
     }
   }
-  return { animals: out, events: eventsOf(corpus.events) };
+  const shown: DisplaySnapshot = {};
+  for (const [k, row] of corpus.display) {
+    shown[k] = {
+      description: row.description,
+      photoUrls: row.photoUrls,
+      listingOrg: row.listingOrg,
+      trackerUrl: row.trackerUrl,
+      fetchedAt: row.fetchedAt.toISOString(),
+    };
+  }
+  return { animals: out, display: shown, events: eventsOf(corpus.events) };
 }
 
 async function pgSnapshot(db: Db): Promise<Snapshot> {
@@ -115,6 +154,16 @@ async function pgSnapshot(db: Db): Promise<Snapshot> {
       if (prov[field]) out[row.id][field] = { value: row[field], ...prov[field] };
     }
   }
+  const shown: DisplaySnapshot = {};
+  for (const row of await db.select().from(animalDisplay).orderBy(animalDisplay.id)) {
+    shown[`${row.animalId}:${row.source}`] = {
+      description: row.description,
+      photoUrls: row.photoUrls,
+      listingOrg: row.listingOrg,
+      trackerUrl: row.trackerUrl,
+      fetchedAt: row.fetchedAt.toISOString(),
+    };
+  }
   const events = (await db.select().from(eventLog).orderBy(eventLog.id)).map((e) => ({
     kind: e.kind,
     subjectId: e.subjectId,
@@ -122,7 +171,7 @@ async function pgSnapshot(db: Db): Promise<Snapshot> {
     occurredAt: e.occurredAt.toISOString(),
     source: e.source as string,
   }));
-  return { animals: out, events };
+  return { animals: out, display: shown, events };
 }
 
 describe.skipIf(!DATABASE_URL)("ADR-0013 writer parity — memory is the reference, Postgres must agree", () => {
@@ -136,7 +185,7 @@ describe.skipIf(!DATABASE_URL)("ADR-0013 writer parity — memory is the referen
 
   beforeEach(async () => {
     await db.execute(
-      sql`truncate table ${rawPayloads}, ${animals}, ${animalIdentities}, ${eventLog} restart identity`,
+      sql`truncate table ${rawPayloads}, ${animals}, ${animalIdentities}, ${animalDisplay}, ${eventLog} restart identity`,
     );
     pg = createPgStages(db, [normalizer]);
     mem = createMemoryStages([normalizer]);
@@ -204,6 +253,136 @@ describe.skipIf(!DATABASE_URL)("ADR-0013 writer parity — memory is the referen
     await expectParity();
   });
 
+  // All four location fields, not a representative two: `MERGED_FIELDS` is a
+  // list, and a field dropped from it is written nowhere, given no provenance
+  // and counted in no conflict — silently, since a subset still typechecks
+  // against `satisfies`.
+  it("merges location facts by tier like any other field (ADR-0015)", async () => {
+    const HERE = { city: "Pittsburgh", state: "PA", orgName: "Animal Friends", postalCode: "15238" };
+    const reports = await both(
+      adapterOf([obs({ ...REX, ...HERE }, T0)]),
+      adapterOf([obs({ ...REX, ...HERE, city: "Wilkinsburg", tier: SHELTER }, T1)]),
+      adapterOf([obs({ ...REX, ...HERE }, T2)]),
+    );
+
+    const snap = await expectParity();
+    // The shelter's city holds against a later aggregator poll, and the
+    // disagreement is counted rather than logged (ADR-0013).
+    expect(snap.animals["1"].city).toMatchObject({ value: "Wilkinsburg", source: SHELTER });
+    expect(snap.animals["1"].state).toMatchObject({ value: "PA", source: SHELTER });
+    expect(snap.animals["1"].orgName).toMatchObject({ value: "Animal Friends", source: SHELTER });
+    expect(snap.animals["1"].postalCode).toMatchObject({ value: "15238", source: SHELTER });
+    expect(reports[1].map((r) => r.events.map((e) => e.data.changed))).toEqual([
+      [["city"]],
+      [["city"]],
+    ]);
+    expect(reports[2].map((r) => [r.events.length, r.conflicted])).toEqual([
+      [0, 1],
+      [0, 1],
+    ]);
+
+    // Promoting location fires its change ONCE. Re-deriving the same corpus
+    // must add nothing: event_log rows are permanent, so a location event per
+    // replay is uncorrectable (ADR-0003).
+    const m = await replay(AGG, mem.corpus.stored(), mem.stages);
+    const p = await replay(AGG, await loadStoredObservations(db, AGG), pg);
+    expect([m.events, p.events]).toEqual([[], []]);
+    expect(await expectParity()).toEqual(snap);
+  });
+
+  it("upserts one display row per source, and clears what the source stopped saying (ADR-0015)", async () => {
+    const SHOWN = { description: "Rex loves everyone", photoUrls: ["https://cdn/rex.jpg?width=500"] };
+    const reports = await both(
+      adapterOf([obs({ ...REX, orgName: "Animal Friends", ...SHOWN }, T0)]),
+      adapterOf([obs({ ...REX, orgName: "Animal Friends", description: "", photoUrls: [] }, T1)]),
+    );
+
+    // The second poll changes ONLY display, and must be silent. Without this
+    // assertion a writer that emits on "display present and some claim
+    // touched" passes every other test here while writing one permanent
+    // event_log row per animal per upstream copy edit (ADR-0003).
+    expect(reports[1].map((r) => r.events)).toEqual([[], []]);
+    const snap = await expectParity();
+    expect(snap.display["1:rescuegroups"]).toEqual({
+      description: "",
+      photoUrls: [],
+      listingOrg: "Animal Friends",
+      trackerUrl: null,
+      fetchedAt: T1.toISOString(),
+    });
+  });
+
+  it("keeps a second source's display row beside the first instead of merging them", async () => {
+    await both(adapterOf([obs({ ...REX, description: "the aggregator's copy" }, T0)]));
+
+    // Applied to the writers directly: v1 entity resolution is per-source, so
+    // one animal carrying two sources is item 10's shape, not a poll's.
+    const second = {
+      source: SHELTER,
+      externalId: "rex-1",
+      rawId: 1,
+      claims: { name: { value: "Rex", source: SHELTER, fetchedAt: T1 } },
+      display: {
+        description: "the shelter's own words",
+        photoUrls: [],
+        listingOrg: null,
+        trackerUrl: null,
+        fetchedAt: T1,
+      },
+    };
+    await mem.stages.writer.apply(second, 1);
+    await pg.writer.apply(second, 1);
+
+    const snap = await expectParity();
+    // Two rows, not one: which of them a page may render is a LICENSE
+    // question (`pickLicensedDisplay`), never a merge (ADR-0015 decision 3).
+    expect(Object.keys(snap.display).sort()).toEqual(["1:rescuegroups", "1:shelterluv"]);
+    expect(snap.display["1:shelterluv"].description).toBe("the shelter's own words");
+  });
+
+  it("writes display without an event, and without touching the animal row", async () => {
+    const shown = { ...REX, description: "Rex loves everyone" };
+    await both(adapterOf([obs(shown, T0)]));
+    const [{ updatedAt }] = await db.select().from(animals);
+    const after = await expectParity();
+
+    // A re-poll of an unchanged payload dedups to the same raw row, so the
+    // claims are identical and nothing about the animal is written. The
+    // display upsert runs anyway — and must stay silent: an `animal.updated`
+    // per poll is permanent, and `updated_at` is what a page shows as
+    // "last updated" (ADR-0003, ADR-0015).
+    const [[mem2, pg2]] = await both(adapterOf([obs(shown, T1)]));
+    expect([mem2.events, pg2.events]).toEqual([[], []]);
+    expect((await db.select().from(animals))[0].updatedAt).toEqual(updatedAt);
+    expect(await expectParity()).toEqual(after);
+  });
+
+  it("leaves an existing display row alone when a poll promotes nothing", async () => {
+    await both(
+      adapterOf([obs({ ...REX, description: "Rex loves everyone" }, T0)]),
+      adapterOf([obs({ ...REX, breed: "collie" }, T1)]),
+    );
+
+    // Absence of `display` is not a retraction — only the purge path deletes
+    // a display row, and only for a whole source (ADR-0006 decision 4).
+    const snap = await expectParity();
+    expect(snap.display["1:rescuegroups"].description).toBe("Rex loves everyone");
+  });
+
+  it("rebuilds an identical display row on replay, from the observation and not the clock", async () => {
+    await both(
+      adapterOf([obs({ ...REX, description: "Rex loves everyone", photoUrls: ["https://cdn/a.jpg"] }, T0)]),
+    );
+    const before = await expectParity();
+
+    const m = await replay(AGG, mem.corpus.stored(), mem.stages);
+    const p = await replay(AGG, await loadStoredObservations(db, AGG), pg);
+
+    expect([m.events, p.events]).toEqual([[], []]);
+    expect(await expectParity()).toEqual(before);
+    expect(before.display["1:rescuegroups"].fetchedAt).toBe(T0.toISOString());
+  });
+
   it("a status nobody asserted is null — never defaulted", async () => {
     await both(adapterOf([obs(REX, T0)]));
 
@@ -217,7 +396,7 @@ describe.skipIf(!DATABASE_URL)("ADR-0013 writer parity — memory is the referen
 
     expect(reports.map((r) => r.failures.map((f) => f.stage))).toEqual([["write"], ["write"]]);
     const snap = await expectParity();
-    expect(snap).toEqual({ animals: {}, events: [] });
+    expect(snap).toEqual({ animals: {}, display: {}, events: [] });
   });
 
   it("a deduped re-poll keeps provenance on the raw row's fetchedAt, not the poll's", async () => {

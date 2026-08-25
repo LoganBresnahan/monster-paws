@@ -82,6 +82,15 @@ export const animals = pgTable(
     isBirthDateExact: boolean("is_birth_date_exact"),
     /** the registry slug (`src/core/shelters.ts`) — natural key for the future `shelters` table */
     shelterExternalId: text("shelter_external_id"),
+    /**
+     * Where the animal is listed — facts with provenance like any other claim
+     * (ADR-0015). Never populate these from `animal_display`: that layer is
+     * licensed expression, and a license is not a fact about the animal.
+     */
+    orgName: text("org_name"),
+    city: text("city"),
+    state: text("state"),
+    postalCode: text("postal_code"),
     // photo KEYS only — images live in R2, never in the DB (ADR-0003)
     photoKeys: jsonb("photo_keys").$type<string[]>().notNull().default([]),
     /** per-field { source, fetchedAt } — the trust hierarchy's working data */
@@ -93,7 +102,17 @@ export const animals = pgTable(
       .notNull()
       .defaultNow(),
   },
-  (t) => [index("animals_status_idx").on(t.status)],
+  (t) => [
+    index("animals_status_idx").on(t.status),
+    // Browse's filters and its longest-listed-first sort (ADR-0015). The sort
+    // key is `created_at` — first canonical write, not first listing — so a
+    // full canonical rebuild would reshuffle the order; that is the browse
+    // page's column to revisit, not this index's.
+    index("animals_status_created_idx").on(t.status, t.createdAt),
+    index("animals_species_idx").on(t.species),
+    index("animals_state_idx").on(t.state),
+    index("animals_shelter_external_idx").on(t.shelterExternalId),
+  ],
 );
 
 /**
@@ -120,8 +139,44 @@ export const animalIdentities = pgTable(
   },
   (t) => [
     uniqueIndex("animal_identities_source_ext_uq").on(t.source, t.externalId),
-    index("animal_identities_animal_idx").on(t.animalId),
+    // `animal_id` leads because `visibleAnimals` correlates per animal and
+    // only then tests presence and freshness — the column order ADR-0015
+    // Consequences names indexes the wrong direction for that subquery.
+    index("animal_identities_visibility_idx").on(t.animalId, t.disappearedAt, t.lastSeenAt),
   ],
+);
+
+/**
+ * What a source lets us SHOW — one row per (animal, source), upserted by
+ * stage 4 (ADR-0015). Never merge these into `animals`: a description is not
+ * a fact competing in `resolveClaim`, it is expression rendered only while a
+ * license holds — `aggregator-display` for `rescuegroups`, a shelter's
+ * `display` grant for `scrape:<slug>`. Derived and purgeable: a terminated
+ * license deletes this source's rows and pages fall back to facts (ADR-0006).
+ */
+export const animalDisplay = pgTable(
+  "animal_display",
+  {
+    id: bigserial("id", { mode: "number" }).primaryKey(),
+    animalId: integer("animal_id")
+      .notNull()
+      .references(() => animals.id, { onDelete: "cascade" }),
+    source: text("source").$type<Source>().notNull(),
+    /** the shelter's own words — rendered verbatim as a quotation, never edited (ADR-0015) */
+    description: text("description"),
+    /**
+     * Hotlinked source URLs, in the order the source listed them — never R2
+     * keys and never fetched into R2, which the display license does not cover
+     * (ADR-0006 as amended). `animals.photo_keys` is the R2 column and stays
+     * separate.
+     */
+    photoUrls: jsonb("photo_urls").$type<string[]>().notNull().default([]),
+    listingOrg: text("listing_org"),
+    trackerUrl: text("tracker_url"),
+    /** the observation's fetch time, never the write's — or replay rebuilds a different row */
+    fetchedAt: timestamp("fetched_at", { withTimezone: true }).notNull(),
+  },
+  (t) => [uniqueIndex("animal_display_animal_source_uq").on(t.animalId, t.source)],
 );
 
 /**

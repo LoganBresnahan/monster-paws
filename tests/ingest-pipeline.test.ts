@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { createMemoryStages } from "@/core/ingest/memory";
 import type { Observation, SourceAdapter, StoredObservation } from "@/core/ingest/observation";
-import { replay, runIngest, type AnimalClaims, type Normalizer } from "@/core/ingest/pipeline";
+import { replay, runIngest, type NormalizedAnimal, type Normalizer } from "@/core/ingest/pipeline";
 import type { Source } from "@/core/sources";
 
 interface RgPayload {
@@ -36,12 +36,14 @@ function adapterOf(observations: Observation<RgPayload>[], source: Source = "res
 function normalizerFor(source: Source): Normalizer<RgPayload> {
   const normalizer: Normalizer<RgPayload> = {
     source,
-    async normalize(o: StoredObservation<RgPayload>): Promise<AnimalClaims> {
+    async normalize(o: StoredObservation<RgPayload>): Promise<NormalizedAnimal> {
       const stamp = { source: o.source, fetchedAt: o.fetchedAt };
       return {
-        name: { value: o.payload.name, ...stamp },
-        species: { value: o.payload.species, ...stamp },
-        breed: { value: o.payload.breed ?? null, ...stamp },
+        claims: {
+          name: { value: o.payload.name, ...stamp },
+          species: { value: o.payload.species, ...stamp },
+          breed: { value: o.payload.breed ?? null, ...stamp },
+        },
       };
     },
   };
@@ -112,7 +114,7 @@ describe("ADR-0009 ingest pipeline", () => {
       source: "rescuegroups",
       async normalize(o) {
         const stamp = { source: o.source, fetchedAt: o.fetchedAt };
-        return { name: { value: "???", ...stamp }, species: { value: "dog", ...stamp } };
+        return { claims: { name: { value: "???", ...stamp }, species: { value: "dog", ...stamp } } };
       },
     };
     const { stages, corpus } = createMemoryStages([broken]);
@@ -150,7 +152,7 @@ describe("ADR-0009 ingest pipeline", () => {
       async normalize(o) {
         if (o.externalId === "rg-1") throw new Error("unparseable payload");
         const stamp = { source: o.source, fetchedAt: o.fetchedAt };
-        return { name: { value: o.payload.name, ...stamp }, species: { value: "dog", ...stamp } };
+        return { claims: { name: { value: o.payload.name, ...stamp }, species: { value: "dog", ...stamp } } };
       },
     };
     const { stages } = createMemoryStages([flaky]);

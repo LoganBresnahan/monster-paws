@@ -19,6 +19,11 @@ export interface AnimalFields {
    */
   isBirthDateExact: boolean | null;
   shelterExternalId: string | null;
+  /** where it is listed — facts, so browse can filter by state and a page can say where (ADR-0015) */
+  orgName: string | null;
+  city: string | null;
+  state: string | null;
+  postalCode: string | null;
   photoKeys: string[];
 }
 
@@ -33,6 +38,10 @@ export const MERGED_FIELDS = [
   "birthDate",
   "isBirthDateExact",
   "shelterExternalId",
+  "orgName",
+  "city",
+  "state",
+  "postalCode",
   "photoKeys",
 ] as const satisfies readonly (keyof AnimalFields)[];
 
@@ -45,12 +54,31 @@ export type AnimalClaims = {
   [K in keyof AnimalFields]?: Claim<AnimalFields[K]>;
 };
 
+/**
+ * What a source lets us show, as opposed to what it asserts (ADR-0015). Kept
+ * off `AnimalClaims` on purpose: routed through the merge a description would
+ * compete in `resolveClaim` as if it were a breed, and provenance would call
+ * it a fact. Never widen `AnimalFields` with a field from here.
+ */
+export interface DisplayContent {
+  /** the shelter's words, verbatim — a normalizer may drop it, never edit it */
+  description: string | null;
+  /** source URLs to hotlink, in the order the source listed them — never R2 keys (ADR-0006 as amended) */
+  photoUrls: string[];
+  listingOrg: string | null;
+  trackerUrl: string | null;
+  /** the observation's fetchedAt, never the write clock — replay must rebuild an identical row */
+  fetchedAt: Date;
+}
+
 /** A normalized observation, still tied to the exact fetch it came from. */
 export interface AnimalCandidate {
   source: Source;
   externalId: string;
   rawId: number;
   claims: AnimalClaims;
+  /** absent when the source licenses us nothing to show — the page then has only facts */
+  display?: DisplayContent;
 }
 
 /**
@@ -88,7 +116,13 @@ export interface RawStore {
  */
 export interface Normalizer<P = unknown> {
   readonly source: Source;
-  normalize(obs: StoredObservation<P>): Promise<AnimalClaims>;
+  normalize(obs: StoredObservation<P>): Promise<NormalizedAnimal>;
+}
+
+/** A normalizer's whole output: facts that merge, and expression that never does (ADR-0015). */
+export interface NormalizedAnimal {
+  claims: AnimalClaims;
+  display?: DisplayContent;
 }
 
 /** Stage 3 — match a candidate to an existing canonical animal, or `null` for new. */
@@ -216,9 +250,9 @@ async function runDerivedStages(
       continue;
     }
 
-    let claims: AnimalClaims;
+    let normalized: NormalizedAnimal;
     try {
-      claims = await normalizer.normalize(obs);
+      normalized = await normalizer.normalize(obs);
     } catch (error) {
       report.failures.push({
         externalId: obs.externalId,
@@ -233,7 +267,8 @@ async function runDerivedStages(
       source: obs.source,
       externalId: obs.externalId,
       rawId: obs.rawId,
-      claims,
+      claims: normalized.claims,
+      display: normalized.display,
     };
 
     let animalId: number | null;

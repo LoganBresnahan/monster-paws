@@ -40,9 +40,12 @@ producing a short report: a partial fetch must never reach stage 5.
                                ▼
    stage 2  ┌──────────────────────────────────┐
   normalize │ stages.normalizers.get(source)    │  per-source mapper; LLM
-            │  .normalize(stored) → AnimalClaims│  extraction is a normalizer
-            │  every field: {value, source,     │  like any other
-            │                fetchedAt}         │  (planned: phases 5–6)
+            │  .normalize(stored) →             │  extraction is a normalizer
+            │   {claims, display?}              │  like any other
+            │  claims: {value, source,          │  (planned: phases 5–6)
+            │           fetchedAt} per field    │  display = licensed
+            │  display: description, photoUrls, │  expression, never a claim
+            │   listingOrg, trackerUrl          │  (ADR-0015)
             └──────────────────┬───────────────┘
                                │ AnimalCandidate
                                ▼
@@ -58,7 +61,9 @@ producing a short report: a partial fetch must never reach stage 5.
             │   resolveClaim(incoming, current) │      {source, fetchedAt}}
             │  emit animal.seen / .updated      │  event_log (SACRED), same
             │  nothing when canonical reproduced│  transaction as the row
-            │  (.disappeared: planned, phase 8) │  (ADR-0013)
+            │  display? → upsert (animal_id,    │  (ADR-0013)
+            │    source): no event, no          │  animal_display (DERIVED,
+            │    updated_at, never merged       │   purgeable — ADR-0015)
             └──────────────────┬───────────────┘
                                ▼
    stage 5  ┌──────────────────────────────────┐  runs ONLY when the caller

@@ -101,7 +101,7 @@ describe("shelter registry (ADR-0006 as amended)", () => {
       "slug 'Happy Tails' is not lowercase kebab-case",
       "happy-tails-rescue/digify: grant has no evidence pointer",
       "duplicate slug 'happy-tails-rescue'",
-      "happy-tails-rescue/display: unparseable grantedAt 'whenever'",
+      "happy-tails-rescue/display: grantedAt 'whenever' is not an ISO date",
     ]);
   });
 });

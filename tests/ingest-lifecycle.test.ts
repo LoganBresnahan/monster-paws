@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { createMemoryStages } from "@/core/ingest/memory";
 import type { Observation, SourceAdapter, StoredObservation } from "@/core/ingest/observation";
-import { replay, runIngest, type AnimalClaims, type Normalizer } from "@/core/ingest/pipeline";
+import { replay, runIngest, type NormalizedAnimal, type Normalizer } from "@/core/ingest/pipeline";
 import { scrapeSource, type Source } from "@/core/sources";
 
 /**
@@ -43,9 +43,11 @@ function adapterOf(source: Source, observations: Observation<Payload>[]): Source
 function normalizerFor(source: Source): Normalizer<Payload> {
   return {
     source,
-    async normalize(o: StoredObservation<Payload>): Promise<AnimalClaims> {
+    async normalize(o: StoredObservation<Payload>): Promise<NormalizedAnimal> {
       const stamp = { source: o.source, fetchedAt: o.fetchedAt };
-      return { name: { value: o.payload.name, ...stamp }, species: { value: "dog", ...stamp } };
+      return {
+        claims: { name: { value: o.payload.name, ...stamp }, species: { value: "dog", ...stamp } },
+      };
     },
   };
 }

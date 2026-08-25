@@ -1,6 +1,6 @@
 import { contentHashOf } from "@/core/ingest/hash";
 import type { Observation, SourceAdapter } from "@/core/ingest/observation";
-import type { AnimalClaims, Normalizer } from "@/core/ingest/pipeline";
+import type { AnimalClaims, DisplayContent, Normalizer } from "@/core/ingest/pipeline";
 
 /**
  * RescueGroups v5 adapter (ADR-0006 decision 2). Tier 2 — discovery, not
@@ -184,12 +184,44 @@ const STATUS_BY_NAME: Record<string, string> = {
 };
 
 /**
- * Deliberately thin (ADR-0006 decision 4). Every field promoted here is a
- * field we must be able to retract on ToS termination, so the aggregator
- * asserts identity and nothing else: never the shelter's prose, never photos
- * (which are also gated on the art-rights consent of decision 5). The full
- * payload stays verbatim in the raw row for whatever we're allowed to do with
- * it later.
+ * The URL RescueGroups publishes for the 500px variant — read, never built.
+ * Appending `?width=500` ourselves would make the obligation to hotlink a
+ * bounded image depend on our guess about their CDN's query grammar, the same
+ * trap `trackerUrlOf` avoids. Falls back to the original when they publish no
+ * variant, rather than dropping the photo.
+ */
+function pictureUrlOf(attributes: Record<string, unknown>): string | null {
+  const variant = (name: string) => (attributes[name] as { url?: unknown } | undefined)?.url;
+  return stringOr(variant("large")) ?? stringOr(variant("original"));
+}
+
+/**
+ * Ordered by each picture's own `order` attribute, not by array position:
+ * `sidecarFor` sorts the sidecar by (type, id) for hash stability, so position
+ * in `included` is our ordering and carries none of theirs (ADR-0015 decision
+ * 4 asks for the order RescueGroups lists them in).
+ */
+function photoUrlsOf(payload: RescueGroupsAnimal): string[] {
+  return payload.included
+    .filter((resource) => resource.type === "pictures")
+    .map((resource) => ({
+      order: typeof resource.attributes.order === "number" ? resource.attributes.order : 0,
+      id: resource.id,
+      url: pictureUrlOf(resource.attributes),
+    }))
+    .filter((p): p is { order: number; id: string; url: string } => p.url !== null)
+    .sort((a, b) => a.order - b.order || a.id.localeCompare(b.id))
+    .map((p) => p.url);
+}
+
+/**
+ * Still bounded by retractability (ADR-0006 decision 4) — every field promoted
+ * here purges with the `rescuegroups` set — but no longer identity-only: the
+ * ADR-0006 amendment of 2026-08-25 licenses the listing description and photo
+ * URLs under `aggregator-display`, and ADR-0015 carries them as `display`,
+ * never as claims. The line that has not moved: prose and photos are
+ * expression, so they never enter `AnimalClaims` and never reach the art
+ * pipeline (decision 5 — no keepsake art from an API photo, ever).
  */
 export const rescueGroupsNormalizer: Normalizer<RescueGroupsAnimal> = {
   source: "rescuegroups",
@@ -235,7 +267,34 @@ export const rescueGroupsNormalizer: Normalizer<RescueGroupsAnimal> = {
       claims.shelterExternalId = { value: `rescuegroups:org:${orgId}`, ...stamp };
     }
 
-    return claims;
+    // The ORG's address, never the `locations` resource: locations is a
+    // mailing record that is routinely missing a city, and browse filters on
+    // state (ADR-0015 decision 4). Their key is `postalcode`, all lowercase.
+    const org = attributesOf(obs.payload, "orgs");
+    const orgName = stringOr(org?.name);
+    if (orgName) claims.orgName = { value: orgName, ...stamp };
+    const city = stringOr(org?.city);
+    if (city) claims.city = { value: city, ...stamp };
+    const state = stringOr(org?.state);
+    if (state) claims.state = { value: state, ...stamp };
+    const postalCode = stringOr(org?.postalcode);
+    if (postalCode) claims.postalCode = { value: postalCode, ...stamp };
+
+    // Promoted unconditionally, empty fields included: an animal whose
+    // description is deleted upstream must clear the display row, and a
+    // normalizer that skipped `display` here would leave yesterday's prose
+    // standing forever (ADR-0015).
+    const display: DisplayContent = {
+      description: stringOr(attributes.descriptionText),
+      photoUrls: photoUrlsOf(obs.payload),
+      listingOrg: orgName,
+      trackerUrl: trackerUrlOf(obs.payload),
+      // The observation's fetch, never `new Date()` — replay must rebuild this
+      // row identically or the corpus stops being the repair path (ADR-0009).
+      fetchedAt: obs.fetchedAt,
+    };
+
+    return { claims, display };
   },
 };
 

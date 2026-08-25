@@ -6,13 +6,13 @@ import { createPgStages, loadStoredObservations } from "@/core/ingest/pg";
 import {
   replay,
   runIngest,
-  type AnimalClaims,
   type IngestStages,
+  type NormalizedAnimal,
   type Normalizer,
 } from "@/core/ingest/pipeline";
 import { scrapeSource, type Source } from "@/core/sources";
 import { closeDb, getDb, type Db } from "@/db/client";
-import { animalIdentities, animals, eventLog, rawPayloads } from "@/db/schema";
+import { animalDisplay, animalIdentities, animals, eventLog, rawPayloads } from "@/db/schema";
 
 /**
  * Stage 5 against Postgres (ADR-0014), run in lockstep with the in-memory
@@ -48,9 +48,11 @@ function adapterOf(source: Source, observations: Observation<Payload>[]): Source
 function normalizerFor(source: Source): Normalizer<Payload> {
   return {
     source,
-    async normalize(o: StoredObservation<Payload>): Promise<AnimalClaims> {
+    async normalize(o: StoredObservation<Payload>): Promise<NormalizedAnimal> {
       const stamp = { source: o.source, fetchedAt: o.fetchedAt };
-      return { name: { value: o.payload.name, ...stamp }, species: { value: "dog", ...stamp } };
+      return {
+        claims: { name: { value: o.payload.name, ...stamp }, species: { value: "dog", ...stamp } },
+      };
     },
   };
 }
@@ -69,7 +71,7 @@ describe.skipIf(!DATABASE_URL)("ADR-0014 Postgres lifecycle — in lockstep with
 
   beforeEach(async () => {
     await db.execute(
-      sql`truncate table ${rawPayloads}, ${animals}, ${animalIdentities}, ${eventLog} restart identity`,
+      sql`truncate table ${rawPayloads}, ${animals}, ${animalIdentities}, ${animalDisplay}, ${eventLog} restart identity`,
     );
     const normalizers = [normalizerFor(AGG), normalizerFor(SCRAPE)];
     pg = createPgStages(db, normalizers);

@@ -1,6 +1,6 @@
 import { and, desc, eq, isNotNull, isNull, max, sql } from "drizzle-orm";
 import type { Db } from "@/db/client";
-import { animalIdentities, animals, eventLog, rawPayloads } from "@/db/schema";
+import { animalDisplay, animalIdentities, animals, eventLog, rawPayloads } from "@/db/schema";
 import type { Observation, StoredObservation } from "@/core/ingest/observation";
 import {
   MERGED_FIELDS,
@@ -216,6 +216,28 @@ export function createPgCanonicalWriter(db: Db): CanonicalWriter {
               .set({ ...(values as Partial<typeof animals.$inferInsert>), provenance, updatedAt: new Date() })
               .where(eq(animals.id, id));
           }
+        }
+
+        // Expression, not facts: outside the merge, outside `provenance`, and
+        // never its own event — a description edited upstream is not an
+        // `animal.updated`, and event_log rows are permanent (ADR-0015,
+        // ADR-0003). The display write touches no column of `animals`; a
+        // display-only edit still moves `updated_at`, because the new raw row
+        // re-stamps every claim's provenance (ADR-0013) — pages show
+        // `last_seen_at`, not this. Last write per (animal, source) wins, and
+        // replay rebuilds the row identically because every value comes off
+        // the stored observation, never the write clock.
+        if (candidate.display) {
+          await tx
+            .insert(animalDisplay)
+            .values({ animalId: id, source: candidate.source, ...candidate.display })
+            // `set` is the whole DisplayContent, never a hand-listed subset: a
+            // field enumerated here and forgotten there would reach new rows
+            // and never the re-polled ones, silently and per-source.
+            .onConflictDoUpdate({
+              target: [animalDisplay.animalId, animalDisplay.source],
+              set: candidate.display,
+            });
         }
 
         const emitted: IngestEvent[] = [];

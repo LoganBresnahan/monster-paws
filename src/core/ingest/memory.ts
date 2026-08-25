@@ -4,6 +4,7 @@ import type {
   AnimalCandidate,
   AnimalClaims,
   CanonicalWriter,
+  DisplayContent,
   EntityResolver,
   IngestEvent,
   IngestStages,
@@ -36,6 +37,12 @@ interface MemoryRawRow {
   lastSeen: Date;
 }
 
+/** One licensed-display row per (animal, source) — never merged across sources (ADR-0015). */
+export interface MemoryDisplay extends DisplayContent {
+  animalId: number;
+  source: Source;
+}
+
 export interface MemoryIdentity {
   animalId: number;
   source: Source;
@@ -48,12 +55,15 @@ export interface MemoryCorpus {
   rawRows: MemoryRawRow[];
   animals: Map<number, MemoryAnimal>;
   identities: Map<string, MemoryIdentity>;
+  /** keyed `animalId:source` — the reference for the Postgres upsert */
+  display: Map<string, MemoryDisplay>;
   events: IngestEvent[];
   /** every stored observation, in insert order — replay's input */
   stored(): StoredObservation<unknown>[];
 }
 
 const key = (source: Source, externalId: string) => `${source}:${externalId}`;
+const displayKey = (animalId: number, source: Source) => `${animalId}:${source}`;
 
 export function createMemoryStages(normalizers: Normalizer[]): {
   stages: IngestStages;
@@ -63,6 +73,7 @@ export function createMemoryStages(normalizers: Normalizer[]): {
   const animals = new Map<number, MemoryAnimal>();
   const events: IngestEvent[] = [];
   const identities = new Map<string, MemoryIdentity>();
+  const display = new Map<string, MemoryDisplay>();
   let nextRawId = 1;
   let nextAnimalId = 1;
 
@@ -141,6 +152,19 @@ export function createMemoryStages(normalizers: Normalizer[]): {
         });
       }
 
+      // Expression, not facts: written outside the merge, and NEVER an event
+      // of its own — a description edited upstream is not an `animal.updated`,
+      // and event_log rows are permanent (ADR-0015, ADR-0003). Last write per
+      // (animal, source) wins: stage 4 sees a source's observations in corpus
+      // order, so the newest expression is the one left standing.
+      if (candidate.display) {
+        display.set(displayKey(animal.id, candidate.source), {
+          animalId: animal.id,
+          source: candidate.source,
+          ...candidate.display,
+        });
+      }
+
       const emitted: IngestEvent[] = [];
       // No event when a replay reproduces what canonical already holds —
       // event_log rows are permanent, so a phantom update is uncorrectable.
@@ -203,6 +227,7 @@ export function createMemoryStages(normalizers: Normalizer[]): {
     rawRows,
     animals,
     identities,
+    display,
     events,
     stored: () =>
       rawRows.map((row) => ({
