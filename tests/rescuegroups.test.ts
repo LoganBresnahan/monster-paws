@@ -28,7 +28,11 @@ function fixtureFetch(pages = 1): { calls: string[]; fetchImpl: typeof fetch } {
   const fetchImpl = (async (url: string, init?: RequestInit) => {
     calls.push(String(url));
     if (init?.method !== "POST") throw new Error(`expected POST, got ${init?.method}`);
-    return new Response(JSON.stringify({ ...FIXTURE, meta: { ...FIXTURE.meta, pages } }), {
+    // The fixture's meta is nationwide (count 64653); a test feed of `pages`
+    // pages of 2 must promise what it delivers or the adapter (rightly)
+    // declares the run truncated (ADR-0014).
+    const meta = { ...FIXTURE.meta, pages, count: pages * FIXTURE.data.length };
+    return new Response(JSON.stringify({ ...FIXTURE, meta }), {
       status: 200,
       headers: { "content-type": "application/json" },
     });
@@ -110,6 +114,67 @@ describe("rescuegroups adapter (ADR-0006 decision 2)", () => {
     const a = await collect(createRescueGroupsAdapter({ apiKey: "k" }, fixtureFetch().fetchImpl));
     const b = await collect(createRescueGroupsAdapter({ apiKey: "k" }, fixtureFetch().fetchImpl));
     expect(a.map((o) => o.contentHash)).toEqual(b.map((o) => o.contentHash));
+  });
+});
+
+describe("rescuegroups adapter — completeness is verified, never assumed (ADR-0014)", () => {
+  function pagedFetch(bodies: unknown[]): typeof fetch {
+    let i = 0;
+    return (async () =>
+      new Response(JSON.stringify(bodies[i++]), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      })) as unknown as typeof fetch;
+  }
+  const page = (over: Record<string, unknown>) => ({ ...FIXTURE, ...over });
+
+  it("throws on a 200 without data or meta instead of ending the run quietly", async () => {
+    const adapter = createRescueGroupsAdapter(
+      { apiKey: "k" },
+      pagedFetch([page({ meta: { pages: 3, count: 6 } }), { errors: [{ title: "rate limited" }] }]),
+    );
+
+    await expect(collect(adapter)).rejects.toThrow(/malformed/);
+  });
+
+  it("takes page count and record count from page 1 — a later page cannot shrink the run", async () => {
+    const adapter = createRescueGroupsAdapter(
+      { apiKey: "k" },
+      pagedFetch([
+        page({ meta: { pages: 3, count: 6 } }),
+        page({ meta: { pages: 1, count: 2 } }),
+        page({ meta: { pages: 1, count: 2 } }),
+      ]),
+    );
+
+    expect(await collect(adapter)).toHaveLength(6);
+  });
+
+  it("throws when the run delivers materially fewer records than page 1 promised", async () => {
+    const adapter = createRescueGroupsAdapter(
+      { apiKey: "k" },
+      pagedFetch([page({ meta: { pages: 2, count: 400 } }), page({ meta: { pages: 2, count: 400 } })]),
+    );
+
+    await expect(collect(adapter)).rejects.toThrow(/incomplete/);
+  });
+
+  it("tolerates live drift within 1% — an adoption mid-run is not a truncated run", async () => {
+    const adapter = createRescueGroupsAdapter(
+      { apiKey: "k", pageLimit: 2 },
+      pagedFetch([page({ meta: { pages: 100, count: 201 } }), ...Array(99).fill(page({ meta: {} }))]),
+    );
+
+    expect(await collect(adapter)).toHaveLength(200);
+  });
+
+  it("does not apply the count check to a page-capped run, which is partial by construction", async () => {
+    const adapter = createRescueGroupsAdapter(
+      { apiKey: "k", maxPages: 1 },
+      pagedFetch([page({ meta: { pages: 50, count: 100 } })]),
+    );
+
+    expect(await collect(adapter)).toHaveLength(2);
   });
 });
 
@@ -219,7 +284,7 @@ describe("rescuegroups through the pipeline", () => {
     const { stages, corpus } = createMemoryStages([rescueGroupsNormalizer]);
     const adapter = createRescueGroupsAdapter({ apiKey: "k" }, fixtureFetch().fetchImpl);
 
-    const report = await runIngest(adapter, stages);
+    const report = await runIngest(adapter, stages, { complete: true });
 
     expect(report.observed).toBe(2);
     expect(report.persisted).toBe(2);
@@ -232,10 +297,11 @@ describe("rescuegroups through the pipeline", () => {
   it("dedups on re-poll: a second identical run appends no raw rows", async () => {
     const { stages, corpus } = createMemoryStages([rescueGroupsNormalizer]);
 
-    await runIngest(createRescueGroupsAdapter({ apiKey: "k" }, fixtureFetch().fetchImpl), stages);
+    await runIngest(createRescueGroupsAdapter({ apiKey: "k" }, fixtureFetch().fetchImpl), stages, { complete: true });
     const second = await runIngest(
       createRescueGroupsAdapter({ apiKey: "k" }, fixtureFetch().fetchImpl),
       stages,
+      { complete: true },
     );
 
     expect(second.deduped).toBe(2);

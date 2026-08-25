@@ -11,13 +11,14 @@ Change a flow's shape — add a stage, move a boundary, add an external call —
 and update its diagram in the same commit. `/shipshape` checks that every
 identifier boxed here still exists.
 
-## Ingest pipeline — the four stages (ADR-0009)
+## Ingest pipeline — the five stages (ADR-0009, ADR-0013, ADR-0014)
 
 Every source, scrape or API, enters through one `SourceAdapter` and runs the
 same stage path. `runIngest` is the full run; `replay` re-enters at stage 2
 over the retained corpus, with no source contact — the two share
 `runDerivedStages`, and if they ever diverge replay stops proving anything
-about production.
+about production. An adapter error propagates out of `runIngest` rather than
+producing a short report: a partial fetch must never reach stage 5.
 
 ```
   source (live)                       corpus (retained)
@@ -47,28 +48,45 @@ about production.
                                ▼
    stage 3  ┌──────────────────────────────────┐
    resolve  │ EntityResolver.resolve(candidate) │  → animalId | null (new)
-            │                                   │  (planned, phase 7)
+            │  exact (source, externalId) via   │  animal_identities (DERIVED)
+            │  animal_identities  (ADR-0013)    │  fuzzy matcher: item 10
             └──────────────────┬───────────────┘
                                ▼
    stage 4  ┌──────────────────────────────────┐
     write   │ CanonicalWriter.apply(cand, id)   │  animals   (DERIVED)
-            │  resolveClaims per field          │  event_log (SACRED)
-            │  emit animal.seen / .updated      │  idempotent: unchanged
-            │  (.disappeared from absence only) │  observation emits nothing
-            └──────────────────┬───────────────┘  (planned, phases 7–8)
+            │  per field, null claims skipped:  │   + provenance{field:
+            │   resolveClaim(incoming, current) │      {source, fetchedAt}}
+            │  emit animal.seen / .updated      │  event_log (SACRED), same
+            │  nothing when canonical reproduced│  transaction as the row
+            │  (.disappeared: planned, phase 8) │  (ADR-0013)
+            └──────────────────┬───────────────┘
+                               ▼
+   stage 5  ┌──────────────────────────────────┐  runs ONLY when the caller
+  lifecycle │ LifecycleStore.reconcile(source,  │  passed {complete: true}
+            │   seen ids, at)                   │  AND the run saw ≥1 animal;
+            │  this source's identities only:   │  never on replay (ADR-0014)
+            │   seen → last_seen_at = at        │  animal_identities (DERIVED)
+            │     (+ animal.reappeared if it    │   last_seen_at,
+            │        was disappeared)           │   disappeared_at
+            │   absent → disappeared_at = at    │  event_log (SACRED)
+            │     + animal.disappeared          │
+            └──────────────────┬───────────────┘
                                ▼
             IngestRunReport {observed, persisted, deduped, normalized,
-                             events, failures[stage]}  → health gates (phase 9)
+                             conflicted, lifecycleSkipped?, events,
+                             failures[stage]}
+                                            → health gates (planned, phase 9:
+                                              ratio gate passes complete:false)
 ```
 
 A failure at any derived stage is recorded in `failures` with its stage and
 the loop continues — one malformed payload must never truncate the run.
 
-## RescueGroups daily poll — what runs today (ADR-0006, ADR-0009)
+## RescueGroups daily poll — what runs today (ADR-0006, ADR-0009, ADR-0013)
 
-The only live poller. It is **stage 1 only** by construction: `runRawOnlyPoll`
-never touches stages 2–4, so nothing reaches `event_log` until the merge
-exists. The corpus it collects is what those stages replay over later.
+The only live poller. Since ADR-0013 it runs all four stages; the same path
+is available one-shot as `npm run ingest -- poll [--max-pages N]`, and
+`npm run ingest -- replay rescuegroups` re-enters at stage 2 over the corpus.
 
 ```
   worker boot (src/worker/index.ts)
@@ -83,7 +101,7 @@ exists. The corpus it collects is what those stages replay over later.
        │                                          for a weekly-minimum refresh
        │  daily tick
        ▼
-  runRawOnlyPoll(adapter, createPgRawStore(db))
+  runIngest(adapter, createPgStages(db, [rescueGroupsNormalizer]))
        │
        ▼
   createRescueGroupsAdapter({apiKey}).fetch()            RescueGroups v5
@@ -105,14 +123,19 @@ exists. The corpus it collects is what those stages replay over later.
   RawStore.persist ──► raw_payloads   (insert | last_seen touch)
        │
        ▼
-  RawPollReport {observed, persisted, deduped}  → worker log
-       ║
-       ╳  stops here. No normalize, no resolve, no event rows.
-          rescueGroupsNormalizer exists (thin claims: name, species, breed,
-          status, sex, ageGroup, birthDate, isBirthDateExact, org handle —
-          never prose or photos, every field retractable on ToS termination)
-          but is wired only in tests until phases 6–8.
+  rescueGroupsNormalizer   thin claims: name, species, breed, status, sex,
+       │                   ageGroup, birthDate, isBirthDateExact, org handle
+       │                   — never prose or photos; every field retractable
+       ▼                   on ToS termination
+  stage 3 → stage 4 → stage 5   (see the pipeline diagram above)
+       │               animals + animal_identities + event_log
+       │               worker: {complete: true}; CLI: complete only
+       ▼               without --max-pages
+  IngestRunReport → worker log  {event:"ingest.run.completed", …counts}
 ```
+
+Smoke 2026-08-21 (2 pages, 200 animals): first run 200 `animal.seen`;
+re-poll 200 deduped, 0 events; replay 0 events, 0 failures.
 
 Purge path (ADR-0006 as amended): on ToS termination every row with
 `source='rescuegroups'` is set-deletable — the first of the two carve-outs
@@ -172,17 +195,27 @@ hierarchy can be reordered without rewriting history.
        │                                             shelter-api
        │     rank differs?  → lower rank wins          first-party-scrape
        │     same rank?     → later fetchedAt wins     aggregator
-       │     exact tie?     → first argument wins        manual
+       │     same instant?  → later rawId wins           manual
+       │     same row?      → first argument wins
        │                      (call as (incoming, current) so a fresh
-       │                       derivation wins and replay can repair)
+       │                       derivation of one row repairs on replay)
        ▼
-  winning Claim → animals.<field>  + provenance {source, fetchedAt}
+  winning Claim → animals.<field>  + provenance {source, fetchedAt, rawId}
+                  written whenever the winning claim changed — value OR
+                  provenance — so a same-value higher tier takes the field
+
+  mergeClaims (src/core/ingest/merge.ts) — the one kernel both writers call:
+    incoming.value == null   → skipped: never wins, never stamps provenance
+    crossTier(incoming, current) AND values differ
+                             → counted in IngestRunReport.conflicted
+                               (either direction; staleness within a tier
+                                is not a conflict, or replay would count
+                                every superseded row)
 ```
 
-Carry-in pinned 2026-08-18 for phase 7 (`96f1ddf`): a fresher same-tier
-`null` claim currently wins on recency and would erase a real value. The merge
-slice decides the rule and its adversarial pass must cover it; today
-`resolveClaim` compares whatever it is handed.
+The null rule closes the phase-7 carry-in from `96f1ddf`: a fresher same-tier
+`null` no longer erases a real value. `resolveClaim` itself still compares
+whatever it is handed — the skip lives in the writer.
 
 ## Consent grants — three gates, three outputs (ADR-0006 as amended, ADR-0004)
 

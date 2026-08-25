@@ -7,6 +7,7 @@ import {
   pgTable,
   text,
   timestamp,
+  uniqueIndex,
 } from "drizzle-orm/pg-core";
 import type { Source } from "@/core/sources";
 
@@ -72,7 +73,8 @@ export const animals = pgTable(
     name: text("name").notNull(),
     species: text("species").notNull(),
     breed: text("breed"),
-    status: text("status").notNull().default("available"),
+    /** no default — a status nobody asserted is null, and null is "don't show" (ADR-0013) */
+    status: text("status"),
     sex: text("sex"),
     ageGroup: text("age_group"),
     birthDate: timestamp("birth_date", { withTimezone: true }),
@@ -92,6 +94,34 @@ export const animals = pgTable(
       .defaultNow(),
   },
   (t) => [index("animals_status_idx").on(t.status)],
+);
+
+/**
+ * Which source identities a canonical animal owns (ADR-0013). Derived like
+ * `animals`; rebuilt by replay. Never put `source`/`external_id` on `animals`
+ * itself — a row with one source stamp can't be merged across sources later.
+ */
+export const animalIdentities = pgTable(
+  "animal_identities",
+  {
+    id: bigserial("id", { mode: "number" }).primaryKey(),
+    animalId: integer("animal_id")
+      .notNull()
+      .references(() => animals.id, { onDelete: "cascade" }),
+    source: text("source").$type<Source>().notNull(),
+    externalId: text("external_id").notNull(),
+    /** newest complete run that observed it (ADR-0014) */
+    lastSeenAt: timestamp("last_seen_at", { withTimezone: true }).notNull().defaultNow(),
+    /** null while present; set by the run whose feed lacked it — never by a payload (ADR-0014) */
+    disappearedAt: timestamp("disappeared_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    uniqueIndex("animal_identities_source_ext_uq").on(t.source, t.externalId),
+    index("animal_identities_animal_idx").on(t.animalId),
+  ],
 );
 
 /**

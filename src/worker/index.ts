@@ -6,9 +6,10 @@
  */
 import { PgBoss } from "pg-boss";
 import { getDb } from "@/db/client";
-import { createPgRawStore } from "@/core/ingest/pg";
-import { createRescueGroupsAdapter } from "@/core/ingest/rescuegroups";
-import { INGEST_POLL, planIngestPoll, runRawOnlyPoll } from "@/worker/ingest-poll";
+import { createPgStages } from "@/core/ingest/pg";
+import { runIngest } from "@/core/ingest/pipeline";
+import { createRescueGroupsAdapter, rescueGroupsNormalizer } from "@/core/ingest/rescuegroups";
+import { INGEST_POLL, planIngestPoll } from "@/worker/ingest-poll";
 
 const DATABASE_URL = process.env.DATABASE_URL;
 
@@ -21,12 +22,13 @@ async function registerIngestPoll(boss: PgBoss) {
 
   await boss.createQueue(INGEST_POLL);
   await boss.work(INGEST_POLL, async () => {
-    const report = await runRawOnlyPoll(
+    const { events, ...report } = await runIngest(
       createRescueGroupsAdapter({ apiKey: plan.apiKey! }),
-      createPgRawStore(getDb(DATABASE_URL)),
+      createPgStages(getDb(DATABASE_URL), [rescueGroupsNormalizer]),
+      { complete: true },
     );
     console.log(
-      JSON.stringify({ event: "ingest.run.completed", source: "rescuegroups", ...report }),
+      JSON.stringify({ event: "ingest.run.completed", ...report, events: events.length }),
     );
   });
 

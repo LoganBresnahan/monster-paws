@@ -58,10 +58,34 @@ pin dogfood findings and deferred sub-tasks to items as carry-ins.
       item 5's consent outreach. Golden fixtures hand-checked per site at
       onboarding; fixture-eval canary on the daily cron tick + live health
       gates.
-      Former carry-ins are folded into the plan itself — verbatim
-      `description` (phase 5),
-      fixture-simulated two-source merge + `sources.conflicted` question
-      (phase 7), per-field staleness gating (phase 9). Tracker pixel on
+      **Phase 7 shipped out of order 2026-08-21 (ADR-0013)** — re-sequenced
+      ahead of 5–6 because the demo must show real animals before any
+      shelter is contacted, and the RescueGroups corpus was the only claim
+      source available: exact `(source, externalId)` identity in
+      `animal_identities`, per-field `resolveClaim(incoming, current)` with
+      provenance JSONB, null claims never compete, conflicts counted (lower
+      tier disagreeing) never logged, `animal.seen`/`animal.updated` from
+      the writer, the poll now runs all four stages, and `npm run ingest --
+      poll|replay` as the one-shot tool (the phase-6 replay command, landed
+      early). Smoke 2026-08-21: 200 live animals → 200 canonical, re-poll
+      and replay both zero events.
+      **Phase 8 shipped 2026-08-21 (ADR-0014)**: stage 5 `LifecycleStore`
+      — per-source set-diff after a run the caller declares complete;
+      `animal.disappeared` / `animal.reappeared` with `last_seen_at` and
+      `disappeared_at` on `animal_identities`; partial, empty and throwing
+      runs reconcile nothing; replay never does. Adversarial pass 2026-08-21
+      hardened the adapter (page-1 `meta.count`/`pages`, malformed-page and
+      short-batch throws) and stage 5 (array binding at the 65k-parameter
+      ceiling, monotonic run time, one event order). Carry-ins → phase 9:
+      the ratio gate (a complete run that disappears more than N% is an
+      upstream bug, not an adoption wave) and **pagination drift** — no
+      cursor, so records shift between pages and a trickle of false
+      disappear/reappear pairs is expected; needs a reappear-rate metric
+      and a sorted search if the API offers one. **Frontier is now phase 9**
+      (health gates + retrieval) — or item 3, since the demo can read
+      `animals` now; phases 5–6 still wait on item 5's fixtures.
+      Remaining carry-ins live in the plan — verbatim `description`
+      (phase 5), per-field staleness gating (phase 9). Tracker pixel on
       detail pages when listings render.
 - [ ] **3. Animal pages.** ISR public pages (browse + detail) rendering real
       local shelters' animals — this is the demo *and* the v1 supply side.

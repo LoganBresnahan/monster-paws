@@ -55,7 +55,7 @@ describe("ADR-0009 ingest pipeline", () => {
   it("persists raw, normalizes, and emits animal.seen per new animal", async () => {
     const { stages, corpus } = createMemoryStages([normalizerFor("rescuegroups")]);
 
-    const report = await runIngest(adapterOf([obs(REX), obs(LUNA)]), stages);
+    const report = await runIngest(adapterOf([obs(REX), obs(LUNA)]), stages, { complete: true });
 
     expect(report).toMatchObject({ observed: 2, persisted: 2, deduped: 0, normalized: 2 });
     expect(report.failures).toEqual([]);
@@ -67,8 +67,8 @@ describe("ADR-0009 ingest pipeline", () => {
   it("dedups an unchanged payload and emits nothing on the second run", async () => {
     const { stages, corpus } = createMemoryStages([normalizerFor("rescuegroups")]);
 
-    await runIngest(adapterOf([obs(REX)]), stages);
-    const second = await runIngest(adapterOf([obs(REX, "rescuegroups", LATER)]), stages);
+    await runIngest(adapterOf([obs(REX)]), stages, { complete: true });
+    const second = await runIngest(adapterOf([obs(REX, "rescuegroups", LATER)]), stages, { complete: true });
 
     expect(second).toMatchObject({ observed: 1, persisted: 0, deduped: 1 });
     expect(second.events).toEqual([]);
@@ -79,10 +79,11 @@ describe("ADR-0009 ingest pipeline", () => {
   it("writes a new raw row and one animal.updated when the payload changes", async () => {
     const { stages, corpus } = createMemoryStages([normalizerFor("rescuegroups")]);
 
-    await runIngest(adapterOf([obs(REX)]), stages);
+    await runIngest(adapterOf([obs(REX)]), stages, { complete: true });
     const second = await runIngest(
       adapterOf([obs({ ...REX, name: "Rexington" }, "rescuegroups", LATER)]),
       stages,
+      { complete: true },
     );
 
     expect(second.persisted).toBe(1);
@@ -94,7 +95,7 @@ describe("ADR-0009 ingest pipeline", () => {
 
   it("replays stages 2-4 off the corpus with no source contact, idempotently", async () => {
     const { stages, corpus } = createMemoryStages([normalizerFor("rescuegroups")]);
-    await runIngest(adapterOf([obs(REX), obs(LUNA)]), stages);
+    await runIngest(adapterOf([obs(REX), obs(LUNA)]), stages, { complete: true });
     const eventsAfterIngest = corpus.events.length;
 
     const report = await replay("rescuegroups", corpus.stored(), stages);
@@ -110,11 +111,12 @@ describe("ADR-0009 ingest pipeline", () => {
     const broken: Normalizer<RgPayload> = {
       source: "rescuegroups",
       async normalize(o) {
-        return { name: { value: "???", source: o.source, fetchedAt: o.fetchedAt } };
+        const stamp = { source: o.source, fetchedAt: o.fetchedAt };
+        return { name: { value: "???", ...stamp }, species: { value: "dog", ...stamp } };
       },
     };
     const { stages, corpus } = createMemoryStages([broken]);
-    await runIngest(adapterOf([obs(REX)]), stages);
+    await runIngest(adapterOf([obs(REX)]), stages, { complete: true });
 
     stages.normalizers.set("rescuegroups", normalizerFor("rescuegroups"));
     const report = await replay("rescuegroups", corpus.stored(), stages);
@@ -130,10 +132,11 @@ describe("ADR-0009 ingest pipeline", () => {
       normalizerFor("shelterluv"),
     ]);
 
-    await runIngest(adapterOf([obs(REX)]), stages);
+    await runIngest(adapterOf([obs(REX)]), stages, { complete: true });
     const report = await runIngest(
       adapterOf([obs({ ...REX, id: "sl-1" }, "shelterluv")], "shelterluv"),
       stages,
+      { complete: true },
     );
 
     expect(report.failures).toEqual([]);
@@ -146,12 +149,13 @@ describe("ADR-0009 ingest pipeline", () => {
       source: "rescuegroups",
       async normalize(o) {
         if (o.externalId === "rg-1") throw new Error("unparseable payload");
-        return { name: { value: o.payload.name, source: o.source, fetchedAt: o.fetchedAt } };
+        const stamp = { source: o.source, fetchedAt: o.fetchedAt };
+        return { name: { value: o.payload.name, ...stamp }, species: { value: "dog", ...stamp } };
       },
     };
     const { stages } = createMemoryStages([flaky]);
 
-    const report = await runIngest(adapterOf([obs(REX), obs(LUNA)]), stages);
+    const report = await runIngest(adapterOf([obs(REX), obs(LUNA)]), stages, { complete: true });
 
     expect(report).toMatchObject({ observed: 2, persisted: 2, normalized: 1 });
     expect(report.failures).toEqual([
@@ -163,7 +167,7 @@ describe("ADR-0009 ingest pipeline", () => {
   it("fails an unregistered source loudly instead of dropping it silently", async () => {
     const { stages, corpus } = createMemoryStages([normalizerFor("rescuegroups")]);
 
-    const report = await runIngest(adapterOf([obs(REX, "manual")], "manual"), stages);
+    const report = await runIngest(adapterOf([obs(REX, "manual")], "manual"), stages, { complete: true });
 
     expect(report.persisted).toBe(1);
     expect(report.normalized).toBe(0);

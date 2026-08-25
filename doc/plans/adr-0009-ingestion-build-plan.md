@@ -46,12 +46,16 @@ from the run journal. Both re-cuts applied by hand.
    the model-selection mechanism).
 6. **per-source-normalizers** — consented-scrape mapper first; replay
    command.
-7. **entity-resolution-merge** — the lone hard-reasoning slice ⚠ verify.
-   With RG unscheduled, the tier branch stays unexercised by live data even
-   longer — build the merge against golden fixtures simulating two sources;
-   do not wait for RescueGroups to prove it.
-8. **lifecycle-events** ⚠ verify — before health gates so stale-marking
-   uses event rows, never UPDATEs.
+7. **entity-resolution-merge** — ✅ shipped 2026-08-21 out of order
+   (**ADR-0013**), ahead of 5–6: the demo needs canonical animals before
+   shelter outreach, and the RescueGroups corpus was the only claim source.
+   Tier branch proven by fixtures simulating two sources
+   (`tests/ingest-merge.test.ts`, `tests/ingest-pg-merge.test.ts`); the
+   replay command (a phase-6 deliverable) landed with it as
+   `npm run ingest -- replay <source>`.
+8. **lifecycle-events** — ✅ shipped 2026-08-21 (**ADR-0014**): completeness
+   is the caller's explicit word, absence is per source, reappearance is
+   its own kind, an empty run is an outage. Ratio gate carried to phase 9.
 9. **health gates + retrieval** — `ingest-health-gates` (+ fixture-eval
    canary on the daily cron tick), `retrieval-jobs` (parallel).
 
@@ -281,7 +285,7 @@ medium, no verify — *on the critical path*
 - Conflict logic is deliberately NOT here — fenced into phase 7.
 
 ### Phase 7 — entity-resolution-merge (the lone Fable slice) ⚠ verify
-high effort, hard-reasoning, adversarial verify pass required
+high effort, hard-reasoning, adversarial verify pass required — **✅ shipped, ADR-0013 records the four decisions below**
 
 - **What gets built.** Merge of normalized observations across sources
   into `animals`, resolving conflicts **per-field** by trust tier then
@@ -309,7 +313,7 @@ high effort, hard-reasoning, adversarial verify pass required
 - **Scheduling.** The chokepoint — phases 8–9 are blocked behind it.
   Start the moment normalizers land.
 
-### Phase 8 — lifecycle-events ⚠ verify · opus, medium
+### Phase 8 — lifecycle-events ⚠ verify · opus, medium — **✅ shipped, ADR-0014**
 
 - **What gets built.** Per-run set-diff against canonical state, appending
   `animal.seen` / `animal.updated` / `animal.disappeared` to `event_log`;

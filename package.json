@@ -12,6 +12,7 @@
     "e2e": "playwright test",
     "e2e:prod": "PW_BASE_URL=http://localhost:3000 playwright test",
     "worker": "tsx src/worker/index.ts",
+    "ingest": "tsx src/worker/ingest-cli.ts",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:up": "docker compose -f docker-compose.dev.yml up -d"

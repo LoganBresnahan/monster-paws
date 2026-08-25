@@ -131,6 +131,8 @@ commit.
   production server via `PW_BASE_URL`
 - `npm run build` / `npm start` — production build / serve
 - `npm run worker` — the pg-boss worker process (needs `DATABASE_URL`)
+- `npm run ingest -- poll [--max-pages N]` / `npm run ingest -- replay <source>`
+  — one-shot ingest through all four stages, or stages 2–4 over the corpus
 - `npm run db:up` — local Postgres via `docker-compose.dev.yml`
   (pgvector/pg16 image — same extensions as production)
 - `npm run db:generate` / `npm run db:migrate` — Drizzle migrations

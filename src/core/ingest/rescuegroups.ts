@@ -75,6 +75,9 @@ function sidecarFor(animal: JsonApiResource, included: JsonApiResource[]): JsonA
     .sort((a, b) => (a.type === b.type ? a.id.localeCompare(b.id) : a.type.localeCompare(b.type)));
 }
 
+/** Fraction of `meta.count` a complete run may fall short by before it is declared truncated. */
+const COUNT_DRIFT_TOLERANCE = 0.01;
+
 export function createRescueGroupsAdapter(
   config: RescueGroupsConfig,
   fetchImpl: typeof fetch = fetch,
@@ -104,13 +107,27 @@ export function createRescueGroupsAdapter(
     async *fetch() {
       let page = 1;
       let pages = 1;
+      let expected: number | undefined;
+      let total = 0;
 
       do {
         const body = await fetchPage(page);
-        pages = body.meta?.pages ?? 1;
+        // A 200 without `data`/`meta` is an error envelope, not an empty page:
+        // yielding a short batch here would let a "complete" run disappear
+        // every animal on the pages it never fetched (ADR-0014).
+        if (!Array.isArray(body.data) || (page === 1 && typeof body.meta?.pages !== "number")) {
+          throw new Error(`rescuegroups page ${page}: malformed response (no data/meta)`);
+        }
+        // Page count and record count are read from page 1 only — a later
+        // page shrinking them is the same silent truncation.
+        if (page === 1) {
+          pages = body.meta!.pages!;
+          expected = body.meta!.count;
+        }
         const included = body.included ?? [];
 
-        for (const animal of body.data ?? []) {
+        for (const animal of body.data) {
+          total += 1;
           const payload: RescueGroupsAnimal = {
             animal,
             included: sidecarFor(animal, included),
@@ -130,6 +147,15 @@ export function createRescueGroupsAdapter(
         if (config.maxPages !== undefined && page >= config.maxPages) return;
         page += 1;
       } while (page <= pages);
+
+      // Live feeds drift a little between pages (an adoption shifts later
+      // records); a shortfall beyond that is a truncated run and must throw
+      // rather than reconcile (ADR-0014).
+      if (expected !== undefined && total < expected * (1 - COUNT_DRIFT_TOLERANCE)) {
+        throw new Error(
+          `rescuegroups: fetched ${total} of ${expected} records — run is incomplete`,
+        );
+      }
     },
   };
 }

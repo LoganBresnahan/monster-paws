@@ -7,7 +7,8 @@ export interface AnimalFields {
   name: string;
   species: string;
   breed: string | null;
-  status: string;
+  /** null = unknown: never defaulted, and a page must not show an animal whose status nobody asserted (ADR-0013) */
+  status: string | null;
   sex: string | null;
   ageGroup: string | null;
   birthDate: Date | null;
@@ -20,6 +21,20 @@ export interface AnimalFields {
   shelterExternalId: string | null;
   photoKeys: string[];
 }
+
+/** The only fields the merge touches, in the one order both writers iterate (ADR-0013). */
+export const MERGED_FIELDS = [
+  "name",
+  "species",
+  "breed",
+  "status",
+  "sex",
+  "ageGroup",
+  "birthDate",
+  "isBirthDateExact",
+  "shelterExternalId",
+  "photoKeys",
+] as const satisfies readonly (keyof AnimalFields)[];
 
 /**
  * Each field carries its own source + fetchedAt so the merge can resolve them
@@ -38,8 +53,15 @@ export interface AnimalCandidate {
   claims: AnimalClaims;
 }
 
-/** `animal.disappeared` is inferred from absence, never from a payload (ADR-0009). */
-export type IngestEventKind = "animal.seen" | "animal.updated" | "animal.disappeared";
+/**
+ * `animal.disappeared` / `animal.reappeared` are inferred from absence and
+ * return, never from a payload (ADR-0009, ADR-0014).
+ */
+export type IngestEventKind =
+  | "animal.seen"
+  | "animal.updated"
+  | "animal.disappeared"
+  | "animal.reappeared";
 
 export interface IngestEvent {
   kind: IngestEventKind;
@@ -83,7 +105,37 @@ export interface CanonicalWriter {
   apply(
     candidate: AnimalCandidate,
     animalId: number | null,
-  ): Promise<{ animalId: number; events: IngestEvent[] }>;
+  ): Promise<{
+    animalId: number;
+    events: IngestEvent[];
+    /** fields where a lower-tier incoming claim disagreed with canonical — counted, never logged as an event (ADR-0013) */
+    conflicted: (keyof AnimalFields)[];
+  }>;
+}
+
+/**
+ * Stage 5 — per-source presence (ADR-0014). Runs only after a COMPLETE fetch:
+ * called on a partial run it would disappear every animal the run skipped,
+ * permanently, so `runIngest` gates it and replay never calls it.
+ */
+export interface LifecycleStore {
+  reconcile(
+    source: Source,
+    seen: ReadonlySet<string>,
+    at: Date,
+  ): Promise<{ events: IngestEvent[] }>;
+}
+
+/**
+ * One order for stage-5 events in every store (ADR-0014): reappearances
+ * first, then disappearances, each by externalId — so the reference and
+ * production can be compared row for row.
+ */
+export function inLifecycleOrder(events: IngestEvent[]): IngestEvent[] {
+  const rank = (e: IngestEvent) => (e.kind === "animal.reappeared" ? 0 : 1);
+  return [...events].sort(
+    (a, b) => rank(a) - rank(b) || String(a.data.externalId).localeCompare(String(b.data.externalId)),
+  );
 }
 
 export interface IngestStages {
@@ -92,6 +144,7 @@ export interface IngestStages {
   normalizers: Map<Source, Normalizer>;
   resolver: EntityResolver;
   writer: CanonicalWriter;
+  lifecycle: LifecycleStore;
 }
 
 export interface IngestFailure {
@@ -107,8 +160,22 @@ export interface IngestRunReport {
   persisted: number;
   deduped: number;
   normalized: number;
+  /** lower-tier claims that disagreed with the canonical value (ADR-0013) */
+  conflicted: number;
+  /** why stage 5 did not run, when it did not (ADR-0014) */
+  lifecycleSkipped?: string;
   events: IngestEvent[];
   failures: IngestFailure[];
+}
+
+export interface RunOptions {
+  /**
+   * The caller's word that the fetch covered the source's whole feed
+   * (ADR-0014). Never default this to true at a call site that can truncate.
+   */
+  complete: boolean;
+  /** the reconcile clock — stage-5 events are dated by it, never by a payload (ADR-0014) */
+  now?: () => Date;
 }
 
 function emptyReport(source: Source): IngestRunReport {
@@ -118,6 +185,7 @@ function emptyReport(source: Source): IngestRunReport {
     persisted: 0,
     deduped: 0,
     normalized: 0,
+    conflicted: 0,
     events: [],
     failures: [],
   };
@@ -181,8 +249,9 @@ async function runDerivedStages(
     }
 
     try {
-      const { events } = await stages.writer.apply(candidate, animalId);
+      const { events, conflicted } = await stages.writer.apply(candidate, animalId);
       report.events.push(...events);
+      report.conflicted += conflicted.length;
     } catch (error) {
       report.failures.push({
         externalId: obs.externalId,
@@ -195,16 +264,23 @@ async function runDerivedStages(
   return report;
 }
 
-/** Full run: fetch → persist → derived stages. */
+/**
+ * Full run: fetch → persist → derived stages → lifecycle. An adapter error
+ * propagates: a short batch reported as a run is how a partial fetch would
+ * reach stage 5 and disappear everything it skipped (ADR-0014).
+ */
 export async function runIngest(
   adapter: SourceAdapter<unknown>,
   stages: IngestStages,
+  options: RunOptions,
 ): Promise<IngestRunReport> {
   const report = emptyReport(adapter.source);
   const stored: StoredObservation<unknown>[] = [];
+  const seen = new Set<string>();
 
   for await (const obs of adapter.fetch()) {
     report.observed += 1;
+    seen.add(obs.externalId);
     try {
       const result = await stages.rawStore.persist(obs);
       if (result.inserted) report.persisted += 1;
@@ -219,7 +295,21 @@ export async function runIngest(
     }
   }
 
-  return runDerivedStages(stored, stages, report);
+  await runDerivedStages(stored, stages, report);
+
+  if (!options.complete) {
+    report.lifecycleSkipped = "run declared partial by caller";
+  } else if (seen.size === 0) {
+    // An empty feed is an outage until proven otherwise — reconciling it
+    // would disappear every animal the source has (ADR-0014).
+    report.lifecycleSkipped = "run observed nothing";
+  } else {
+    const at = (options.now ?? (() => new Date()))();
+    const { events } = await stages.lifecycle.reconcile(adapter.source, seen, at);
+    report.events.push(...events);
+  }
+
+  return report;
 }
 
 /**
