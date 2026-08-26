@@ -17,8 +17,22 @@
   --paw: #a97c50; /* warm brown — borders, illustrations */
 }
 
+/* Dark values live twice below by necessity — a selector list cannot span a media
+ * query. Keep both blocks identical; /design renders each to make a mismatch visible. */
+:root[data-theme="dark"] {
+  --background: #2b2118; /* cocoa night */
+  --foreground: #f3e9d8;
+  --muted: #c2ab93;
+  --card: #362a1f;
+  --honey: #f2b134;
+  --honey-deep: #ffcf66;
+  --leaf: #7fb35e;
+  --leaf-deep: #96c877;
+  --paw: #c49a6c;
+}
+
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme="light"]) {
     --background: #2b2118; /* cocoa night */
     --foreground: #f3e9d8;
     --muted: #c2ab93;
