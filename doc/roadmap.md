@@ -112,6 +112,22 @@ pin dogfood findings and deferred sub-tasks to items as carry-ins.
       photos, ever. Needs: ADR-0015 for the page shape and how display
       content is carried in claims; the normalizer widening to promote
       photo URLs and description.
+      **ADR-0015 amended 2026-09-03**: browse pages by keyset cursor, not
+      offset; RG's `createdDate`/`updatedDate` are promoted as `listedAt` (a
+      claim, and the only column the longest-listed sort may use) and
+      `sourceUpdatedAt` (per-source, on `animal_identities`); visibility gains
+      a 24-month upkeep bound. Measured on the live feed before deciding:
+      ~10% of it was listed 2+ years ago and 82% of that tail has not been
+      updated in twelve months, so an unguarded longest-first sort opens
+      browse on abandoned listings. The `animal-listing-dates` slice shipped
+      the same day (migration 0006).
+      Carry-in: a null `source_updated_at` hides an animal, so the existing
+      64k corpus stays invisible until a poll or `npm run ingest -- replay
+      rescuegroups` fills the column — run that before judging a browse page
+      empty.
+      Carry-in: ~4,100 animals are now collected but never rendered. A
+      supply-side number to watch, not a bug; if it grows, look at the bound
+      and at the upstream feed.
 
 ## Next
 

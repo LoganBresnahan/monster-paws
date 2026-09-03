@@ -43,6 +43,13 @@
       "when": 1787687238622,
       "tag": "0005_nifty_zuras",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1788468642478,
+      "tag": "0006_melodic_crystal",
+      "breakpoints": true
     }
   ]
 }

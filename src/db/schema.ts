@@ -83,6 +83,13 @@ export const animals = pgTable(
     /** the registry slug (`src/core/shelters.ts`) — natural key for the future `shelters` table */
     shelterExternalId: text("shelter_external_id"),
     /**
+     * When the source listed the animal — a claim like any other, and the ONLY
+     * column browse's "longest-listed first" may sort by. Never substitute
+     * `created_at`: that is when our INSERT ran, and on a backfill it is one
+     * timestamp for the whole corpus (ADR-0015 as amended).
+     */
+    listedAt: timestamp("listed_at", { withTimezone: true }),
+    /**
      * Where the animal is listed — facts with provenance like any other claim
      * (ADR-0015). Never populate these from `animal_display`: that layer is
      * licensed expression, and a license is not a fact about the animal.
@@ -104,11 +111,15 @@ export const animals = pgTable(
   },
   (t) => [
     index("animals_status_idx").on(t.status),
-    // Browse's filters and its longest-listed-first sort (ADR-0015). The sort
-    // key is `created_at` — first canonical write, not first listing — so a
-    // full canonical rebuild would reshuffle the order; that is the browse
-    // page's column to revisit, not this index's.
-    index("animals_status_created_idx").on(t.status, t.createdAt),
+    // Browse's filters and its longest-listed-first sort (ADR-0015 as
+    // amended). All three columns, in this order: the keyset cursor compares
+    // `(listed_at, id)` and the sort orders by it, so an index that stops
+    // short of `id` leaves the tiebreaker to a re-sort. `listed_at` is null
+    // for any source that does not publish a listing date — those rows sort
+    // last and are not reachable by cursor. Measured 2026-09-03 on a 64k
+    // synthetic corpus: browse page 1 is 0.98 ms and a deep filtered keyset
+    // page 0.61 ms, both an ordered index scan with no sort node.
+    index("animals_status_listed_idx").on(t.status, t.listedAt, t.id),
     index("animals_species_idx").on(t.species),
     index("animals_state_idx").on(t.state),
     index("animals_shelter_external_idx").on(t.shelterExternalId),
@@ -133,6 +144,14 @@ export const animalIdentities = pgTable(
     lastSeenAt: timestamp("last_seen_at", { withTimezone: true }).notNull().defaultNow(),
     /** null while present; set by the run whose feed lacked it — never by a payload (ADR-0014) */
     disappearedAt: timestamp("disappeared_at", { withTimezone: true }),
+    /**
+     * When the source last touched its own record — upkeep, not a fact about
+     * the animal, which is why it lives here per-source and never merges into
+     * `animals` (ADR-0015 as amended). `last_seen_at` says we saw the record;
+     * this says someone maintained it, and only the second one distinguishes a
+     * dog waiting ten years from a listing abandoned eight years ago.
+     */
+    sourceUpdatedAt: timestamp("source_updated_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
@@ -142,7 +161,18 @@ export const animalIdentities = pgTable(
     // `animal_id` leads because `visibleAnimals` correlates per animal and
     // only then tests presence and freshness — the column order ADR-0015
     // Consequences names indexes the wrong direction for that subquery.
-    index("animal_identities_visibility_idx").on(t.animalId, t.disappearedAt, t.lastSeenAt),
+    // Every column `visibleAnimals` tests, so the correlated EXISTS stays an
+    // index-only scan. Measured 2026-09-03 on a 64k synthetic corpus
+    // (throwaway db, dropped after): 0.20 ms warm against 0.24 ms for the
+    // three-column version — indistinguishable at this size. The fourth column
+    // is here for the probe shape, not for that number; drop it and each
+    // candidate row costs a heap fetch, which grows with the table.
+    index("animal_identities_visibility_idx").on(
+      t.animalId,
+      t.disappearedAt,
+      t.lastSeenAt,
+      t.sourceUpdatedAt,
+    ),
   ],
 );
 

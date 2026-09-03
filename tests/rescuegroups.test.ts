@@ -179,15 +179,19 @@ describe("rescuegroups adapter — completeness is verified, never assumed (ADR-
 });
 
 describe("rescuegroups normalizer — thin by design (ADR-0006 decision 4)", () => {
-  async function claimsFor(index: number) {
+  async function observationFor(index: number) {
     const observations = await collect(
       createRescueGroupsAdapter({ apiKey: "k" }, fixtureFetch().fetchImpl),
     );
-    const { claims } = await rescueGroupsNormalizer.normalize({
-      ...observations[index],
-      rawId: index + 1,
-    });
-    return claims;
+    return { ...observations[index], rawId: index + 1 };
+  }
+
+  async function normalizeFixture(index: number) {
+    return rescueGroupsNormalizer.normalize(await observationFor(index));
+  }
+
+  async function claimsFor(index: number) {
+    return (await normalizeFixture(index)).claims;
   }
 
   it("maps the hand-checked fields of animal 10013509 (Stowaway)", async () => {
@@ -223,6 +227,7 @@ describe("rescuegroups normalizer — thin by design (ADR-0006 decision 4)", () 
       "breed",
       "city",
       "isBirthDateExact",
+      "listedAt",
       "name",
       "orgName",
       "postalCode",
@@ -234,6 +239,33 @@ describe("rescuegroups normalizer — thin by design (ADR-0006 decision 4)", () 
     ]);
     expect(JSON.stringify(claims)).not.toContain("rescuer could no longer keep her");
     expect(JSON.stringify(claims)).not.toContain("cdn.rescuegroups.org");
+  });
+
+  // The two dates the browse sort and the upkeep bound rest on. They are read
+  // off the same payload but land in different places on purpose: one is a
+  // fact that merges, the other is the source's own housekeeping.
+  it("promotes createdDate as the listedAt claim, and updatedDate as upkeep that never merges", async () => {
+    const normalized = await normalizeFixture(0);
+
+    expect(normalized.claims.listedAt?.value).toEqual(new Date("2016-05-17T21:17:53Z"));
+    expect(normalized.sourceUpdatedAt).toEqual(new Date("2018-04-22T17:49:32Z"));
+    // Upkeep is not a fact about the animal: routed through `claims` it would
+    // compete in `resolveClaim` and take provenance as if a shelter's edit
+    // history were the animal's (ADR-0015 as amended).
+    expect(Object.keys(normalized.claims)).not.toContain("sourceUpdatedAt");
+  });
+
+  it("asserts neither date when the payload's is unparseable, rather than an Invalid Date", async () => {
+    const obs = await observationFor(0);
+    obs.payload.animal.attributes.createdDate = "not a date";
+    obs.payload.animal.attributes.updatedDate = "";
+    const normalized = await rescueGroupsNormalizer.normalize(obs);
+
+    // `new Date("not a date")` is NaN, and every NaN comparison is false — an
+    // unparseable stamp stored raw would slip PAST the upkeep window instead of
+    // failing it, which is the bug the `isActive` verify pass found.
+    expect(normalized.claims.listedAt).toBeUndefined();
+    expect(normalized.sourceUpdatedAt).toBeNull();
   });
 
   it("promotes the org address as facts, so browse can filter by state (ADR-0015)", async () => {

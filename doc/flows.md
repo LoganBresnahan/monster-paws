@@ -64,6 +64,9 @@ producing a short report: a partial fetch must never reach stage 5.
             │  display? → upsert (animal_id,    │  (ADR-0013)
             │    source): no event, no          │  animal_display (DERIVED,
             │    updated_at, never merged       │   purgeable — ADR-0015)
+            │  sourceUpdatedAt? → this source's │  animal_identities (DERIVED)
+            │    identity only: no event, and   │   source_updated_at
+            │    never a claim (ADR-0015 am.)   │
             └──────────────────┬───────────────┘
                                ▼
    stage 5  ┌──────────────────────────────────┐  runs ONLY when the caller
@@ -267,10 +270,12 @@ Components; nothing here touches `raw_payloads`.
   request /animals/[id]                (planned, item 3; ISR revalidate 1h)
        │
        ▼
-  visibleAnimals(db).where(id)         ONE predicate, every page:
+  visibleAnimals(db).where(id)         ONE predicate, every page. All three
+       │                               conditions on the SAME identity row:
        │                               status = 'available'
        │                               AND an identity with disappeared_at IS NULL
        │                               AND its last_seen_at > now() - 8 days
+       │                               AND its source_updated_at > now() - 24 mo
        ├─ none ──► 404                 (never a stale card)
        ▼
   animals row  (facts + provenance)    name, species, breed, sex, ageGroup,
@@ -289,10 +294,15 @@ Components; nothing here touches `raw_payloads`.
     description verbatim, as a quotation
     tracker     <img src=tracker_url>  on every RG detail page (API terms)
     footer      "last updated <last_seen_at>" · listing org, linked by name
+                "listed <listed_at>" — the source's date, never created_at
                 "Not affiliated — claim or remove your listings"
                 unverified: "your donation goes to <org>"; no update promise
 ```
 
 Browse (`/animals`) applies the same `visibleAnimals` predicate, filters by
-species and state, and sorts longest-listed first (first `animal.seen`
-oldest) — never by anything resembling desirability (bright line 1).
+species and state, and sorts longest-listed first by `animals.listed_at` — the
+source's own listing date, never `created_at`, which dates our INSERT
+(ADR-0015 as amended) — never by anything resembling desirability (bright
+line 1). It pages by keyset cursor, `(listed_at, id) > (cursor)`: an offset
+window shifts as animals are adopted out of it and silently skips whoever
+crosses a page boundary.

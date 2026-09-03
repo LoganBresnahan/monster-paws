@@ -172,6 +172,19 @@ function stringOr(value: unknown, fallback: string | null = null): string | null
 }
 
 /**
+ * An unparseable date asserts nothing rather than `Invalid Date` — never
+ * return the raw `new Date(s)`: every comparison against NaN is false, so a
+ * malformed stamp would slip past a window check instead of failing it, which
+ * is the bug the `isActive` verify pass found in `shelters.ts`.
+ */
+function dateOr(value: unknown): Date | null {
+  const text = stringOr(value);
+  if (!text) return null;
+  const parsed = new Date(text);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
+/**
  * Their vocabulary, ours. An unmapped status asserts nothing rather than
  * guessing: the raw row keeps the truth, and a wrong status is worse than a
  * missing one — it decides whether a donor sees an animal at all.
@@ -248,12 +261,18 @@ export const rescueGroupsNormalizer: Normalizer<RescueGroupsAnimal> = {
     // The exactness flag is only meaningful alongside a date — asserted
     // together or not at all, so a later merge can never pair one source's
     // date with another's confidence about it.
-    const birthDate = stringOr(attributes.birthDate);
-    const parsed = birthDate ? new Date(birthDate) : null;
-    if (parsed && !Number.isNaN(parsed.getTime())) {
-      claims.birthDate = { value: parsed, ...stamp };
+    const birthDate = dateOr(attributes.birthDate);
+    if (birthDate) {
+      claims.birthDate = { value: birthDate, ...stamp };
       claims.isBirthDateExact = { value: attributes.isBirthDateExact === true, ...stamp };
     }
+
+    // The listing's creation in RescueGroups, hand-checked against the live
+    // feed 2026-09-03 (600 records over 60 random pages): a real per-animal
+    // date, not an onboarding stamp — only one same-timestamp org cluster in
+    // the sample was older than two years, the rest being same-day intakes.
+    const listedAt = dateOr(attributes.createdDate);
+    if (listedAt) claims.listedAt = { value: listedAt, ...stamp };
 
     const statusName = stringOr(attributesOf(obs.payload, "statuses")?.name);
     const status = statusName ? STATUS_BY_NAME[statusName] : undefined;
@@ -294,7 +313,11 @@ export const rescueGroupsNormalizer: Normalizer<RescueGroupsAnimal> = {
       fetchedAt: obs.fetchedAt,
     };
 
-    return { claims, display };
+    // Upkeep, deliberately outside `claims` — it says the org still tends this
+    // record, which is not a fact about the animal and must never compete in
+    // `resolveClaim` (ADR-0015 as amended). `null` when RG omits it, which
+    // hides the animal: unknown upkeep is not good upkeep.
+    return { claims, display, sourceUpdatedAt: dateOr(attributes.updatedDate) };
   },
 };
 

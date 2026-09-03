@@ -49,6 +49,8 @@ export interface MemoryIdentity {
   externalId: string;
   lastSeenAt: Date;
   disappearedAt: Date | null;
+  /** the source's own upkeep stamp, never merged into the animal (ADR-0015 as amended) */
+  sourceUpdatedAt: Date | null;
 }
 
 export interface MemoryCorpus {
@@ -149,7 +151,13 @@ export function createMemoryStages(normalizers: Normalizer[]): {
           externalId: candidate.externalId,
           lastSeenAt: raw?.lastSeen ?? merged.occurredAt ?? new Date(0),
           disappearedAt: null,
+          sourceUpdatedAt: candidate.sourceUpdatedAt ?? null,
         });
+      } else if (candidate.sourceUpdatedAt !== undefined) {
+        // Upkeep, not a fact: written outside the merge and never an event of
+        // its own, on THIS source's identity only (ADR-0015 as amended).
+        const identity = identities.get(key(candidate.source, candidate.externalId));
+        if (identity) identity.sourceUpdatedAt = candidate.sourceUpdatedAt;
       }
 
       // Expression, not facts: written outside the merge, and NEVER an event

@@ -19,6 +19,12 @@ export interface AnimalFields {
    */
   isBirthDateExact: boolean | null;
   shelterExternalId: string | null;
+  /**
+   * When the SOURCE first listed the animal — never when we first wrote the
+   * row, which is `animals.created_at` and is a fact about our INSERT
+   * (ADR-0015 as amended). Browse's default sort reads this and nothing else.
+   */
+  listedAt: Date | null;
   /** where it is listed — facts, so browse can filter by state and a page can say where (ADR-0015) */
   orgName: string | null;
   city: string | null;
@@ -38,6 +44,7 @@ export const MERGED_FIELDS = [
   "birthDate",
   "isBirthDateExact",
   "shelterExternalId",
+  "listedAt",
   "orgName",
   "city",
   "state",
@@ -79,6 +86,15 @@ export interface AnimalCandidate {
   claims: AnimalClaims;
   /** absent when the source licenses us nothing to show — the page then has only facts */
   display?: DisplayContent;
+  /**
+   * When this source last touched ITS record. Never a claim and never merged:
+   * it describes a source's upkeep, not the animal, so a second source's
+   * diligence must never resolve away a first source's neglect. Lands on
+   * `animal_identities` beside `last_seen_at`, which is the same shape — ours
+   * says we saw the record, this says someone maintained it (ADR-0015 as
+   * amended).
+   */
+  sourceUpdatedAt?: Date | null;
 }
 
 /**
@@ -123,6 +139,7 @@ export interface Normalizer<P = unknown> {
 export interface NormalizedAnimal {
   claims: AnimalClaims;
   display?: DisplayContent;
+  sourceUpdatedAt?: Date | null;
 }
 
 /** Stage 3 — match a candidate to an existing canonical animal, or `null` for new. */
@@ -269,6 +286,7 @@ async function runDerivedStages(
       rawId: obs.rawId,
       claims: normalized.claims,
       display: normalized.display,
+      sourceUpdatedAt: normalized.sourceUpdatedAt,
     };
 
     let animalId: number | null;

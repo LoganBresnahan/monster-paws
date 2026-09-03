@@ -41,6 +41,8 @@ interface Payload {
   state?: string;
   orgName?: string;
   postalCode?: string;
+  listedAt?: string;
+  sourceUpdatedAt?: string | null;
   description?: string;
   photoUrls?: string[];
   tier?: Source;
@@ -88,9 +90,19 @@ const normalizer: Normalizer<Payload> = {
     if (o.payload.postalCode !== undefined) {
       claims.postalCode = { value: o.payload.postalCode, ...stamp };
     }
-    if (o.payload.description === undefined) return { claims };
+    if (o.payload.listedAt !== undefined) {
+      claims.listedAt = { value: new Date(o.payload.listedAt), ...stamp };
+    }
+    const sourceUpdatedAt =
+      o.payload.sourceUpdatedAt === undefined
+        ? undefined
+        : o.payload.sourceUpdatedAt === null
+          ? null
+          : new Date(o.payload.sourceUpdatedAt);
+    if (o.payload.description === undefined) return { claims, sourceUpdatedAt };
     return {
       claims,
+      sourceUpdatedAt,
       display: {
         description: o.payload.description,
         photoUrls: o.payload.photoUrls ?? [],
@@ -102,6 +114,9 @@ const normalizer: Normalizer<Payload> = {
   },
 };
 
+/** The same mapping under a second source, so a per-source write can be caught ignoring the source. */
+const shelterNormalizer: Normalizer<Payload> = { ...normalizer, source: SHELTER };
+
 type DisplaySnapshot = Record<
   string,
   { description: string | null; photoUrls: string[]; listingOrg: string | null; trackerUrl: string | null; fetchedAt: string }
@@ -110,6 +125,8 @@ type DisplaySnapshot = Record<
 type Snapshot = {
   animals: Record<string, Record<string, { value: unknown; source: string; fetchedAt: string; rawId?: number }>>;
   display: DisplaySnapshot;
+  /** per-(animal, source) upkeep — in the snapshot because it decides visibility (ADR-0015 as amended) */
+  upkeep: Record<string, string | null>;
   events: { kind: string; subjectId: string; changed: unknown; occurredAt: string; source: string }[];
 };
 
@@ -142,7 +159,12 @@ function memorySnapshot(corpus: MemoryCorpus): Snapshot {
       fetchedAt: row.fetchedAt.toISOString(),
     };
   }
-  return { animals: out, display: shown, events: eventsOf(corpus.events) };
+  const upkeep: Snapshot["upkeep"] = {};
+  for (const identity of corpus.identities.values()) {
+    upkeep[`${identity.animalId}:${identity.source}`] =
+      identity.sourceUpdatedAt?.toISOString() ?? null;
+  }
+  return { animals: out, display: shown, upkeep, events: eventsOf(corpus.events) };
 }
 
 async function pgSnapshot(db: Db): Promise<Snapshot> {
@@ -171,7 +193,11 @@ async function pgSnapshot(db: Db): Promise<Snapshot> {
     occurredAt: e.occurredAt.toISOString(),
     source: e.source as string,
   }));
-  return { animals: out, display: shown, events };
+  const upkeep: Snapshot["upkeep"] = {};
+  for (const row of await db.select().from(animalIdentities).orderBy(animalIdentities.id)) {
+    upkeep[`${row.animalId}:${row.source}`] = row.sourceUpdatedAt?.toISOString() ?? null;
+  }
+  return { animals: out, display: shown, upkeep, events };
 }
 
 describe.skipIf(!DATABASE_URL)("ADR-0013 writer parity — memory is the reference, Postgres must agree", () => {
@@ -187,8 +213,8 @@ describe.skipIf(!DATABASE_URL)("ADR-0013 writer parity — memory is the referen
     await db.execute(
       sql`truncate table ${rawPayloads}, ${animals}, ${animalIdentities}, ${animalDisplay}, ${eventLog} restart identity`,
     );
-    pg = createPgStages(db, [normalizer]);
-    mem = createMemoryStages([normalizer]);
+    pg = createPgStages(db, [normalizer, shelterNormalizer]);
+    mem = createMemoryStages([normalizer, shelterNormalizer]);
   });
 
   afterAll(async () => {
@@ -288,6 +314,59 @@ describe.skipIf(!DATABASE_URL)("ADR-0013 writer parity — memory is the referen
     const p = await replay(AGG, await loadStoredObservations(db, AGG), pg);
     expect([m.events, p.events]).toEqual([[], []]);
     expect(await expectParity()).toEqual(snap);
+  });
+
+  it("merges listedAt by tier like any other fact, and fires `changed` once per real change", async () => {
+    const reports = await both(
+      adapterOf([obs({ ...REX, listedAt: "2019-04-01T00:00:00Z" }, T0)]),
+      // Same value, re-polled: the animal is not newly listed every day.
+      adapterOf([obs({ ...REX, listedAt: "2019-04-01T00:00:00Z" }, T1)]),
+      // The shelter's own record disagrees, and outranks the aggregator.
+      adapterOf([obs({ ...REX, listedAt: "2018-11-20T00:00:00Z", tier: SHELTER }, T2)]),
+    );
+
+    const snap = await expectParity();
+    expect(snap.animals[1].listedAt.value).toEqual(new Date("2018-11-20T00:00:00Z"));
+    expect(snap.animals[1].listedAt.source).toBe(SHELTER);
+    // Once for the first sighting, once for the tier correction — never for the
+    // unchanged re-poll. A `changed` per poll is a permanent event_log row per
+    // animal per day, and the corpus has 64k of them (ADR-0003).
+    expect(reports.map(([m]) => m.events.length)).toEqual([1, 0, 1]);
+    expect(snap.events.filter((e) => e.kind === "animal.updated")).toHaveLength(1);
+  });
+
+  it("stores upkeep per source, without an event and without competing as a claim", async () => {
+    const reports = await both(
+      adapterOf([obs({ ...REX, sourceUpdatedAt: "2026-07-01T00:00:00Z" }, T0)]),
+      adapterOf([obs({ ...REX, sourceUpdatedAt: "2026-08-02T00:00:00Z" }, T1)]),
+    );
+
+    const snap = await expectParity();
+    expect(snap.upkeep["1:rescuegroups"]).toBe("2026-08-02T00:00:00.000Z");
+    // Upkeep moving is the source editing its own record, not the animal
+    // changing: no `animal.updated`, and nothing in `provenance` (ADR-0015).
+    expect(reports[1][0].events).toEqual([]);
+    expect(snap.animals[1].sourceUpdatedAt).toBeUndefined();
+  });
+
+  it("scopes an upkeep write to its own source, not to every identity sharing an externalId", async () => {
+    // Two sources publishing the SAME externalId. Until the cross-source merge
+    // (item 10) that is two animals, which is what makes this a live trap: an
+    // upkeep write that matched on externalId alone would refresh the
+    // aggregator's abandoned record from the shelter's diligent one, and the
+    // abandoned listing would stay visible (ADR-0015 as amended).
+    await both(
+      adapterOf([obs({ ...REX, sourceUpdatedAt: "2019-01-01T00:00:00Z" }, T0)]),
+      adapterOf([obs({ ...REX, sourceUpdatedAt: "2020-01-01T00:00:00Z" }, T1, SHELTER)], SHELTER),
+      // The shelter's SECOND poll: an existing identity, so this is the update
+      // path rather than the insert. Without this step the unscoped write is
+      // never reached and the test passes while the trap is wide open.
+      adapterOf([obs({ ...REX, sourceUpdatedAt: "2026-08-02T00:00:00Z" }, T2, SHELTER)], SHELTER),
+    );
+
+    const snap = await expectParity();
+    expect(snap.upkeep["1:rescuegroups"]).toBe("2019-01-01T00:00:00.000Z");
+    expect(snap.upkeep["2:shelterluv"]).toBe("2026-08-02T00:00:00.000Z");
   });
 
   it("upserts one display row per source, and clears what the source stopped saying (ADR-0015)", async () => {
@@ -396,7 +475,7 @@ describe.skipIf(!DATABASE_URL)("ADR-0013 writer parity — memory is the referen
 
     expect(reports.map((r) => r.failures.map((f) => f.stage))).toEqual([["write"], ["write"]]);
     const snap = await expectParity();
-    expect(snap).toEqual({ animals: {}, display: {}, events: [] });
+    expect(snap).toEqual({ animals: {}, display: {}, upkeep: {}, events: [] });
   });
 
   it("a deduped re-poll keeps provenance on the raw row's fetchedAt, not the poll's", async () => {

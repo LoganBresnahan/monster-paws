@@ -1,8 +1,10 @@
 import { sql } from "drizzle-orm";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import {
+  UPKEEP_WINDOW_MONTHS,
   VISIBILITY_WINDOW_DAYS,
   stalenessCutoff,
+  upkeepCutoff,
   visibleAnimalById,
   visibleAnimals,
 } from "@/core/animals";
@@ -48,10 +50,19 @@ describe.skipIf(!DATABASE_URL)("ADR-0015 visibility — one predicate, used ever
     await closeDb();
   });
 
-  /** One animal with the identities described; returns its id. */
+  /**
+   * One animal with the identities described; returns its id. `sourceUpdatedAt`
+   * defaults to freshly-maintained so that a case about presence or staleness
+   * is not silently also a case about upkeep — the upkeep tests pass it.
+   */
   async function seed(
     status: string | null,
-    identities: { source: Source; lastSeenAt: Date; disappearedAt?: Date }[],
+    identities: {
+      source: Source;
+      lastSeenAt: Date;
+      disappearedAt?: Date;
+      sourceUpdatedAt?: Date | null;
+    }[],
   ): Promise<number> {
     const [row] = await db
       .insert(animals)
@@ -64,6 +75,8 @@ describe.skipIf(!DATABASE_URL)("ADR-0015 visibility — one predicate, used ever
         externalId: `${row.id}-${i}`,
         lastSeenAt: identity.lastSeenAt,
         disappearedAt: identity.disappearedAt ?? null,
+        sourceUpdatedAt:
+          identity.sourceUpdatedAt === undefined ? NOW : identity.sourceUpdatedAt,
       });
     }
     return row.id;
@@ -127,6 +140,58 @@ describe.skipIf(!DATABASE_URL)("ADR-0015 visibility — one predicate, used ever
       { source: SHELTER, lastSeenAt: daysBefore(30), disappearedAt: daysBefore(20) },
     ]);
     expect(await visibleIds()).toEqual([id]);
+  });
+
+  // Literal dates, never `UPKEEP_WINDOW_MONTHS ± 1`: a fixture derived from the
+  // constant slides with it, and a one-character edit widening the bound to ten
+  // years would keep this green. Twenty-four months is what the measurement
+  // bought (ADR-0015 as amended) and this is the only thing holding it.
+  it("hides an animal its own source has not touched in twenty-four months", async () => {
+    const kept = await seed("available", [
+      { source: AGG, lastSeenAt: NOW, sourceUpdatedAt: new Date("2024-03-16T12:00:00Z") },
+    ]);
+    await seed("available", [
+      { source: AGG, lastSeenAt: NOW, sourceUpdatedAt: new Date("2024-03-15T12:00:00Z") },
+    ]);
+    await seed("available", [
+      { source: AGG, lastSeenAt: NOW, sourceUpdatedAt: new Date("2024-03-14T12:00:00Z") },
+    ]);
+
+    expect(await visibleIds()).toEqual([kept]);
+    expect(UPKEEP_WINDOW_MONTHS).toBe(24);
+    expect(upkeepCutoff(NOW)).toEqual(new Date("2024-03-15T12:00:00Z"));
+  });
+
+  // The abandoned listing this bound exists for: RescueGroups still serves it,
+  // so we still see it daily, but nobody at the org has edited the record in
+  // eight years. Fresh by `last_seen_at`, dead by every other measure.
+  it("hides a listing we see daily that its shelter abandoned years ago", async () => {
+    await seed("available", [
+      { source: AGG, lastSeenAt: daysBefore(0), sourceUpdatedAt: new Date("2018-04-22T00:00:00Z") },
+    ]);
+    expect(await visibleIds()).toEqual([]);
+  });
+
+  it("hides an animal whose source publishes no upkeep at all — unknown is not maintained", async () => {
+    await seed("available", [{ source: AGG, lastSeenAt: NOW, sourceUpdatedAt: null }]);
+    expect(await visibleIds()).toEqual([]);
+  });
+
+  it("requires upkeep on the SAME identity as presence and freshness", async () => {
+    // The aggregator is live and fresh but its record is abandoned; the shelter
+    // API maintains its record but has dropped the animal. Neither identity
+    // satisfies all three, and only a per-row EXISTS sees that.
+    await seed("available", [
+      { source: AGG, lastSeenAt: daysBefore(0), sourceUpdatedAt: new Date("2019-01-01T00:00:00Z") },
+      {
+        source: SHELTER,
+        lastSeenAt: daysBefore(0),
+        disappearedAt: daysBefore(0),
+        sourceUpdatedAt: NOW,
+      },
+    ]);
+
+    expect(await visibleIds()).toEqual([]);
   });
 
   it("gives detail the same answer as browse — a stale id is no row, never a stale card", async () => {

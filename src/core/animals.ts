@@ -17,10 +17,25 @@ export const VISIBLE_STATUS = "available";
  */
 export const VISIBILITY_WINDOW_DAYS = 8;
 
+/**
+ * How long a source may leave its own record untouched before we stop
+ * rendering it (ADR-0015 as amended). Measured, not chosen: ~10% of the
+ * RescueGroups feed was listed 2+ years ago and 82% of that tail had not been
+ * updated in twelve months, so the longest-listed sort points straight at
+ * abandoned listings. Widening this puts them back at the top of browse.
+ */
+export const UPKEEP_WINDOW_MONTHS = 24;
+
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 export function stalenessCutoff(asOf: Date): Date {
   return new Date(asOf.getTime() - VISIBILITY_WINDOW_DAYS * DAY_MS);
+}
+
+export function upkeepCutoff(asOf: Date): Date {
+  const cutoff = new Date(asOf);
+  cutoff.setUTCMonth(cutoff.getUTCMonth() - UPKEEP_WINDOW_MONTHS);
+  return cutoff;
 }
 
 /**
@@ -33,16 +48,25 @@ export function stalenessCutoff(asOf: Date): Date {
  */
 export function visibleAnimals(asOf: Date = new Date()): SQL {
   const cutoff = stalenessCutoff(asOf);
+  const upkeep = upkeepCutoff(asOf);
   return and(
     eq(animals.status, VISIBLE_STATUS),
-    // Both conditions on ONE identity row: an animal present under a
-    // disappeared source and stale under a live one is not visible, and
-    // splitting these across rows would show it (ADR-0014).
+    // All THREE conditions on ONE identity row: an animal present under a
+    // disappeared source, stale under a live one, and maintained under a third
+    // is not visible, and splitting these across rows would show it (ADR-0014,
+    // ADR-0015 as amended).
+    //
+    // A null `source_updated_at` fails the comparison and hides the animal.
+    // That is the intended default-deny: a source that does not tell us
+    // whether anyone still maintains a record has not earned a rendered page,
+    // and a source that publishes upkeep must be mapped in its normalizer
+    // before its animals can appear.
     sql`exists (
       select 1 from ${animalIdentities}
       where ${animalIdentities.animalId} = ${animals.id}
         and ${animalIdentities.disappearedAt} is null
         and ${animalIdentities.lastSeenAt} > ${cutoff}
+        and ${animalIdentities.sourceUpdatedAt} > ${upkeep}
     )`,
   )!;
 }

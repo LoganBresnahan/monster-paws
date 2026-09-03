@@ -19,7 +19,7 @@ adversarial verify pass (⚠). Check items off as they ship.
    - [x] `claim-or-optout-contact-route` — low, mechanical
 
 2. **ingest wiring + read-side helpers** — shipped 2026-08-25 (migration 0005)
-   - [ ] `animal-listing-dates` — medium, moderate — **added 2026-09-03**
+   - [x] `animal-listing-dates` — medium, moderate — **added 2026-09-03**
      (ADR-0015 amendment decisions 2–3), and it reopens phase 2 ahead of the
      pages: the browse sort column does not exist yet. Promote RG's
      `createdDate` → `listedAt` (a merged claim on `animals`) and
@@ -34,6 +34,22 @@ adversarial verify pass (⚠). Check items off as they ship.
      shape. Verification is the existing writer-parity harness plus a
      visibility test per boundary; no adversarial pass, since a wrong version
      fails loudly.
+     - shipped 2026-09-03 (migration 0006). The EXPLAIN ran on a 64k synthetic
+       corpus (throwaway db, dropped after): browse page 1 is 0.98 ms and a
+       deep filtered keyset page 0.61 ms, both an ordered index scan with no
+       sort node, and the four-column identity index measures the same as the
+       three-column one at this size — it is kept for the index-only probe,
+       which is what grows with the table, and the numbers are in
+       `src/db/schema.ts`.
+     - decided here, not by the ADR: a null `source_updated_at` HIDES the
+       animal. Default-deny matches the null-status rule, but it means the
+       existing 64k corpus is invisible until a poll or
+       `npm run ingest -- replay rescuegroups` repopulates the column — do
+       that before judging a browse page as empty.
+     - carry-in → phase 3: the upkeep gate rejects ~5.8 rows per visible one at
+       the HEAD of the sort, where the stale tail lives (measured on the
+       synthetic corpus). Sub-millisecond at 64k, but it is the one number that
+       degrades if the tail grows; re-EXPLAIN if browse slows.
    - [x] `stage4-display-upsert` — medium, moderate ⚠ verify
    - [x] `rescuegroups-display-promotion` — medium, moderate
    - [x] `licensed-display-picker` — medium, moderate ⚠ verify

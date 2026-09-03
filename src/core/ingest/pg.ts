@@ -204,6 +204,7 @@ export function createPgCanonicalWriter(db: Db): CanonicalWriter {
             source: candidate.source,
             externalId: candidate.externalId,
             lastSeenAt: raw?.lastSeen ?? merged.occurredAt ?? new Date(0),
+            sourceUpdatedAt: candidate.sourceUpdatedAt ?? null,
           });
         } else {
           id = animalId;
@@ -215,6 +216,22 @@ export function createPgCanonicalWriter(db: Db): CanonicalWriter {
               .update(animals)
               .set({ ...(values as Partial<typeof animals.$inferInsert>), provenance, updatedAt: new Date() })
               .where(eq(animals.id, id));
+          }
+          // Upkeep, not a fact: an UPDATE on a derived table like the
+          // `last_seen_at` touch beside it, outside `provenance`, and never its
+          // own event — a source editing its record is not an `animal.updated`
+          // (ADR-0003, ADR-0015 as amended). Scoped to THIS source's identity:
+          // one source's diligence must never refresh another's neglect.
+          if (candidate.sourceUpdatedAt !== undefined) {
+            await tx
+              .update(animalIdentities)
+              .set({ sourceUpdatedAt: candidate.sourceUpdatedAt })
+              .where(
+                and(
+                  eq(animalIdentities.source, candidate.source),
+                  eq(animalIdentities.externalId, candidate.externalId),
+                ),
+              );
           }
         }
 
