@@ -19,6 +19,21 @@ adversarial verify pass (⚠). Check items off as they ship.
    - [x] `claim-or-optout-contact-route` — low, mechanical
 
 2. **ingest wiring + read-side helpers** — shipped 2026-08-25 (migration 0005)
+   - [ ] `animal-listing-dates` — medium, moderate — **added 2026-09-03**
+     (ADR-0015 amendment decisions 2–3), and it reopens phase 2 ahead of the
+     pages: the browse sort column does not exist yet. Promote RG's
+     `createdDate` → `listedAt` (a merged claim on `animals`) and
+     `updatedDate` → `sourceUpdatedAt` (a column on `animal_identities`, never
+     a claim — it is per-source like `last_seen_at`); extend `visibleAnimals`
+     with the 24-month upkeep bound on the SAME identity row as the other two
+     conditions; replace `animals_status_created_idx` with
+     `(status, listed_at, id)`. Medium because `MERGED_FIELDS` grows — the
+     first replay after the migration fires `changed` for every animal
+     (sequencing risk (b)), which the parity test must assert once, not per
+     re-poll. Do the EXPLAIN on a real-size corpus before trusting the index
+     shape. Verification is the existing writer-parity harness plus a
+     visibility test per boundary; no adversarial pass, since a wrong version
+     fails loudly.
    - [x] `stage4-display-upsert` — medium, moderate ⚠ verify
    - [x] `rescuegroups-display-promotion` — medium, moderate
    - [x] `licensed-display-picker` — medium, moderate ⚠ verify
@@ -60,6 +75,26 @@ adversarial verify pass (⚠). Check items off as they ship.
    - [ ] `animal-detail-page` — medium, moderate
    - [ ] `animal-browse-page` — medium, moderate
    - [ ] `brand-tokens-in-pages` — low, mechanical
+     - **amended 2026-09-03 (ADR-0016)**: the cycle resolution under "Why this
+       order" — fold the styling in, no shared component — is superseded now
+       that `/design` exists. A pattern both pages use (the animal card, the
+       photo block, the "last updated" line) is proposed as a section on
+       `/design` and lands as a component under `src/ui/`, which `/design` then
+       renders instead of a copy. Styling still ships inside the page commits;
+       what changed is where a shared pattern lives.
+     - **settled 2026-09-03 (ADR-0015 amendment)**: browse pages by keyset
+       cursor (`?after=<created_at>,<id>`), forward-only, Back is browser
+       history. EXPLAIN whether `id` must join `animals_status_created_idx`
+       before writing the query, on a corpus of real size — the phase-2 index
+       carry-in is the precedent for not guessing.
+     - **settled 2026-09-03 (ADR-0015 amendment)**: browse sorts on `listedAt`,
+       not `animals.created_at`, so this phase now depends on
+       `animal-listing-dates` landing in phase 2. Duration copy ("listed 3
+       years ago") becomes sayable once it does — off `listedAt` only, never
+       off `created_at`, which is a fact about our INSERT.
+     - open, needs the live corpus: the v1 species and state filter values are
+       whatever RG actually returns. Read them off `animals` before hardcoding
+       a list.
 
 4. **closure — purge path + e2e**
    - [ ] `display-purge-path` — medium, moderate
@@ -71,7 +106,7 @@ adversarial verify pass (⚠). Check items off as they ship.
 5. **docs reconciliation**
    - [ ] `flows-and-roadmap-docs` — low, mechanical
 
-**Critical path:** `animal-display-table` → `stage4-display-upsert` → `animal-detail-page` → `display-purge-path` → `flows-and-roadmap-docs`
+**Critical path:** `animal-display-table` → `stage4-display-upsert` → `animal-listing-dates` → `animal-detail-page` → `display-purge-path` → `flows-and-roadmap-docs`
 
 ## Why this order
 
