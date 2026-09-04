@@ -348,3 +348,55 @@ a copy of.
 after the migration fired `animal.updated` for 62,729 animals — the same
 expected-once cost the `listedAt` amendment names, and the same permanent
 `event_log` rows.
+
+## Amendment (2026-09-04): the description stays whole, and is never linkified
+
+Prompted by a listing whose description ends in the shelter's Venmo handle and
+a PayPal.me link (animal 63964). Measured before deciding: of 45,131 stored
+descriptions, 342 (0.76%) name a payment platform — PayPal 303, Venmo 206, plus
+CashApp/Zelle/GoFundMe — and they sit late, a median 72% of the way through the
+text. 37.6% contain a URL, 20.5% an email, 11.9% a phone number.
+
+Excerpting was considered and **rejected**: dropping every paragraph holding a
+URL, email or phone empties 23% of descriptions outright (10,372 animals) and
+deletes the adoption contact details that get animals homes, and a
+payment-platform blocklist is an arms race against a field we do not control.
+Decision 4 stands unamended — the shelter's words render verbatim and in full.
+
+What is added is the invariant that makes that safe, which until now held only
+by accident:
+
+1. **Description text is NEVER linkified.** It renders as a text node, so a URL
+   in it is inert characters. No `dangerouslySetInnerHTML`, no linkify helper,
+   no autolinking — the change that turns a stranger's `paypal.me` into one
+   click is exactly the "helpful" one a future contributor will propose. A unit
+   test guards the page source, and phase 4's e2e asserts zero anchors inside
+   the quotation.
+2. **The money rail must be unmistakable** (roadmap item 4). Our donate control
+   is the only payment surface we vouch for; a payment handle sitting in
+   someone else's quoted text must never be confusable with it. That is a
+   requirement on item 4's design, recorded here because the risk arrives with
+   this page and not with that one.
+3. **Attribution stays visible.** The quotation is marked as the shelter's own
+   words with the organization named beneath it, and the organization is linked
+   (this ADR as amended) — a reader can always reach the source that wrote the
+   text they are reading.
+
+Storage was never the question: the full description is kept verbatim in
+`animal_display` and the raw payload is permanent, so what a page chooses to
+show costs the corpus nothing.
+
+### Consequence for generation (roadmap item 8)
+
+Two constraints, decided here because they are constraints on THIS text:
+
+- **Generated prose may never reproduce contact or payment details** — no
+  handle, URL, email or phone lifted out of a description. This is a mechanical
+  check the faithfulness harness can make, and a far easier one than the
+  care-claim rule beside it.
+- **A licensed display is not a licensed derivative.** The RescueGroups terms
+  grant "temporary use and display"; an LLM-written story derived from a
+  shelter's prose is arguably neither. Decide it deliberately at item 8 — the
+  ADR-0004 gate on AI art (consented shelters only) is the shape to copy, and
+  in ADR-0020 terms anything generated from a description is `observed` tier at
+  best, never attested.

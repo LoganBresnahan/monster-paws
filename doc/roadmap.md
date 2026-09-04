@@ -174,7 +174,10 @@ slice or change build order.
       donate — framed real photo by default; AI art (ADR-0004 pipeline v0,
       built and exercised internally) ships in production **only for
       consented shelters**, credited "Permission to digify <pet> given by
-      <shelter>". Collection page — the card timeline reads `animal_story`
+      <shelter>". **The donate control must be unmistakable** — descriptions
+      quote shelters verbatim and 0.76% of them carry a Venmo or PayPal handle,
+      so our rail cannot be confusable with someone else's (ADR-0015 as
+      amended). Collection page — the card timeline reads `animal_story`
       (ADR-0020); the two kinds projectable today, `status.changed` and
       `listing.reappeared`, are enough for a first card and may pull the
       projector forward from item 6.
@@ -211,7 +214,11 @@ slice or change build order.
       `event_log` (**ADR-0020**, decided 2026-09-04 after a replay wrote
       62,729 true-but-not-news `animal.updated` rows): prose elaborates within
       a row's evidence tier and never up it, and the harness joins story →
-      evidence.
+      evidence. Two constraints on generating from listing descriptions
+      (ADR-0015 as amended): prose never reproduces a handle, URL, email or
+      phone out of one — a mechanical harness check — and a licensed DISPLAY is
+      not a licensed derivative, so the ADR-0004 consent gate is the shape to
+      copy before an LLM rewrites an unverified shelter's prose.
 - [ ] **9. Style LoRA.** Fine-tune the "Monster Paws look"; identity conditioning;
       CLIP-QC harness proper.
 - [ ] **10. Entity resolution at scale.** Second/third listing source; dedup
