@@ -8,6 +8,9 @@ export default defineConfig({
   test: {
     include: ["tests/**/*.test.ts"],
     environment: "node",
+    // Creates and migrates the test database before any file (ADR-0017) —
+    // the `db:test:prepare` vitest does not ship.
+    globalSetup: ["tests/support/global-setup.ts"],
     // The Postgres suites share one database and truncate between tests;
     // files must not interleave or one suite's truncate lands mid-test in
     // another. The whole run is ~1s, so serial costs nothing.

@@ -1,11 +1,12 @@
-import { eq, sql } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { contentHashOf } from "@/core/ingest/hash";
 import { scrapeSource } from "@/core/sources";
 import type { Observation } from "@/core/ingest/observation";
 import { createPgRawStore, loadStoredObservations } from "@/core/ingest/pg";
 import type { RawStore } from "@/core/ingest/pipeline";
-import { closeDb, getDb, type Db } from "@/db/client";
+import { closeDb, type Db } from "@/db/client";
+import { SKIP_DB_TESTS, testDb, truncateCorpus } from "./support/db";
 import { rawPayloads } from "@/db/schema";
 
 /**
@@ -13,16 +14,17 @@ import { rawPayloads } from "@/db/schema";
  * DATABASE_URL — run `npm run db:up` first. The dedup semantics are the same
  * ones `memory.ts` implements; this proves the SQL agrees.
  */
-const DATABASE_URL = process.env.DATABASE_URL;
+// Never DATABASE_URL: these suites truncate, and the dev database is not
+// theirs to empty (ADR-0017).
 
-describe.skipIf(!DATABASE_URL)("ADR-0009 Postgres raw store", () => {
+describe.skipIf(SKIP_DB_TESTS)("ADR-0009 Postgres raw store", () => {
   // Built inside a hook, not at describe scope: skipIf still evaluates this
   // body, so connecting here would fail collection when the DB is absent.
   let db: Db;
   let store: RawStore;
 
   beforeAll(() => {
-    db = getDb(DATABASE_URL);
+    db = testDb();
     store = createPgRawStore(db);
   });
 
@@ -35,7 +37,7 @@ describe.skipIf(!DATABASE_URL)("ADR-0009 Postgres raw store", () => {
   });
 
   beforeEach(async () => {
-    await db.execute(sql`truncate table ${rawPayloads} restart identity`);
+    await truncateCorpus(db);
   });
 
   afterAll(async () => {

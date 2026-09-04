@@ -49,3 +49,6 @@ next-env.d.ts
 
 # dev logs (ADR-0010 agentic feedback loop)
 /.logs/
+
+# local corpus dumps (ADR-0017) — a copy, never a source of truth
+/var/dumps

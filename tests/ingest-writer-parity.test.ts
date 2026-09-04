@@ -1,5 +1,4 @@
 import { readFileSync } from "node:fs";
-import { sql } from "drizzle-orm";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { createMemoryStages, type MemoryCorpus } from "@/core/ingest/memory";
 import type { Observation, SourceAdapter, StoredObservation } from "@/core/ingest/observation";
@@ -18,8 +17,9 @@ import {
 import { createRescueGroupsAdapter, rescueGroupsNormalizer } from "@/core/ingest/rescuegroups";
 import type { Source } from "@/core/sources";
 import type { Claim } from "@/core/trust";
-import { closeDb, getDb, type Db } from "@/db/client";
-import { animalDisplay, animalIdentities, animals, eventLog, rawPayloads } from "@/db/schema";
+import { closeDb, type Db } from "@/db/client";
+import { SKIP_DB_TESTS, testDb, truncateCorpus } from "./support/db";
+import { animalDisplay, animalIdentities, animals, eventLog } from "@/db/schema";
 
 /**
  * The in-memory writer is the reference and the Postgres writer is
@@ -29,7 +29,8 @@ import { animalDisplay, animalIdentities, animals, eventLog, rawPayloads } from 
  * adversarial pass of 2026-08-21 found the two disagreeing on. Skipped
  * without DATABASE_URL.
  */
-const DATABASE_URL = process.env.DATABASE_URL;
+// Never DATABASE_URL: these suites truncate, and the dev database is not
+// theirs to empty (ADR-0017).
 
 interface Payload {
   id: string;
@@ -200,19 +201,17 @@ async function pgSnapshot(db: Db): Promise<Snapshot> {
   return { animals: out, display: shown, upkeep, events };
 }
 
-describe.skipIf(!DATABASE_URL)("ADR-0013 writer parity — memory is the reference, Postgres must agree", () => {
+describe.skipIf(SKIP_DB_TESTS)("ADR-0013 writer parity — memory is the reference, Postgres must agree", () => {
   let db: Db;
   let pg: IngestStages;
   let mem: { stages: IngestStages; corpus: MemoryCorpus };
 
   beforeAll(() => {
-    db = getDb(DATABASE_URL);
+    db = testDb();
   });
 
   beforeEach(async () => {
-    await db.execute(
-      sql`truncate table ${rawPayloads}, ${animals}, ${animalIdentities}, ${animalDisplay}, ${eventLog} restart identity`,
-    );
+    await truncateCorpus(db);
     pg = createPgStages(db, [normalizer, shelterNormalizer]);
     mem = createMemoryStages([normalizer, shelterNormalizer]);
   });

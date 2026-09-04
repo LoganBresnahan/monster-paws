@@ -1,4 +1,3 @@
-import { sql } from "drizzle-orm";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import {
   UPKEEP_WINDOW_MONTHS,
@@ -9,8 +8,9 @@ import {
   visibleAnimals,
 } from "@/core/animals";
 import type { Source } from "@/core/sources";
-import { closeDb, getDb, type Db } from "@/db/client";
-import { animalDisplay, animalIdentities, animals, eventLog, rawPayloads } from "@/db/schema";
+import { closeDb, type Db } from "@/db/client";
+import { SKIP_DB_TESTS, testDb, truncateCorpus } from "./support/db";
+import { animalIdentities, animals } from "@/db/schema";
 
 /**
  * The ADR-0015 visibility predicate against real Postgres. What is being
@@ -18,7 +18,8 @@ import { animalDisplay, animalIdentities, animals, eventLog, rawPayloads } from 
  * page-local `where status = 'available'` would get wrong. Skipped without
  * DATABASE_URL — `npm run db:up` first.
  */
-const DATABASE_URL = process.env.DATABASE_URL;
+// Never DATABASE_URL: these suites truncate, and the dev database is not
+// theirs to empty (ADR-0017).
 
 /**
  * Deliberately far from today: with `NOW` set to the current date, an
@@ -33,17 +34,15 @@ function daysBefore(days: number): Date {
   return new Date(NOW.getTime() - days * 24 * 60 * 60 * 1000);
 }
 
-describe.skipIf(!DATABASE_URL)("ADR-0015 visibility — one predicate, used everywhere", () => {
+describe.skipIf(SKIP_DB_TESTS)("ADR-0015 visibility — one predicate, used everywhere", () => {
   let db: Db;
 
   beforeAll(() => {
-    db = getDb(DATABASE_URL);
+    db = testDb();
   });
 
   beforeEach(async () => {
-    await db.execute(
-      sql`truncate table ${rawPayloads}, ${animals}, ${animalIdentities}, ${animalDisplay}, ${eventLog} restart identity`,
-    );
+    await truncateCorpus(db);
   });
 
   afterAll(async () => {

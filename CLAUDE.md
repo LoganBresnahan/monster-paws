@@ -124,7 +124,10 @@ commit.
 ## Commands
 
 - `npm run dev` — Next.js dev server (port 3000)
-- `npm test` — vitest units in `tests/` (run twice for the ship bar)
+- `npm test` — vitest units in `tests/` (run twice for the ship bar). Creates
+  and migrates `monsterpaws_test` itself (ADR-0017); it never touches the dev
+  database, and it FAILS rather than skips when Postgres is unreachable —
+  `SKIP_DB_TESTS=1` runs only the unit suites
 - `npm run typecheck` — tsc, no emit
 - `npm run e2e` — Playwright specs in `e2e/` (boots the dev server itself);
   `npm run e2e:prod` reuses the specs against an already-running
@@ -136,5 +139,8 @@ commit.
 - `npm run db:up` — local Postgres via `docker-compose.dev.yml`
   (pgvector/pg16 image — same extensions as production)
 - `npm run db:generate` / `npm run db:migrate` — Drizzle migrations
+- `npm run db:dump` — gzipped `pg_dump` of the dev database to `var/dumps/`;
+  run it after a full poll, because that corpus is currently the only copy
+  (ADR-0017)
 - Env: copy `.env.example` → `.env`; keys are commented with the roadmap
   item that needs them.

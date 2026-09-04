@@ -1,4 +1,4 @@
-import { eq, sql } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { createMemoryStages, type MemoryCorpus } from "@/core/ingest/memory";
 import type { Observation, SourceAdapter, StoredObservation } from "@/core/ingest/observation";
@@ -11,15 +11,17 @@ import {
   type Normalizer,
 } from "@/core/ingest/pipeline";
 import { scrapeSource, type Source } from "@/core/sources";
-import { closeDb, getDb, type Db } from "@/db/client";
-import { animalDisplay, animalIdentities, animals, eventLog, rawPayloads } from "@/db/schema";
+import { closeDb, type Db } from "@/db/client";
+import { SKIP_DB_TESTS, testDb, truncateCorpus, truncateDerived } from "./support/db";
+import { animalIdentities, eventLog, rawPayloads } from "@/db/schema";
 
 /**
  * Stage 5 against Postgres (ADR-0014), run in lockstep with the in-memory
  * reference: after every run both stores must hold the same identity state
  * and have emitted the same events. Skipped without DATABASE_URL.
  */
-const DATABASE_URL = process.env.DATABASE_URL;
+// Never DATABASE_URL: these suites truncate, and the dev database is not
+// theirs to empty (ADR-0017).
 
 interface Payload {
   id: string;
@@ -60,19 +62,17 @@ function normalizerFor(source: Source): Normalizer<Payload> {
 type IdentityState = Record<string, { lastSeenAt: string; disappearedAt: string | null }>;
 type EventRow = { kind: string; subjectId: string; source: string; externalId: unknown; occurredAt: string };
 
-describe.skipIf(!DATABASE_URL)("ADR-0014 Postgres lifecycle — in lockstep with the reference", () => {
+describe.skipIf(SKIP_DB_TESTS)("ADR-0014 Postgres lifecycle — in lockstep with the reference", () => {
   let db: Db;
   let pg: IngestStages;
   let mem: { stages: IngestStages; corpus: MemoryCorpus };
 
   beforeAll(() => {
-    db = getDb(DATABASE_URL);
+    db = testDb();
   });
 
   beforeEach(async () => {
-    await db.execute(
-      sql`truncate table ${rawPayloads}, ${animals}, ${animalIdentities}, ${animalDisplay}, ${eventLog} restart identity`,
-    );
+    await truncateCorpus(db);
     const normalizers = [normalizerFor(AGG), normalizerFor(SCRAPE)];
     pg = createPgStages(db, normalizers);
     mem = createMemoryStages(normalizers);
@@ -216,7 +216,8 @@ describe.skipIf(!DATABASE_URL)("ADR-0014 Postgres lifecycle — in lockstep with
     await both(AGG, [obs(AGG, "a", D1), obs(AGG, "b", D1)]);
     await both(AGG, [obs(AGG, "a", D2)]);
 
-    await db.execute(sql`truncate table ${animals} cascade`);
+    // Derived only: the raw rows are what the rebuild replays from.
+    await truncateDerived(db);
     await replay(AGG, await loadStoredObservations(db, AGG), pg);
     const rebuilt = await db.select().from(animalIdentities);
     expect(rebuilt.map((r) => [r.externalId, r.lastSeenAt, r.disappearedAt])).toEqual([

@@ -15,7 +15,8 @@
     "ingest": "tsx src/worker/ingest-cli.ts",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
-    "db:up": "docker compose -f docker-compose.dev.yml up -d"
+    "db:up": "docker compose -f docker-compose.dev.yml up -d",
+    "db:dump": "tsx scripts/db-dump.ts"
   },
   "dependencies": {
     "aws4fetch": "^1.0.20",

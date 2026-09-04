@@ -1,4 +1,4 @@
-import { eq, sql } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import type { Observation, SourceAdapter, StoredObservation } from "@/core/ingest/observation";
 import { createPgStages, loadStoredObservations } from "@/core/ingest/pg";
@@ -11,8 +11,9 @@ import {
   type Normalizer,
 } from "@/core/ingest/pipeline";
 import type { Source } from "@/core/sources";
-import { closeDb, getDb, type Db } from "@/db/client";
-import { animalDisplay, animalIdentities, animals, eventLog, rawPayloads } from "@/db/schema";
+import { closeDb, type Db } from "@/db/client";
+import { SKIP_DB_TESTS, testDb, truncateCorpus } from "./support/db";
+import { animalIdentities, animals, eventLog } from "@/db/schema";
 
 /**
  * Integration: stages 3–4 against real Postgres (ADR-0013). Skipped without
@@ -20,7 +21,8 @@ import { animalDisplay, animalIdentities, animals, eventLog, rawPayloads } from 
  * `ingest-merge.test.ts` pins on the in-memory writer; this proves the SQL
  * writer agrees, and that `event_log` only ever grows.
  */
-const DATABASE_URL = process.env.DATABASE_URL;
+// Never DATABASE_URL: these suites truncate, and the dev database is not
+// theirs to empty (ADR-0017).
 
 interface Payload {
   id: string;
@@ -72,19 +74,17 @@ function normalizerFor(source: Source): Normalizer<Payload> {
   };
 }
 
-describe.skipIf(!DATABASE_URL)("ADR-0013 Postgres merge", () => {
+describe.skipIf(SKIP_DB_TESTS)("ADR-0013 Postgres merge", () => {
   let db: Db;
   let stages: IngestStages;
 
   beforeAll(() => {
-    db = getDb(DATABASE_URL);
+    db = testDb();
     stages = createPgStages(db, [normalizerFor(AGG)]);
   });
 
   beforeEach(async () => {
-    await db.execute(
-      sql`truncate table ${rawPayloads}, ${animals}, ${animalIdentities}, ${animalDisplay}, ${eventLog} restart identity`,
-    );
+    await truncateCorpus(db);
   });
 
   afterAll(async () => {

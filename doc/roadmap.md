@@ -97,6 +97,14 @@ pin dogfood findings and deferred sub-tasks to items as carry-ins.
       pages, and stage 5 bound all 64k ids in one parameter. **Frontier is now phase 9**
       (health gates + retrieval) — or item 3, since the demo can read
       `animals` now; phases 5–6 still wait on item 5's fixtures.
+      **The 2026-08-25 corpus was lost on 2026-09-03** — the poll had written
+      it to the dev database, and the test suites truncated
+      `raw_payloads` there with no backup anywhere (no Managed Postgres, and
+      the RescueGroups adapter never vaults to R2). **ADR-0017** fixes the
+      mechanism: tests own `monsterpaws_test`, never the dev database, and
+      `npm run db:dump` takes a local copy. Carry-in: **re-poll to rebuild the
+      corpus**, then dump it — the run will populate `listed_at` and
+      `source_updated_at` on the way in, which the pages need.
       Remaining carry-ins live in the plan — verbatim `description`
       (phase 5), per-field staleness gating (phase 9). Tracker pixel on
       detail pages when listings render.
