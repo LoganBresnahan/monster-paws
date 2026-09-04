@@ -45,7 +45,7 @@ interface Payload {
   listedAt?: string;
   sourceUpdatedAt?: string | null;
   description?: string;
-  photoUrls?: string[];
+  photos?: { url: string; width: number; height: number }[];
   tier?: Source;
 }
 
@@ -106,7 +106,7 @@ const normalizer: Normalizer<Payload> = {
       sourceUpdatedAt,
       display: {
         description: o.payload.description,
-        photoUrls: o.payload.photoUrls ?? [],
+        photos: o.payload.photos ?? [],
         listingOrg: o.payload.orgName ?? null,
         trackerUrl: null,
         fetchedAt: o.fetchedAt,
@@ -120,7 +120,7 @@ const shelterNormalizer: Normalizer<Payload> = { ...normalizer, source: SHELTER 
 
 type DisplaySnapshot = Record<
   string,
-  { description: string | null; photoUrls: string[]; listingOrg: string | null; trackerUrl: string | null; fetchedAt: string }
+  { description: string | null; photos: { url: string; width: number; height: number }[]; listingOrg: string | null; trackerUrl: string | null; fetchedAt: string }
 >;
 
 type Snapshot = {
@@ -154,7 +154,7 @@ function memorySnapshot(corpus: MemoryCorpus): Snapshot {
   for (const [k, row] of corpus.display) {
     shown[k] = {
       description: row.description,
-      photoUrls: row.photoUrls,
+      photos: row.photos,
       listingOrg: row.listingOrg,
       trackerUrl: row.trackerUrl,
       fetchedAt: row.fetchedAt.toISOString(),
@@ -181,7 +181,7 @@ async function pgSnapshot(db: Db): Promise<Snapshot> {
   for (const row of await db.select().from(animalDisplay).orderBy(animalDisplay.id)) {
     shown[`${row.animalId}:${row.source}`] = {
       description: row.description,
-      photoUrls: row.photoUrls,
+      photos: row.photos,
       listingOrg: row.listingOrg,
       trackerUrl: row.trackerUrl,
       fetchedAt: row.fetchedAt.toISOString(),
@@ -369,10 +369,13 @@ describe.skipIf(SKIP_DB_TESTS)("ADR-0013 writer parity — memory is the referen
   });
 
   it("upserts one display row per source, and clears what the source stopped saying (ADR-0015)", async () => {
-    const SHOWN = { description: "Rex loves everyone", photoUrls: ["https://cdn/rex.jpg?width=500"] };
+    const SHOWN = {
+      description: "Rex loves everyone",
+      photos: [{ url: "https://cdn/rex.jpg?width=500", width: 500, height: 400 }],
+    };
     const reports = await both(
       adapterOf([obs({ ...REX, orgName: "Animal Friends", ...SHOWN }, T0)]),
-      adapterOf([obs({ ...REX, orgName: "Animal Friends", description: "", photoUrls: [] }, T1)]),
+      adapterOf([obs({ ...REX, orgName: "Animal Friends", description: "", photos: [] }, T1)]),
     );
 
     // The second poll changes ONLY display, and must be silent. Without this
@@ -383,7 +386,7 @@ describe.skipIf(SKIP_DB_TESTS)("ADR-0013 writer parity — memory is the referen
     const snap = await expectParity();
     expect(snap.display["1:rescuegroups"]).toEqual({
       description: "",
-      photoUrls: [],
+      photos: [],
       listingOrg: "Animal Friends",
       trackerUrl: null,
       fetchedAt: T1.toISOString(),
@@ -402,7 +405,7 @@ describe.skipIf(SKIP_DB_TESTS)("ADR-0013 writer parity — memory is the referen
       claims: { name: { value: "Rex", source: SHELTER, fetchedAt: T1 } },
       display: {
         description: "the shelter's own words",
-        photoUrls: [],
+        photos: [],
         listingOrg: null,
         trackerUrl: null,
         fetchedAt: T1,
@@ -449,7 +452,7 @@ describe.skipIf(SKIP_DB_TESTS)("ADR-0013 writer parity — memory is the referen
 
   it("rebuilds an identical display row on replay, from the observation and not the clock", async () => {
     await both(
-      adapterOf([obs({ ...REX, description: "Rex loves everyone", photoUrls: ["https://cdn/a.jpg"] }, T0)]),
+      adapterOf([obs({ ...REX, description: "Rex loves everyone", photos: [{ url: "https://cdn/a.jpg", width: 4, height: 3 }] }, T0)]),
     );
     const before = await expectParity();
 

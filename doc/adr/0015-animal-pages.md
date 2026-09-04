@@ -244,3 +244,107 @@ is touched here.
   `resolveClaim` decide it by default.
 - The tail percentages are re-measured and have moved materially → revisit both
   the bound and the default sort.
+
+## Amendment (2026-09-04): the first client island is the photo gallery
+
+Decision 7 said server components only, with the first client island arriving
+at item 4 with a state-library ADR. Dogfooding the detail page moved it
+earlier, for two reasons found by using the page rather than by design.
+
+- **The hotlinked hero photo loaded last and shoved the page down.** The fix is
+  a fixed aspect box the photo fills absolutely, so height is decided before a
+  third-party image of unknown dimensions arrives. That much is still server
+  markup and is the load-bearing half of this amendment: the URLs are
+  third-party and uncached, so what reads as a small jump on a dev machine is
+  the whole page moving under a reader's thumb.
+- **Thumbnails that do nothing are a broken promise.** A grid of small photos
+  under a large one reads as clickable, so clicking one replaces the hero.
+  That is client state, and no server round trip should be spent on it.
+
+`AnimalGallery` (`src/ui/animal-gallery.tsx`) is therefore a `"use client"`
+component holding one `useState` index. **No state library**: this is component
+state, not shared application state, and the Zustand dependency ADR that
+CLAUDE.md's Stack section owes is still owed by whatever first needs a store —
+this does not pay it and must not be cited as if it had.
+
+Everything else on the page stays a server component: the island is the gallery
+and nothing else, and the licensed-display pick, the visibility predicate and
+the tracker pixel all stay on the server where they cannot be reasoned around
+by a client render.
+
+## Amendment (2026-09-04): photos carry their published dimensions
+
+Decision 3 stored photos as bare URLs, which left a page no way to know a
+photo's shape before it loaded. Every option from there is bad: crop it
+(`object-cover` cut the head off a portrait shot of a dog), letterbox it in a
+guessed frame, or size the frame to the image after it arrives and move the
+page under the reader.
+
+RescueGroups publishes the pixel size of every variant it serves — measured
+across 73,833 pictures in the corpus, `large.url`, `resolutionX` and
+`resolutionY` are present on all of them, none zero. So the shape is not a
+guess we have to make; it is data we were dropping.
+
+- `animal_display.photo_urls` (`string[]`) becomes **`animal_display.photos`**
+  (`{ url, width, height }[]`), and `DisplayContent.photoUrls` becomes
+  `DisplayContent.photos`. Migrations 0007 (drop) and 0008 (add); the table is
+  derived, so `npm run ingest -- replay rescuegroups` rebuilt all 64,133 rows —
+  62,121 of them with photos, none malformed.
+- **URL and dimensions come from one variant or neither.** `large` and
+  `original` are different pixel sizes of the same picture (500×636 against
+  700×890 in the fixture), so crossing them sizes every frame wrong while
+  looking entirely plausible.
+- **A picture whose variant publishes no usable size is dropped**, exactly as
+  one with no URL already was. With 100% coverage upstream, a missing dimension
+  means the payload changed shape — and an invented dimension is worse than a
+  dropped photo, because the page trusts it.
+- The detail frame takes the selected photo's own ratio and contains the image
+  in it: no crop, no bars, and the space is still reserved before the image
+  arrives. The height cap is spent as a max-WIDTH derived from the ratio — a
+  `max-height` on a full-width box lets the frame stay wider than the photo and
+  the bars return.
+
+Thumbnails stay cropped square: at 80px a thumbnail is a target to press, not
+the photo anyone reads the animal from.
+
+## Amendment (2026-09-04): the link back is two claims, not one
+
+Decision 5 requires a page that "links back to the listing organization by
+name", and the RescueGroups key application promised the same thing in the
+terms `AGGREGATOR_LICENSES` cites. The first detail page named the organization
+without linking it, on the belief — from reading ONE payload — that RG
+publishes no organization URL. Wrong: measured across the corpus, it publishes
+several.
+
+- `orgs.url` covers 62,658 of 64,133 animals (97.7%), plus `adoptionUrl` and
+  `facebookUrl` for orgs that file elsewhere.
+- The ANIMAL carries `url` for 11,933 of them (18.6%) — its own listing page on
+  the organization's site.
+
+Both are promoted as claims (`orgUrl`, `listingUrl` — migration 0009), not as
+display content: where an animal is listed is a fact about the animal, subject
+to the merge and provenance like `orgName` beside it, while the description is
+a licensed copy of someone's words. **Neither is ever assembled.** The listing
+URLs are per-organization subdomains
+(`catrangers.rescuegroups.org/animals/detail?AnimalID=…`), so a URL built from
+an org id would send a donor to a different shelter and call it attribution —
+`trackerUrlOf`'s rule, applied where it matters most.
+
+**Validation, because the field is not clean**: 3,349 org URLs arrive with no
+scheme, and some hold something that never was a URL — one is a street address,
+one is the bare string `http://`. A value is promoted only if it parses with a
+dotted, whitespace-free hostname. The single character we add is a missing
+scheme, and it is `http://`, which is what 82% of this feed's own organizations
+publish; an https-capable host redirects, whereas assuming https breaks every
+shelter still serving plain http.
+
+Result: 62,729 of 64,133 animals now carry at least one link home, 1,404 carry
+none and render the organization's name alone. The page links the org name to
+`orgUrl` and, when there is one, offers the animal's own listing as a second
+link — the strongest attribution available, since it is the page we are showing
+a copy of.
+
+`orgUrl` and `listingUrl` are new `MERGED_FIELDS` entries, so the first replay
+after the migration fired `animal.updated` for 62,729 animals — the same
+expected-once cost the `listedAt` amendment names, and the same permanent
+`event_log` rows.

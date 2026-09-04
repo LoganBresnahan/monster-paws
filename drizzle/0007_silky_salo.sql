@@ -1,0 +1,1 @@
+ALTER TABLE "animal_display" DROP COLUMN "photo_urls";

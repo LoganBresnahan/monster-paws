@@ -9,6 +9,7 @@ import {
   timestamp,
   uniqueIndex,
 } from "drizzle-orm/pg-core";
+import type { DisplayPhoto } from "@/core/ingest/pipeline";
 import type { Source } from "@/core/sources";
 
 /**
@@ -95,6 +96,15 @@ export const animals = pgTable(
      * licensed expression, and a license is not a fact about the animal.
      */
     orgName: text("org_name"),
+    /**
+     * The listing organization's own site, promoted only when the source
+     * published something that parses as a host (ADR-0015 as amended). Never
+     * build one from an org id: a link back to the wrong shelter is worse than
+     * the name alone, which is what a null here renders.
+     */
+    orgUrl: text("org_url"),
+    /** the animal's page on the source's own site, when published — attribution, not decoration (ADR-0015 as amended) */
+    listingUrl: text("listing_url"),
     city: text("city"),
     state: text("state"),
     postalCode: text("postal_code"),
@@ -195,12 +205,18 @@ export const animalDisplay = pgTable(
     /** the shelter's own words — rendered verbatim as a quotation, never edited (ADR-0015) */
     description: text("description"),
     /**
-     * Hotlinked source URLs, in the order the source listed them — never R2
-     * keys and never fetched into R2, which the display license does not cover
-     * (ADR-0006 as amended). `animals.photo_keys` is the R2 column and stays
-     * separate.
+     * Hotlinked source URLs with the pixel size of each, in the order the
+     * source listed them — never R2 keys and never fetched into R2, which the
+     * display license does not cover (ADR-0006 as amended).
+     * `animals.photo_keys` is the R2 column and stays separate.
+     *
+     * The dimensions are what let a page reserve a photo's exact shape before
+     * it loads: without them the frame is a guess, and a guess either crops the
+     * animal or letterboxes it (ADR-0015 as amended 2026-09-04). Never store a
+     * dimension we computed or defaulted — an invented shape is worse than no
+     * shape, because the page trusts it.
      */
-    photoUrls: jsonb("photo_urls").$type<string[]>().notNull().default([]),
+    photos: jsonb("photos").$type<DisplayPhoto[]>().notNull().default([]),
     listingOrg: text("listing_org"),
     trackerUrl: text("tracker_url"),
     /** the observation's fetch time, never the write's — or replay rebuilds a different row */

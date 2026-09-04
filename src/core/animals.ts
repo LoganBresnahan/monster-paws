@@ -1,5 +1,6 @@
-import { and, eq, sql, type SQL } from "drizzle-orm";
-import { animalIdentities, animals } from "@/db/schema";
+import { and, eq, isNull, sql, type SQL } from "drizzle-orm";
+import type { Db } from "@/db/client";
+import { animalDisplay, animalIdentities, animals } from "@/db/schema";
 
 /**
  * The one visibility predicate (ADR-0015). Browse, detail, the sitemap and any
@@ -74,4 +75,53 @@ export function visibleAnimals(asOf: Date = new Date()): SQL {
 /** Detail's lookup — never `eq(animals.id, …)` alone, or the predicate is bypassed. */
 export function visibleAnimalById(id: number, asOf: Date = new Date()): SQL {
   return and(eq(animals.id, id), visibleAnimals(asOf))!;
+}
+
+export interface AnimalDetail {
+  animal: typeof animals.$inferSelect;
+  /** live identities only — see `loadAnimalDetail` */
+  identities: (typeof animalIdentities.$inferSelect)[];
+  display: (typeof animalDisplay.$inferSelect)[];
+}
+
+/**
+ * Everything a detail page renders, or `null` when the animal is not visible —
+ * the 404 (ADR-0015 decision 2). Reads `animals`, `animal_identities` and
+ * `animal_display` and never `raw_payloads`: everything on the page was
+ * promoted through a normalizer, so replay repairs pages too.
+ *
+ * Disappeared identities are dropped here rather than at render: a source that
+ * stopped listing the animal is not evidence of how recently anyone saw it,
+ * and a "last checked" line computed over one would be a lie told by the
+ * freshest row we happen to hold (ADR-0014).
+ */
+export async function loadAnimalDetail(
+  db: Db,
+  id: number,
+  asOf: Date = new Date(),
+): Promise<AnimalDetail | null> {
+  const [animal] = await db
+    .select()
+    .from(animals)
+    .where(visibleAnimalById(id, asOf))
+    .limit(1);
+  if (!animal) return null;
+
+  const [identities, display] = await Promise.all([
+    db
+      .select()
+      .from(animalIdentities)
+      .where(and(eq(animalIdentities.animalId, animal.id), isNull(animalIdentities.disappearedAt))),
+    db.select().from(animalDisplay).where(eq(animalDisplay.animalId, animal.id)),
+  ]);
+  return { animal, identities, display };
+}
+
+/** The most recent confirmation any live source gave us, or `null` if none did. */
+export function lastSeenOf(identities: readonly { lastSeenAt: Date }[]): Date | null {
+  const newest = identities.reduce<Date | null>(
+    (best, i) => (best === null || i.lastSeenAt > best ? i.lastSeenAt : best),
+    null,
+  );
+  return newest;
 }

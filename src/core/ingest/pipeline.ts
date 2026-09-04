@@ -27,6 +27,21 @@ export interface AnimalFields {
   listedAt: Date | null;
   /** where it is listed — facts, so browse can filter by state and a page can say where (ADR-0015) */
   orgName: string | null;
+  /**
+   * The listing organization's own site. A fact about where the animal is
+   * listed, like `orgName` beside it — and the thing ADR-0015 decision 5 and
+   * the RescueGroups key application both promise: a public page that links
+   * BACK to the organization. Never a URL we assembled from an id or a slug.
+   */
+  orgUrl: string | null;
+  /**
+   * This animal's own page on the source's site, when the source publishes one
+   * (18.6% of the RescueGroups corpus). Distinct from `orgUrl`: it is where a
+   * donor reads the listing we are showing a copy of, which is the closest
+   * thing to attribution there is. Never assembled from an id — the URLs are
+   * per-organization subdomains, so a built one points at the wrong shelter.
+   */
+  listingUrl: string | null;
   city: string | null;
   state: string | null;
   postalCode: string | null;
@@ -46,6 +61,8 @@ export const MERGED_FIELDS = [
   "shelterExternalId",
   "listedAt",
   "orgName",
+  "orgUrl",
+  "listingUrl",
   "city",
   "state",
   "postalCode",
@@ -67,11 +84,26 @@ export type AnimalClaims = {
  * compete in `resolveClaim` as if it were a breed, and provenance would call
  * it a fact. Never widen `AnimalFields` with a field from here.
  */
+export interface DisplayPhoto {
+  /** hotlink target, read from the source — never R2 and never built (ADR-0006 as amended) */
+  url: string;
+  /**
+   * The pixel size OF THIS URL, taken from the same variant the URL came from
+   * (ADR-0015 as amended 2026-09-04) — pairing one variant's URL with
+   * another's dimensions renders every photo at the wrong shape. Present or
+   * the photo is dropped: 73,833 of 73,833 RescueGroups pictures publish both,
+   * so a missing one means the payload changed shape, not that a shelter took
+   * an unusual photo.
+   */
+  width: number;
+  height: number;
+}
+
 export interface DisplayContent {
   /** the shelter's words, verbatim — a normalizer may drop it, never edit it */
   description: string | null;
-  /** source URLs to hotlink, in the order the source listed them — never R2 keys (ADR-0006 as amended) */
-  photoUrls: string[];
+  /** what to hotlink, in the order the source listed them */
+  photos: DisplayPhoto[];
   listingOrg: string | null;
   trackerUrl: string | null;
   /** the observation's fetchedAt, never the write clock — replay must rebuild an identical row */

@@ -264,14 +264,18 @@ displaying verbatim are different permissions.
 The registry is checked in and empty until item 5; the commit that adds a
 grant is the record, with evidence under `doc/consent/`.
 
-## Animal page render — facts, display layer, visibility (ADR-0015)
+## Animal page render — facts, display layer, visibility (ADR-0015, ADR-0018)
 
-Planned: roadmap item 3. Pages read Postgres directly from Server
-Components; nothing here touches `raw_payloads`.
+Detail (`/animals/[id]`) is built; browse is planned (roadmap item 3). Pages
+read Postgres directly from Server Components; nothing here touches
+`raw_payloads`.
 
 ```
-  request /animals/[id]                (planned, item 3; ISR revalidate 1h)
+  request /animals/[id]                ISR, revalidate 1h
        │
+       ▼
+  loadAnimalDetail(db, id, asOf)       composes visibleAnimalById — a page that
+       │                               assembles its own predicate is the bug
        ▼
   visibleAnimals(db).where(id)         ONE predicate, every page. All three
        │                               conditions on the SAME identity row:
@@ -283,8 +287,13 @@ Components; nothing here touches `raw_payloads`.
        ▼
   animals row  (facts + provenance)    name, species, breed, sex, ageGroup,
        │                               birthDate/isBirthDateExact, location
+       │                               + live animal_identities (disappeared
+       │                               ones dropped: a source that stopped
+       │                               listing is not evidence of a sighting)
        ▼
   animal_display rows for the animal, one per source   (DERIVED, purgeable)
+       │                               photos = [{url, width, height}] — sizes
+       │                               are the source's own, never computed
        │
        │   pick the LICENSED row, or none:
        │     source = 'rescuegroups'   → aggregator-display  (held by the key,
@@ -292,11 +301,23 @@ Components; nothing here touches `raw_payloads`.
        │     source = 'scrape:<slug>'  → hasGrant(shelter, "display")
        │     else                      → facts + our own words, no photo
        ▼
-  render
-    photos      hotlinked <img src=cdn.rescuegroups.org/…?width=500>  — never R2
-    description verbatim, as a quotation
-    tracker     <img src=tracker_url>  on every RG detail page (API terms)
-    footer      "last updated <last_seen_at>" · listing org, linked by name
+  render                               src/app/animals/[id]/page.tsx
+    photos      AnimalGallery (the one client island, ADR-0015 as amended):
+                frame takes the photo's OWN ratio from animal_display.photos
+                {url,width,height} → whole photo, no crop, no bars, no jump;
+                thumbnails swap the hero. AnimalPhoto is a plain <img>, never
+                next/image, whose loader copies the file onto our server
+    description verbatim, as a quotation; decodeEntities then tidyWhitespace,
+                in that order (ADR-0018 as amended: 72% are entity-encoded,
+                none carry tags, and the blank lines ARE decoded &nbsp;)
+    tracker     TrackerPixel <img src=tracker_url> — driven by the RG display
+                row itself, never by whichever row won display precedence
+                (a shelter's own row outranking RG must not drop the pixel)
+    footer      "last updated <last_seen_at>" · listing org linked by name to
+                animals.org_url, plus animals.listing_url when the source
+                publishes the animal's own page (ADR-0015 as amended) — both
+                claims, never assembled: a built URL points at the wrong
+                shelter and calls it attribution
                 "listed <listed_at>" — the source's date, never created_at
                 "Not affiliated — claim or remove your listings"
                 unverified: "your donation goes to <org>"; no update promise

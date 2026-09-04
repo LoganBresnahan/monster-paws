@@ -1,6 +1,6 @@
 import { contentHashOf } from "@/core/ingest/hash";
 import type { Observation, SourceAdapter } from "@/core/ingest/observation";
-import type { AnimalClaims, DisplayContent, Normalizer } from "@/core/ingest/pipeline";
+import type { AnimalClaims, DisplayContent, DisplayPhoto, Normalizer } from "@/core/ingest/pipeline";
 
 /**
  * RescueGroups v5 adapter (ADR-0006 decision 2). Tier 2 — discovery, not
@@ -215,15 +215,33 @@ const STATUS_BY_NAME: Record<string, string> = {
 };
 
 /**
- * The URL RescueGroups publishes for the 500px variant — read, never built.
- * Appending `?width=500` ourselves would make the obligation to hotlink a
- * bounded image depend on our guess about their CDN's query grammar, the same
- * trap `trackerUrlOf` avoids. Falls back to the original when they publish no
- * variant, rather than dropping the photo.
+ * The 500px variant RescueGroups publishes — read, never built. Appending
+ * `?width=500` ourselves would make the obligation to hotlink a bounded image
+ * depend on our guess about their CDN's query grammar, the same trap
+ * `trackerUrlOf` avoids. Falls back to the original variant rather than
+ * dropping the photo.
+ *
+ * URL and dimensions come from ONE variant or neither: `large` and `original`
+ * are different pixel sizes of the same picture (500×636 against 700×890 in
+ * the payload this was written from), so crossing them would size every frame
+ * wrong while looking perfectly plausible.
  */
-function pictureUrlOf(attributes: Record<string, unknown>): string | null {
-  const variant = (name: string) => (attributes[name] as { url?: unknown } | undefined)?.url;
-  return stringOr(variant("large")) ?? stringOr(variant("original"));
+function pictureOf(attributes: Record<string, unknown>): DisplayPhoto | null {
+  for (const name of ["large", "original"]) {
+    const variant = attributes[name] as
+      | { url?: unknown; resolutionX?: unknown; resolutionY?: unknown }
+      | undefined;
+    const url = stringOr(variant?.url);
+    const width = numberOr(variant?.resolutionX);
+    const height = numberOr(variant?.resolutionY);
+    if (url && width && height) return { url, width, height };
+  }
+  return null;
+}
+
+/** Positive finite numbers only: a zero dimension divides into an infinite aspect ratio. */
+function numberOr(value: unknown): number | null {
+  return typeof value === "number" && Number.isFinite(value) && value > 0 ? value : null;
 }
 
 /**
@@ -232,17 +250,17 @@ function pictureUrlOf(attributes: Record<string, unknown>): string | null {
  * in `included` is our ordering and carries none of theirs (ADR-0015 decision
  * 4 asks for the order RescueGroups lists them in).
  */
-function photoUrlsOf(payload: RescueGroupsAnimal): string[] {
+function photosOf(payload: RescueGroupsAnimal): DisplayPhoto[] {
   return payload.included
     .filter((resource) => resource.type === "pictures")
     .map((resource) => ({
       order: typeof resource.attributes.order === "number" ? resource.attributes.order : 0,
       id: resource.id,
-      url: pictureUrlOf(resource.attributes),
+      photo: pictureOf(resource.attributes),
     }))
-    .filter((p): p is { order: number; id: string; url: string } => p.url !== null)
+    .filter((p): p is { order: number; id: string; photo: DisplayPhoto } => p.photo !== null)
     .sort((a, b) => a.order - b.order || a.id.localeCompare(b.id))
-    .map((p) => p.url);
+    .map((p) => p.photo);
 }
 
 /**
@@ -310,6 +328,15 @@ export const rescueGroupsNormalizer: Normalizer<RescueGroupsAnimal> = {
     const org = attributesOf(obs.payload, "orgs");
     const orgName = stringOr(org?.name);
     if (orgName) claims.orgName = { value: orgName, ...stamp };
+    const orgUrl = orgUrlOf(org);
+    if (orgUrl) claims.orgUrl = { value: orgUrl, ...stamp };
+
+    // The listing itself, on the organization's own site — published for 18.6%
+    // of the corpus and read, never built: these are per-organization
+    // subdomains (`catrangers.rescuegroups.org/animals/detail?AnimalID=…`), so
+    // a URL assembled from an id would point at whichever shelter we guessed.
+    const listingUrl = httpUrlOr(attributes.url);
+    if (listingUrl) claims.listingUrl = { value: listingUrl, ...stamp };
     const city = stringOr(org?.city);
     if (city) claims.city = { value: city, ...stamp };
     const state = stateOr(org?.state);
@@ -323,7 +350,7 @@ export const rescueGroupsNormalizer: Normalizer<RescueGroupsAnimal> = {
     // standing forever (ADR-0015).
     const display: DisplayContent = {
       description: stringOr(attributes.descriptionText),
-      photoUrls: photoUrlsOf(obs.payload),
+      photos: photosOf(obs.payload),
       listingOrg: orgName,
       trackerUrl: trackerUrlOf(obs.payload),
       // The observation's fetch, never `new Date()` — replay must rebuild this
@@ -338,6 +365,57 @@ export const rescueGroupsNormalizer: Normalizer<RescueGroupsAnimal> = {
     return { claims, display, sourceUpdatedAt: dateOr(attributes.updatedDate) };
   },
 };
+
+
+/**
+ * The organization's own site, for the link back that the API terms and
+ * ADR-0015 decision 5 both require. Three fields in order of how directly they
+ * answer "where does this listing live" — `url`, then the adoption page, then
+ * Facebook, which for a lot of small rescues IS the website.
+ *
+ * Measured on the 2026-09-04 corpus before choosing this shape: 62,658 of
+ * 64,133 animals' orgs publish a `url`, 82% of those with an explicit
+ * `http://`, 3,349 with no scheme at all, and a few holding something that was
+ * never a URL — one is a street address, one is the bare string `http://`.
+ * So the field is validated, never trusted.
+ *
+ * The ONE character we add is a missing scheme, and it is `http://` because
+ * that is what this feed's own organizations overwhelmingly publish; an
+ * https-capable host redirects, while assuming https breaks every shelter
+ * still serving plain http. Nothing else is rewritten — not the host, not the
+ * path, not a trailing slash — so what we link is what they published.
+ */
+export function orgUrlOf(org: Record<string, unknown> | undefined): string | null {
+  for (const field of ["url", "adoptionUrl", "facebookUrl"]) {
+    const url = httpUrlOr(org?.[field]);
+    if (url) return url;
+  }
+  return null;
+}
+
+/**
+ * A link we are willing to send a donor to, or null. The ONE character this
+ * adds is a missing scheme, and it is `http://` because that is what this
+ * feed's own organizations overwhelmingly publish; an https-capable host
+ * redirects, while assuming https breaks every shelter still serving plain
+ * http. Nothing else is rewritten — not the host, not the path, not a trailing
+ * slash — so what we link is what they published.
+ */
+function httpUrlOr(value: unknown): string | null {
+  const raw = stringOr(value)?.trim();
+  if (!raw) return null;
+  const candidate = /^https?:\/\//i.test(raw) ? raw : `http://${raw}`;
+  let parsed: URL;
+  try {
+    parsed = new URL(candidate);
+  } catch {
+    return null;
+  }
+  // A hostname with a dot and no whitespace — enough to reject `http://` and
+  // the street address one org files under `url`, and deliberately not a TLD
+  // list we would have to maintain against a source that keeps surprising us.
+  return /^[^\s]+\.[^\s.]{2,}$/.test(parsed.hostname) ? candidate : null;
+}
 
 /**
  * The per-animal Adoption Tracker URL (ADR-0006 decision 2) — the pixel every

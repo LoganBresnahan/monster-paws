@@ -150,6 +150,20 @@ slice or change build order.
       not blocking — the build plan carries the detail. Until it is fixed,
       browse's filter OPTIONS must be built from values matching `^[A-Z]{2}$`,
       never `select distinct state`, or `T` becomes a filter nobody can use.
+      The `animal-detail-page` slice shipped 2026-09-04: `/animals/[id]`,
+      ISR at an hour, reading only through `loadAnimalDetail` so the one
+      visibility predicate cannot be bypassed. Two findings from the first
+      render against the real corpus. **ADR-0018**: 72% of stored descriptions
+      are HTML-entity-encoded (none carry tags), so prose is entity-decoded at
+      render, never at promotion. The link-back that decision 5 and the key
+      application promise is **closed** (migration 0009): `orgUrl` (97.7% of
+      animals) and the animal's own `listingUrl` (18.6%) are promoted as
+      claims, validated and never assembled, leaving 1,404 animals named but
+      unlinked.
+      Amended again the same day: photos carry the dimensions RescueGroups
+      publishes (`animal_display.photos`, migrations 0007/0008, corpus
+      replayed), so a detail frame takes each photo's own shape instead of
+      cropping the animal or letterboxing it.
       Carry-in: ~4,100 animals are now collected but never rendered. A
       supply-side number to watch, not a bug; if it grows, look at the bound
       and at the upstream feed.

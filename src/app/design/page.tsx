@@ -1,6 +1,30 @@
 import { notFound } from "next/navigation";
 import { Swatches, ThemeToggle } from "./swatches";
+import { AnimalGallery } from "@/ui/animal-gallery";
+import { agoInWords } from "@/ui/dates";
 import { TYPE_SCALE } from "@/ui/tokens";
+
+/** Local, so the guide never hotlinks a real shelter's photo to demo a component. */
+function samplePhoto(emoji: string, width: number, height: number) {
+  const url =
+    "data:image/svg+xml;utf8," +
+    encodeURIComponent(
+      `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}"><rect width="${width}" height="${height}" fill="%23a97c50" opacity="0.25"/><text x="${width / 2}" y="${height * 0.6}" font-size="96" text-anchor="middle">${emoji}</text></svg>`,
+    );
+  return { url, width, height };
+}
+
+/** Deliberately different shapes: the frame takes each photo's own ratio, and one sample size would hide that. */
+const SAMPLE_PHOTOS = [
+  samplePhoto("🐶", 400, 300),
+  samplePhoto("🐕", 300, 400),
+  samplePhoto("🦴", 400, 400),
+  samplePhoto("🐾", 500, 250),
+];
+
+/** Fixed, not `Date.now()`: a style guide that renders differently each visit cannot be diffed by eye. */
+const SAMPLE_NOW = new Date("2026-09-04T12:00:00Z");
+const SAMPLE_SEEN = new Date("2026-09-03T00:00:00Z");
 
 /** Living style guide (ADR-0016): every token and pattern the site uses, rendered. Dev only. */
 
@@ -86,6 +110,32 @@ export default function DesignPage() {
           >
             ← Text link
           </a>
+        </div>
+      </Section>
+
+      <Section title="Animal photo & freshness (ADR-0015)">
+        <div className="grid gap-6 sm:grid-cols-2">
+          <div className="rounded-cuddly bg-card p-4 shadow-sm">
+            <AnimalGallery photos={SAMPLE_PHOTOS} name="Biscuit" />
+            <div className="p-4">
+              <h3 className="text-lg font-bold">Biscuit</h3>
+              <p className="mt-1 text-sm text-muted">
+                Beagle mix · Female · About 3 years old (estimated) · Austin, TX
+              </p>
+            </div>
+          </div>
+          <div className="rounded-cuddly border-2 border-paw/30 bg-card p-6">
+            <p className="text-sm text-muted">
+              We last checked this listing{" "}
+              {agoInWords(SAMPLE_SEEN, SAMPLE_NOW)}. Listings refresh at most
+              once a day, so ours can be behind the shelter&apos;s — always confirm with them
+              before making plans.
+            </p>
+            <p className="mt-4 text-sm text-muted">
+              The freshness line is copy the detail page renders, not decoration: it is the
+              stale-data mitigation, and it never says &ldquo;available now&rdquo;.
+            </p>
+          </div>
         </div>
       </Section>
 

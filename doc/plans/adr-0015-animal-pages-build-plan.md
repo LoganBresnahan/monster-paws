@@ -88,8 +88,53 @@ adversarial verify pass (⚠). Check items off as they ship.
        Carry-ins raised but out of this slice's scope are on roadmap item 2.
 
 3. **pages (styled with brand tokens)**
-   - [ ] `animal-detail-page` — medium, moderate
+   - [x] `animal-detail-page` — medium, moderate — shipped 2026-09-04
+     - `src/app/animals/[id]/page.tsx` reaches the database only through
+       `loadAnimalDetail` (`src/core/animals.ts`), which composes
+       `visibleAnimalById`; a non-visible id, a nonexistent one and a
+       non-numeric one are all 404. Shared primitives (`AnimalPhoto`,
+       `TrackerPixel`) live in `src/ui/animal.tsx` and `/design` renders those,
+       per the ADR-0016 amendment above.
+     - the tracker pixel is driven by the `rescuegroups` display row itself,
+       never by whichever row won `pickLicensedDisplay` precedence — a
+       shelter's own display row outranking RG's must not silently drop a pixel
+       the API terms owe (ADR-0006 decision 2).
+     - **ADR-0018 came out of the first real render**: 72% of stored
+       descriptions are HTML-entity-encoded, so the page showed
+       `I&#39;m a chill girl.&nbsp;`. Decoding happens at render, never at
+       promotion, and unknown entities stand verbatim.
+     - the link-back decision 5 owes is **closed 2026-09-04** (ADR-0015 as
+       amended, migration 0009). It was briefly filed as blocking on the belief
+       that RG publishes no org URL — a conclusion drawn from ONE payload, and
+       wrong: `orgs.url` covers 97.7% of animals and 18.6% carry their own
+       listing page. Both are claims, validated, never assembled. The lesson is
+       the cheaper one: measure a field's coverage across the corpus before
+       concluding a source does not publish it.
+     - dogfooding 2026-09-04 moved two decisions earlier, both amendments:
+       **ADR-0015 decision 7** — the hero photo loaded last and shoved the page
+       down, so photos are a fixed aspect box, and thumbnails that look
+       clickable now are (`AnimalGallery`, the one client island, `useState`
+       only, no state library). **ADR-0018** — `tidyWhitespace` after
+       `decodeEntities`, in that order, because one listing rendered ~4,000px
+       tall and its blank lines were decoded `&nbsp;`.
+     - **ADR-0015 amended again 2026-09-04** after `object-cover` was seen
+       cutting a dog's head off: `animal_display.photo_urls` became `photos`
+       (`{url,width,height}`, migrations 0007/0008), the RG normalizer reads
+       each variant's own `resolutionX/Y`, and the frame takes the photo's own
+       ratio. Corpus replayed: 64,133 display rows, 62,121 with photos, none
+       malformed. A photo whose size the source omits is dropped.
+     - carry-in → phase 4: `isBirthDateExact` renders as "Born <date>" and the
+       estimate as "About N years old (estimated)" — e2e should pin both, since
+       a flipped flag states an age a shelter would have to defend.
    - [ ] `animal-browse-page` — medium, moderate
+     - carry-in, seen 2026-09-04 on the dev-only stub index: the head of the
+       longest-listed sort is not animals. The first rows are administrative
+       listings a rescue parked in the feed years ago — "ADOPTION-Read First"
+       (listed 2006), "Kittens!!!!" (2006), "OK Fosters Needed" (2008), "One by
+       One cats" — all `available`, all maintained recently enough to clear the
+       24-month upkeep bound. The bound filters abandonment, not
+       not-an-animalness, and the sort points straight at these. Decide it
+       before browse ships: it is the first page a donor sees.
    - [ ] `brand-tokens-in-pages` — low, mechanical
      - **amended 2026-09-03 (ADR-0016)**: the cycle resolution under "Why this
        order" — fold the styling in, no shared component — is superseded now

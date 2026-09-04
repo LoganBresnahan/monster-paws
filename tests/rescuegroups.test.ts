@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import {
   createRescueGroupsAdapter,
+  orgUrlOf,
   rescueGroupsNormalizer,
   trackerUrlOf,
   type RescueGroupsAnimal,
@@ -406,11 +407,39 @@ describe("rescuegroups display promotion (ADR-0015, ADR-0006 as amended 2026-08-
 
     // Picture ids 35712496/35712498/56438918 carry order 1/2/3; the sidecar is
     // sorted by id for hash stability, so array position is not their order.
-    expect(display?.photoUrls).toEqual([
-      "https://cdn.rescuegroups.org/3077/pictures/animals/10013/10013509/35712496.jpg?width=500",
-      "https://cdn.rescuegroups.org/3077/pictures/animals/10013/10013509/35712498.jpg?width=500",
-      "https://cdn.rescuegroups.org/3077/pictures/animals/10013/10013509/56438918.jpg?width=500",
+    // Each size is the `large` variant's OWN — the originals are 700×890,
+    // 799×915 and 1014×1257, and pairing those with a 500px URL would size
+    // every frame wrong while looking plausible (ADR-0015 as amended).
+    expect(display?.photos).toEqual([
+      {
+        url: "https://cdn.rescuegroups.org/3077/pictures/animals/10013/10013509/35712496.jpg?width=500",
+        width: 500,
+        height: 636,
+      },
+      {
+        url: "https://cdn.rescuegroups.org/3077/pictures/animals/10013/10013509/35712498.jpg?width=500",
+        width: 500,
+        height: 573,
+      },
+      {
+        url: "https://cdn.rescuegroups.org/3077/pictures/animals/10013/10013509/56438918.jpg?width=500",
+        width: 500,
+        height: 620,
+      },
     ]);
+  });
+
+  it("drops a picture whose variant publishes no usable size — an invented shape is worse than none", async () => {
+    const [obs] = await collect(createRescueGroupsAdapter({ apiKey: "k" }, fixtureFetch().fetchImpl));
+    const first = obs.payload.included.find((r) => r.type === "pictures")!;
+    first.attributes.large = { url: "https://cdn.rescuegroups.org/x.jpg?width=500", resolutionY: 0 };
+    delete first.attributes.original;
+
+    const { display } = await rescueGroupsNormalizer.normalize({ ...obs, rawId: 1 });
+    expect(display?.photos.map((p) => p.url)).not.toContain(
+      "https://cdn.rescuegroups.org/x.jpg?width=500",
+    );
+    expect(display?.photos).toHaveLength(2);
   });
 
   it("orders by `order`, not by the sidecar's id sort", async () => {
@@ -420,7 +449,7 @@ describe("rescuegroups display promotion (ADR-0015, ADR-0006 as amended 2026-08-
     pictures.forEach((p, i) => (p.attributes.order = pictures.length - i));
 
     const { display } = await rescueGroupsNormalizer.normalize({ ...obs, rawId: 1 });
-    expect(display?.photoUrls.map((u) => u.split("/").pop())).toEqual([
+    expect(display?.photos.map((p) => p.url.split("/").pop())).toEqual([
       "56438918.jpg?width=500",
       "35712498.jpg?width=500",
       "35712496.jpg?width=500",
@@ -433,9 +462,11 @@ describe("rescuegroups display promotion (ADR-0015, ADR-0006 as amended 2026-08-
     delete first.attributes.large;
 
     const { display } = await rescueGroupsNormalizer.normalize({ ...obs, rawId: 1 });
-    expect(display?.photoUrls[0]).toBe(
-      "https://cdn.rescuegroups.org/3077/pictures/animals/10013/10013509/35712496.jpg",
-    );
+    expect(display?.photos[0]).toEqual({
+      url: "https://cdn.rescuegroups.org/3077/pictures/animals/10013/10013509/35712496.jpg",
+      width: 700,
+      height: 890,
+    });
   });
 
   it("carries the observation's fetchedAt, so replay rebuilds the same row", async () => {
@@ -459,7 +490,7 @@ describe("rescuegroups display promotion (ADR-0015, ADR-0006 as amended 2026-08-
     // the page forever — the upsert can only clear what it is handed.
     expect(display).toEqual({
       description: null,
-      photoUrls: [],
+      photos: [],
       listingOrg: "Angel Pets Animal Welfare Society, Inc",
       trackerUrl: null,
       fetchedAt: obs.fetchedAt,
@@ -470,17 +501,27 @@ describe("rescuegroups display promotion (ADR-0015, ADR-0006 as amended 2026-08-
     const { display } = await displayFor(1);
 
     expect(display?.trackerUrl).toBeNull();
-    expect(display?.photoUrls).toEqual([
-      "https://cdn.rescuegroups.org/27/pictures/animals/10059/10059734/41339654.jpg?width=500",
-      "https://cdn.rescuegroups.org/27/pictures/animals/10059/10059734/41339662.jpg?width=500",
+    expect(display?.photos).toEqual([
+      {
+        url: "https://cdn.rescuegroups.org/27/pictures/animals/10059/10059734/41339654.jpg?width=500",
+        width: 500,
+        height: 517,
+      },
+      {
+        url: "https://cdn.rescuegroups.org/27/pictures/animals/10059/10059734/41339662.jpg?width=500",
+        width: 500,
+        height: 566,
+      },
     ]);
   });
 
   it("never promotes a video or a thumbnail as a listing photo", async () => {
     const { display } = await displayFor(1);
 
-    expect(display?.photoUrls.some((u) => u.includes("width=100"))).toBe(false);
-    expect(display?.photoUrls.some((u) => u.includes("videosroot") || u.includes("youtube"))).toBe(false);
+    expect(display?.photos.some((p) => p.url.includes("width=100"))).toBe(false);
+    expect(
+      display?.photos.some((p) => p.url.includes("videosroot") || p.url.includes("youtube")),
+    ).toBe(false);
   });
 });
 
@@ -507,7 +548,7 @@ describe("rescuegroups through the pipeline", () => {
     const first = structuredClone([...corpus.display.entries()]);
 
     expect(first.map(([k]) => k)).toEqual(["1:rescuegroups", "2:rescuegroups"]);
-    expect(corpus.display.get("1:rescuegroups")?.photoUrls).toHaveLength(3);
+    expect(corpus.display.get("1:rescuegroups")?.photos).toHaveLength(3);
 
     const second = await runIngest(
       createRescueGroupsAdapter({ apiKey: "k" }, fixtureFetch().fetchImpl),
@@ -535,5 +576,80 @@ describe("rescuegroups through the pipeline", () => {
     expect(second.deduped).toBe(2);
     expect(second.persisted).toBe(0);
     expect(corpus.rawRows).toHaveLength(2);
+  });
+});
+
+/**
+ * The link back to the listing organization (ADR-0015 decision 5, ADR-0006
+ * decision 2). Cases are from the 2026-09-04 corpus, where 62,658 of 64,133
+ * animals' orgs publish a `url`, 11,933 animals carry their own listing page,
+ * and a handful publish something that never was a URL.
+ */
+describe("rescuegroups link-back (ADR-0015 as amended 2026-09-04)", () => {
+  async function normalizeWithOrg(index: number, orgAttributes: Record<string, unknown>) {
+    const observations = await collect(
+      createRescueGroupsAdapter({ apiKey: "k" }, fixtureFetch().fetchImpl),
+    );
+    const obs = observations[index];
+    const org = obs.payload.included.find((r) => r.type === "orgs")!;
+    Object.assign(org.attributes, orgAttributes);
+    return rescueGroupsNormalizer.normalize({ ...obs, rawId: index + 1 });
+  }
+
+  it("takes what RescueGroups published, unchanged", () => {
+    expect(orgUrlOf({ url: "http://aaFlorida.org" })).toBe("http://aaFlorida.org");
+    expect(orgUrlOf({ url: "https://adopt.pawslikeme.com/" })).toBe("https://adopt.pawslikeme.com/");
+  });
+
+  // The only character we add. `http` because that is what this feed's own orgs
+  // publish 82% of the time — assuming https breaks every http-only shelter.
+  it("adds the missing scheme and nothing else", () => {
+    expect(orgUrlOf({ url: "24petconnect.com/pp2928" })).toBe("http://24petconnect.com/pp2928");
+    expect(orgUrlOf({ url: "DesertPawsNM.org" })).toBe("http://DesertPawsNM.org");
+  });
+
+  it("rejects a value that was never a URL rather than linking a donor into nowhere", () => {
+    expect(orgUrlOf({ url: "150 Gardener pl." })).toBeNull();
+    expect(orgUrlOf({ url: "http://" })).toBeNull();
+    expect(orgUrlOf({ url: "   " })).toBeNull();
+    expect(orgUrlOf({})).toBeNull();
+    expect(orgUrlOf(undefined)).toBeNull();
+  });
+
+  it("falls back through the adoption page to Facebook, which for small rescues is the site", () => {
+    expect(orgUrlOf({ url: "http://", adoptionUrl: "https://rescue.org/adopt" })).toBe(
+      "https://rescue.org/adopt",
+    );
+    expect(orgUrlOf({ facebookUrl: "facebook.com/tinyrescue" })).toBe(
+      "http://facebook.com/tinyrescue",
+    );
+  });
+
+  // A claim, not display content: it merges by tier and carries provenance,
+  // because where an animal is listed is a fact about the animal — while the
+  // description beside it is a licensed copy of someone's words.
+  it("promotes the org site as a claim", async () => {
+    const { claims, display } = await normalizeWithOrg(0, { url: "angelpets.org" });
+
+    expect(claims.orgUrl?.value).toBe("http://angelpets.org");
+    expect(claims.orgUrl?.source).toBe("rescuegroups");
+    expect(display).not.toHaveProperty("orgUrl");
+  });
+
+  it("asserts nothing when the org publishes no usable link", async () => {
+    const { claims } = await normalizeWithOrg(0, {});
+    expect(claims.orgUrl).toBeUndefined();
+  });
+
+  // The fixture's second animal carries its own listing page; the first does
+  // not, which is the 81% of the corpus that gets the org link and no more.
+  it("promotes the animal's own listing page when the source publishes one", async () => {
+    const { claims } = await normalizeWithOrg(1, {});
+    expect(claims.listingUrl?.value).toBe(
+      "https://www.olivebranchwv.org/animals/detail?AnimalID=10059734",
+    );
+
+    const first = await normalizeWithOrg(0, {});
+    expect(first.claims.listingUrl).toBeUndefined();
   });
 });

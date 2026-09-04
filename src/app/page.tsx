@@ -1,4 +1,15 @@
 import Image from "next/image";
+import Link from "next/link";
+
+/**
+ * Dev-only navigation. Both destinations are dev-gated pages — `/animals` is a
+ * stub standing in for the unbuilt browse page and `/design` is the style
+ * guide — so a link that renders in production is a link to a 404.
+ */
+const DEV_LINKS = [
+  { href: "/animals", label: "Animals (stub)" },
+  { href: "/design", label: "Design" },
+];
 
 const LOOP = [
   {
@@ -21,6 +32,15 @@ const LOOP = [
 export default function Home() {
   return (
     <main className="flex flex-1 flex-col items-center px-6 py-20 text-center">
+      {process.env.NODE_ENV !== "production" && (
+        <nav className="mb-10 flex gap-4 text-sm font-medium text-muted">
+          {DEV_LINKS.map((link) => (
+            <Link key={link.href} href={link.href} className="underline hover:text-foreground">
+              {link.label}
+            </Link>
+          ))}
+        </nav>
+      )}
       <h1>
         <Image
           src="/brand/wordmark-v1.png"
