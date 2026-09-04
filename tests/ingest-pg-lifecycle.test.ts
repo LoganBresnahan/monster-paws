@@ -200,10 +200,11 @@ describe.skipIf(SKIP_DB_TESTS)("ADR-0014 Postgres lifecycle — in lockstep with
     await expectParity();
   });
 
-  // The clock on this machine steps back ~105s when its host resyncs, which
-  // failed roughly one run in eight — and in production would throw away a
-  // 15-minute poll over 64k animals (ADR-0014 as amended).
-  it("clamps a small backward clock step forward instead of failing the run", async () => {
+  // This machine's wall clock steps in BOTH directions by tens of seconds and
+  // growing — dual-boot RTC disagreement, corrected through Hyper-V time sync
+  // — so no fixed tolerance would hold (ADR-0014 as amended). Failing here
+  // would discard a complete 64k poll for a machine's bookkeeping.
+  it("clamps a backward clock step forward instead of failing the run", async () => {
     await both(AGG, [obs(AGG, "a", D3), obs(AGG, "b", D3)]);
 
     // Two minutes back: inside the tolerance, and the run must still complete.
@@ -229,16 +230,29 @@ describe.skipIf(SKIP_DB_TESTS)("ADR-0014 Postgres lifecycle — in lockstep with
     expect(report.clockSteppedBackMs).toBeUndefined();
   });
 
-  it("refuses a run older than the source's newest sighting", async () => {
+  // Supersedes "refuses a run older than the source's newest sighting": the
+  // refusal protected nothing the clamp does not. A run the caller declared
+  // COMPLETE that did not contain `b` means `b` is gone, and no reading of the
+  // clock changes that — only the DATE of the event was ever in question, and
+  // clamping answers it (ADR-0014 as amended).
+  it("still reconciles a run two days behind the clock, dating it at the last sighting", async () => {
     await both(AGG, [obs(AGG, "a", D3), obs(AGG, "b", D3)]);
 
     const backwards = { complete: true, now: () => D1 };
-    await expect(runIngest(adapterOf(AGG, [obs(AGG, "a", D1)]), pg, backwards)).rejects.toThrow(/predates/);
-    await expect(runIngest(adapterOf(AGG, [obs(AGG, "a", D1)]), mem.stages, backwards)).rejects.toThrow(
-      /predates/,
-    );
+    const m = await runIngest(adapterOf(AGG, [obs(AGG, "a", D1)]), mem.stages, backwards);
+    const report = await runIngest(adapterOf(AGG, [obs(AGG, "a", D1)]), pg, backwards);
+
+    expect(report.events.map((e) => [e.kind, e.data.externalId])).toEqual([
+      ["animal.disappeared", "b"],
+    ]);
+    // Never before the sighting it follows — the whole point of the clamp.
+    expect(report.events[0].occurredAt).toEqual(D3);
+    expect(report.clockSteppedBackMs).toBe(D3.getTime() - D1.getTime());
+    expect(m.clockSteppedBackMs).toBe(D3.getTime() - D1.getTime());
+
     const [b] = await db.select().from(animalIdentities).where(eq(animalIdentities.externalId, "b"));
-    expect(b.disappearedAt).toBeNull();
+    expect(b.disappearedAt).toEqual(D3);
+    await expectParity();
   });
 
   it("a rebuild keeps true last sightings, and the next run re-establishes disappearance once", async () => {

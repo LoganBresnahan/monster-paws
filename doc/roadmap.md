@@ -85,9 +85,13 @@ pin dogfood findings and deferred sub-tasks to items as carry-ins.
       check whether RG's duplicates actually differ before choosing a fix, and
       note the "a duplicate raw row is inert" comment in `pg.ts` is no longer
       true; ~~**a backward wall clock**~~ — **fixed 2026-09-04 (ADR-0014 as
-      amended)**: a step inside five minutes is clamped forward and reported as
-      `clockSteppedBackMs`, beyond it still throws. The dev host steps back
-      ~105s on resync, which was failing about one run in eight; and
+      amended)**: `at = max(at, newest sighting)`, always, reported as
+      `clockSteppedBackMs` and never fatal. No tolerance — the dev box's steps
+      are accumulated dual-boot RTC drift (86.7s in August, 105s in September,
+      both directions), so any fixed bound is a number waiting to be exceeded.
+      Carry-in: a FORWARD step writes a future `last_seen_at` and so widens
+      ADR-0015's visibility window until real time catches up — unaddressed,
+      because it needs a reference clock the ingest path does not have; and
       **pagination drift** — no
       cursor, so records shift between pages and a trickle of false
       disappear/reappear pairs is expected; needs a reappear-rate metric

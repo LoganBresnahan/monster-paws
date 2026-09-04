@@ -109,55 +109,71 @@ is the per-source list of what canonical knows about.
 - Sponsors exist and the graduation moment is wired — the daily lag and
   the ratio gate both become user-visible and should be revisited together.
 
-## Amendment (2026-09-04): a small backward clock step is corrected, not refused
+## Amendment (2026-09-04): the reconcile clock is ordered by the data, not by the wall clock
 
 The original decision refuses any run whose `at` predates the source's newest
 sighting, to stop a disappearance being dated before a presence. The rule is
-right; the response was too blunt.
+right; the refusal was the wrong instrument.
 
-Observed rather than theorised. The development host steps its clock backward
-by ~105 seconds when it resyncs — caught in the act on 2026-09-04, where an
-`animal_identities` row carried a Postgres-written `created_at` of
-`01:56:37.723` while that same database reported `now()` as `01:54:52.300` a
-moment later. It failed roughly one test run in eight, and in production the
-same step during a poll throws away fifteen minutes of work over 64k animals
-after every page has already been fetched.
+### The machine
 
-### 1. Clamp forward inside a tolerance
+Observed here, and already characterised in a sibling project on the same box
+(`captAInHook/doc/platform.md`, measured 2026-08-11): WSL2's wall clock steps by
+tens of seconds **in both directions** — a +86.4s step while the monotonic clock
+advanced 101ms, and −86.7s back a minute later. The mechanism is a dual-boot
+machine whose two operating systems disagree about the RTC; Windows resyncs
+against time.windows.com to correct the accumulated drift, WSL2's guest clock
+follows through Hyper-V time sync, and each correction lands in the guest as a
+step. Nothing in the workload provokes it.
 
-`resolveReconcileAt(at, newest)` returns `max(at, newest)`. The invariant this
-ADR actually cares about — a disappearance is never dated before a presence —
-is satisfied outright by the clamp, so inside the tolerance there is nothing
-to refuse: the events are dated at the last sighting, which is both true and
-monotonic.
+This ADR was amended earlier the same day with a five-minute tolerance, chosen
+from a single ~105s observation. That was wrong, and the reason matters: **the
+step size is the accumulated drift**, so it grows with the time between the
+host's resyncs — 86.7s in August, 105s in September. Any fixed bound is a number
+waiting to be exceeded, and exceeding it discards a complete 64k poll for a
+machine's bookkeeping.
 
-`CLOCK_STEP_TOLERANCE_MS` is five minutes: a few multiples of the ~105s
-observed, and still far below the misconfiguration the refusal exists for.
+The bidirectional part also corrects the earlier diagnosis. A *forward* step is
+what lets Postgres stamp `created_at` ahead of true time; the backward
+correction is merely when the damage becomes visible.
 
-### 2. Beyond the tolerance it still throws
+### 1. Always clamp forward
 
-A clock that wrong makes every other stamp in the run wrong too —
-`fetched_at`, `last_seen`, every event's `occurredAt` — and reconcile is the
-only place that notices. The throw is the canary, not the rule; never widen
-this to "always clamp".
+`resolveReconcileAt(at, newest)` returns `max(at, newest)`, with no threshold.
+The clamp is not a concession to a broken clock — it is this ADR's invariant
+written as an expression, and it holds at any magnitude.
+
+### 2. The refusal is withdrawn
+
+It protected nothing the clamp does not. A run the caller declared **complete**
+that did not contain an animal means that animal is gone; only the *date* of
+the event was ever in question, and the clamp answers it. Replay never
+reconciles, a partial run never reconciles, and an empty feed is already
+skipped — so no path reaches here where "the clock looks wrong" implies "the
+data is wrong".
 
 ### 3. A corrected run says so
 
-`IngestRunReport.clockSteppedBackMs` carries the correction, and the ingest CLI
-prints it. Silent correction would trade a loud wrong failure for a quiet
-wrong success, which is the worse of the two.
+`IngestRunReport.clockSteppedBackMs` carries the correction and the ingest CLI
+prints it. This is now the only signal, which makes it the important one:
+a step is reported, never silently absorbed.
 
 ### Consequences (added)
 
-- A step inside the tolerance dates that run's lifecycle events at the previous
-  sighting rather than at the true present — up to five minutes early. That is
-  the price of not discarding the run, and it is bounded by the tolerance.
-- `clockSteppedBackMs` appearing on most runs is a broken host clock, not a
-  quirk of the feed. Read it as an infrastructure alarm.
+- A stepped run dates its lifecycle events at the previous sighting rather than
+  at the true present. Unbounded in principle, bounded in practice by how far
+  the host's clock has drifted.
+- `clockSteppedBackMs` appearing routinely is an infrastructure fact about the
+  host, not a property of the feed. On the droplet it would mean NTP needs
+  fixing; a tolerance was never a substitute for a machine that keeps time.
+- Nothing here helps a *forward* step, which writes a future `last_seen_at` and
+  so widens the ADR-0015 visibility window until real time catches up. Pinned as
+  a roadmap carry-in rather than solved: it needs a reference clock, and this
+  ADR only has the data's own ordering.
 
 ### Revisit triggers (added)
 
-- The droplet reports steps in production — NTP there is a fixable problem, and
-  a tolerance is not a substitute for a machine that keeps time.
-- A step is ever observed larger than the tolerance in normal operation — the
-  number was chosen from one machine's behaviour and would need re-measuring.
+- The droplet reports steps — fix NTP there; do not widen anything.
+- A reference clock becomes available (a monotonic-anchored source, or trusting
+  Postgres as the single clock for both sighting and reconcile) — the forward
+  step becomes addressable and this decision can be revisited whole.

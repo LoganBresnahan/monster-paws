@@ -178,37 +178,24 @@ export interface LifecycleStore {
 }
 
 /**
- * How far the wall clock may step backward before a run is refused rather than
- * corrected (ADR-0014 as amended). Measured, not chosen: this machine steps
- * back ~105s when its host resyncs, which failed roughly one poll or test run
- * in eight. Five minutes is a few multiples of that and still far below a
- * misconfiguration, which is what the refusal is actually for.
- */
-export const CLOCK_STEP_TOLERANCE_MS = 5 * 60 * 1000;
-
-/**
- * The reconcile clock, clamped forward to the newest sighting. ADR-0014's
- * invariant is that a disappearance is never dated before a presence — which
- * `max(at, newest)` satisfies outright, so a small backward step needs no
- * refusal. Beyond the tolerance we still throw: a clock that wrong makes every
- * other stamp in the run wrong too, and this is the only place that notices.
+ * The reconcile clock, ordered by the data rather than by the wall clock
+ * (ADR-0014 as amended). ADR-0014's invariant — a disappearance is never dated
+ * before a presence — is what `max(at, newest)` states directly, so the clamp
+ * IS the rule and needs no threshold to sit behind.
  *
- * Never widen this to "always clamp" — the throw is the canary, not the rule.
+ * Never reintroduce a tolerance that throws past some size. The step size here
+ * is accumulated RTC drift, so it grows with the time between the host's
+ * resyncs: any fixed bound is a number waiting to be exceeded, and exceeding it
+ * would discard a complete 64k poll for a machine's bookkeeping. A run that is
+ * complete and did not see an animal means that animal is gone, whatever the
+ * clock believes.
  */
 export function resolveReconcileAt(
   at: Date,
   newest: Date | null,
 ): { at: Date; clockSteppedBackMs: number } {
   if (!newest || at >= newest) return { at, clockSteppedBackMs: 0 };
-  const steppedBack = newest.getTime() - at.getTime();
-  if (steppedBack > CLOCK_STEP_TOLERANCE_MS) {
-    throw new Error(
-      `reconcile at ${at.toISOString()} predates last sighting ${newest.toISOString()} by ` +
-        `${Math.round(steppedBack / 1000)}s — beyond the ${CLOCK_STEP_TOLERANCE_MS / 1000}s ` +
-        `clock-step tolerance (ADR-0014 as amended)`,
-    );
-  }
-  return { at: newest, clockSteppedBackMs: steppedBack };
+  return { at: newest, clockSteppedBackMs: newest.getTime() - at.getTime() };
 }
 
 /**
