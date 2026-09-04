@@ -217,6 +217,13 @@ slice or change build order.
 
 ## Later
 
+- [ ] **7b. Listing assessment (ADR-0021).** An LLM verdict per listing —
+      "is this one adoptable animal?" — as derived, model-versioned data,
+      gating browse only, default-show, and switched on only after a
+      hand-labelled eval beats the regex baseline on *recall of real animals*.
+      Sits here because it brings the first LLM into the ingest path and a
+      third eval harness, which item 8 needs anyway. ~$15 for the whole corpus
+      via the Batch API; the labelling afternoon is the real cost.
 - [ ] **8. Update generation + faithfulness evals.** LLM donor updates from
       confirmed events; the no-unattested-claims harness; adoption
       "graduation" moment + gotcha-day card. Reads `animal_story` only, never

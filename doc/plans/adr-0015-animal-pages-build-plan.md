@@ -133,8 +133,14 @@ adversarial verify pass (⚠). Check items off as they ship.
        (listed 2006), "Kittens!!!!" (2006), "OK Fosters Needed" (2008), "One by
        One cats" — all `available`, all maintained recently enough to clear the
        24-month upkeep bound. The bound filters abandonment, not
-       not-an-animalness, and the sort points straight at these. Decide it
-       before browse ships: it is the first page a donor sees.
+       not-an-animalness, and the sort points straight at these.
+       **Decided 2026-09-04 (ADR-0021)**: the real fix is an LLM verdict as
+       derived data, built later as roadmap item 7b. Browse owns the interim:
+       accept the dozen rows as a dev-demo blemish or a tiny curated exclusion
+       — never a regex over names, which hides real animals ("Sunshine
+       9.21.09", "Afraid of Commitment") to catch them. Whatever the interim is,
+       it composes beside `visibleAnimals`, never inside it: the detail page
+       must stay reachable by link.
    - [ ] `brand-tokens-in-pages` — low, mechanical
      - **amended 2026-09-03 (ADR-0016)**: the cycle resolution under "Why this
        order" — fold the styling in, no shared component — is superseded now

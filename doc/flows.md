@@ -373,3 +373,37 @@ first projector with item 4. Nothing donor-facing reads `event_log`.
 Why the line is where it is: on 2026-09-04 a replay backfilling two new merged
 fields wrote 62,729 true, permanent `animal.updated` rows about nothing that
 happened to an animal. The ledger was right; it was only ever wrong as a feed.
+
+## Listing assessment — a verdict beside visibility, never inside it (ADR-0021)
+
+Planned: roadmap item 7b. Derived data like `embeddings`; gates browse only.
+
+```
+  animals + animal_display          the fields the PAGE shows — never the raw
+       │                            payload, so the judge sees nothing a reader
+       ▼                            could not
+  assessListings()   (planned, 7b)  Batch API, cached instruction prefix,
+       │                            structured output; model + prompt_version
+       │                            stamped on every row
+       ▼
+  animal_assessments                (animal_id, model, prompt_version) →
+       │                              is_individual_animal   ← the only gate
+       │                              name_reads_as_name     ← gates NOTHING
+       │                              confidence, reason, assessed_at
+       │                            rebuildable; a new prompt version rewrites
+       │                            every row in one run
+       ▼
+  browse / feeds                    where(visibleAnimals() AND notJunk())
+                                    notJunk = no verdict, low confidence, or
+                                    stale prompt version → SHOWN; only a
+                                    confident false hides. Composed, never
+                                    folded into visibleAnimals —
+  detail /animals/[id]              reads visibleAnimals() ONLY: a false
+                                    positive is "not discoverable," never a
+                                    404 on the link the shelter shared
+
+  eval (planned, 7b)                ~200 hand-labelled listings, head-of-sort
+                                    AND random; the gate turns on when recall
+                                    on REAL animals clears the bar, not when
+                                    junk-catch does
+```
