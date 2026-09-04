@@ -174,7 +174,10 @@ slice or change build order.
       donate — framed real photo by default; AI art (ADR-0004 pipeline v0,
       built and exercised internally) ships in production **only for
       consented shelters**, credited "Permission to digify <pet> given by
-      <shelter>". Collection page.
+      <shelter>". Collection page — the card timeline reads `animal_story`
+      (ADR-0020); the two kinds projectable today, `status.changed` and
+      `listing.reappeared`, are enough for a first card and may pull the
+      projector forward from item 6.
       Carry-in: **`shelters` table lands here or at item 7** — whichever comes
       first. The registry (item 2 carry-in) covers config and consent; a table
       is owed once a shelter is a user-facing entity that donations route to
@@ -193,6 +196,10 @@ slice or change build order.
       tier pitch (Shelterluv key, attestations) follows with whichever
       shelter warms up first.
 - [ ] **6. Shelterluv integration.** Approval → poller → care-event diffing.
+      Lands the `animal_story` table and its projector (ADR-0020) — care
+      `kind`s are named against real care events here, not before; the
+      newsworthiness list classifies every `AnimalFields` entry or the build
+      fails.
 - [ ] **7. Attestation pipeline.** Shelter keys, weekly batch-confirm
       dashboard, hash anchoring, R2 flat-file mirror, public verification page.
 
@@ -200,7 +207,11 @@ slice or change build order.
 
 - [ ] **8. Update generation + faithfulness evals.** LLM donor updates from
       confirmed events; the no-unattested-claims harness; adoption
-      "graduation" moment + gotcha-day card.
+      "graduation" moment + gotcha-day card. Reads `animal_story` only, never
+      `event_log` (**ADR-0020**, decided 2026-09-04 after a replay wrote
+      62,729 true-but-not-news `animal.updated` rows): prose elaborates within
+      a row's evidence tier and never up it, and the harness joins story →
+      evidence.
 - [ ] **9. Style LoRA.** Fine-tune the "Monster Paws look"; identity conditioning;
       CLIP-QC harness proper.
 - [ ] **10. Entity resolution at scale.** Second/third listing source; dedup

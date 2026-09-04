@@ -49,6 +49,10 @@ only — do not build from it.
 - **Bright lines** (see DIRECTION.md): no rarity tiers on animals, nothing
   tradeable ever, no dark-pattern pressure, no programmatic ads, generated
   donor text never claims care that isn't attested.
+- **The donor feed is a projection, never the ledger** (ADR-0020). Nothing
+  donor-facing reads `event_log`; `animal_story` is derived, rebuildable, and
+  written only by its projector, with the evidence tier persisted by name. An
+  absence from a feed is never an outcome.
 
 ## Infra ops
 

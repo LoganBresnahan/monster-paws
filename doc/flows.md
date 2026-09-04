@@ -330,3 +330,46 @@ source's own listing date, never `created_at`, which dates our INSERT
 line 1). It pages by keyset cursor, `(listed_at, id) > (cursor)`: an offset
 window shifts as animals are adopted out of it and silently skips whoever
 crosses a page boundary.
+
+## Animal story — the donor feed is a projection, never the ledger (ADR-0020)
+
+Planned: the boundary is decided; the table lands with roadmap item 6 and the
+first projector with item 4. Nothing donor-facing reads `event_log`.
+
+```
+  PERMANENT TRUTH                        DISPOSABLE INTERPRETATION
+  ───────────────                        ─────────────────────────
+  event_log                              animal_story  (planned, item 6)
+    animal.updated ──┐                     derived: rebuilt from scratch by the
+    animal.reappeared│                     projector; ids unstable, never
+    animal.disappeared                     referenced from outside
+    animal.seen      │                          ▲
+                     │                          │ only writer
+  attestations ──────┤                   projectStory()  (planned, item 4/6)
+  (planned, item 7)  │                     │  newsworthiness list: status → news;
+                     │                     │  orgUrl / listingUrl / postalCode /
+                     └────────────────────►│  listedAt → nothing. A field missing
+                                           │  from the list fails the build.
+                                           │
+                                           │  tier by EVIDENCE, name persisted:
+                                           │    attestation row  → 'attested'
+                                           │    shelter-api row  → 'reported'
+                                           │    aggregator row   → 'observed'
+                                           │
+                                           │  forbidden: animal.disappeared → an
+                                           │  outcome. "Went home" is a shelter's
+                                           │  sentence, never an absence's.
+                                           ▼
+                            readers, all above the line:
+                              card timeline      (planned, item 4)
+                              update generator   (planned, item 8) — elaborates
+                                                  within a tier, never up it;
+                                                  faithfulness eval joins
+                                                  animal_story → evidence
+                              notifications      (planned, item 11) — reference
+                                                  the evidence, not the story id
+```
+
+Why the line is where it is: on 2026-09-04 a replay backfilling two new merged
+fields wrote 62,729 true, permanent `animal.updated` rows about nothing that
+happened to an animal. The ledger was right; it was only ever wrong as a feed.
