@@ -172,6 +172,24 @@ function stringOr(value: unknown, fallback: string | null = null): string | null
 }
 
 /**
+ * Case-canonicalised, because orgs type their own: `TX`, `Tx` and `tx` are one
+ * state and three values, and browse filters on equality against an index — a
+ * `state = 'OH'` query found 1,207 of 1,618 Ohio animals before this, missing
+ * the rest silently (measured on the 64k corpus 2026-09-04). Canonicalising a
+ * code's case is not editing the claim, the same way `species.toLowerCase()`
+ * above is not.
+ *
+ * Anything that is not a two-letter code asserts NOTHING rather than a value no
+ * filter can use — one org files 27 animals under `T`. The raw row keeps what
+ * they said; this layer only decides what we are willing to assert, and a
+ * junk state is worse than a missing one because it becomes a filter option.
+ */
+function stateOr(value: unknown): string | null {
+  const text = stringOr(value)?.trim().toUpperCase();
+  return text && /^[A-Z]{2}$/.test(text) ? text : null;
+}
+
+/**
  * An unparseable date asserts nothing rather than `Invalid Date` — never
  * return the raw `new Date(s)`: every comparison against NaN is false, so a
  * malformed stamp would slip past a window check instead of failing it, which
@@ -294,7 +312,7 @@ export const rescueGroupsNormalizer: Normalizer<RescueGroupsAnimal> = {
     if (orgName) claims.orgName = { value: orgName, ...stamp };
     const city = stringOr(org?.city);
     if (city) claims.city = { value: city, ...stamp };
-    const state = stringOr(org?.state);
+    const state = stateOr(org?.state);
     if (state) claims.state = { value: state, ...stamp };
     const postalCode = stringOr(org?.postalcode);
     if (postalCode) claims.postalCode = { value: postalCode, ...stamp };

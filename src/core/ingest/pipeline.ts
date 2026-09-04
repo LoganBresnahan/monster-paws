@@ -174,7 +174,41 @@ export interface LifecycleStore {
     source: Source,
     seen: ReadonlySet<string>,
     at: Date,
-  ): Promise<{ events: IngestEvent[] }>;
+  ): Promise<{ events: IngestEvent[]; clockSteppedBackMs?: number }>;
+}
+
+/**
+ * How far the wall clock may step backward before a run is refused rather than
+ * corrected (ADR-0014 as amended). Measured, not chosen: this machine steps
+ * back ~105s when its host resyncs, which failed roughly one poll or test run
+ * in eight. Five minutes is a few multiples of that and still far below a
+ * misconfiguration, which is what the refusal is actually for.
+ */
+export const CLOCK_STEP_TOLERANCE_MS = 5 * 60 * 1000;
+
+/**
+ * The reconcile clock, clamped forward to the newest sighting. ADR-0014's
+ * invariant is that a disappearance is never dated before a presence — which
+ * `max(at, newest)` satisfies outright, so a small backward step needs no
+ * refusal. Beyond the tolerance we still throw: a clock that wrong makes every
+ * other stamp in the run wrong too, and this is the only place that notices.
+ *
+ * Never widen this to "always clamp" — the throw is the canary, not the rule.
+ */
+export function resolveReconcileAt(
+  at: Date,
+  newest: Date | null,
+): { at: Date; clockSteppedBackMs: number } {
+  if (!newest || at >= newest) return { at, clockSteppedBackMs: 0 };
+  const steppedBack = newest.getTime() - at.getTime();
+  if (steppedBack > CLOCK_STEP_TOLERANCE_MS) {
+    throw new Error(
+      `reconcile at ${at.toISOString()} predates last sighting ${newest.toISOString()} by ` +
+        `${Math.round(steppedBack / 1000)}s — beyond the ${CLOCK_STEP_TOLERANCE_MS / 1000}s ` +
+        `clock-step tolerance (ADR-0014 as amended)`,
+    );
+  }
+  return { at: newest, clockSteppedBackMs: steppedBack };
 }
 
 /**
@@ -215,6 +249,12 @@ export interface IngestRunReport {
   conflicted: number;
   /** why stage 5 did not run, when it did not (ADR-0014) */
   lifecycleSkipped?: string;
+  /**
+   * How far the wall clock stepped backward during the run, when it did — a
+   * corrected run, never a silent one (ADR-0014 as amended). A number here
+   * repeatedly is a broken clock on the host, not a quirk of the feed.
+   */
+  clockSteppedBackMs?: number;
   events: IngestEvent[];
   failures: IngestFailure[];
 }
@@ -358,8 +398,13 @@ export async function runIngest(
     report.lifecycleSkipped = "run observed nothing";
   } else {
     const at = (options.now ?? (() => new Date()))();
-    const { events } = await stages.lifecycle.reconcile(adapter.source, seen, at);
+    const { events, clockSteppedBackMs } = await stages.lifecycle.reconcile(
+      adapter.source,
+      seen,
+      at,
+    );
     report.events.push(...events);
+    if (clockSteppedBackMs) report.clockSteppedBackMs = clockSteppedBackMs;
   }
 
   return report;

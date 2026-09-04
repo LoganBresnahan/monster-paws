@@ -5,6 +5,7 @@ import type { Observation, StoredObservation } from "@/core/ingest/observation";
 import {
   MERGED_FIELDS,
   inLifecycleOrder,
+  resolveReconcileAt,
   type AnimalCandidate,
   type AnimalClaims,
   type AnimalFields,
@@ -287,7 +288,8 @@ function pgTextArray(values: string[]): string {
 
 export function createPgLifecycleStore(db: Db): LifecycleStore {
   return {
-    async reconcile(source: Source, seen: ReadonlySet<string>, at: Date) {
+    async reconcile(source: Source, seen: ReadonlySet<string>, requestedAt: Date) {
+      let at = requestedAt;
       // One array parameter, never one `$n` per id: the nationwide feed is
       // ~65k animals and Postgres binds at most 65,535 parameters (ADR-0014).
       const inSeen = sql`${animalIdentities.externalId} = ANY(${pgTextArray([...seen])}::text[])`;
@@ -297,14 +299,17 @@ export function createPgLifecycleStore(db: Db): LifecycleStore {
         const bySource = eq(animalIdentities.source, source);
 
         // A run older than the newest sighting would write a disappearance
-        // that predates a presence — refuse rather than record it (ADR-0014).
+        // that predates a presence (ADR-0014). A small backward step is the
+        // host's clock resyncing, so it is clamped and reported rather than
+        // failing a 15-minute run; a large one still throws (ADR-0014 as
+        // amended).
         const [{ newest }] = await tx
           .select({ newest: max(animalIdentities.lastSeenAt) })
           .from(animalIdentities)
           .where(bySource);
-        if (newest && at < newest) {
-          throw new Error(`reconcile at ${at.toISOString()} predates last sighting ${newest.toISOString()}`);
-        }
+        const resolved = resolveReconcileAt(at, newest);
+        at = resolved.at;
+
 
         const wasGone = await tx
           .select({
@@ -351,7 +356,7 @@ export function createPgLifecycleStore(db: Db): LifecycleStore {
 
         const ordered = inLifecycleOrder(emitted);
         if (ordered.length > 0) await tx.insert(eventLog).values(ordered);
-        return { events: ordered };
+        return { events: ordered, clockSteppedBackMs: resolved.clockSteppedBackMs };
       });
     },
   };

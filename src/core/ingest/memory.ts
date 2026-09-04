@@ -12,7 +12,7 @@ import type {
   Normalizer,
   RawStore,
 } from "@/core/ingest/pipeline";
-import { inLifecycleOrder } from "@/core/ingest/pipeline";
+import { inLifecycleOrder, resolveReconcileAt } from "@/core/ingest/pipeline";
 import type { Source } from "@/core/sources";
 
 /**
@@ -192,7 +192,8 @@ export function createMemoryStages(normalizers: Normalizer[]): {
   };
 
   const lifecycle: LifecycleStore = {
-    async reconcile(source: Source, seen: ReadonlySet<string>, at: Date) {
+    async reconcile(source: Source, seen: ReadonlySet<string>, requestedAt: Date) {
+      let at = requestedAt;
       const emitted: IngestEvent[] = [];
       const event = (kind: IngestEvent["kind"], id: MemoryIdentity, data: Record<string, unknown>) =>
         emitted.push({
@@ -208,11 +209,12 @@ export function createMemoryStages(normalizers: Normalizer[]): {
       // about another (ADR-0014).
       const own = [...identities.values()].filter((id) => id.source === source);
       // A run older than the newest sighting would write a disappearance
-      // that predates a presence — refuse rather than record it (ADR-0014).
+      // that predates a presence (ADR-0014). A small backward step is the
+      // host's clock resyncing, so it is clamped and reported rather than
+      // failing the run; a large one still throws (ADR-0014 as amended).
       const newest = own.reduce<Date | null>((m, id) => (!m || id.lastSeenAt > m ? id.lastSeenAt : m), null);
-      if (newest && at < newest) {
-        throw new Error(`reconcile at ${at.toISOString()} predates last sighting ${newest.toISOString()}`);
-      }
+      const resolved = resolveReconcileAt(at, newest);
+      at = resolved.at;
       for (const id of own) {
         if (seen.has(id.externalId)) {
           if (id.disappearedAt) {
@@ -227,7 +229,7 @@ export function createMemoryStages(normalizers: Normalizer[]): {
       }
       const ordered = inLifecycleOrder(emitted);
       events.push(...ordered);
-      return { events: ordered };
+      return { events: ordered, clockSteppedBackMs: resolved.clockSteppedBackMs };
     },
   };
 

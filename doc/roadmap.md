@@ -84,9 +84,11 @@ pin dogfood findings and deferred sub-tasks to items as carry-ins.
       poll and (since ADR-0015) flap the rendered description and photos;
       check whether RG's duplicates actually differ before choosing a fix, and
       note the "a duplicate raw row is inert" comment in `pg.ts` is no longer
-      true; **a backward wall clock** — `createPgLifecycleStore` throws when
-      `at` predates the newest sighting, so an NTP step correction on the
-      droplet fails a whole poll run (ADR-0014); and **pagination drift** — no
+      true; ~~**a backward wall clock**~~ — **fixed 2026-09-04 (ADR-0014 as
+      amended)**: a step inside five minutes is clamped forward and reported as
+      `clockSteppedBackMs`, beyond it still throws. The dev host steps back
+      ~105s on resync, which was failing about one run in eight; and
+      **pagination drift** — no
       cursor, so records shift between pages and a trickle of false
       disappear/reappear pairs is expected; needs a reappear-rate metric
       and a sorted search if the API offers one. Measured on the first
@@ -133,6 +135,15 @@ pin dogfood findings and deferred sub-tasks to items as carry-ins.
       64k corpus stays invisible until a poll or `npm run ingest -- replay
       rescuegroups` fills the column — run that before judging a browse page
       empty.
+      Carry-in: **replay cannot retract a claim** — a fact promoted in error
+      stays until a source asserts a replacement, because an absent claim never
+      overwrites (ADR-0009 phase-7 rule). Measured 2026-09-04: the `stateOr` fix
+      corrected 5,023 states on replay and left 27 junk `T` values standing.
+      Nothing obliges us to retract a fact today (ADR-0006 set-deletion and
+      ADR-0015's display purge both DELETE rows instead), so this is deferred,
+      not blocking — the build plan carries the detail. Until it is fixed,
+      browse's filter OPTIONS must be built from values matching `^[A-Z]{2}$`,
+      never `select distinct state`, or `T` becomes a filter nobody can use.
       Carry-in: ~4,100 animals are now collected but never rendered. A
       supply-side number to watch, not a bug; if it grows, look at the bound
       and at the upstream feed.

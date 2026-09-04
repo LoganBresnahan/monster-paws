@@ -200,6 +200,35 @@ describe.skipIf(SKIP_DB_TESTS)("ADR-0014 Postgres lifecycle — in lockstep with
     await expectParity();
   });
 
+  // The clock on this machine steps back ~105s when its host resyncs, which
+  // failed roughly one run in eight — and in production would throw away a
+  // 15-minute poll over 64k animals (ADR-0014 as amended).
+  it("clamps a small backward clock step forward instead of failing the run", async () => {
+    await both(AGG, [obs(AGG, "a", D3), obs(AGG, "b", D3)]);
+
+    // Two minutes back: inside the tolerance, and the run must still complete.
+    const stepped = new Date(D3.getTime() - 2 * 60 * 1000);
+    const options = { complete: true, now: () => stepped };
+    const m = await runIngest(adapterOf(AGG, [obs(AGG, "a", D3)]), mem.stages, options);
+    const report = await runIngest(adapterOf(AGG, [obs(AGG, "a", D3)]), pg, options);
+
+    // `b` disappears, dated at the newest sighting rather than before it — the
+    // ADR-0014 invariant holds by clamping, which is why no refusal is needed.
+    expect(report.events.map((e) => [e.kind, e.data.externalId])).toEqual([
+      ["animal.disappeared", "b"],
+    ]);
+    expect(report.events[0].occurredAt).toEqual(D3);
+    // Corrected, never silent: a number here every run is a broken host clock.
+    expect(report.clockSteppedBackMs).toBe(2 * 60 * 1000);
+    expect(m.clockSteppedBackMs).toBe(2 * 60 * 1000);
+    await expectParity();
+  });
+
+  it("reports no clock step when the clock behaved", async () => {
+    const report = await both(AGG, [obs(AGG, "a", D3)]);
+    expect(report.clockSteppedBackMs).toBeUndefined();
+  });
+
   it("refuses a run older than the source's newest sighting", async () => {
     await both(AGG, [obs(AGG, "a", D3), obs(AGG, "b", D3)]);
 

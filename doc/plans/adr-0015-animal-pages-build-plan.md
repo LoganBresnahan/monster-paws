@@ -108,9 +108,18 @@ adversarial verify pass (⚠). Check items off as they ship.
        `animal-listing-dates` landing in phase 2. Duration copy ("listed 3
        years ago") becomes sayable once it does — off `listedAt` only, never
        off `created_at`, which is a fact about our INSERT.
-     - open, needs the live corpus: the v1 species and state filter values are
-       whatever RG actually returns. Read them off `animals` before hardcoding
-       a list.
+     - **settled 2026-09-04** against the rebuilt 64k corpus. Species: `dog`
+       29,560 and `cat` 28,776, then a long tail (bird 723, rabbit 613, guinea
+       pig 220, down to snakes) — the two-species v1 filter is honest, but the
+       tail is real animals and must stay reachable unfiltered. State: 57
+       values after the normalizer fix, six of them NOT US states — `ON`, `AB`,
+       `BC`, `QC`, `SK`, `PR`, 683 animals. Never hardcode the fifty: RG is not
+       US-only and those animals would become unreachable.
+     - carry-in: build the filter's OPTION list from values matching
+       `^[A-Z]{2}$`, not from `select distinct state`. Twenty-seven animals
+       carry a junk `T` that predates the normalizer fix and **cannot be
+       removed by replay** — see below — so a raw distinct query offers `T` as
+       a filter nobody can use.
 
 4. **closure — purge path + e2e**
    - [ ] `display-purge-path` — medium, moderate
@@ -121,6 +130,24 @@ adversarial verify pass (⚠). Check items off as they ship.
 
 5. **docs reconciliation**
    - [ ] `flows-and-roadmap-docs` — low, mechanical
+
+## Replay cannot retract a claim (found 2026-09-04)
+
+Measured, not reasoned: the `stateOr` fix promoted 5,023 corrected states on
+replay and left 27 junk `T` values exactly where they were. The normalizer now
+asserts *nothing* for an uninterpretable state, and an absent claim does not
+overwrite — which is ADR-0009's phase-7 rule ("null claims may not silently
+beat real values") working as designed.
+
+The consequence is worth stating because ADR-0009 promises the corpus is the
+repair path: **replay repairs any claim except one we should never have made.**
+Correcting a value needs only a better assertion; retracting one needs a
+mechanism that does not exist.
+
+Nothing currently obliges us to retract a fact — ADR-0006's set-deletion and
+ADR-0015's display purge both DELETE rows rather than withdraw claims, so
+neither is blocked. Reopen this if an obligation ever lands on `animals`
+itself.
 
 **Critical path:** `animal-display-table` → `stage4-display-upsert` → `animal-listing-dates` → `animal-detail-page` → `display-purge-path` → `flows-and-roadmap-docs`
 

@@ -72,6 +72,9 @@ producing a short report: a partial fetch must never reach stage 5.
    stage 5  ┌──────────────────────────────────┐  runs ONLY when the caller
   lifecycle │ LifecycleStore.reconcile(source,  │  passed {complete: true}
             │   seen ids, at)                   │  AND the run saw ≥1 animal;
+            │   at = max(at, newest sighting):  │  a clock step back within 5m
+            │     clamped, or throws past 5m    │   is corrected + reported,
+            │     (ADR-0014 as amended)         │   never silent
             │  this source's identities only:   │  never on replay (ADR-0014)
             │   seen → last_seen_at = at        │  animal_identities (DERIVED)
             │     (+ animal.reappeared if it    │   last_seen_at,

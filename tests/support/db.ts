@@ -29,11 +29,6 @@ export function testDb(): Db {
   return getDb(TEST_DATABASE_URL);
 }
 
-/** The database name the URL points at — what decision 3 checks. */
-function databaseNameOf(url: string): string {
-  return new URL(url).pathname.replace(/^\//, "");
-}
-
 /**
  * Empties every table these suites write. The name check is deliberately
  * redundant with `TEST_DATABASE_URL`: it is the last thing standing if a
@@ -41,7 +36,7 @@ function databaseNameOf(url: string): string {
  * of temptation rather than after the corpus is gone (ADR-0017).
  */
 export async function truncateCorpus(db: Db): Promise<void> {
-  assertTestDatabase();
+  await assertTestDatabase(db);
   await db.execute(
     sql`truncate table ${rawPayloads}, ${animals}, ${animalIdentities}, ${animalDisplay}, ${eventLog} restart identity`,
   );
@@ -53,12 +48,19 @@ export async function truncateCorpus(db: Db): Promise<void> {
  * to the raw table: a rebuild with nothing to rebuild from passes vacuously.
  */
 export async function truncateDerived(db: Db): Promise<void> {
-  assertTestDatabase();
+  await assertTestDatabase(db);
   await db.execute(sql`truncate table ${animals} cascade`);
 }
 
-function assertTestDatabase(): void {
-  const name = databaseNameOf(TEST_DATABASE_URL);
+/**
+ * Asks the CONNECTION what database it is in, never the URL string: a handle
+ * built from some other connection string would sail past a check on
+ * `TEST_DATABASE_URL` and truncate whatever it is actually pointed at
+ * (ADR-0017).
+ */
+async function assertTestDatabase(db: Db): Promise<void> {
+  const result = await db.execute(sql`select current_database() as name`);
+  const name = (result.rows[0] as { name: string }).name;
   if (!name.endsWith("_test")) {
     throw new Error(
       `refusing to truncate '${name}': tests only run against a database whose name ends in _test (ADR-0017)`,

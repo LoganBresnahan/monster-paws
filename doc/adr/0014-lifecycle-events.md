@@ -108,3 +108,56 @@ is the per-source list of what canonical knows about.
   animal becomes "all identities disappeared", a query, not a new event.
 - Sponsors exist and the graduation moment is wired — the daily lag and
   the ratio gate both become user-visible and should be revisited together.
+
+## Amendment (2026-09-04): a small backward clock step is corrected, not refused
+
+The original decision refuses any run whose `at` predates the source's newest
+sighting, to stop a disappearance being dated before a presence. The rule is
+right; the response was too blunt.
+
+Observed rather than theorised. The development host steps its clock backward
+by ~105 seconds when it resyncs — caught in the act on 2026-09-04, where an
+`animal_identities` row carried a Postgres-written `created_at` of
+`01:56:37.723` while that same database reported `now()` as `01:54:52.300` a
+moment later. It failed roughly one test run in eight, and in production the
+same step during a poll throws away fifteen minutes of work over 64k animals
+after every page has already been fetched.
+
+### 1. Clamp forward inside a tolerance
+
+`resolveReconcileAt(at, newest)` returns `max(at, newest)`. The invariant this
+ADR actually cares about — a disappearance is never dated before a presence —
+is satisfied outright by the clamp, so inside the tolerance there is nothing
+to refuse: the events are dated at the last sighting, which is both true and
+monotonic.
+
+`CLOCK_STEP_TOLERANCE_MS` is five minutes: a few multiples of the ~105s
+observed, and still far below the misconfiguration the refusal exists for.
+
+### 2. Beyond the tolerance it still throws
+
+A clock that wrong makes every other stamp in the run wrong too —
+`fetched_at`, `last_seen`, every event's `occurredAt` — and reconcile is the
+only place that notices. The throw is the canary, not the rule; never widen
+this to "always clamp".
+
+### 3. A corrected run says so
+
+`IngestRunReport.clockSteppedBackMs` carries the correction, and the ingest CLI
+prints it. Silent correction would trade a loud wrong failure for a quiet
+wrong success, which is the worse of the two.
+
+### Consequences (added)
+
+- A step inside the tolerance dates that run's lifecycle events at the previous
+  sighting rather than at the true present — up to five minutes early. That is
+  the price of not discarding the run, and it is bounded by the tolerance.
+- `clockSteppedBackMs` appearing on most runs is a broken host clock, not a
+  quirk of the feed. Read it as an infrastructure alarm.
+
+### Revisit triggers (added)
+
+- The droplet reports steps in production — NTP there is a fixable problem, and
+  a tolerance is not a substitute for a machine that keeps time.
+- A step is ever observed larger than the tolerance in normal operation — the
+  number was chosen from one machine's behaviour and would need re-measuring.

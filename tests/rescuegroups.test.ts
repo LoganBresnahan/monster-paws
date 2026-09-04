@@ -186,6 +186,11 @@ describe("rescuegroups normalizer — thin by design (ADR-0006 decision 4)", () 
     return { ...observations[index], rawId: index + 1 };
   }
 
+  /** The org resource carries the address the location claims come from. */
+  function orgAttributesOf(obs: { payload: { included: { type: string; attributes: Record<string, unknown> }[] } }) {
+    return obs.payload.included.find((r) => r.type === "orgs")!.attributes;
+  }
+
   async function normalizeFixture(index: number) {
     return rescueGroupsNormalizer.normalize(await observationFor(index));
   }
@@ -266,6 +271,37 @@ describe("rescuegroups normalizer — thin by design (ADR-0006 decision 4)", () 
     // failing it, which is the bug the `isActive` verify pass found.
     expect(normalized.claims.listedAt).toBeUndefined();
     expect(normalized.sourceUpdatedAt).toBeNull();
+  });
+
+  // Measured on the 64k corpus 2026-09-04: orgs type their own state, so the
+  // raw feed carries TX/Tx/tx as three values and a `state = 'OH'` filter found
+  // 1,207 of 1,618 Ohio animals. Browse filters by equality against an index,
+  // so this has to be right at promotion, not at query time.
+  it("canonicalises the state's case, so one state is one value", async () => {
+    for (const [raw, expected] of [
+      ["Tx", "TX"],
+      ["tx", "TX"],
+      [" tx ", "TX"],
+      ["TX", "TX"],
+    ] as const) {
+      const obs = await observationFor(0);
+      orgAttributesOf(obs).state = raw;
+      const { claims } = await rescueGroupsNormalizer.normalize(obs);
+      expect(claims.state?.value, `${JSON.stringify(raw)} should promote as ${expected}`).toBe(
+        expected,
+      );
+    }
+  });
+
+  it("asserts no state at all when the value is not a two-letter code", async () => {
+    // One org files 27 animals under `T`. A junk state is worse than a missing
+    // one: it survives into the filter list as an option nobody can use.
+    for (const junk of ["T", "Texas", "", "  ", "T3"]) {
+      const obs = await observationFor(0);
+      orgAttributesOf(obs).state = junk;
+      const { claims } = await rescueGroupsNormalizer.normalize(obs);
+      expect(claims.state, `${JSON.stringify(junk)} should assert nothing`).toBeUndefined();
+    }
   });
 
   it("promotes the org address as facts, so browse can filter by state (ADR-0015)", async () => {
