@@ -1,7 +1,9 @@
 # Monster Paws roadmap
 
 Frontier = first unchecked item under **Now**. Check items off as they ship;
-pin dogfood findings and deferred sub-tasks to items as carry-ins.
+pin deferred sub-tasks to items as carry-ins. Dogfood findings live in
+`doc/issues.md` (ADR-0019) and are pinned here as well only when they block a
+slice or change build order.
 
 ## Now
 

@@ -60,8 +60,10 @@ commit.
 ## Conventions
 
 - Documentation lives in `doc/`. `doc/roadmap.md` tracks build order
-  (frontier = first unchecked item); check items off as they ship; dogfood
-  findings get pinned there as carry-ins, not left in chat.
+  (frontier = first unchecked item); check items off as they ship. Dogfood
+  findings go in `doc/issues.md` (ADR-0019) — never left in chat — and are ALSO
+  pinned to the roadmap or a plan as a carry-in when they block a slice or
+  change what we build next; entries are deleted when fixed, never ticked.
 - **Process and data flows are ASCII diagrams in `doc/flows.md`** (ADR-0012),
   one per flow, each citing its ADR, every box naming a real symbol or table,
   unbuilt stages marked `(planned, …)`. Change a flow's shape — a stage, a
