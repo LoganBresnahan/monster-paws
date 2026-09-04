@@ -102,7 +102,12 @@ slice or change build order.
       64,312 (0.53% short — inside the 1% tolerance) with 2 ids returned
       twice, so the drift is real and visible on day one; 64,110 canonical
       animals, 0 failures, 0 null statuses, 1,465 orgs, ~15 min for 643
-      pages, and stage 5 bound all 64k ids in one parameter. **Frontier is now phase 9**
+      pages, and stage 5 bound all 64k ids in one parameter. Carry-in → phase 9: **a picture with no published
+      dimensions is dropped** (ADR-0015 as amended), which is right while
+      RescueGroups publishes them for 73,833 of 73,833 pictures and silent if
+      that ever stops — pages would simply lose photos. The health gate should
+      watch the promoted photo count per run, not just failures.
+      **Frontier is now phase 9**
       (health gates + retrieval) — or item 3, since the demo can read
       `animals` now; phases 5–6 still wait on item 5's fixtures.
       **The 2026-08-25 corpus was lost on 2026-09-03** — the poll had written
@@ -113,6 +118,10 @@ slice or change build order.
       `npm run db:dump` takes a local copy. Carry-in: **re-poll to rebuild the
       corpus**, then dump it — the run will populate `listed_at` and
       `source_updated_at` on the way in, which the pages need.
+      Carry-in → phases 5–6: a scraped shelter page publishes prose WITH
+      HTML tags, which `decodeEntities` does not cover — that is a
+      sanitization decision needing its own ADR (ADR-0018 revisit trigger),
+      not a wider entity table.
       Remaining carry-ins live in the plan — verbatim `description`
       (phase 5), per-field staleness gating (phase 9). Tracker pixel on
       detail pages when listings render.

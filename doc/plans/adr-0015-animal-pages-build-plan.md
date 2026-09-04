@@ -172,6 +172,15 @@ adversarial verify pass (⚠). Check items off as they ship.
      - carry-in (phase-1 verify pass): nothing stops a page assembling its own
        predicate, and no unit test can catch that. Assert BOTH halves for one
        non-visible animal — the detail 404 and its absence from browse.
+     - carry-in (2026-09-04): **zero anchors inside the quotation.** ADR-0015
+       as amended promises the description renders as inert text, and 0.76% of
+       them carry a PayPal.me or Venmo handle. `description-never-linkified`
+       guards the source; only e2e can assert the rendered half, and the ADR
+       already names this slice as where that happens.
+     - carry-in (2026-09-04): the tracker pixel loads on an RG-sourced detail
+       page (API terms, ADR-0006 decision 2), and `isBirthDateExact` renders
+       "Born <date>" only when the flag is true — a page-level assertion,
+       because both are things a layout refactor can silently drop.
 
 5. **docs reconciliation**
    - [ ] `flows-and-roadmap-docs` — low, mechanical
