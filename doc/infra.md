@@ -249,14 +249,23 @@ curl -X POST "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/purge_cache" \
 ```
   git push ──► GitHub Actions (ci.yml)                    droplet
               ┌──────────────────────────────┐            ┌──────────────────────┐
-              │ typecheck                    │   manual   │ git pull             │
-              │ vitest ×2   (flaky bar)      │  /deploy   │ compose up -d --build│
-              │ next build  (standalone)     ├───────────►│  · caddy (certs kept)│
-              │ playwright vs `next start`   │  ship bar  │  · app   (rebuilt)   │
-              │   (prod bytes, not dev)      │  green     │  · worker(rebuilt)   │
-              └──────────────────────────────┘            │ smoke: /api/health   │
-                                                          │ rollback: checkout   │
-                                                          │  prev sha + rebuild  │
+              │ verify                       │   manual   │ git pull             │
+              │  typecheck                   │  /deploy   │ compose pull         │
+              │  vitest ×2   (flaky bar) ◄─┐ ├───────────►│ compose up -d        │
+              │  next build  (standalone)  │ │  ship bar  │  · caddy (certs kept)│
+              │  playwright vs `next start`│ │  green     │  · app   (pulled)    │
+              │    (prod bytes, no DB)     │ │            │  · worker(pulled)    │
+              │ ┌────────────────────────┐ │ │            │ smoke: /api/health   │
+              │ │ service: postgres      ├─┘ │            │ rollback: pin the    │
+              │ │ pgvector/pgvector:pg16 │   │            │  previous sha tag    │
+              │ │ monsterpaws_test,      │   │            └──────────▲───────────┘
+              │ │ migrated per run       │   │                       │ pull
+              │ │ (ADR-0017)             │   │            ┌──────────┴───────────┐
+              │ └────────────────────────┘   │            │ GHCR (public)        │
+              │ images  (needs verify,       │   push     │  monster-paws-app    │
+              │          topdog pushes only) ├───────────►│  monster-paws-worker │
+              │  docker build app + worker   │            │  :latest + :<sha>    │
+              └──────────────────────────────┘            │  (ADR-0007)          │
                                                           └──────────────────────┘
 ```
 

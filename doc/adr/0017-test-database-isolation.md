@@ -106,3 +106,60 @@ their vaulted HTML survives in R2 only because the raw rows index it.
   re-flattened dev and test onto one connection string.
 - Scraped observations enter the corpus (item 5) — they are not re-fetchable,
   so the local dump stops being a nicety and the R2 copy stops being deferred.
+
+## Amendment (2026-09-28): CI provisions Postgres as a service container
+
+The first revisit trigger fired on the first push after this ADR shipped and
+went unanswered for 24 days. Decision 1 made an unreachable database a failure, `ci.yml` had
+no database, and every push from 2026-09-04 to 2026-09-28 — five runs — went
+red at `npm test` with `ECONNREFUSED :5432`. The `images` job needs `verify`,
+so no deployable image was built in that time either. The suite did exactly
+what it was told to; nobody was reading the result.
+
+### 1. A service container, the same image as dev
+
+The `verify` job declares a `postgres` service: `pgvector/pgvector:pg16`, the
+`monsterpaws` user, password and database, port 5432, gated on `pg_isready`.
+These are `docker-compose.dev.yml`'s values on purpose — `TEST_DATABASE_URL`
+then resolves by its default, so CI sets no database environment at all and
+runs the same `global-setup.ts` path a laptop does: create `monsterpaws_test`,
+run the shipped migrations, test. Verified 2026-09-28 against a brand-new
+server: 10 migrations applied from zero, 223 of 223 tests green, twice.
+
+### 2. CI never sets `SKIP_DB_TESTS`
+
+The trigger's second half, restated as a rule. A CI that skips the Postgres
+suites is the silent green this ADR exists to remove, relocated to the one
+place nobody would think to look.
+
+### 3. The production-build e2e still runs with no database
+
+`npm start` in CI gets no `DATABASE_URL`. The one spec today is the landing
+page, which needs none; `/animals` answers 500 there. Which database the e2e
+server reads, and what seeds it, belongs to the `animal-pages-e2e` slice
+(ADR-0015 build plan) — it is pinned there as a carry-in, not decided here.
+
+### Consequences (added)
+
+- The image and credentials now live in two files. A change to one without
+  the other breaks CI loudly, which is the acceptable direction to fail in.
+- A red CI blocks deploys by construction (ADR-0007 as amended), so a failing
+  run is an ops event, not a badge colour. Nothing reports one today except
+  the badge and `gh run list`; ADR-0010's alerting does not cover CI.
+
+### Alternatives (added)
+
+- **`SKIP_DB_TESTS=1` in CI.** Rejected by the trigger itself.
+- **`docker compose -f docker-compose.dev.yml up -d` as a step.** One source
+  of truth for the image, at the cost of a hand-rolled readiness loop and a
+  named volume CI has no use for. The service block gets the health gate from
+  the platform.
+- **testcontainers.** Still the revisit it was above; a service container is
+  the same isolation for a job that is already a throwaway machine.
+
+### Revisit triggers (added)
+
+- The e2e suite needs animals → the e2e server gets its own seeded database,
+  never `monsterpaws_test`, which the unit suites truncate.
+- Managed Postgres lands on a different major version than 16 → dev, CI and
+  production move together.

@@ -213,6 +213,11 @@ adversarial verify pass (⚠). Check items off as they ship.
      - carry-in (phase-1 verify pass): nothing stops a page assembling its own
        predicate, and no unit test can catch that. Assert BOTH halves for one
        non-visible animal — the detail 404 and its absence from browse.
+     - carry-in (2026-09-28): **CI's production server has no database.**
+       `ci.yml` now runs a Postgres service for vitest (ADR-0017 as amended),
+       but `npm start` gets no `DATABASE_URL` and `/animals` answers 500
+       there. This slice decides which database the e2e server reads and what
+       seeds it — never `monsterpaws_test`, which the unit suites truncate.
      - carry-in (2026-09-04): **zero anchors inside the quotation.** ADR-0015
        as amended promises the description renders as inert text, and 0.76% of
        them carry a PayPal.me or Venmo handle. `description-never-linkified`

@@ -8,6 +8,24 @@ on:
 jobs:
   verify:
     runs-on: ubuntu-latest
+    services:
+      # Never set SKIP_DB_TESTS to go green — CI provisions Postgres or the
+      # run fails (ADR-0017 as amended). Image and credentials are
+      # docker-compose.dev.yml's, so the suite's default TEST_DATABASE_URL
+      # resolves here with no env at all; change them in both files or neither.
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: monsterpaws
+          POSTGRES_PASSWORD: monsterpaws
+          POSTGRES_DB: monsterpaws
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U monsterpaws"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
