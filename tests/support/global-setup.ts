@@ -5,7 +5,8 @@ import { SKIP_DB_TESTS, TEST_DATABASE_URL } from "./db";
 /**
  * What Rails hands you as `db:test:prepare` and vitest does not: create the
  * test database if it is missing, then migrate it (ADR-0017). Runs once per
- * `npm test`, before any file.
+ * `npm test`, before any file; Playwright's setup prepares the e2e database
+ * through the same `prepareDatabase`.
  */
 
 function serverUrlOf(url: string): { admin: string; database: string } {
@@ -20,8 +21,11 @@ export default async function setup(): Promise<void> {
     console.warn("SKIP_DB_TESTS=1 — the Postgres suites will not run (ADR-0017)");
     return;
   }
+  await prepareDatabase(TEST_DATABASE_URL);
+}
 
-  const { admin, database } = serverUrlOf(TEST_DATABASE_URL);
+export async function prepareDatabase(url: string): Promise<void> {
+  const { admin, database } = serverUrlOf(url);
   // A timeout, or an unreachable host HANGS the run instead of failing it —
   // which is the silent-green failure this ADR exists to remove, wearing a
   // different hat (ADR-0017).
@@ -53,6 +57,6 @@ export default async function setup(): Promise<void> {
   // schema stops being the one that ships.
   execFileSync("npx", ["drizzle-kit", "migrate"], {
     stdio: "inherit",
-    env: { ...process.env, DATABASE_URL: TEST_DATABASE_URL },
+    env: { ...process.env, DATABASE_URL: url },
   });
 }

@@ -211,7 +211,12 @@ adversarial verify pass (⚠). Check items off as they ship.
    - [x] `display-purge-path` — medium, moderate — shipped 2026-09-28:
      `purgeDisplay` (`src/core/purge.ts`), display rows only, refuses while
      licensed; the resurrection-on-ingest carry-in is on the roadmap
-   - [ ] `animal-pages-e2e` — medium, moderate
+   - [x] `animal-pages-e2e` — medium, moderate — shipped 2026-09-28
+     (ADR-0017 as amended): `monsterpaws_e2e` seeded through `runIngest` over
+     the golden fixture plus five variants, the standalone server started by
+     Playwright, a canary, and every off-site request stubbed. All four
+     carry-ins below are asserted, and each was proved by a mutation that
+     broke the page and failed exactly its spec.
      - carry-in (phase-1 verify pass): nothing stops a page assembling its own
        predicate, and no unit test can catch that. Assert BOTH halves for one
        non-visible animal — the detail 404 and its absence from browse.

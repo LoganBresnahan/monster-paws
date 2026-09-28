@@ -138,9 +138,11 @@ commit.
   database, and it FAILS rather than skips when Postgres is unreachable —
   `SKIP_DB_TESTS=1` runs only the unit suites
 - `npm run typecheck` — tsc, no emit
-- `npm run e2e` — Playwright specs in `e2e/` (boots the dev server itself);
-  `npm run e2e:prod` reuses the specs against an already-running
-  production server via `PW_BASE_URL`
+- `npm run e2e` — builds, then Playwright seeds `monsterpaws_e2e` through the
+  real pipeline and runs `e2e/` against the standalone production server on
+  :3100 (ADR-0017 as amended); `npm run e2e:prod` reuses the specs against an
+  already-running server via `PW_BASE_URL`, which must read that same
+  database — a canary fails the run if it doesn't
 - `npm run build` / `npm start` — production build / serve
 - `npm run env:dev` — scaffold `.env` from the example and fill the secrets
   kept in `pass` (idempotent; never overwrites a set value)

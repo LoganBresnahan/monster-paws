@@ -220,8 +220,12 @@ slice or change build order.
       `shelterluv` row. Build it before the first scrape source can lose a
       grant; `onEnd` end terms on every license and grant (ADR-0006 as
       amended 2026-09-28) land with it.
-      Remaining in item 3: `animal-pages-e2e` and the docs reconciliation
-      (plan phases 4–5).
+      The `animal-pages-e2e` slice shipped 2026-09-28 (ADR-0017 as amended):
+      Playwright seeds `monsterpaws_e2e` through the real pipeline and runs
+      against the standalone production server it starts itself, so CI's
+      `/animals` no longer answers 500. Plan phase 4 is green, which lifts
+      its "no /deploy" hold.
+      Remaining in item 3: the docs reconciliation (plan phase 5).
 
 ## Next
 

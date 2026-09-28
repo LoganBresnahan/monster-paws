@@ -253,13 +253,15 @@ curl -X POST "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/purge_cache" \
               │  typecheck                   │  /deploy   │ compose pull         │
               │  vitest ×2   (flaky bar) ◄─┐ ├───────────►│ compose up -d        │
               │  next build  (standalone)  │ │  ship bar  │  · caddy (certs kept)│
-              │  playwright vs `next start`│ │  green     │  · app   (pulled)    │
-              │    (prod bytes, no DB)     │ │            │  · worker(pulled)    │
+              │  playwright vs standalone  │ │  green     │  · app   (pulled)    │
+              │    server.js on seeded     │ │            │  · worker(pulled)    │
+              │    monsterpaws_e2e         │ │            │                      │
               │ ┌────────────────────────┐ │ │            │ smoke: /api/health   │
               │ │ service: postgres      ├─┘ │            │ rollback: pin the    │
               │ │ pgvector/pgvector:pg16 │   │            │  previous sha tag    │
-              │ │ monsterpaws_test,      │   │            └──────────▲───────────┘
-              │ │ migrated per run       │   │                       │ pull
+              │ │ monsterpaws_test +     │   │            └──────────▲───────────┘
+              │ │ monsterpaws_e2e,       │   │                       │ pull
+              │ │ migrated per run       │   │                       │
               │ │ (ADR-0017)             │   │            ┌──────────┴───────────┐
               │ └────────────────────────┘   │            │ GHCR (public)        │
               │ images  (needs verify,       │   push     │  monster-paws-app    │

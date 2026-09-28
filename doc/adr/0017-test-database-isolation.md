@@ -163,3 +163,77 @@ server reads, and what seeds it, belongs to the `animal-pages-e2e` slice
   never `monsterpaws_test`, which the unit suites truncate.
 - Managed Postgres lands on a different major version than 16 → dev, CI and
   production move together.
+
+## Amendment (2026-09-28): e2e owns a third database, and Playwright owns the server that reads it
+
+The first added trigger fired: `animal-pages-e2e` needs animals. Two ways to
+get it wrong were already in the tree. CI's production server ran with no
+`DATABASE_URL`, so `/animals` answered 500. And `playwright.config.ts` reused
+any server already listening on :3000 — on a laptop that is `npm run dev`,
+reading the dev database — so a seed written anywhere else would have been
+invisible, and a seed written to the dev database would have been the
+2026-09-03 wipe again.
+
+### 1. `monsterpaws_e2e`, seeded per run, never either of the other two
+The e2e suite reads `E2E_DATABASE_URL`, defaulting to `monsterpaws_e2e` on the
+dev server — never `DATABASE_URL`, never `monsterpaws_test`, which the unit
+suites truncate mid-run. Playwright's global setup creates and migrates it
+exactly as vitest's does, then truncates and reseeds it. Decision 3's name
+check widens to a closed pair: the truncate helper accepts a database ending
+`_test` or `_e2e`, and nothing else.
+
+### 2. Playwright starts the server, with the database in its environment
+The config starts the standalone `server.js` — assembled with `public/` and
+`.next/static` exactly as the Dockerfile assembles it, since `next start`
+refuses standalone output — on **:3100** (`E2E_PORT` overrides) with
+`DATABASE_URL` set to the e2e database, and never reuses a running server. :3100, because :3000 is the
+developer's dev server; never reuse, because a reused server reads whatever
+database it was started with. `npm run e2e` builds first — the suite runs
+against the production build everywhere, which is what `/deploy` demanded of
+it anyway (dev-mode green does not count), and Next 16 locks a checkout to one
+dev server, so a dev-mode e2e could not start beside `npm run dev` at all.
+
+`e2e:prod` keeps `PW_BASE_URL` for `/deploy`'s local containers. That server
+was started by someone else, so global setup ends with a **canary**: it fetches
+a seeded animal's page and fails the run, naming the variable to fix, if the
+server cannot see it. An e2e run against a server reading the wrong database
+must not reach a spec.
+
+### 3. The seed goes through the real pipeline, with time made relative
+The seed is the golden RescueGroups fixture, fed through the real adapter,
+normalizer and pg stages (`runIngest`), plus named variants cloned from it — an
+adopted animal, a stale sighting, an exact birth date, a description carrying a
+payment handle. Seeding through the pipeline means e2e also covers promotion;
+a hand-inserted row would test a shape the normalizer might never produce.
+
+Every date a visibility rule reads is restamped relative to now at seed time:
+`fetchedAt` (the sighting), and `updatedDate` (the 24-month upkeep bound). The
+fixture's own `updatedDate` is 2018 — seeded verbatim, it is invisible today.
+The fixture file stays byte-for-byte as recorded; only the seeded copies move.
+
+### 4. The browser never reaches RescueGroups
+Every spec aborts or stubs requests that leave localhost. The tracker pixel is
+a real page view on RescueGroups' side, and a CI run must not count as one; the
+photo CDN is someone else's bandwidth. Specs assert that the page *requests*
+the tracker, from the intercepted request, not that it loaded.
+
+### Consequences (added)
+- Three databases now. `monsterpaws_e2e` is created on first run, like the
+  test database; nothing else needs to know about it.
+- `npm run e2e` costs a production build (~a minute). The shipshape gate pays
+  it; that is the price of never testing a dev-mode server.
+- CI's hand-rolled `npm start &` loop is gone — the config starts the server,
+  so CI and a laptop run the same command.
+- `next.config.ts` pins `outputFileTracingRoot` to the repo. A lockfile above
+  the checkout (there is one in `$HOME` on the dev box) made Next nest the
+  standalone server a directory deeper than the Dockerfile copies it from —
+  found by this slice, and invisible to the image build, whose root is `/app`.
+- Detail pages are ISR-cached for an hour. A reused `PW_BASE_URL` server keeps
+  pages from a previous run; the seed is deterministic, so ids and content
+  match, but a seed change means restarting that server.
+
+### Revisit triggers (added)
+- A spec needs a second shelter's display grant or a scrape source — the seed
+  gains a registry fixture, and the registry becomes injectable at render.
+- The production build makes the e2e loop too slow to run per commit — a
+  build cache in CI, not a return to dev mode.

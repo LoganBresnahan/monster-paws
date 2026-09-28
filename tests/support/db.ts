@@ -61,9 +61,11 @@ export async function truncateDerived(db: Db): Promise<void> {
 async function assertTestDatabase(db: Db): Promise<void> {
   const result = await db.execute(sql`select current_database() as name`);
   const name = (result.rows[0] as { name: string }).name;
-  if (!name.endsWith("_test")) {
+  // A closed pair, never a pattern someone widens: `_test` is vitest's and
+  // `_e2e` is Playwright's, and nothing else is ours to empty (ADR-0017 as amended).
+  if (!name.endsWith("_test") && !name.endsWith("_e2e")) {
     throw new Error(
-      `refusing to truncate '${name}': tests only run against a database whose name ends in _test (ADR-0017)`,
+      `refusing to truncate '${name}': tests only run against a database whose name ends in _test or _e2e (ADR-0017)`,
     );
   }
 }

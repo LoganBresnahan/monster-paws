@@ -32,9 +32,18 @@ same bytes that ship.
 ## 2. Verify the production build locally
 
 ```sh
-docker compose -f docker-compose.prod.yml up -d   # prod images, local Postgres
-npm run e2e:prod                                   # Playwright vs the prod containers
+# the app image, reading the SEEDED e2e database — never .env's dev database
+docker run --rm -d --name mp-e2e --network host \
+  -e DATABASE_URL=postgres://monsterpaws:monsterpaws@localhost:5432/monsterpaws_e2e \
+  -e PORT=3200 -e HOSTNAME=127.0.0.1 ghcr.io/loganbresnahan/monster-paws-app:<sha>
+PW_BASE_URL=http://127.0.0.1:3200 npm run e2e:prod   # seeds, canaries, runs the specs
+docker stop mp-e2e
 ```
+
+Global setup reseeds `monsterpaws_e2e` and then checks the container can see
+it; a container reading any other database fails the run before a single spec
+(ADR-0017 as amended 2026-09-28). The image's detail pages are ISR-cached, so
+restart the container between runs if the seed changed.
 
 **Dev-mode green does not count.** Production Next.js fails in
 production-only ways: ISR/cache behavior, env wiring, standalone-output

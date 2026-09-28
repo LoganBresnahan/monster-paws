@@ -12,7 +12,7 @@ preserve.
 
 | File | Recorded | By | Source |
 | --- | --- | --- | --- |
-| `rescuegroups-available.json` | 2026-08-17 | Claude, hand-checked with Logan | Live `POST /v5/public/animals/search/available/` (`limit=2&page=1`). Per-request `meta.transactionId` dropped; records otherwise untouched. Expectations in `tests/rescuegroups.test.ts`. |
+| `rescuegroups-available.json` | 2026-08-17 | Claude, hand-checked with Logan | Live `POST /v5/public/animals/search/available/` (`limit=2&page=1`). Per-request `meta.transactionId` dropped; records otherwise untouched. Expectations in `tests/rescuegroups.test.ts`. Also the e2e seed (`e2e/seed.ts`), which clones it into variants and restamps their dates in memory — the file itself is never rewritten. |
 
 Per-site scrape fixtures land here at shelter onboarding (roadmap item 5), one
 row each.
