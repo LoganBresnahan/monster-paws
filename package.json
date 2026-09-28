@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "up": "scripts/dev-up.sh",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
@@ -11,10 +12,11 @@
     "typecheck": "tsc --noEmit",
     "e2e": "playwright test",
     "e2e:prod": "PW_BASE_URL=http://localhost:3000 playwright test",
-    "worker": "tsx src/worker/index.ts",
-    "ingest": "tsx src/worker/ingest-cli.ts",
+    "worker": "tsx --env-file-if-exists=.env src/worker/index.ts",
+    "ingest": "tsx --env-file-if-exists=.env src/worker/ingest-cli.ts",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
+    "env:dev": "scripts/env-dev.sh",
     "db:up": "docker compose -f docker-compose.dev.yml up -d",
     "db:dump": "tsx scripts/db-dump.ts"
   },

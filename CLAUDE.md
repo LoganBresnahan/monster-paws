@@ -129,6 +129,9 @@ commit.
 
 ## Commands
 
+- `npm run up` — cold start in the safe order: `db:up` → `env:dev` →
+  `db:migrate` → poll+dump in the background if the corpus is older than the
+  visibility window → `dev`. Run this after any time away
 - `npm run dev` — Next.js dev server (port 3000)
 - `npm test` — vitest units in `tests/` (run twice for the ship bar). Creates
   and migrates `monsterpaws_test` itself (ADR-0017); it never touches the dev
@@ -139,6 +142,8 @@ commit.
   `npm run e2e:prod` reuses the specs against an already-running
   production server via `PW_BASE_URL`
 - `npm run build` / `npm start` — production build / serve
+- `npm run env:dev` — scaffold `.env` from the example and fill the secrets
+  kept in `pass` (idempotent; never overwrites a set value)
 - `npm run worker` — the pg-boss worker process (needs `DATABASE_URL`)
 - `npm run ingest -- poll [--max-pages N]` / `npm run ingest -- replay <source>`
   — one-shot ingest through all four stages, or stages 2–4 over the corpus
@@ -148,5 +153,7 @@ commit.
 - `npm run db:dump` — gzipped `pg_dump` of the dev database to `var/dumps/`;
   run it after a full poll, because that corpus is currently the only copy
   (ADR-0017)
-- Env: copy `.env.example` → `.env`; keys are commented with the roadmap
-  item that needs them.
+- Env: `npm run env:dev` (or copy `.env.example` → `.env` by hand); keys are
+  commented with the roadmap item that needs them. Next.js reads `.env`
+  itself and the tsx scripts load it via `--env-file-if-exists`, so nothing
+  needs exporting into the shell.
