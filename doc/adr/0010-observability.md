@@ -161,9 +161,11 @@ product data, never read by anything donor-facing.
 - One new table (`ops_daily`), one new job, one new endpoint, one new secret.
   No new infrastructure; the routine is a claude.ai feature.
 - Sentry, the uptime check and the health extension move from "arrives with
-  the first worker feature" to **owed before the next production deploy that
-  turns the poller on** — the poller has been running in production since
-  2026-08, so they are already late.
+  the first worker feature" to **owed before the first production deploy that
+  turns the poller on**. (Corrected 2026-09-28: this first read "the poller
+  has been running in production since 2026-08, so they are already late". It
+  has never run there — production is still the v0.1.0 landing page with no
+  database behind it, `doc/infra.md` step 6 — so they are owed, not overdue.)
 - Sits on the roadmap as its own item once item 3 closes; this amendment is
   the decision, not the build.
 

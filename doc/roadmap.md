@@ -121,9 +121,10 @@ slice or change build order.
       `raw_payloads` there with no backup anywhere (no Managed Postgres, and
       the RescueGroups adapter never vaults to R2). **ADR-0017** fixes the
       mechanism: tests own `monsterpaws_test`, never the dev database, and
-      `npm run db:dump` takes a local copy. Carry-in: **re-poll to rebuild the
-      corpus**, then dump it — the run will populate `listed_at` and
-      `source_updated_at` on the way in, which the pages need.
+      `npm run db:dump` takes a local copy. ~~Carry-in: **re-poll to rebuild
+      the corpus**, then dump it~~ — **done 2026-09-03 and again 2026-09-28**,
+      both dumped to `var/dumps/`: 85,204 identities, none missing `listed_at`
+      or `source_updated_at`.
       Carry-in → phases 5–6: a scraped shelter page publishes prose WITH
       HTML tags, which `decodeEntities` does not cover — that is a
       sanitization decision needing its own ADR (ADR-0018 revisit trigger),
@@ -152,10 +153,11 @@ slice or change build order.
       updated in twelve months, so an unguarded longest-first sort opens
       browse on abandoned listings. The `animal-listing-dates` slice shipped
       the same day (migration 0006).
-      Carry-in: a null `source_updated_at` hides an animal, so the existing
-      64k corpus stays invisible until a poll or `npm run ingest -- replay
-      rescuegroups` fills the column — run that before judging a browse page
-      empty.
+      ~~Carry-in: a null `source_updated_at` hides an animal, so the existing
+      64k corpus stays invisible until a poll or replay fills the column~~ —
+      **discharged by the 2026-09-03 re-poll**; no identity has a null
+      `source_updated_at` as of 2026-09-28. The rule still holds for any
+      database restored from a dump older than migration 0006.
       Carry-in: **replay cannot retract a claim** — a fact promoted in error
       stays until a source asserts a replacement, because an absent claim never
       overwrites (ADR-0009 phase-7 rule). Measured 2026-09-04: the `stateOr` fix
@@ -257,9 +259,9 @@ slice or change build order.
       everything else. Prompted by the 2026-09-28 stage-5 failure, which in
       production would have been a pg-boss job failing silently while the site
       aged out of its visibility window. Sentry, the uptime check and the
-      health extension are already late — the poller has run in production
-      since August — so they come first, before the next deploy that turns
-      the poller on.
+      health extension come first, before the first deploy that turns the
+      poller on — it has never run in production, which is still the v0.1.0
+      landing page with no database behind it (`doc/infra.md` step 6).
 - [ ] **8. Update generation + faithfulness evals.** LLM donor updates from
       confirmed events; the no-unattested-claims harness; adoption
       "graduation" moment + gotcha-day card. Reads `animal_story` only, never
