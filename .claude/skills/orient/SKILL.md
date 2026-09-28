@@ -36,10 +36,18 @@ Rules that keep the lanes disjoint:
 ```bash
 git log --oneline -12
 git status --short
+gh run list --limit 5
 ```
 
 Read back only until the arc is coherent. Answer three things: last
 known-good state, what landed most recently, uncommitted WIP on the floor.
+
+**"Last good" is the newest commit CI passed, not the newest commit.** A red
+run blocks deploys by construction — the `images` job needs `verify`
+(ADR-0007) — and nothing else reports one: five consecutive red runs went
+unread from 2026-09-04 to 2026-09-28 (ADR-0017 as amended). If the newest run
+is red, read its failure (`gh run view <id> --log-failed`) and lead the
+bearing with it. Skip cleanly if `gh` is not authenticated, and say so.
 
 ## 2. Where we meant to be — the roadmap
 
@@ -75,6 +83,7 @@ attestation pipeline → ADR-0003's rules and revisit triggers; scope change →
 ORIENT — Monster Paws @ <branch> <sha>
   shipped     <recent arc in one line>  · last good: <commit>
   wip         <uncommitted files, or "clean">
+  ci          <green @ sha, or "RED since <date>: <failing step>">
   roadmap     frontier → item <N> "<title>"  (done: <range>)
   drift       <remembered-vs-actual mismatch, or "none">
   next move   <the obvious task> — read <the one doc> first
