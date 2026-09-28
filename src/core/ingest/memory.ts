@@ -186,7 +186,7 @@ export function createMemoryStages(normalizers: Normalizer[]): {
           occurredAt: merged.occurredAt,
         });
       }
-      events.push(...emitted);
+      for (const e of emitted) events.push(e);
       return { animalId: animal.id, events: emitted, conflicted: merged.conflicted };
     },
   };
@@ -228,7 +228,7 @@ export function createMemoryStages(normalizers: Normalizer[]): {
         }
       }
       const ordered = inLifecycleOrder(emitted);
-      events.push(...ordered);
+      for (const e of ordered) events.push(e);
       return { events: ordered, clockSteppedBackMs: resolved.clockSteppedBackMs };
     },
   };

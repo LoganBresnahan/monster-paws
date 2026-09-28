@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { createMemoryStages, type MemoryCorpus } from "@/core/ingest/memory";
 import type { Observation, SourceAdapter, StoredObservation } from "@/core/ingest/observation";
@@ -253,6 +253,39 @@ describe.skipIf(SKIP_DB_TESTS)("ADR-0014 Postgres lifecycle — in lockstep with
     const [b] = await db.select().from(animalIdentities).where(eq(animalIdentities.externalId, "b"));
     expect(b.disappearedAt).toEqual(D3);
     await expectParity();
+  });
+
+  // Found 2026-09-28: the first poll after 24 days away disappeared ~21k
+  // animals in one run, and a single INSERT of that many event rows overflowed
+  // the stack inside drizzle's query builder — stage 5 rolled back and no
+  // pre-existing animal was re-seen. The wave is seeded with SQL, not the
+  // pipeline, so the test costs a second rather than a minute.
+  it("lands a disappearance wave of tens of thousands in one transaction", async () => {
+    const known = 25_000;
+    const seenCount = 4_000;
+    await db.execute(
+      sql`insert into animals (name, species, status) select 'a'||g, 'dog', 'available' from generate_series(1, ${known}) g`,
+    );
+    await db.execute(
+      sql`insert into animal_identities (animal_id, source, external_id, last_seen_at) select id, ${AGG}, 'x'||id, ${D1} from animals`,
+    );
+    const seen = new Set<string>();
+    for (let i = 1; i <= seenCount; i++) seen.add(`x${i}`);
+
+    const { events } = await pg.lifecycle.reconcile(AGG, seen, D2);
+
+    expect(events).toHaveLength(known - seenCount);
+    expect(events.every((e) => e.kind === "animal.disappeared")).toBe(true);
+    const [{ count }] = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(eventLog)
+      .where(eq(eventLog.kind, "animal.disappeared"));
+    expect(count).toBe(known - seenCount);
+    const [{ gone }] = await db
+      .select({ gone: sql<number>`count(*)::int` })
+      .from(animalIdentities)
+      .where(eq(animalIdentities.disappearedAt, D2));
+    expect(gone).toBe(known - seenCount);
   });
 
   it("a rebuild keeps true last sightings, and the next run re-establishes disappearance once", async () => {

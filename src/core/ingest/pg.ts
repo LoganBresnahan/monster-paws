@@ -286,6 +286,9 @@ function pgTextArray(values: string[]): string {
   return `{${values.map((v) => `"${v.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`).join(",")}}`;
 }
 
+/** Rows per INSERT: 7 columns × 1,000 stays far under Postgres's 65,535 bound parameters. */
+const EVENT_INSERT_CHUNK = 1_000;
+
 export function createPgLifecycleStore(db: Db): LifecycleStore {
   return {
     async reconcile(source: Source, seen: ReadonlySet<string>, requestedAt: Date) {
@@ -355,7 +358,13 @@ export function createPgLifecycleStore(db: Db): LifecycleStore {
         }
 
         const ordered = inLifecycleOrder(emitted);
-        if (ordered.length > 0) await tx.insert(eventLog).values(ordered);
+        // Never one INSERT for the whole wave: a run after weeks away disappears
+        // tens of thousands of animals at once, and drizzle overflows the stack
+        // building a single statement that size (measured 2026-09-28 at ~21k
+        // rows) — chunked, but still inside this one transaction (ADR-0014).
+        for (let i = 0; i < ordered.length; i += EVENT_INSERT_CHUNK) {
+          await tx.insert(eventLog).values(ordered.slice(i, i + EVENT_INSERT_CHUNK));
+        }
         return { events: ordered, clockSteppedBackMs: resolved.clockSteppedBackMs };
       });
     },

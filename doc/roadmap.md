@@ -80,7 +80,13 @@ slice or change build order.
       short-batch throws) and stage 5 (array binding at the 65k-parameter
       ceiling, monotonic run time, one event order). Carry-ins → phase 9:
       the ratio gate (a complete run that disappears more than N% is an
-      upstream bug, not an adoption wave); **duplicate externalIds** — the
+      upstream bug, not an adoption wave — but N must be a rate per day
+      since the last complete run, not a flat share: the first poll after
+      24 days away, 2026-09-28, legitimately disappeared ~21k of 85k
+      identities, and a flat N would have refused it. That run also
+      overflowed the stack on the single INSERT of its event wave; stage 5
+      now inserts in chunks inside the one transaction, with a 25k-row
+      test); **duplicate externalIds** — the
       2026-08-25 run returned 2 ids twice, and stage 1 compares only the
       LATEST raw row, so two differing payloads under one id re-insert every
       poll and (since ADR-0015) flap the rendered description and photos;

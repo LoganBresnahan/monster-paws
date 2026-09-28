@@ -362,7 +362,7 @@ async function runDerivedStages(
 
     try {
       const { events, conflicted } = await stages.writer.apply(candidate, animalId);
-      report.events.push(...events);
+      for (const e of events) report.events.push(e);
       report.conflicted += conflicted.length;
     } catch (error) {
       report.failures.push({
@@ -422,7 +422,9 @@ export async function runIngest(
       seen,
       at,
     );
-    report.events.push(...events);
+    // A loop, never `push(...events)`: argument spread overflows the stack near
+    // 200k values, and a disappearance wave is bounded only by the identity table.
+    for (const e of events) report.events.push(e);
     if (clockSteppedBackMs) report.clockSteppedBackMs = clockSteppedBackMs;
   }
 
