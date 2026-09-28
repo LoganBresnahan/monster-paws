@@ -44,7 +44,7 @@ producing a short report: a partial fetch must never reach stage 5.
             │   {claims, display?}              │  like any other
             │  claims: {value, source,          │  (planned: phases 5–6)
             │           fetchedAt} per field    │  display = licensed
-            │  display: description, photoUrls, │  expression, never a claim
+            │  display: description, photos,    │  expression, never a claim
             │   listingOrg, trackerUrl          │  (ADR-0015)
             └──────────────────┬───────────────┘
                                │ AnimalCandidate
@@ -397,7 +397,7 @@ Planned: the boundary is decided; the table lands with roadmap item 6 and the
 first projector with item 4. Nothing donor-facing reads `event_log`.
 
 ```
-  PERMANENT TRUTH                        DISPOSABLE INTERPRETATION
+  PERMANENT TRUTH                        DISPOSABLE INTERPRETATION   (planned, items 4/6)
   ───────────────                        ─────────────────────────
   event_log                              animal_story  (planned, item 6)
     animal.updated ──┐                     derived: rebuilt from scratch by the
@@ -439,7 +439,7 @@ happened to an animal. The ledger was right; it was only ever wrong as a feed.
 Planned: roadmap item 7b. Derived data like `embeddings`; gates browse only.
 
 ```
-  animals + animal_display          the fields the PAGE shows — never the raw
+  animals + animal_display          the fields the PAGE shows — never the raw   (planned, 7b)
        │                            payload, so the judge sees nothing a reader
        ▼                            could not
   assessListings()   (planned, 7b)  Batch API, cached instruction prefix,

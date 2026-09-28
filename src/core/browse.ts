@@ -17,9 +17,9 @@ export const BROWSE_PAGE_SIZE = 24;
 
 /**
  * The only state values a filter may offer. Replay cannot retract a claim
- * (ADR-0009 phase-7 rule), so 27 animals still carry the junk state `T` that a
- * fixed normalizer no longer asserts — and `select distinct state` would put it
- * in the filter as a choice nobody can use.
+ * (ADR-0009 phase-7 rule), so 27 animals still carry a junk state `T` that the
+ * normalizer never asserts — and `select distinct state` would put it in the
+ * filter as a choice nobody can use.
  */
 export const STATE_CODE = /^[A-Z]{2}$/;
 
