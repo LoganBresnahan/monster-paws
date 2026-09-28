@@ -230,6 +230,14 @@ slice or change build order.
       (ADR-0020); the two kinds projectable today, `status.changed` and
       `listing.reappeared`, are enough for a first card and may pull the
       projector forward from item 6.
+      Carry-in: **the keepsake is its own entity (ADR-0022)** — snapshotted
+      at donation, append-only, every field a row carrying the basis it is
+      held on (`donation`, `grant:<slug>:<permission>`,
+      `aggregator:<source>`), and the card renders from it alone, never
+      through `animals`. Build it before a donation points at an animal, and
+      decide the degraded aggregator-only card's copy here.
+      Carry-in: **the full source purge is designed before this item ships**
+      (ADR-0006 as amended 2026-09-28) — keepsake facts are in its set.
       Carry-in: **`shelters` table lands here or at item 7** — whichever comes
       first. The registry (item 2 carry-in) covers config and consent; a table
       is owed once a shelter is a user-facing entity that donations route to
@@ -244,6 +252,11 @@ slice or change build order.
       The digify ask carries the ADR-0004 amendment's
       two additions: photos are processed by third-party AI services, and
       the shelter confirms it holds or can license the photo.
+      Carry-in: **the ask carries a retention clause (ADR-0022 §5)** —
+      keepsakes already given to donors (name, breed, age, photo, art) stay
+      in their accounts if the shelter later withdraws. It must be in the
+      FIRST email; the answer becomes the grant's end terms (ADR-0006 as
+      amended 2026-09-28). Have a lawyer read the wording first.
       **Milestone: one real donation reaches one real shelter.** Verified-
       tier pitch (Shelterluv key, attestations) follows with whichever
       shelter warms up first.

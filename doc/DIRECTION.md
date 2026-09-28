@@ -30,7 +30,10 @@ return the donor gets, for **the remainder of that animal's stay**:
   moment the product has.
 - **AI keepsake art** — one generated image immediately after donating (the
   thank-you dopamine hit and the viral share loop), and a second "gotcha day"
-  portrait at adoption. Both live permanently in the donor's account.
+  portrait at adoption. Both live permanently in the donor's account — for
+  shelters that consented. A keepsake is held on the basis each field came
+  from (ADR-0022): an aggregator-only sponsorship keeps its donation forever
+  but its name and photo only as long as the aggregator license holds.
 
 The shelter's pitch-facing value is **donor retention**: donors who see what
 they funded come back.

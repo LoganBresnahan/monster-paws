@@ -437,6 +437,39 @@ Why the line is where it is: on 2026-09-04 a replay backfilling two new merged
 fields wrote 62,729 true, permanent `animal.updated` rows about nothing that
 happened to an animal. The ledger was right; it was only ever wrong as a feed.
 
+## Keepsake snapshot — held on its own basis, never a view of the listing (ADR-0022)
+
+Planned: roadmap item 4. The card reads the keepsake alone; the listing side
+may be purged, rebuilt or merged without touching it.
+
+```
+  donation completes (Every.org)             (planned, item 4)
+       │
+       ▼
+  snapshotKeepsake()  (planned, item 4)      the ONE writer — every field
+       │                                     must name its basis or it is
+       │  reads, once, at donation time:     not written
+       │    animals + licensed animal_display row + the shelter registry
+       ▼
+  keepsake            (planned)              basis = donation: amount, date,
+       │                                     recipient nonprofit — PERMANENT
+       │                                     append-only, never UPDATEd
+       ▼
+  keepsake_fact       (planned)              (keepsake_id, field, value,
+       │                                      basis, snapshotted_at)
+       │   basis = grant:<slug>:<permission> → kept per the grant's onEnd
+       │   basis = aggregator:<source>       → purged with the source
+       │   one basis per field; the most durable available wins
+       ▼
+  donor collection card                      never joins animals /
+                                             animal_display to render
+
+  aggregator license ends  →  DELETE keepsake_fact WHERE basis =
+                              'aggregator:rescuegroups'  (set delete)
+                              card degrades to its donation half:
+                              "A sponsorship at <shelter> · <date> · $<n>"
+```
+
 ## Listing assessment — a verdict beside visibility, never inside it (ADR-0021)
 
 Planned: roadmap item 7b. Derived data like `embeddings`; gates browse only.
