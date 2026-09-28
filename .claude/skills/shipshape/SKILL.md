@@ -189,8 +189,13 @@ hand-checked it, when, and from which snapshot (an unattributed fixture is an
 unfalsifiable assertion, and these gate the LLM extractor per **ADR-0009**):
 
 ```bash
-ls tests/fixtures 2>/dev/null && grep -rLn "hand-checked" tests/fixtures
-# expect: no files listed — every fixture carries provenance
+for f in $(ls tests/fixtures 2>/dev/null | grep -v README.md); do
+  grep -q "\`$f\`.*hand-checked" tests/fixtures/README.md || echo "UNATTRIBUTED: $f"
+done
+# expect: no output. Snapshots are stored VERBATIM (an added provenance key
+# would change the bytes the fixture exists to preserve), so provenance is a
+# row in tests/fixtures/README.md naming the file and "hand-checked" — never
+# a phrase inside the fixture itself.
 ```
 
 Judgment calls the greps can't make, spot-check by reading: an invariant
