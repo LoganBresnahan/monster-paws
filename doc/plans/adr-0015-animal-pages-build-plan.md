@@ -208,7 +208,9 @@ adversarial verify pass (⚠). Check items off as they ship.
        by the component itself.
 
 4. **closure — purge path + e2e**
-   - [ ] `display-purge-path` — medium, moderate
+   - [x] `display-purge-path` — medium, moderate — shipped 2026-09-28:
+     `purgeDisplay` (`src/core/purge.ts`), display rows only, refuses while
+     licensed; the resurrection-on-ingest carry-in is on the roadmap
    - [ ] `animal-pages-e2e` — medium, moderate
      - carry-in (phase-1 verify pass): nothing stops a page assembling its own
        predicate, and no unit test can catch that. Assert BOTH halves for one

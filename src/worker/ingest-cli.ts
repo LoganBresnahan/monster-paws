@@ -3,6 +3,8 @@
  *
  *   npm run ingest -- poll [--max-pages N]   fetch → all four stages
  *   npm run ingest -- replay <source>        stages 2–4 over the corpus
+ *   npm run ingest -- purge-display <source> delete a source's display rows
+ *                                            once its license has ended
  *
  * Replay is how a normalizer fix is applied retroactively with no source
  * contact; it touches `animals` and `event_log` only through the writer,
@@ -10,6 +12,7 @@
  */
 import { closeDb, getDb } from "@/db/client";
 import { createPgStages, loadStoredObservations } from "@/core/ingest/pg";
+import { purgeDisplay } from "@/core/purge";
 import { replay, runIngest, type IngestRunReport } from "@/core/ingest/pipeline";
 import { createRescueGroupsAdapter, rescueGroupsNormalizer } from "@/core/ingest/rescuegroups";
 import { planIngestPoll } from "@/worker/ingest-poll";
@@ -39,8 +42,12 @@ async function main([command, ...rest]: string[]) {
     } else if (command === "replay" && rest[0]) {
       const stored = await loadStoredObservations(db, rest[0]);
       print(await replay(rest[0] as never, stored, stages));
+    } else if (command === "purge-display" && rest[0]) {
+      console.log(JSON.stringify({ purged: await purgeDisplay(db, rest[0] as never) }));
     } else {
-      throw new Error("usage: ingest poll [--max-pages N] | ingest replay <source>");
+      throw new Error(
+        "usage: ingest poll [--max-pages N] | ingest replay <source> | ingest purge-display <source>",
+      );
     }
   } finally {
     await closeDb();

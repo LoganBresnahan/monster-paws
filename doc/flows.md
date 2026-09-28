@@ -257,7 +257,9 @@ displaying verbatim are different permissions.
                     └──────────────────────────────────────────────┘
 
   revoke "scrape"  → purge prefix + rows (carve-out 2), downstream grants moot
-  revoke "display" → pages fall back to facts + our words; corpus untouched
+  revoke "display" → pages fall back to facts + our words; purgeDisplay
+                     (src/core/purge.ts) deletes that source's animal_display
+                     rows once the revocation is committed; corpus untouched
   revoke "digify"  → no new art; existing cards keep their credit line
 ```
 
@@ -290,7 +292,8 @@ nothing here touches `raw_payloads`.
        │                               ones dropped: a source that stopped
        │                               listing is not evidence of a sighting)
        ▼
-  animal_display rows for the animal, one per source   (DERIVED, purgeable)
+  animal_display rows for the animal, one per source   (DERIVED, purgeable:
+       │                               purgeDisplay(source) once its license ends)
        │                               photos = [{url, width, height}] — sizes
        │                               are the source's own, never computed
        │

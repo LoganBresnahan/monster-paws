@@ -201,8 +201,21 @@ slice or change build order.
       (`BROWSE_EXCLUSIONS`), keyed by `(source, external_id)` and composed
       beside `visibleAnimals` — delete the list wholesale when item 7b lands,
       never grow it.
-      Remaining in item 3: `display-purge-path`, `animal-pages-e2e` and the
-      docs reconciliation (plan phases 4–5).
+      The `display-purge-path` slice shipped 2026-09-28: `purgeDisplay` in
+      `src/core/purge.ts` (and `npm run ingest -- purge-display <source>`)
+      deletes one source's `animal_display` rows and nothing else — raw, vault
+      and facts are a separate purge, decided per termination. It refuses while
+      the source's display license is active, so the checked-in revocation
+      always comes first.
+      Carry-in → phases 5–6: **a purge is undone by the next ingest of that
+      source.** Stage 4 writes display rows whatever the license says (the
+      gate is at render), so a replay, or a scrape that still holds its
+      `scrape` grant after `display` is revoked, rebuilds the purged rows.
+      Pages still refuse to render them, so nothing unlicensed is shown, but
+      the purge no longer holds. Decide whether stage 4 skips unlicensed
+      display before the first scrape source can lose a grant.
+      Remaining in item 3: `animal-pages-e2e` and the docs reconciliation
+      (plan phases 4–5).
 
 ## Next
 
