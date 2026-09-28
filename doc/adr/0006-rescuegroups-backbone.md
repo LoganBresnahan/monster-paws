@@ -281,3 +281,87 @@ decide; this amendment only licenses the promotion.
 - Item 4 wants the listing photo *inside* a generated composition (a
   frame is display; a composite may be a derivative) — decide the line
   then, not by analogy.
+
+## Amendment (2026-09-28): every end carries its terms, and a source purge is a rebuild
+
+Prompted by the display purge (`purgeDisplay`, ADR-0015 phase 4) and by
+ADR-0022's keepsakes. Decision 4 and the 2026-08-02 revocation carve-out say a
+source's rows *may* be deleted as a set; neither says *which* rows a given end
+requires, and the answer differs by source. RescueGroups' terms require
+everything derived to go. A shelter that withdraws display may be happy for us
+to keep its facts — the 2026-08-02 amendment already says facts are "decided
+per revocation and on the shelter's terms, not ours" — but nothing recorded
+the decision. Four decisions.
+
+### 1. Every license and grant end carries recorded end terms
+`ConsentWindow` gains `onEnd`, a record like the grant itself:
+
+```
+onEnd: {
+  corpus:    "retain" | "purge",   // raw, vault, facts, identities, events
+  keepsakes: "retain" | "purge",   // keepsake_fact rows on this basis (ADR-0022)
+  evidence:  string,               // the terms clause, or the revocation email
+}
+```
+
+- Known at grant when the terms say it: `rescuegroups` records
+  `{ corpus: "purge", keepsakes: "purge" }` citing the termination clause.
+- Otherwise recorded **no later than the revocation**, from what the shelter
+  said. The consent ask (item 5) requests `keepsakes: "retain"` up front
+  (ADR-0022 §5).
+- `licenseProblems` / `registryProblems` fail the build on a window with
+  `revokedAt` and no `onEnd` — an end without terms is a purge nobody can run
+  correctly. Like the grant, `onEnd` is appended, never edited: a shelter that
+  later asks for deletion is a new record with its own evidence.
+- `corpus` is meaningful only on windows that put data in the corpus (a
+  `scrape` grant, an aggregator license). A `display` grant's end never touches
+  the corpus.
+
+### 2. Display is never a term — it always goes
+At any display end, `animal_display` rows for the source are deleted
+(`purgeDisplay`) and stage 4 stops writing them (ADR-0015 as amended
+2026-09-28). This is safe even under `corpus: "retain"`: display rows are
+derived, so a re-grant plus a replay restores them.
+
+### 3. A source purge deletes the source's corpus, then rebuilds from what remains
+`purgeSource(source)` runs only on an end with `corpus: "purge"`:
+
+1. Delete the source's `raw_payloads`, vault prefix, `animal_identities`,
+   `animal_display` and embeddings — and its `event_log` rows. The event log is
+   named here explicitly: its rows carry field names and external ids, which
+   is "information derived or extracted". This is the same sanctioned exception
+   as decision 4, reaching one more append-only table, and only in this
+   operation.
+2. If `keepsakes: "purge"`, delete `keepsake_fact` rows on this source's basis
+   (ADR-0022 §3).
+3. **Rebuild every affected animal from scratch** from the remaining corpus —
+   never an incremental replay, which cannot retract a claim (an absent claim
+   never overwrites; ADR-0009 phase-7 rule). An animal left with no identity is
+   deleted; `animal_story` is reprojected (ADR-0020).
+
+How the rebuild appears in `event_log` is decided when it is built, with one
+prohibition: it is **never** an `animal.updated` attributed to a surviving
+source, which asserted nothing new.
+
+### 4. Designed now, built before item 10
+Today stage 3 matches only exact `(source, externalId)` (ADR-0013), so every
+animal has one source and a purge is a plain set delete. Item 10's
+cross-source merge ends that: a merged animal's fields interleave sources, and
+only step 3's rebuild separates them. `purgeSource` is built and tested on a
+two-source animal **before** item 10 ships, and its design is settled before
+item 4, whose keepsakes it reaches.
+
+### Consequences
+- A termination or revocation is a checked-in record first and a command
+  second. The CLI reads `onEnd` and refuses a purge the terms don't call for,
+  as `purgeDisplay` refuses while a license is active.
+- The per-animal rebuild also discharges the "replay cannot retract a claim"
+  carry-in (roadmap item 3) — the same mechanism with no purge in front of it.
+- `event_log` has a second deletion path. It is still append-only in every
+  other operation, and the rule is enforced by review and `/shipshape`.
+
+### Revisit triggers (added)
+- A shelter's end terms don't fit two layers (say, "keep the facts, delete the
+  photos we vaulted") — split `corpus` rather than adding exceptions.
+- A purge's rebuild is slow enough to leave pages half-rebuilt — rebuild into
+  a shadow set and swap.

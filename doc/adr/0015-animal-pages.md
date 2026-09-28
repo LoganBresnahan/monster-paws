@@ -489,3 +489,42 @@ can find the row again and delete the list wholesale when item 7b lands.
 - Item 7b's verdict ships → delete `BROWSE_EXCLUSIONS` entirely rather than
   growing it; a curated list that outlives its interim becomes an unreviewable
   editorial policy.
+
+## Amendment (2026-09-28): stage 4 writes display only while the source is licensed
+
+`display-purge-path` shipped `purgeDisplay`, and with it a gap: stage 4
+upserted display rows whatever the license said, leaving the license check to
+render (`pickLicensedDisplay`). So the next ingest of a purged source rebuilt
+its rows — a `replay rescuegroups` after termination (replay needs no key), or
+tonight's scrape of a shelter that revoked `display` but kept `scrape`. Nothing
+unlicensed rendered, but the purge did not hold, and ADR-0006's terms are about
+holding, not only showing.
+
+### Decision
+The writer upserts `animal_display` for a candidate **only if
+`isDisplayLicensed(source, asOf)`**, where `asOf` is the write's clock, not the
+observation's `fetchedAt`: whether we may hold expression is a question about
+now. An unlicensed candidate's display is dropped silently — no event, no
+failure — and its facts are written as before. Both writers (`memory.ts`,
+`pg.ts`) gate identically; the parity harness covers it.
+
+`pickLicensedDisplay` stays as the render gate. The two are defence in depth,
+and the render gate also covers the hour a detail page is ISR-cached after a
+revocation.
+
+### Consequences
+- A display row now means "held under a license that was live when written",
+  and `purgeDisplay` plus this gate make a display end stick (ADR-0006 as
+  amended 2026-09-28, decision 2).
+- Replay is no longer purely a function of the corpus: the display rows it
+  rebuilds depend on the licenses at `asOf`. That is the point — a re-grant
+  followed by a replay restores pages, and nothing else does.
+- The parity test "keeps a second source's display row beside the first"
+  stores an unlicensed `shelterluv` row. It is superseded, not deleted: a
+  licensed second source keeps its row beside the first, an unlicensed one
+  writes none. A Tier 1 source displaying anything needs its own license
+  record first — none exists, and nothing displays one today.
+
+### Revisit triggers (added)
+- A source's license is decided per animal or per org, not per source —
+  `isDisplayLicensed` needs the candidate, not just its source.

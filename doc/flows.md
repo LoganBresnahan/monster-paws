@@ -64,6 +64,8 @@ producing a short report: a partial fetch must never reach stage 5.
             │  display? → upsert (animal_id,    │  (ADR-0013)
             │    source): no event, no          │  animal_display (DERIVED,
             │    updated_at, never merged       │   purgeable — ADR-0015)
+            │    only if isDisplayLicensed(     │  (planned: the license
+            │    source, now)                   │   gate, ADR-0015 am.)
             │  sourceUpdatedAt? → this source's │  animal_identities (DERIVED)
             │    identity only: no event, and   │   source_updated_at
             │    never a claim (ADR-0015 am.)   │
@@ -256,7 +258,11 @@ displaying verbatim are different permissions.
                     │ <shelter>"                (planned, item 4)   │
                     └──────────────────────────────────────────────┘
 
-  revoke "scrape"  → purge prefix + rows (carve-out 2), downstream grants moot
+  every revocation commits onEnd {corpus, keepsakes, evidence} first
+  (planned, ADR-0006 as amended 2026-09-28) — the purge reads it
+  revoke "scrape"  → onEnd.corpus = "purge": purgeSource (planned) deletes
+                     prefix + rows + events, rebuilds survivors from scratch;
+                     "retain": corpus stays. Downstream grants moot either way
   revoke "display" → pages fall back to facts + our words; purgeDisplay
                      (src/core/purge.ts) deletes that source's animal_display
                      rows once the revocation is committed; corpus untouched

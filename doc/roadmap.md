@@ -164,7 +164,9 @@ slice or change build order.
       corrected 5,023 states on replay and left 27 junk `T` values standing.
       Nothing obliges us to retract a fact today (ADR-0006 set-deletion and
       ADR-0015's display purge both DELETE rows instead), so this is deferred,
-      not blocking — the build plan carries the detail. Until it is fixed,
+      not blocking — the build plan carries the detail. The fix is now
+      named: `purgeSource`'s from-scratch per-animal rebuild (ADR-0006 as
+      amended 2026-09-28) is the same mechanism. Until it is fixed,
       browse's filter OPTIONS must be built from values matching `^[A-Z]{2}$`,
       never `select distinct state`, or `T` becomes a filter nobody can use.
       The `animal-detail-page` slice shipped 2026-09-04: `/animals/[id]`,
@@ -212,8 +214,12 @@ slice or change build order.
       gate is at render), so a replay, or a scrape that still holds its
       `scrape` grant after `display` is revoked, rebuilds the purged rows.
       Pages still refuse to render them, so nothing unlicensed is shown, but
-      the purge no longer holds. Decide whether stage 4 skips unlicensed
-      display before the first scrape source can lose a grant.
+      the purge no longer holds. **Decided 2026-09-28 (ADR-0015 as
+      amended): stage 4 writes display only while the source is licensed**,
+      in both writers, superseding the parity test that stores an unlicensed
+      `shelterluv` row. Build it before the first scrape source can lose a
+      grant; `onEnd` end terms on every license and grant (ADR-0006 as
+      amended 2026-09-28) land with it.
       Remaining in item 3: `animal-pages-e2e` and the docs reconciliation
       (plan phases 4–5).
 
@@ -303,6 +309,11 @@ slice or change build order.
       CLIP-QC harness proper.
 - [ ] **10. Entity resolution at scale.** Second/third listing source; dedup
       across feeds; trust-hierarchy merge.
+      Carry-in: **`purgeSource` is built and tested on a two-source animal
+      before this ships** (ADR-0006 as amended 2026-09-28): delete the
+      source's corpus and its `event_log` rows, then rebuild each affected
+      animal from scratch. Until this item, every animal has one source and a
+      purge is a set delete; after it, only the rebuild separates them.
 - [ ] **11. PWA push** for sponsors; **Expo app** when push friction costs
       engagement.
 - [ ] **12. Vet co-signing.**
