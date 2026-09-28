@@ -2,14 +2,11 @@ import Image from "next/image";
 import Link from "next/link";
 
 /**
- * Dev-only navigation. Both destinations are dev-gated pages — `/animals` is a
- * stub standing in for the unbuilt browse page and `/design` is the style
- * guide — so a link that renders in production is a link to a 404.
+ * Dev-only navigation: `/design` is the style guide and 404s in production
+ * (ADR-0016), so a link to it must not render there. `/animals` is a real page
+ * now and is linked from the hero like any other reader would reach it.
  */
-const DEV_LINKS = [
-  { href: "/animals", label: "Animals (stub)" },
-  { href: "/design", label: "Design" },
-];
+const DEV_LINKS = [{ href: "/design", label: "Design" }];
 
 const LOOP = [
   {
@@ -62,13 +59,12 @@ export default function Home() {
         </span>
       </p>
 
-      <a
-        href="#"
-        aria-disabled
+      <Link
+        href="/animals"
         className="mt-8 inline-block rounded-cuddly bg-leaf px-8 py-4 text-lg font-bold text-white shadow-lg transition-colors hover:bg-leaf-deep"
       >
-        Meet the monsters (soon!)
-      </a>
+        Meet the monsters
+      </Link>
 
       <div className="mt-16 grid w-full max-w-4xl gap-6 sm:grid-cols-3">
         {LOOP.map((step) => (

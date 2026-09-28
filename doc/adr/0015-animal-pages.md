@@ -400,3 +400,92 @@ Two constraints, decided here because they are constraints on THIS text:
   ADR-0004 gate on AI art (consented shelters only) is the shape to copy, and
   in ADR-0020 terms anything generated from a description is `observed` tier at
   best, never attested.
+
+## Amendment (2026-09-04): browse renders per request, and its filters are the corpus's own
+
+Prompted by building the browse page. Decision 1 put both routes on ISR at an
+hour and decision 5 named two filters; neither survives contact with a page
+whose URL carries filters and a cursor. Three decisions.
+
+### 1. Browse is rendered per request; the hour stays with detail
+
+Filters and the keyset cursor are search params, so there is no finite set of
+browse URLs to revalidate — species × state × every cursor is the whole corpus
+written as URLs. Rendering per request is also *fresher* than the hour, never
+staler, so nothing decision 1 promised a donor is weakened; what it costs is
+database work per view, and that is measured rather than assumed on the live
+64k corpus: **0.55 ms** for the page query at page one, **8.8 ms** for a deep
+cursor with both filters (the filters are not in the sort index, so this one
+grows with depth into the sort), **30 ms** for the facet grid.
+
+The 30 ms is the number to watch. Caching it for an hour is one wrapper when
+browse traffic makes it matter — that is a revisit trigger, not machinery to
+add before the first shelter has been contacted.
+
+### 2. Filter options are the visible set's own values, counted
+
+The menus are built from one `(species, state, count)` aggregate over the
+*visible* set — about 700 cells — never from a hardcoded list of species or the
+50 states. Two consequences that are the point rather than side effects:
+
+- **A filter can only ever open a page that has animals on it.** An option
+  nobody can use is a dead end a reader blames themselves for.
+- **States must match `^[A-Z]{2}$`.** Replay cannot retract a claim, so 27
+  animals still carry the junk state `T` that a fixed normalizer no longer
+  asserts; `select distinct state` would offer it as a choice. This is the
+  build plan's carry-in, discharged here.
+
+Each menu is counted under the *other* menu's selection, from the same grid, so
+"cat (412)" beside a chosen state means 412 cats in that state and cannot
+disagree with the page it opens. An unknown or junk value in a URL is dropped
+rather than queried: a filter silently ignored would show animals nobody asked
+for, and one silently applied would empty a page for a reason nobody can see.
+
+### 3. The interim for listings that are not animals is six curated rows
+
+ADR-0021 defers the real fix — an LLM verdict as derived data, roadmap item 7b
+— and leaves browse the interim, either "accept the blemish" or "a tiny curated
+exclusion". Measured 2026-09-04 at the head of the longest-listed sort: the
+four oldest visible rows are administrative (`ADOPTION-Read First`,
+`Kittens!!!!`, `OK Fosters Needed`, `One by One cats`), and two group listings
+sit just behind them (`Kittens Available 20+!`, whose own description says the
+pictured kittens are adopted, and `Red Eared Slider Turtles!`). Six rows out of
+60,295 visible, all six in the first thirty a reader sees. The exclusion is
+worth the six lines.
+
+- **Keyed by `(source, external_id)`, never by `animals.id`.** A canonical
+  rebuild reassigns our ids, and a stale id list would then hide six animals
+  chosen at random — a silent, undetectable wrong.
+- **Composed beside `visibleAnimals`, never inside it.** Visibility is what a
+  donor may reach at all; this is one page's editorial interim, and a detail
+  page linked from anywhere still resolves.
+- **Never a regex over names**, per ADR-0021: the same pattern that catches
+  `Kittens!!!!` hides `Sunshine 9.21.09` and `Afraid of Commitment`, who are
+  real animals waiting sixteen and fifteen years.
+
+Each entry carries the listing's name and what it actually is, so a reviewer
+can find the row again and delete the list wholesale when item 7b lands.
+
+### Consequences (added)
+
+- The browse page reads the database three times per view (facets, page, card
+  display) and holds no count and no page number, so nothing on it can imply
+  scarcity.
+- `AnimalCard` (`src/ui/animal.tsx`) frames a card photo at a fixed 4:3 and
+  *contains* it, where the detail page takes each photo's own ratio: a grid
+  needs one card height, and the alternative to ground around a photo is the
+  crop that cut a dog's head off. `/design` renders the component itself
+  (ADR-0016).
+- The landing page's hero now links to `/animals` — browse is the demo, so the
+  dev-only stub and its "(soon!)" button are gone.
+
+### Revisit triggers (added)
+
+- The facet grid's 30 ms shows up in browse latency → cache it for the hour,
+  or narrow it to the facets a page actually renders.
+- A reader asks for "near me", a total, or page numbers → the geocode trigger
+  above, and the `?before=` / counted-variant trigger from the keyset
+  amendment.
+- Item 7b's verdict ships → delete `BROWSE_EXCLUSIONS` entirely rather than
+  growing it; a curated list that outlives its interim becomes an unreviewable
+  editorial policy.

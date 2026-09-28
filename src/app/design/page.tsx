@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { Swatches, ThemeToggle } from "./swatches";
+import { AnimalCard } from "@/ui/animal";
 import { AnimalGallery } from "@/ui/animal-gallery";
 import { agoInWords } from "@/ui/dates";
 import { TYPE_SCALE } from "@/ui/tokens";
@@ -150,29 +151,24 @@ export default function DesignPage() {
               The landing-page card as shipped.
             </p>
           </div>
-          <div className="overflow-hidden rounded-cuddly border-2 border-paw/30 bg-card shadow-sm">
-            <div className="flex h-40 items-center justify-center bg-paw/20 text-5xl">
-              🐕
-            </div>
-            <div className="p-4">
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-bold">Biscuit</h3>
-                <span className="rounded-full bg-honey px-2 py-0.5 text-xs font-bold">
-                  adoptable
-                </span>
-              </div>
-              <p className="mt-1 text-sm text-muted">
-                Dog · Beagle mix · Austin, TX
-              </p>
-            </div>
-          </div>
-          <div className="rounded-cuddly border-2 border-paw/30 bg-card p-6 shadow-sm">
-            <h3 className="text-lg font-bold">Animal card (proposal)</h3>
-            <p className="mt-2 text-sm text-muted">
-              Middle card is a sketch of what ADR-0015 browse needs. Not built
-              yet.
-            </p>
-          </div>
+          {/* The browse card itself, not a copy of it (ADR-0016): the two
+              samples are the only two states it has — a licensed photo, and
+              the species stand-in when no display row is licensed. */}
+          <AnimalCard
+            href="/design"
+            name="Biscuit"
+            facts="Beagle mix · Austin, TX"
+            photo={SAMPLE_PHOTOS[1]}
+            footer="Listed March 3, 2021 · waiting 4 years"
+            fallbackEmoji="🐶"
+          />
+          <AnimalCard
+            href="/design"
+            name="Marbles"
+            facts="Domestic Short Hair · Reno, NV"
+            footer="Listed August 20, 2024 · waiting 12 months"
+            fallbackEmoji="🐱"
+          />
         </div>
       </Section>
     </main>

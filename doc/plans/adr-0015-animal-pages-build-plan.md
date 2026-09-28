@@ -126,7 +126,7 @@ adversarial verify pass (⚠). Check items off as they ship.
      - carry-in → phase 4: `isBirthDateExact` renders as "Born <date>" and the
        estimate as "About N years old (estimated)" — e2e should pin both, since
        a flipped flag states an age a shelter would have to defend.
-   - [ ] `animal-browse-page` — medium, moderate
+   - [x] `animal-browse-page` — medium, moderate — shipped 2026-09-04
      - carry-in, seen 2026-09-04 on the dev-only stub index: the head of the
        longest-listed sort is not animals. The first rows are administrative
        listings a rescue parked in the feed years ago — "ADOPTION-Read First"
@@ -141,7 +141,32 @@ adversarial verify pass (⚠). Check items off as they ship.
        9.21.09", "Afraid of Commitment") to catch them. Whatever the interim is,
        it composes beside `visibleAnimals`, never inside it: the detail page
        must stay reachable by link.
-   - [ ] `brand-tokens-in-pages` — low, mechanical
+       **Settled 2026-09-04 (ADR-0015 as amended)**: a curated exclusion of six
+       listings — the four administrative rows above plus two group listings
+       beside them (`Kittens Available 20+!`, `Red Eared Slider Turtles!`) —
+       keyed by `(source, external_id)`, never by `animals.id`, which a
+       canonical rebuild reassigns. Six of 60,295 visible, all six inside the
+       first thirty a reader sees.
+     - `src/app/animals/page.tsx` reads the database only through
+       `src/core/browse.ts` (`loadFacetGrid`, `loadBrowsePage`,
+       `loadCardDisplay`), each composing `visibleAnimals`; the dev-only stub
+       is gone and the landing hero links here.
+     - **rendered per request, not ISR** (ADR-0015 as amended): filters and the
+       cursor are search params, so there is no URL set to revalidate.
+       Measured on the live 64k corpus — page query 0.55 ms at page one,
+       8.8 ms for a deep cursor with both filters, 30 ms for the facet grid.
+       The 30 ms is the number to watch; caching it is one wrapper when browse
+       traffic makes it matter.
+     - **the filter menus are the corpus's own values**, counted, each under
+       the other menu's selection — which discharges the `^[A-Z]{2}$` carry-in
+       above, since options built from the visible set still have to exclude
+       the junk `T` state replay cannot retract.
+     - carry-in → phase 4: e2e should pin the keyset boundary (no skip, no
+       repeat across a page break) and that an excluded listing is absent from
+       browse while its detail page still resolves. The unit suite has both
+       against real Postgres; e2e is what proves the rendered page composes
+       them.
+   - [x] `brand-tokens-in-pages` — low, mechanical — shipped 2026-09-04 with the two pages
      - **amended 2026-09-03 (ADR-0016)**: the cycle resolution under "Why this
        order" — fold the styling in, no shared component — is superseded now
        that `/design` exists. A pattern both pages use (the animal card, the
@@ -171,6 +196,16 @@ adversarial verify pass (⚠). Check items off as they ship.
        carry a junk `T` that predates the normalizer fix and **cannot be
        removed by replay** — see below — so a raw distinct query offers `T` as
        a filter nobody can use.
+       **Discharged 2026-09-04**: the options are built from an aggregate over
+       the visible set and filtered by that pattern, so `T` is offered nowhere
+       and `ON`/`AB`/`BC`/`QC`/`SK`/`PR` stay reachable — the whole species
+       tail too, since the menu is the corpus's own values rather than a
+       two-species list.
+     - done with the pages: both are built on the `@theme` tokens directly, and
+       the shared patterns live in `src/ui/animal.tsx` (`AnimalPhoto`,
+       `TrackerPixel`, `AnimalCard`, `speciesEmoji`) which `/design` renders
+       instead of a copy (ADR-0016). The card sketch on `/design` is replaced
+       by the component itself.
 
 4. **closure — purge path + e2e**
    - [ ] `display-purge-path` — medium, moderate

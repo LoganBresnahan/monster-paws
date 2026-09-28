@@ -176,6 +176,25 @@ slice or change build order.
       Carry-in: ~4,100 animals are now collected but never rendered. A
       supply-side number to watch, not a bug; if it grows, look at the bound
       and at the upstream feed.
+      The `animal-browse-page` slice shipped 2026-09-04, and with it
+      `brand-tokens-in-pages`: `/animals` reads only through `src/core/browse.ts`
+      (facet grid, keyset page, licensed card display), the landing hero links
+      to it, and the dev-only stub is gone. **ADR-0015 amended again the same
+      day**: browse renders per request rather than on ISR — filters and the
+      cursor are search params, so there is no URL set to revalidate, and
+      per-request is fresher than the hour, never staler. Measured on the live
+      corpus: 0.55 ms for the page query, 8.8 ms for a deep filtered cursor,
+      30 ms for the facet grid — that last is the one to watch, and caching it
+      for the hour is the revisit trigger. The filter menus are the visible
+      corpus's own values, counted under each other, which discharges the
+      `^[A-Z]{2}$` carry-in (the junk `T` state is offered nowhere, and the
+      non-US `ON`/`AB`/`BC`/`QC`/`SK`/`PR` stay reachable).
+      Carry-in: the ADR-0021 interim shipped as **six curated exclusions**
+      (`BROWSE_EXCLUSIONS`), keyed by `(source, external_id)` and composed
+      beside `visibleAnimals` — delete the list wholesale when item 7b lands,
+      never grow it.
+      Remaining in item 3: `display-purge-path`, `animal-pages-e2e` and the
+      docs reconciliation (plan phases 4–5).
 
 ## Next
 

@@ -27,6 +27,9 @@ function codeOf(source: string): string {
 
 const RENDERERS = [
   "src/app/animals/[id]/page.tsx",
+  // Browse renders no description today; it is listed so that the day someone
+  // puts an excerpt on a card, this is the test that stops it being a link.
+  "src/app/animals/page.tsx",
   "src/ui/animal-gallery.tsx",
   "src/ui/animal.tsx",
   "src/ui/text.ts",

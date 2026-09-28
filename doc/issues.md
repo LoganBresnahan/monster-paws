@@ -14,8 +14,12 @@ is the record, and a file of ticked boxes stops being read.
   names.** Four of the top six rows of the browse sort are administrative
   records, and the two problems must not share a fix — see **ADR-0021** for the
   measurements and the decision (an LLM verdict as derived data, gating browse
-  only, default-show, eval-gated, deferred past phase 4). Pinned as a carry-in
-  on `animal-browse-page`, which owns the interim. Found 2026-09-04.
+  only, default-show, eval-gated, deferred past phase 4). The interim shipped
+  2026-09-04 with the browse page: six hand-checked listings in
+  `BROWSE_EXCLUSIONS`, keyed by `(source, external_id)` and applied beside the
+  visibility predicate, so their detail pages still resolve. That covers the
+  head of one sort and nothing else — the rest of the corpus is unmeasured, so
+  this stays open until item 7b. Found 2026-09-04.
 - **A thin tail of descriptions is the shelter's whole adoption manual** —
   deposit amounts, adoption-fair schedules, size-and-age glossaries. Re-measured
   2026-09-04 after whitespace tidying (ADR-0018 as amended), which fixed most of

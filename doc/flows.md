@@ -266,9 +266,8 @@ grant is the record, with evidence under `doc/consent/`.
 
 ## Animal page render — facts, display layer, visibility (ADR-0015, ADR-0018)
 
-Detail (`/animals/[id]`) is built; browse is planned (roadmap item 3). Pages
-read Postgres directly from Server Components; nothing here touches
-`raw_payloads`.
+Both routes are built. Pages read Postgres directly from Server Components;
+nothing here touches `raw_payloads`.
 
 ```
   request /animals/[id]                ISR, revalidate 1h
@@ -323,13 +322,74 @@ read Postgres directly from Server Components; nothing here touches
                 unverified: "your donation goes to <org>"; no update promise
 ```
 
-Browse (`/animals`) applies the same `visibleAnimals` predicate, filters by
-species and state, and sorts longest-listed first by `animals.listed_at` — the
-source's own listing date, never `created_at`, which dates our INSERT
-(ADR-0015 as amended) — never by anything resembling desirability (bright
-line 1). It pages by keyset cursor, `(listed_at, id) > (cursor)`: an offset
-window shifts as animals are adopted out of it and silently skips whoever
-crosses a page boundary.
+Browse (`/animals`) is the same predicate, one page at a time.
+
+```
+  request /animals?species=&state=&after=   rendered PER REQUEST — filters and
+       │                                    the cursor are search params, so
+       │                                    there is no URL set to revalidate
+       │                                    (ADR-0015 as amended). Fresher than
+       │                                    detail's hour, never staler
+       ▼
+  loadFacetGrid(db, asOf)                   one aggregate over the VISIBLE set:
+       │                                    (species, state, count), ~700 cells,
+       │                                    30 ms on the 64k corpus
+       ▼
+  facetOptions(grid, filters)               the menus ARE the corpus's values —
+       │                                    never a hardcoded species list, and
+       │                                    states must match ^[A-Z]{2}$ (replay
+       │                                    cannot retract the junk `T` state).
+       │                                    Each menu counted under the OTHER
+       │                                    menu's selection, so a count is a
+       │                                    promise about the page it opens
+       ▼
+  filtersFrom(searchParams, known)          a value the corpus does not hold is
+       │                                    DROPPED, never queried: silently
+       │                                    ignored shows animals nobody asked
+       │                                    for; silently applied empties a page
+       ▼
+  loadBrowsePage(db, filters, cursor, asOf)
+       │
+       ├─ visibleAnimals(asOf)              THE predicate — the same one detail
+       │                                    composes, never a copy
+       ├─ not exists BROWSE_EXCLUSIONS      six hand-checked non-animal listings
+       │                                    keyed by (source, external_id), never
+       │                                    by animals.id, which a canonical
+       │                                    rebuild reassigns. BESIDE visibility,
+       │                                    so /animals/[id] still resolves.
+       │                                    Interim only — ADR-0021 item 7b
+       ├─ species / state = $               the v1 filters (ADR-0015 decision 5)
+       ├─ (listed_at, id) > (cursor)        keyset, forward only: an offset window
+       │                                    shifts as animals are adopted out and
+       │                                    silently skips whoever crosses a page
+       │                                    boundary. `id` is the tiebreaker the
+       │                                    backfill's shared timestamps need
+       ▼
+  order by listed_at asc, id asc            longest-waiting first — the source's
+  limit 24 + 1                              date, never created_at, and never
+       │                                    anything resembling desirability
+       │                                    (bright line 1). The +1 row is what
+       │                                    says "there is more" without a count
+       ▼
+  loadCardDisplay(db, ids, asOf)            pickLicensedDisplay per animal — the
+       │                                    same picker as detail; an unlicensed
+       │                                    row means a card with no photo
+       ▼
+  render                                    src/app/animals/page.tsx
+    cards       AnimalCard (src/ui/animal.tsx, rendered by /design too):
+                photo contained in a fixed 4:3 frame — a grid needs one card
+                height, and the alternative to ground around a photo is the crop
+                that cut a dog's head off on detail
+    filters     a plain GET form: no client island, no JS, a shareable URL per
+                combination, and no `after` field — a new filter starts at the
+                first animal
+    paging      "Next 24 animals →" only; no `?before=`, no page number, no
+                total, so nothing on the page can imply scarcity. Back is the
+                browser's own
+    no pixel    the Pet Adoption Tracker is owed on every pet DETAIL page
+                (ADR-0006 decision 2); one per card would report 24 views of
+                animals nobody opened
+```
 
 ## Animal story — the donor feed is a projection, never the ledger (ADR-0020)
 

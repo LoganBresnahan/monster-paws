@@ -5,7 +5,7 @@ import { cache } from "react";
 import { lastSeenOf, loadAnimalDetail, type AnimalDetail } from "@/core/animals";
 import { isDisplayLicensed, pickLicensedDisplay } from "@/core/display";
 import { getDb } from "@/db/client";
-import { TrackerPixel } from "@/ui/animal";
+import { speciesEmoji, TrackerPixel } from "@/ui/animal";
 import { AnimalGallery } from "@/ui/animal-gallery";
 import { agoInWords, formatDate } from "@/ui/dates";
 import { decodeEntities, tidyWhitespace } from "@/ui/text";
@@ -25,13 +25,6 @@ import { decodeEntities, tidyWhitespace } from "@/ui/text";
  * buys nothing until on-demand revalidation from the poll exists.
  */
 export const revalidate = 3600;
-
-/** Any deeper facts must come from `animals` — never from `animal_display`, which is licensed expression, not fact. */
-function speciesEmoji(species: string): string {
-  if (species === "dog") return "🐶";
-  if (species === "cat") return "🐱";
-  return "🐾";
-}
 
 /**
  * Never state a birth date as exact unless the source said it is — most
