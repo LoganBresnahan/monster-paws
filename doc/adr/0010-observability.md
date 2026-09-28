@@ -93,3 +93,85 @@ OTel arrives only if a real cross-service latency mystery exists.
 - More than ~2 incidents/month where grep is the bottleneck → add Axiom or
   Grafana Cloud via pino transport.
 - A second service/box appears → revisit OTel.
+
+## Amendment (2026-09-28): a failed job must reach a person, and a daily brief is read by Claude
+
+Prompted by an incident, not a plan. The first poll after 24 days away
+disappeared ~21k of 85k identities in one run; stage 5 overflowed the stack
+building a single INSERT for that event wave and rolled back. In dev the crash
+was one line in a log file. In production the same failure would have been a
+pg-boss job failing, retrying and failing again, while the site aged out of
+its 8-day visibility window one animal at a time — and nothing above would have
+told anyone. Three of this ADR's decisions would each have caught it, and none
+is built: `ingest_runs`, the health endpoint's poller-age check, Sentry. This
+amendment sharpens what "built" must mean, and adds the reading layer.
+
+### 1. Two channels, by latency — never one channel for both
+
+- **Minutes: things a person must act on today.** A failed or missing poll,
+  the site down, a new error class. These go straight from the platform to
+  email: Sentry on a new issue, the external uptime check on `/api/health`
+  (which must include `lastCompletePollAt` and fail when it is older than one
+  poll interval plus slack), and the existing DO host alerts. **No LLM in this
+  path** — an alert that waits for a scheduled agent is not an alert.
+- **Daily: things a person should know this week.** Run counts, failures,
+  the visible-animal count, the disappearance rate, job-queue depth, the
+  supply-side numbers the roadmap says to watch. This is a brief, and a brief
+  is where an LLM earns its place: it reads the numbers against the roadmap's
+  carry-ins and says what changed.
+
+### 2. The brief is three pieces, and the worker owns the facts
+
+1. **`ops.daily` job** (worker, pg-boss cron): reads `ingest_runs`, the pg-boss
+   job tables and the projection counts, and writes ONE JSON summary row
+   (`ops_daily`, append-only — a correction is tomorrow's row) plus a
+   structured log line. Postgres stays the metrics warehouse.
+2. **`GET /api/ops/daily`** (app): returns the latest row, behind a bearer
+   token in `.env`. Ops counters only — never a donor, a shelter contact or an
+   animal's prose — so a leaked token embarrasses nobody and the endpoint can
+   be read from outside the box.
+3. **A Claude routine** (claude.ai scheduled cloud agent, daily, on Logan's
+   subscription) fetches the endpoint and writes the brief. A routine runs in
+   Anthropic's cloud with no access to the droplet, the database or local
+   files: the endpoint is the only way it sees anything, which is why piece 2
+   exists at all.
+
+### 3. Delivery is a connector or a commit, decided when built
+
+A routine cannot email on its own. Either a Gmail connector is attached at
+claude.ai (the routine sends the brief) or the routine commits the brief to
+`doc/ops/` and GitHub's own notification carries it. The second needs nothing
+new and leaves a history in the repo; prefer it unless the inbox turns out to
+matter. Either way the brief is derived, disposable operations data — never
+product data, never read by anything donor-facing.
+
+### 4. Two rules the incident adds to "what gets logged"
+
+- **A job's terminal failure is an event, not a log line**: pg-boss's failed
+  state must surface in `/api/health` and in Sentry, because docker logs are
+  read only by someone already looking.
+- **The ratio gate is a rate, not a share** (roadmap phase 9 carry-in): a
+  complete run may legitimately disappear a quarter of the identity table
+  after weeks away. Gate on disappearances per day since the last COMPLETE
+  run, and record that run's date in `ingest_runs` so the gate has a
+  denominator.
+
+### Consequences (added)
+
+- One new table (`ops_daily`), one new job, one new endpoint, one new secret.
+  No new infrastructure; the routine is a claude.ai feature.
+- Sentry, the uptime check and the health extension move from "arrives with
+  the first worker feature" to **owed before the next production deploy that
+  turns the poller on** — the poller has been running in production since
+  2026-08, so they are already late.
+- Sits on the roadmap as its own item once item 3 closes; this amendment is
+  the decision, not the build.
+
+### Revisit triggers (added)
+
+- The daily brief says nothing anyone acts on for a month → drop the routine
+  and keep the endpoint; the numbers are still the diagnostics.
+- A second reader for the brief appears (a shelter partner, a contributor) →
+  the token becomes per-reader, and the endpoint gets rate limiting.
+- The brief starts wanting per-animal detail → stop; that is a product
+  surface, and it belongs to the donor feed (ADR-0020), not ops.

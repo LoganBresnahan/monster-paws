@@ -249,6 +249,17 @@ slice or change build order.
       Sits here because it brings the first LLM into the ingest path and a
       third eval harness, which item 8 needs anyway. ~$15 for the whole corpus
       via the Batch API; the labelling afternoon is the real cost.
+- [ ] **7c. Ops brief (ADR-0010 as amended 2026-09-28).** Two channels by
+      latency: Sentry + an external uptime check on an extended `/api/health`
+      (`lastCompletePollAt`) for anything a person must act on today; an
+      `ops.daily` worker job → append-only `ops_daily` row → tokened
+      `/api/ops/daily` → a claude.ai routine that writes the daily brief for
+      everything else. Prompted by the 2026-09-28 stage-5 failure, which in
+      production would have been a pg-boss job failing silently while the site
+      aged out of its visibility window. Sentry, the uptime check and the
+      health extension are already late — the poller has run in production
+      since August — so they come first, before the next deploy that turns
+      the poller on.
 - [ ] **8. Update generation + faithfulness evals.** LLM donor updates from
       confirmed events; the no-unattested-claims harness; adoption
       "graduation" moment + gotcha-day card. Reads `animal_story` only, never
