@@ -29,6 +29,15 @@ docker compose -f docker-compose.prod.yml build   # app + worker images
 Tag images with the sha. The e2e in step 2 runs against these exact images —
 same bytes that ship.
 
+## 1b. Write the op-log entry first (ADR-0023)
+
+Every production deploy has an entry in `doc/oplog/` — next free number,
+`Status: planned`, format in `doc/oplog/README.md` — written and committed
+before step 3 touches the droplet. Fill its **Run** section as you go (output
+redacted: no IP, no token, no connection string), set `Status: run` at the
+end, and never edit it afterwards. If an entry for this deploy already exists
+(a launch planned weeks ahead), run that one instead of writing a new one.
+
 ## 2. Verify the production build locally
 
 ```sh

@@ -234,6 +234,26 @@ slice or change build order.
       (7c), per-org opt-out (5), CDN hotlink failure (2, phase 9), display
       precedence (10). "Near me" stays in the ADR; no item plans it.
 
+- [ ] **3b. Production launch.** Item 3's pages, the worker's daily poll and
+      error reporting go live together, on Managed Postgres. Prerequisites,
+      in order — the launch itself is planned step by step in
+      `doc/oplog/0001-production-launch.md` (ADR-0023), which is revised as
+      each lands and never improvised on the day:
+      - [ ] **SDK integration** (7c; ADR-0010 as amended 2026-09-29):
+            `@sentry/nextjs` + `@sentry/node` on the Better Stack DSN; a
+            source-map proof on the Turbopack production image, run locally;
+            the worker's failure reports and heartbeat pings (`/fail` only on
+            the final attempt).
+      - [ ] **`lastCompletePollAt` in `/api/health`** (7c) — failing once it is
+            older than one poll interval plus slack.
+      - [ ] **The disappearance-rate gate** (item 2 phase 9): per day since the
+            last complete run, never a flat share (ADR-0010 as amended).
+      - [ ] **The revalidation decision** (7c carry-in) — on-demand ISR from
+            the worker, or the hour accepted in writing.
+      - [ ] **Provision + deploy** — run oplog 0001: Managed Postgres
+            (~$15/mo), migrations, `.env`, first poll by hand, heartbeat
+            unpaused, smoke.
+
 ## Next
 
 - [ ] **4. Donation flow.** Every.org integration + donor accounts; card on

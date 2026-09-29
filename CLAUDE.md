@@ -75,6 +75,11 @@ commit.
   exactly as `doc/infra.md` does for the deployment shape. ADRs link to
   flows.md; they don't embed diagrams. Not every ADR has a flow; draw only
   what has stages and boundaries.
+- **Production operations go in `doc/oplog/`** (ADR-0023): one numbered
+  entry per operation, written and committed as `planned` *before* touching
+  production, filled in while running, then frozen — a correction is a new
+  entry. `/deploy` writes one every time. Same public-repo rules as
+  `doc/infra.md`: `$IP`, `$(pass show …)`, redacted output.
 - **Every decision gets an ADR** in `doc/adr/NNNN-slug.md` (Nygard style:
   Context / Decision / Consequences / Alternatives / Revisit triggers). New
   dependency, changed contract or algorithm, pattern adopted or rejected —
