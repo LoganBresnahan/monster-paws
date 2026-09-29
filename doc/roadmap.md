@@ -112,7 +112,10 @@ slice or change build order.
       dimensions is dropped** (ADR-0015 as amended), which is right while
       RescueGroups publishes them for 73,833 of 73,833 pictures and silent if
       that ever stops — pages would simply lose photos. The health gate should
-      watch the promoted photo count per run, not just failures.
+      watch the promoted photo count per run, not just failures. Its sibling
+      (ADR-0015 revisit trigger): **RG CDN hotlinks failing or blocked** —
+      photos are hotlinked, so a CDN refusing us is invisible to the poll;
+      the storage question reopens under the terms, never by copying quietly.
       **Frontier is now phase 9**
       (health gates + retrieval) — or item 3, since the demo can read
       `animals` now; phases 5–6 still wait on item 5's fixtures.
@@ -132,7 +135,7 @@ slice or change build order.
       Remaining carry-ins live in the plan — verbatim `description`
       (phase 5), per-field staleness gating (phase 9). Tracker pixel on
       detail pages when listings render.
-- [ ] **3. Animal pages.** ISR public pages (browse + detail) rendering real
+- [x] **3. Animal pages.** Done 2026-09-28. ISR public pages (browse + detail) rendering real
       local shelters' animals — this is the demo *and* the v1 supply side.
       Carry-in from the ADR-0006 amendments: two distinct display
       permissions, never conflated — **`aggregator-display`** (held by the
@@ -225,7 +228,11 @@ slice or change build order.
       against the standalone production server it starts itself, so CI's
       `/animals` no longer answers 500. Plan phase 4 is green, which lifts
       its "no /deploy" hold.
-      Remaining in item 3: the docs reconciliation (plan phase 5).
+      The docs reconciliation closed the item 2026-09-28: flows.md names only
+      built symbols, and ADR-0015's four open revisit triggers are pinned as
+      carry-ins to the items that will meet them — on-demand revalidation
+      (7c), per-org opt-out (5), CDN hotlink failure (2, phase 9), display
+      precedence (10). "Near me" stays in the ADR; no item plans it.
 
 ## Next
 
@@ -262,6 +269,10 @@ slice or change build order.
       The digify ask carries the ADR-0004 amendment's
       two additions: photos are processed by third-party AI services, and
       the shelter confirms it holds or can license the photo.
+      Carry-in: **the first claim/opt-out email needs a per-org exclusion**
+      (ADR-0015 revisit trigger) — one that overrides `aggregator-display`
+      in the registry, honored whatever the license says. The `/claim` line
+      is on every RG detail page, so this can arrive before any grant does.
       Carry-in: **the ask carries a retention clause (ADR-0022 §5)** —
       keepsakes already given to donors (name, breed, age, photo, art) stay
       in their accounts if the shelter later withdraws. It must be in the
@@ -296,8 +307,12 @@ slice or change build order.
       production would have been a pg-boss job failing silently while the site
       aged out of its visibility window. Sentry, the uptime check and the
       health extension come first, before the first deploy that turns the
-      poller on — it has never run in production, which is still the v0.1.0
-      landing page with no database behind it (`doc/infra.md` step 6).
+      poller on. Carry-in: **on-demand revalidation from the worker**
+      (ADR-0015 revisit trigger) — once the poller runs in production, an
+      animal adopted this morning stays on its ISR-cached detail page for up
+      to the hour, and a revoked display license does too. Decide it with the
+      same deploy. The poller has never run in production, which is still the
+      v0.1.0 landing page with no database behind it (`doc/infra.md` step 6).
 - [ ] **8. Update generation + faithfulness evals.** LLM donor updates from
       confirmed events; the no-unattested-claims harness; adoption
       "graduation" moment + gotcha-day card. Reads `animal_story` only, never
@@ -313,6 +328,10 @@ slice or change build order.
       CLIP-QC harness proper.
 - [ ] **10. Entity resolution at scale.** Second/third listing source; dedup
       across feeds; trust-hierarchy merge.
+      Carry-in: **display precedence between two licensed rows** (ADR-0015
+      revisit trigger) — `pickLicensedDisplay` ranks a shelter's own words
+      over an aggregator's copy by a stated v1 rule, not a decided one; the
+      first merged animal with two licensed rows is when to decide it.
       Carry-in: **`purgeSource` is built and tested on a two-source animal
       before this ships** (ADR-0006 as amended 2026-09-28): delete the
       source's corpus and its `event_log` rows, then rebuild each affected

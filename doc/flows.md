@@ -250,7 +250,7 @@ displaying verbatim are different permissions.
                     └──────────────────────────────────────────────┘
   ┌───────────┐     ┌──────────────────────────────────────────────┐
   │ "display" ├────►│ render THEIR description prose + photos       │
-  └───────────┘     │ on animal pages           (planned, item 3)   │
+  └───────────┘     │ on animal pages, via pickLicensedDisplay      │
                     └──────────────────────────────────────────────┘
   ┌───────────┐     ┌──────────────────────────────────────────────┐
   │ "digify"  ├────►│ photo → third-party AI → monster art          │

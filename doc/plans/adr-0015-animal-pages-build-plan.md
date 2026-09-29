@@ -236,7 +236,8 @@ adversarial verify pass (⚠). Check items off as they ship.
        because both are things a layout refactor can silently drop.
 
 5. **docs reconciliation**
-   - [ ] `flows-and-roadmap-docs` — low, mechanical
+   - [x] `flows-and-roadmap-docs` — low, mechanical — done 2026-09-28;
+     roadmap item 3 checked off
 
 ## Replay cannot retract a claim (found 2026-09-04)
 
