@@ -11,10 +11,154 @@ the deployment shape; what moves *through* it is drawn in `doc/flows.md`
 | Tool | For | Install | Auth |
 | --- | --- | --- | --- |
 | `doctl` | DigitalOcean: droplet, firewall, managed PG, snapshots | **installed 2026-07-29** (v1.164.0): release binary → `~/.local/bin` (chosen over snap — WSL2, no systemd dependency). Upgrade = re-download latest tarball to the same path | token lives in `pass` only (no `auth init`, no plaintext config): `DIGITALOCEAN_ACCESS_TOKEN=$(pass show digitalocean/api-token) doctl ...` — verified working 2026-07-29 |
-| `wrangler` | Cloudflare R2: buckets, objects, spot-checks | **no install** — `npx wrangler@latest` (rare ops; keep it out of package.json) | `CLOUDFLARE_API_TOKEN=$(pass show cloudflare/r2-token)` — token scoped Account·R2·Edit |
+| `wrangler` | Cloudflare R2 admin (bucket create/config) | **no install** — `npx wrangler@latest` (rare ops; keep it out of package.json) | **no stored token can drive it**: `cloudflare/r2-token` is object-scoped and 403s on every R2 REST call (verified 2026-09-29). Bucket admin is done in the dashboard (step 5b); objects go through `rclone_r2` |
 | Cloudflare API (`curl`) | DNS records, SSL mode, cache — wrangler doesn't do DNS | — | `CF_API_TOKEN=$(pass show cloudflare/dns-token)` — token scoped Zone·DNS·Edit |
 | `rclone` | Shipping pg_dumps + attestation mirror to R2 (S3-compatible) | `sudo apt install rclone` | `rclone config` → S3 provider, R2 endpoint |
 | `gh` | repo, Actions runs, CI watch (already installed) | — | `gh auth login` |
+
+## Secrets in `pass` — the registry
+
+`pass` holds **every** credential for the project, not only the ones the app
+runs with: it is how development — Claude included — reaches each service
+securely, with no plaintext config on disk. An entry nothing in `src/` reads
+is normal; it is a development credential, and never deleted for being
+"unused".
+
+Rules: names only, never a value, anywhere in this repo. Read a value at the
+moment of use — `VAR=$(pass show <entry>) cmd` — and never echo it, write it
+to a file, or paste it into a commit. Add a section row in the same commit
+that adds an entry. The audit — both lists must come back empty, except rows
+marked *not created yet*:
+
+```sh
+comm -3 <(cd ~/.password-store && find . -name '*.gpg' | sed 's#^\./##; s#\.gpg$##' | sort) \
+        <(grep -oE '`(cloudflare|digitalocean|rescuegroups|resend|betterstack)/[a-z0-9-]+`' doc/infra.md | tr -d '`' | sort -u)
+```
+**Lands in** is where a copy lives besides `pass`: the droplet's `.env`
+(prod), a GitHub Actions secret (CI), or *dev only*.
+
+Not in `pass`, on purpose: `gh` keeps its own login (`gh auth login`), and CI
+pushes to GHCR with the workflow's built-in `GITHUB_TOKEN`.
+
+### DigitalOcean
+
+| Entry | What it is | What it's for | Lands in |
+| --- | --- | --- | --- |
+| `digitalocean/api-token` | DO account API token (created 2026-07-29) | Everything `doctl` does: the droplet, firewall, monitoring alert policies (step 6c), snapshots, and Managed Postgres when step 6 lands | dev only |
+
+```sh
+DIGITALOCEAN_ACCESS_TOKEN=$(pass show digitalocean/api-token) doctl compute droplet list
+DIGITALOCEAN_ACCESS_TOKEN=$(pass show digitalocean/api-token) doctl monitoring alert list
+```
+Never `doctl auth init` — it writes the token to a plaintext config file.
+
+### Cloudflare — zone and email
+
+| Entry | What it is | What it's for | Lands in |
+| --- | --- | --- | --- |
+| `cloudflare/dns-token` | API token: Zone · DNS · Edit, Zone Settings, Cache Purge | DNS records (step 3), SSL mode (step 4), zone settings such as Bot Fight Mode, cache purges after a deploy | dev only |
+| `cloudflare/email-token` | API token: Email Routing rules (zone) + destination addresses (account) | The routing that forwards hello@ / security@ / logan@monsterpaws.org to Gmail — change a rule or add an address | dev only |
+
+```sh
+CF=$(pass show cloudflare/dns-token)
+ZONE=$(curl -s -H "Authorization: Bearer $CF" \
+  "https://api.cloudflare.com/client/v4/zones?name=monsterpaws.org" | jq -r '.result[0].id')
+curl -s -H "Authorization: Bearer $CF" "https://api.cloudflare.com/client/v4/zones/$ZONE/dns_records" | jq '.result[].name'
+curl -s -H "Authorization: Bearer $(pass show cloudflare/email-token)" \
+  "https://api.cloudflare.com/client/v4/zones/$ZONE/email/routing/rules" | jq '.result[].matchers'
+```
+
+### Cloudflare — R2 storage (ADR-0011)
+
+Two credentials, never collapsed into one: the **worker** pair reaches media +
+corpus, the **vault** pair reaches only the vault (pg_dumps, the attestation
+mirror). Each pair is derived from an R2 token; the tokens are Object Read &
+Write, so they work only through the S3 API — every R2 REST call 403s, and
+`wrangler` cannot use them. Bucket admin (create, configure) is done in the
+dashboard (step 5b).
+
+| Entry | What it is | What it's for | Lands in |
+| --- | --- | --- | --- |
+| `cloudflare/r2-endpoint` | The account's S3 endpoint URL | Where every S3 client points, both pairs | droplet `.env` once the worker's R2 client is wired (not yet) |
+| `cloudflare/r2-access-key-id` | Worker pair, access key id | Read/write media + corpus: vaulting scraped HTML (ADR-0011), card images | droplet `.env` `R2_ACCESS_KEY_ID`, once wired (not yet) |
+| `cloudflare/r2-secret-access-key` | Worker pair, secret | same | droplet `.env` `R2_SECRET_ACCESS_KEY`, once wired (not yet) |
+| `cloudflare/r2-vault-access-key-id` | Vault pair, access key id | Read/write the vault: nightly pg_dumps, the attestation mirror | droplet `.env` `R2_VAULT_ACCESS_KEY_ID`, when backups go live (step 6) |
+| `cloudflare/r2-vault-secret-access-key` | Vault pair, secret | same | droplet `.env` `R2_VAULT_SECRET_ACCESS_KEY`, when backups go live |
+| `cloudflare/r2-vault-endpoint` | Same URL as `r2-endpoint`, stored beside the vault pair | Nothing reads it today (`rclone_r2` uses `r2-endpoint` for both) | dev only |
+| `cloudflare/r2-token` | Account-owned R2 token, Object Read & Write on media + corpus | The token the worker pair was derived from — re-derive the pair from it, or roll it to revoke the pair | dev only |
+| `cloudflare/r2-vault-token` | Account-owned R2 token, Object Read & Write on the vault only | The token the vault pair was derived from | dev only |
+
+```sh
+rclone_r2 worker lsf r2:monsterpaws-corpus      # the function is defined in step 5
+rclone_r2 vault  lsf r2:monsterpaws-vault
+# An account-owned token verifies ONLY at the account endpoint —
+# /user/tokens/verify always answers "Invalid API Token" for it:
+ACCT=$(pass show cloudflare/r2-endpoint | sed -E 's#https?://([^.]+)\..*#\1#')
+curl -s -H "Authorization: Bearer $(pass show cloudflare/r2-token)" \
+  "https://api.cloudflare.com/client/v4/accounts/$ACCT/tokens/verify" | jq '.result.status'
+```
+Verified 2026-09-29, read side: the worker pair reads media + corpus and 403s
+on the vault; the vault pair reads the vault and 403s on both others.
+
+### RescueGroups
+
+| Entry | What it is | What it's for | Lands in |
+| --- | --- | --- | --- |
+| `rescuegroups/api-key` | The API key granted 2026-08-02 on our key application | Polling the nationwide adoptable-animal feed (ADR-0006, ADR-0009). Replay needs no key — it reads the corpus | local `.env` via `npm run env:dev`; droplet `.env` `RESCUEGROUPS_API_KEY` at the first poller deploy |
+
+```sh
+npm run env:dev                         # fills RESCUEGROUPS_API_KEY into .env
+npm run ingest -- poll --max-pages 1    # smoke: one page, partial (never disappears anything)
+```
+A wrong key is NOT detectable: the API returns 200 for any non-empty
+Authorization header (verified 2026-08-17). Check that a poll returns animals.
+
+### Resend
+
+| Entry | What it is | What it's for | Lands in |
+| --- | --- | --- | --- |
+| `resend/api-key` | Sending-only API key, domain `monsterpaws.org` (DKIM verified 2026-07-30) | Outbound email as hello@monsterpaws.org: donor updates (roadmap item 8). Cannot read mail or change the domain | droplet `.env` when item 8 lands |
+
+```sh
+curl -s https://api.resend.com/emails -H "Authorization: Bearer $(pass show resend/api-key)" \
+  -H "Content-Type: application/json" \
+  -d '{"from":"hello@monsterpaws.org","to":"<you>","subject":"test","text":"test"}'
+```
+
+### Better Stack (ADR-0010) — errors, uptime, heartbeats
+
+Team **Monster Paws** (id `606375`). Every resource below was created by API
+from these tokens on 2026-09-29, and step 6d rebuilds them by command. No
+global token exists or is needed — both team tokens cover everything we
+create; a global one would only add cross-team, billing and usage access.
+
+| Entry | What it is | What it's for | Lands in |
+| --- | --- | --- | --- |
+| `betterstack/telemetry-token` | Team telemetry API token (premade), read & write | Provisioning from a laptop: creating and inspecting the Errors application through the Telemetry/Errors APIs | dev only |
+| `betterstack/telemetry-token-ci` | Team telemetry token named `ci-sourcemaps`, read & write — made by hand, since Better Stack has no API for minting tokens | Uploading source maps during CI's image build, so errors show TypeScript lines. Separate from the dev token so it can be revoked alone if CI leaks it | GH Actions secret `BETTERSTACK_SOURCEMAPS_TOKEN` |
+| `betterstack/uptime-token` | Team uptime API token (premade), read & write | Creating, pausing and inspecting monitors and heartbeats by API | dev only |
+| `betterstack/errors-dsn` | DSN of the Errors application `monsterpaws` (id `2778816`, `next_js_errors`, 90-day retention, linked to the GitHub repo), assembled as `https://<token>@<ingesting_host>/<id>` | Where the app and worker send errors through the Sentry SDK. Ingest-only, and public in the browser bundle by design | GH Actions secret `BETTERSTACK_ERRORS_DSN`; droplet `.env` at the next deploy |
+| `betterstack/heartbeat-ingest-poll` | URL of heartbeat `499765`, "ingest.poll — RescueGroups daily 07:00 UTC": period 24h, grace 3h, **created paused** | The worker pings it after each complete poll, `/fail` on failure; silence past the grace alerts. Secret, since anyone holding it can ping it and hide a real failure. Unpause it in the same deploy that turns the poller on, or it alerts every morning | droplet `.env` at the poller deploy |
+
+Not secrets, so GitHub Actions *variables*: `BETTERSTACK_TEAM_ID` (`606375`),
+`BETTERSTACK_ERRORS_APP_ID` (`2778816`), `BETTERSTACK_SOURCEMAPS_URL`
+(`https://us-west-2a-sourcemaps.betterstackdata.com` — the region pattern from
+the docs, resolved by DNS; the API does not expose it, so confirm it once
+against the application's Advanced settings).
+
+Monitors (uptime, 3-minute checks, email): `4995720` HTTP status on
+`https://monsterpaws.org/` (made by hand 2026-09-29 — it proved Bot Fight Mode
+lets the checker through); `4995794` keyword `"ok":true` on
+`https://monsterpaws.org/api/health`.
+
+```sh
+U=$(pass show betterstack/uptime-token)
+curl -s -H "Authorization: Bearer $U" https://uptime.betterstack.com/api/v2/monitors \
+  | jq -c '.data[] | {id, url: .attributes.url, status: .attributes.status}'
+curl -s -X PATCH -H "Authorization: Bearer $U" -H "Content-Type: application/json" \
+  -d '{"paused":false}' https://uptime.betterstack.com/api/v2/heartbeats/499765   # at the poller deploy
+curl -fsS "$(pass show betterstack/heartbeat-ingest-poll)"   # a manual "it ran" ping
+```
 
 Notes: `flarectl` (Cloudflare's older Go CLI) is effectively superseded —
 the two API curls below are all the DNS we need. `cloudflared` (tunnels) is
@@ -104,9 +248,13 @@ rclone_r2() { # $1 = worker|vault, rest = rclone args
 #     stored credentials carry — this one was made in the dashboard UI, then
 #     added to the "Monster Paws R2" token's bucket list. Do the same next
 #     time; don't mint an account-wide key for a one-off.
-#     `pass cloudflare/r2-token` is NOT a valid CF API token (verified
-#     2026-08-17: "Invalid API Token" from /user/tokens/verify) — every
-#     working path uses the S3 access-key-id/secret entries instead.
+#     `pass cloudflare/r2-token` and `r2-vault-token` ARE valid — account-owned
+#     tokens, which verify only at /accounts/<id>/tokens/verify; the
+#     2026-08-17 "Invalid API Token" came from /user/tokens/verify (corrected
+#     2026-09-29). They are Object Read & Write tokens: every R2 REST call 403s,
+#     so every working path uses the S3 access-key-id/secret derived from them.
+#     Separation re-verified 2026-09-29, read side only: worker key reads media
+#     + corpus and 403s on vault; vault key reads vault and 403s on both.
 #     .env: R2_CORPUS_BUCKET / R2_ACCESS_KEY_ID / R2_SECRET_ACCESS_KEY.
 #     Consent revocation (ADR-0006 as amended) is one prefix purge — the keys
 #     are sharded by shelter slug precisely so this stays a single command:
@@ -139,6 +287,34 @@ ssh root@$IP 'sed -i "s/^#\?PasswordAuthentication.*/PasswordAuthentication no/;
 #     `ssh <droplet> docker logs monsterpaws-app-1 --since 1h`.
 #     Health: /api/health (ok + sha + uptime) — point external uptime check
 #     here; extended with DB + poller-age at ingest.
+
+# 6d. Better Stack (ADR-0010 as amended 2026-09-29) — DONE 2026-09-29.
+#     Errors + uptime + heartbeats on the free tier; ids and pass entries in
+#     the registry above. Rebuild from nothing, team tokens only:
+#   U=$(pass show betterstack/uptime-token); T=$(pass show betterstack/telemetry-token)
+#   curl -X POST https://uptime.betterstack.com/api/v2/monitors -H "Authorization: Bearer $U" \
+#     -H "Content-Type: application/json" -d '{"monitor_type":"keyword",
+#     "url":"https://monsterpaws.org/api/health","required_keyword":"\"ok\":true",
+#     "check_frequency":180,"email":true}'
+#   curl -X POST https://uptime.betterstack.com/api/v2/heartbeats -H "Authorization: Bearer $U" \
+#     -H "Content-Type: application/json" -d '{"name":"ingest.poll — RescueGroups daily 07:00 UTC",
+#     "period":86400,"grace":10800,"email":true,"paused":true}'
+#     → pipe .data.attributes.url into `pass insert -m betterstack/heartbeat-ingest-poll`
+#   curl -X POST https://errors.betterstack.com/api/v2/applications -H "Authorization: Bearer $T" \
+#     -H "Content-Type: application/json" -d '{"name":"monsterpaws","platform":"next_js_errors"}'
+#     → pipe https://<token>@<ingesting_host>/<id> into `pass insert -m betterstack/errors-dsn`
+#   pass show betterstack/errors-dsn        | gh secret set BETTERSTACK_ERRORS_DSN
+#   pass show betterstack/telemetry-token-ci | gh secret set BETTERSTACK_SOURCEMAPS_TOKEN
+#   gh variable set BETTERSTACK_TEAM_ID / BETTERSTACK_ERRORS_APP_ID / BETTERSTACK_SOURCEMAPS_URL
+#   curl -X PATCH https://errors.betterstack.com/api/v2/applications/<id> \
+#     -H "Authorization: Bearer $T" -H "Content-Type: application/json" \
+#     -d '{"github_repository_name":"LoganBresnahan/monster-paws"}'
+#     TRAPS: that PATCH (or the field on create) 422s until GitHub is connected
+#     in the Better Stack UI — Error tracking → Integrations → GitHub, "Only
+#     select repositories" → monster-paws (done by hand 2026-09-29; there is no
+#     API for it). Never use "Applications → Connect application" to link a
+#     repo: that form CREATES a second application with a second DSN. Never
+#     print a token or DSN: extract with jq into a variable and pipe it into pass.
 
 # RULES (public repo):
 # - The droplet IP NEVER appears in the repo, docs, or CI logs — placeholders

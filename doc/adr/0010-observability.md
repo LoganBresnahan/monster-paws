@@ -177,3 +177,76 @@ product data, never read by anything donor-facing.
   the token becomes per-reader, and the endpoint gets rate limiting.
 - The brief starts wanting per-animal detail → stop; that is a product
   surface, and it belongs to the donor feed (ADR-0020), not ops.
+
+## Amendment (2026-09-29): Better Stack is the provider; the Sentry SDK is the seam
+
+The decisions above name "Sentry free tier" for errors and "DO Uptime or
+UptimeRobot" for the external check, and the 2026-09-28 amendment adds a
+heartbeat for the silent poller. Compared on 2026-09-29 against the live
+pricing pages (Sentry, Better Stack, Honeybadger, UptimeRobot), one free tier
+now covers all three needs with headroom.
+
+### 1. Better Stack for errors, uptime and heartbeats
+Free tier as read that day: 100,000 exceptions/month kept 90 days, 10 uptime
+monitors at 3-minute checks, 10 heartbeats, one status page, and no one-user
+limit. Sentry's free tier fits exactly one cron monitor and one uptime monitor —
+`ops.daily` would be the first thing we paid for — and UptimeRobot's free tier
+has no heartbeats at all. One account, one alert policy, email delivery.
+
+### 2. The code speaks Sentry's SDK, so the provider is a DSN
+The app uses `@sentry/nextjs` and the worker `@sentry/node`, pointed at the
+Better Stack DSN — Better Stack ingests the Sentry protocol. Moving to Sentry
+(or GlitchTip) later is an `.env` change, never a rewrite. Never import a
+Better Stack–specific client for errors.
+
+### 3. Heartbeats are URL pings, not SDK check-ins
+The worker requests the heartbeat URL after a complete poll and `<url>/fail` on
+failure. No SDK in that path: a worker too broken to load its SDK still gets
+reported, by silence.
+
+### 4. Settings, fixed here so a wizard cannot change them
+- Tracing sample rate **0** (decision above: no tracing in v1).
+- Session Replay **off** — it records visitors' sessions: a privacy cost for no
+  current need.
+- `sendDefaultPii: false` plus a `beforeSend` scrub — identifiers, never
+  identities (decision above).
+- Every event carries `release` = the build sha and `environment`; development
+  events never alert.
+- **One** Errors application for app and worker, told apart by a `component`
+  tag. 100k/month is ample headroom, and one application is one alert policy.
+
+### 5. Provisioned by API from team tokens — never a global token
+Two team-scoped tokens (telemetry, uptime) create every resource; a global
+token would add only cross-team, billing and usage reach. Tokens themselves
+cannot be minted by API, so the CI source-map token is made by hand and kept
+separate from the dev one, to be revoked alone. What exists, and the commands
+that rebuild it, live in `doc/infra.md` (registry, step 6d).
+
+### Consequences (added)
+- Built 2026-09-29: the Errors application, a keyword monitor on
+  `/api/health` beside the hand-made one on `/`, and the poll heartbeat —
+  created **paused**, because the poller has never run in production and an
+  unpaused heartbeat would alert every morning. It is unpaused in the deploy
+  that turns the poller on.
+- Not built yet: the SDK integration, the worker's pings, and the
+  `/api/health` extension (`lastCompletePollAt`) — roadmap item 7c.
+- **Source maps are unproven for this stack.** Better Stack accepts uploads
+  through Sentry's build tooling, but documents no Next.js path, and our build
+  is Turbopack. The first 7c slice proves it with one deliberate error; server
+  code and the `tsx` worker read fine without maps, so only the client island
+  depends on it.
+
+### Alternatives (added)
+- **Sentry + UptimeRobot** — the original shape. Strongest Next.js
+  integration; rejected on free-tier fit (one cron monitor, one seat, a second
+  vendor for uptime). The SDK choice in §2 keeps it one DSN away.
+- **Honeybadger** — similar quotas, 15-day retention, and its own SDK: lock-in
+  for nothing Better Stack lacks.
+- **Self-hosted Sentry or GlitchTip** — rejected: neither fits a 1GB droplet.
+
+### Revisit triggers (added)
+- Better Stack's free tier shrinks below what §1 relies on → switch the DSN to
+  Sentry, re-home uptime and the heartbeat.
+- Source maps cannot be made to work → a client-side error is unreadable;
+  weigh Sentry for the app alone.
+- A second person needs access → confirm the free tier still carries seats.

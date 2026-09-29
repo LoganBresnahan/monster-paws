@@ -298,8 +298,9 @@ slice or change build order.
       Sits here because it brings the first LLM into the ingest path and a
       third eval harness, which item 8 needs anyway. ~$15 for the whole corpus
       via the Batch API; the labelling afternoon is the real cost.
-- [ ] **7c. Ops brief (ADR-0010 as amended 2026-09-28).** Two channels by
-      latency: Sentry + an external uptime check on an extended `/api/health`
+- [ ] **7c. Ops brief (ADR-0010 as amended 2026-09-28, 2026-09-29).** Two
+      channels by latency: errors + an external uptime check on an extended
+      `/api/health`
       (`lastCompletePollAt`) for anything a person must act on today; an
       `ops.daily` worker job → append-only `ops_daily` row → tokened
       `/api/ops/daily` → a claude.ai routine that writes the daily brief for
@@ -307,7 +308,13 @@ slice or change build order.
       production would have been a pg-boss job failing silently while the site
       aged out of its visibility window. Sentry, the uptime check and the
       health extension come first, before the first deploy that turns the
-      poller on. Carry-in: **on-demand revalidation from the worker**
+      poller on. **Provider provisioned 2026-09-29 (ADR-0010 as amended):**
+      Better Stack — the Errors application, a keyword monitor on
+      `/api/health`, and the poll heartbeat, created paused (`doc/infra.md`
+      step 6d). Left to build: the Sentry-SDK integration in app and worker
+      with a source-map proof on the Turbopack build, the worker's heartbeat
+      pings, and `lastCompletePollAt` in `/api/health`; unpause the heartbeat
+      in the poller deploy. Carry-in: **on-demand revalidation from the worker**
       (ADR-0015 revisit trigger) — once the poller runs in production, an
       animal adopted this morning stays on its ISR-cached detail page for up
       to the hour, and a revoked display license does too. Decide it with the
