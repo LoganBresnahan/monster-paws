@@ -239,11 +239,12 @@ slice or change build order.
       in order — the launch itself is planned step by step in
       `doc/oplog/0001-production-launch.md` (ADR-0023), which is revised as
       each lands and never improvised on the day:
-      - [ ] **SDK integration** (7c; ADR-0010 as amended 2026-09-29):
-            `@sentry/nextjs` + `@sentry/node` on the Better Stack DSN; a
-            source-map proof on the Turbopack production image, run locally;
-            the worker's failure reports and heartbeat pings (`/fail` only on
-            the final attempt).
+      - [x] **SDK integration** (7c; ADR-0010 as amended 2026-09-29,
+            2026-09-30) — done 2026-09-30: app server (ContextLines off),
+            browser SDK deferred behind a stub (first-load JS unchanged),
+            worker failure reports + heartbeat (`/fail` only on attempt 3/3),
+            source maps proven end to end and uploaded by their own CI job,
+            which `/deploy` requires green. Next.js 16.3.8 on topdog too.
       - [ ] **`lastCompletePollAt` in `/api/health`** (7c) — failing once it is
             older than one poll interval plus slack.
       - [ ] **The disappearance-rate gate** (item 2 phase 9): per day since the

@@ -1,8 +1,9 @@
 # Production stack on the droplet (ADR-0007, amended): Caddy → app; worker
 # alongside. Images are BUILT IN CI and pulled from GHCR — the $6 droplet
 # doesn't build. Postgres is DO Managed (ADR-0003) — external DATABASE_URL.
-# Deploy: git pull && docker compose -f docker-compose.prod.yml pull && \
-#         docker compose -f docker-compose.prod.yml up -d
+# Deploy: set IMAGE_TAG=<sha> in .env, then git pull &&
+#         docker compose -f docker-compose.prod.yml pull && ... up -d
+#         (/deploy; the sha's `sourcemaps` CI job must be green first).
 # (build: targets remain for local e2e:prod use — CI and local pass --build.)
 # Log rotation (ADR-0010): stdout JSON captured by docker, bounded on disk.
 x-logging: &logging
@@ -28,7 +29,9 @@ services:
       - app
 
   app:
-    image: ghcr.io/loganbresnahan/monster-paws-app:latest
+    # Pinned by IMAGE_TAG in .env, never :latest — every topdog push moves
+    # :latest, so an implicit tag deploys whatever CI built last (oplog 0002).
+    image: ghcr.io/loganbresnahan/monster-paws-app:${IMAGE_TAG:?set IMAGE_TAG in .env}
     build:
       context: .
       target: app
@@ -39,7 +42,7 @@ services:
       - "3000"
 
   worker:
-    image: ghcr.io/loganbresnahan/monster-paws-worker:latest
+    image: ghcr.io/loganbresnahan/monster-paws-worker:${IMAGE_TAG:?set IMAGE_TAG in .env}
     build:
       context: .
       target: worker

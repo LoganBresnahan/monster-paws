@@ -11,7 +11,18 @@ FROM node:24-alpine AS build
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-RUN npm run build
+# NEXT_PUBLIC_* are inlined into the browser bundle at build time; the DSN is
+# ingest-only and public by design, so a build arg is the right home for it.
+ARG BUILD_SHA=dev
+ARG NEXT_PUBLIC_SENTRY_DSN=
+ENV BUILD_SHA=$BUILD_SHA NEXT_PUBLIC_BUILD_SHA=$BUILD_SHA NEXT_PUBLIC_SENTRY_DSN=$NEXT_PUBLIC_SENTRY_DSN
+# Debug IDs are stamped offline here; the upload is CI's `sourcemaps` job,
+# never this build (ADR-0010 as amended 2026-09-30).
+RUN npm run build && sh scripts/sourcemaps.sh inject /sourcemaps
+
+# --- sourcemaps: exported by CI (`--target sourcemaps --output`), never run ---
+FROM scratch AS sourcemaps
+COPY --from=build /sourcemaps /
 
 # --- app: minimal standalone runtime ---
 FROM node:24-alpine AS app
@@ -27,7 +38,8 @@ CMD ["node", "server.js"]
 # --- worker: full deps (tsx runtime) ---
 FROM node:24-alpine AS worker
 WORKDIR /app
-ENV NODE_ENV=production
+ARG BUILD_SHA=dev
+ENV NODE_ENV=production BUILD_SHA=$BUILD_SHA
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 CMD ["npx", "tsx", "src/worker/index.ts"]

@@ -250,3 +250,65 @@ that rebuild it, live in `doc/infra.md` (registry, step 6d).
 - Source maps cannot be made to work → a client-side error is unreadable;
   weigh Sentry for the app alone.
 - A second person needs access → confirm the free tier still carries seats.
+
+## Amendment (2026-09-30): source maps are uploaded by their own CI job, and server frames carry no context lines
+
+The 2026-09-29 amendment left source maps "unproven for this stack". A
+two-day probe — events sent at will, read back through Better Stack's SQL API
+(`remote(t606375_monsterpaws_exceptions)` and the `_s3` archive,
+`_row_type = 4`) — proved them, and found two behaviours of Better Stack that
+Sentry does not share.
+
+### Findings
+1. **A frame that already carries source lines is never source-mapped.** The
+   Sentry Node SDK's `ContextLines` integration attaches lines read from the
+   local file; it skips very long lines, which is why Next's large vendor chunks
+   resolved and our small route chunks never did. Proven with one captured
+   event sent twice: with context lines, unresolved; without, resolved to
+   `src/app/api/spike-error/route.ts:3:13`.
+2. **Bundle "assembly" is slow and happens on their side** — 1.5 to 10 minutes
+   per upload, even for a single file. The CLI stops waiting after ~5 minutes
+   ("Artifact bundle assembly timed out"), and processing continues without it.
+   An error that arrives before processing finishes is stored unresolved, and
+   stays that way.
+3. Not the cause, each ruled out by a controlled probe: bracketed file names
+   (`[root-of-the-server]__…`), index-format maps, URL-encoded map references,
+   the plugin's upload versus the CLI's. All 46 probed files from a real upload
+   resolved once findings 1 and 2 were out of the way.
+4. Better Stack implements Sentry's API partially: `/store/` answers 200 and
+   discards the event (only `/envelope/` stores); release delete and
+   set-commits answer 404. Nothing we ship depends on those.
+
+### Decisions
+1. **`ContextLines` is off in the app server's SDK** (`src/instrumentation.ts`).
+   The lines it attaches are minified chunk code anyway. The worker keeps it: it
+   runs TypeScript directly through `tsx`, has no maps, and its lines are real
+   source.
+2. **The image build never talks to the error service.** Next emits browser
+   maps (`productionBrowserSourceMaps`), the plugin's upload is disabled, and
+   `scripts/sourcemaps.sh inject` stamps debug IDs offline inside the Docker
+   build, syncs them into the standalone server, exports JS + maps through a
+   `sourcemaps` stage, and deletes the browser maps so the image never serves
+   them.
+3. **CI's `sourcemaps` job uploads that export** — the same build's maps, never
+   a second `next build` — and retries until Better Stack confirms processing.
+   A slow or absent vendor can delay readable traces; it can never fail or stall
+   an image build.
+4. **`/deploy` and every op-log entry require that job green for the sha being
+   rolled.** A gate, not a timer: "wait ten minutes" is exactly the kind of rule
+   that gets forgotten on a busy day.
+
+### Consequences (added)
+- Three CI jobs: `verify → images → sourcemaps`. Only `images` blocks a
+  deploy's artifacts; `sourcemaps` blocks the deploy itself, by the rule above.
+- Images are sha-tagged only; `:latest` is gone (oplog 0002).
+- The SDK choice (§2 of 2026-09-29) survives intact: both findings live in
+  config and one script, and a move to Sentry reverses neither harmfully.
+
+### Revisit triggers (added)
+- Better Stack source-maps frames that carry context lines → re-enable
+  `ContextLines` in the app server.
+- Processing regularly exceeds six CLI waits (~30 minutes) → raise the retry
+  count, or report it to Better Stack with the timings above. The first full
+  run (2026-09-30, 33 MB export) confirmed on attempt 4 of 4, after 15 minutes —
+  which is why the limit is six.

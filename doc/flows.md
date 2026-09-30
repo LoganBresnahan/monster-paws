@@ -476,6 +476,36 @@ may be purged, rebuilt or merged without touching it.
                               "A sponsorship at <shelter> · <date> · $<n>"
 ```
 
+## Error reporting — the SDK is Sentry's, the service is a DSN (ADR-0010)
+
+Built 2026-09-30 except where marked. Nothing reports without a DSN, so dev
+and CI's e2e send nothing.
+
+```
+  browser                          app server (Next)          worker (tsx)
+  instrumentation-client.ts        instrumentation.ts         src/worker/index.ts
+   stub: queue window errors        Sentry.init at register    Sentry.init first
+   ─ load + idle, or 1st error ─►   ContextLines OFF — Better  ContextLines ON (real
+   import("@sentry/nextjs")         Stack skips any frame that  TS source, no maps)
+   (never static: ~57 KB gz)        carries source lines        poll failure → event,
+   init, replay the queue          onRequestError →            attempt n/3 tagged
+        │                            captureRequestError        heartbeatPing():
+        │                                 │                     success → URL
+        │                                 │                     final fail → /fail
+        ▼                                 ▼                          │        │
+  reportingOptions() — one settings object: tracing 0, no PII,       │        │
+  release = build sha, tags.component   (src/core/observability.ts)  │        │
+        │                                 │                          │        │
+        └──────── envelope ───────────────┴──────────────────────────┘        │
+                          ▼                                                   ▼
+            Better Stack Errors  app `monsterpaws`          heartbeat 499765 (paused
+            resolves frames by debug ID ◄─┐                  until oplog 0001)
+                                          │
+  CI: images ─ Docker build stamps debug IDs offline (scripts/sourcemaps.sh inject)
+      └─ --target sourcemaps export ─► sourcemaps job: upload, retry ≤ 6 until
+                                       processed — /deploy's gate for the sha
+```
+
 ## Listing assessment — a verdict beside visibility, never inside it (ADR-0021)
 
 Planned: roadmap item 7b. Derived data like `embeddings`; gates browse only.

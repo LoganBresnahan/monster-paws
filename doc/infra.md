@@ -137,8 +137,11 @@ create; a global one would only add cross-team, billing and usage access.
 | `betterstack/telemetry-token` | Team telemetry API token (premade), read & write | Provisioning from a laptop: creating and inspecting the Errors application through the Telemetry/Errors APIs | dev only |
 | `betterstack/telemetry-token-ci` | Team telemetry token named `ci-sourcemaps`, read & write — made by hand, since Better Stack has no API for minting tokens | Uploading source maps during CI's image build, so errors show TypeScript lines. Separate from the dev token so it can be revoked alone if CI leaks it | GH Actions secret `BETTERSTACK_SOURCEMAPS_TOKEN` |
 | `betterstack/uptime-token` | Team uptime API token (premade), read & write | Creating, pausing and inspecting monitors and heartbeats by API | dev only |
-| `betterstack/errors-dsn` | DSN of the Errors application `monsterpaws` (id `2778816`, `next_js_errors`, 90-day retention, linked to the GitHub repo), assembled as `https://<token>@<ingesting_host>/<id>` | Where the app and worker send errors through the Sentry SDK. Ingest-only, and public in the browser bundle by design | GH Actions secret `BETTERSTACK_ERRORS_DSN`; droplet `.env` at the next deploy |
+| `betterstack/errors-dsn` | DSN of the Errors application `monsterpaws` (id `2778816`, `next_js_errors`, 90-day retention, linked to the GitHub repo), assembled as `https://<token>@<ingesting_host>/<id>` | Where the app and worker send errors through the Sentry SDK. Ingest-only, and public in the browser bundle by design — CI passes it to the image build as `NEXT_PUBLIC_SENTRY_DSN` | GH Actions secret `BETTERSTACK_ERRORS_DSN`; droplet `.env` `SENTRY_DSN` at the next deploy |
 | `betterstack/heartbeat-ingest-poll` | URL of heartbeat `499765`, "ingest.poll — RescueGroups daily 07:00 UTC": period 24h, grace 3h, **created paused** | The worker pings it after each complete poll, `/fail` on failure; silence past the grace alerts. Secret, since anyone holding it can ping it and hide a real failure. Unpause it in the same deploy that turns the poller on, or it alerts every morning | droplet `.env` at the poller deploy |
+| `betterstack/sql-host` | Host of the ClickHouse HTTP "SQL API" connection (team Monster Paws, created in the dashboard 2026-09-30 — a global token would be needed to create it by API) | Reading stored errors, stack frames and their source-map results: `scripts/betterstack-sql.sh` | dev only |
+| `betterstack/sql-username` | That connection's username (rotated 2026-09-30 after the first was pasted into a chat) | same | dev only |
+| `betterstack/sql-password` | That connection's password — shown once at creation, never retrievable. Read-only, IP-allowlisted to the dev machine's public address | same; if queries start failing, the home IP changed — update the allowlist | dev only |
 
 Not secrets, so GitHub Actions *variables*: `BETTERSTACK_TEAM_ID` (`606375`),
 `BETTERSTACK_ERRORS_APP_ID` (`2778816`), `BETTERSTACK_SOURCEMAPS_URL`
@@ -425,7 +428,7 @@ curl -X POST "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/purge_cache" \
 ```
   git push ──► GitHub Actions (ci.yml)                    droplet
               ┌──────────────────────────────┐            ┌──────────────────────┐
-              │ verify                       │   manual   │ git pull             │
+              │ verify                       │   manual   │ IMAGE_TAG=<sha> .env │
               │  typecheck                   │  /deploy   │ compose pull         │
               │  vitest ×2   (flaky bar) ◄─┐ ├───────────►│ compose up -d        │
               │  next build  (standalone)  │ │  ship bar  │  · caddy (certs kept)│
@@ -440,11 +443,17 @@ curl -X POST "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/purge_cache" \
               │ │ migrated per run       │   │                       │
               │ │ (ADR-0017)             │   │            ┌──────────┴───────────┐
               │ └────────────────────────┘   │            │ GHCR (public)        │
-              │ images  (needs verify,       │   push     │  monster-paws-app    │
-              │          topdog pushes only) ├───────────►│  monster-paws-worker │
-              │  docker build app + worker   │            │  :latest + :<sha>    │
-              └──────────────────────────────┘            │  (ADR-0007)          │
-                                                          └──────────────────────┘
+              │ images  (needs verify; topdog│   push     │  monster-paws-app    │
+              │  + hotfix/** pushes)         ├───────────►│  monster-paws-worker │
+              │  docker build app + worker   │            │  :<sha> only — prod  │
+              │  --target sourcemaps export  │            │  pins IMAGE_TAG      │
+              │  (debug IDs stamped offline) │            │  (ADR-0007, oplog 2) │
+              │        │ artifact            │            └──────────────────────┘
+              │ sourcemaps (needs images)    │
+              │  upload, retry until         ├──────────► Better Stack Errors
+              │  processed (≤ 6 attempts)    │            (ADR-0010 am. 2026-09-30)
+              │  /deploy gate: green for sha │
+              └──────────────────────────────┘
 ```
 
 ## Data custody (what lives where, what's sacred)

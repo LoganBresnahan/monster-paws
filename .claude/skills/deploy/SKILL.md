@@ -67,14 +67,19 @@ accidents permanent.
 ## 3. Roll onto the droplet, with rollback
 
 ```sh
-# Images come from GHCR, built by CI after verify (ADR-0007 amended) —
-# confirm the images job for this sha is green BEFORE rolling:
-gh run list --workflow=CI --limit 1
-ssh <droplet> 'cd monsterpaws && git pull && docker compose -f docker-compose.prod.yml pull && docker compose -f docker-compose.prod.yml up -d'
+# Images come from GHCR, built by CI after verify (ADR-0007 amended), tagged
+# with the sha only. BOTH the images job AND the sourcemaps job for this sha
+# must be green BEFORE rolling — an error that arrives before the error
+# service has processed the maps stays minified forever (ADR-0010 as amended
+# 2026-09-30). Never shortcut this by "waiting ten minutes":
+gh run view <run-id> --json jobs -q '.jobs[] | "\(.name): \(.conclusion)"'
+ssh <droplet> 'cd monsterpaws && sed -i "s/^IMAGE_TAG=.*/IMAGE_TAG=<sha>/" .env &&
+  git pull && docker compose -f docker-compose.prod.yml pull && docker compose -f docker-compose.prod.yml up -d'
 ```
 
-Rollback = pin the previous sha tag (images are tagged `latest` + sha):
-edit the compose image tags to `<prev sha>` and `up -d`, or retag in GHCR.
+Production runs exactly `IMAGE_TAG` from `.env` — compose refuses to start
+without it, and there is no `:latest` (oplog 0002). Rollback = set
+`IMAGE_TAG` back to the previous sha and `up -d`.
 
 Before switching: record the currently-running image tags (that *is* the
 rollback). After switching: keep the previous images — never prune in the

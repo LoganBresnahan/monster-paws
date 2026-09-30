@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [main, topdog]
+    branches: [main, topdog, 'hotfix/**']
   pull_request:
 
 jobs:
@@ -46,12 +46,17 @@ jobs:
   images:
     # Build + push production images after verification (ADR-0007 amended:
     # droplet pulls from GHCR; no on-droplet builds — 1GB box can't).
+    # Sha tags only, never :latest — production pins IMAGE_TAG, and a moving
+    # :latest is how a routine pull deploys whatever CI built last (oplog 0002).
     needs: verify
-    if: github.event_name == 'push' && github.ref == 'refs/heads/topdog'
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/topdog' || startsWith(github.ref, 'refs/heads/hotfix/'))
     runs-on: ubuntu-latest
     permissions:
       contents: read
       packages: write
+    env:
+      APP: ghcr.io/loganbresnahan/monster-paws-app:${{ github.sha }}
+      WORKER: ghcr.io/loganbresnahan/monster-paws-worker:${{ github.sha }}
     steps:
       - uses: actions/checkout@v4
       - name: Login to GHCR
@@ -59,12 +64,48 @@ jobs:
       - name: Build and push app image
         run: |
           docker build --target app --build-arg BUILD_SHA=${{ github.sha }} \
-            -t ghcr.io/loganbresnahan/monster-paws-app:latest \
-            -t ghcr.io/loganbresnahan/monster-paws-app:${{ github.sha }} .
-          docker push --all-tags ghcr.io/loganbresnahan/monster-paws-app
+            --build-arg NEXT_PUBLIC_SENTRY_DSN=${{ secrets.BETTERSTACK_ERRORS_DSN }} -t "$APP" .
+          docker push "$APP"
+      # Same build, same cache: the maps carry the debug IDs stamped into the
+      # image just pushed — never a second `next build`, whose IDs could differ.
+      - name: Export source maps from the same build
+        run: |
+          docker build --target sourcemaps --build-arg BUILD_SHA=${{ github.sha }} \
+            --build-arg NEXT_PUBLIC_SENTRY_DSN=${{ secrets.BETTERSTACK_ERRORS_DSN }} \
+            --output type=local,dest=sourcemaps .
+      - uses: actions/upload-artifact@v4
+        with:
+          name: sourcemaps-${{ github.sha }}
+          path: sourcemaps
+          retention-days: 7
       - name: Build and push worker image
         run: |
-          docker build --target worker \
-            -t ghcr.io/loganbresnahan/monster-paws-worker:latest \
-            -t ghcr.io/loganbresnahan/monster-paws-worker:${{ github.sha }} .
-          docker push --all-tags ghcr.io/loganbresnahan/monster-paws-worker
+          docker build --target worker --build-arg BUILD_SHA=${{ github.sha }} -t "$WORKER" .
+          docker push "$WORKER"
+
+  sourcemaps:
+    # The error service processes uploads slowly and on its own schedule, so
+    # it runs here — never inside a build. /deploy requires this job green for
+    # the sha it rolls: errors that arrive before processing stay minified
+    # forever (ADR-0010 as amended 2026-09-30).
+    needs: images
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - uses: actions/download-artifact@v4
+        with:
+          name: sourcemaps-${{ github.sha }}
+          path: sourcemaps
+      - name: Upload and wait for processing
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.BETTERSTACK_SOURCEMAPS_TOKEN }}
+          SENTRY_URL: ${{ vars.BETTERSTACK_SOURCEMAPS_URL }}
+          SENTRY_ORG: ${{ vars.BETTERSTACK_TEAM_ID }}
+          SENTRY_PROJECT: ${{ vars.BETTERSTACK_ERRORS_APP_ID }}
+          BUILD_SHA: ${{ github.sha }}
+        run: sh scripts/sourcemaps.sh upload sourcemaps

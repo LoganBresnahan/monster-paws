@@ -18,8 +18,13 @@ on the day.
 - [ ] Roadmap item 3b's checklist is complete (SDK integration,
       `lastCompletePollAt`, the disappearance-rate gate, the revalidation
       decision) — every box checked, none "nearly".
-- [ ] CI is green on the commit being deployed, and its `images` job pushed
-      `monster-paws-app:<sha>` and `monster-paws-worker:<sha>` (ADR-0007).
+- [ ] CI is green on the commit being deployed: `images` pushed
+      `monster-paws-app:<sha>` and `monster-paws-worker:<sha>` (ADR-0007), and
+      **`sourcemaps` is green for that sha** — errors that arrive before the
+      maps are processed stay minified forever (ADR-0010 as amended
+      2026-09-30). The job's green check is the gate, never a timer.
+- [ ] The droplet is on `hotfix/next-16.3.8` with `IMAGE_TAG` pinned
+      (oplog 0002) — step 4 moves it back to `topdog`.
 - [ ] `npm run e2e` green on that commit locally too (`/deploy` step 2).
 - [ ] `pass` holds `rescuegroups/api-key`, `betterstack/errors-dsn`,
       `betterstack/heartbeat-ingest-poll`; `gh secret list` shows
@@ -67,9 +72,13 @@ Rollback: delete the four lines; the worker idles again without
 `DATABASE_URL`.
 
 ### 4. Pull the release
-    ssh root@$IP 'cd monsterpaws && git pull && docker compose -f docker-compose.prod.yml pull'
-Verify: `docker compose images` shows the new sha tags, not yet running.
-Rollback: nothing is running from them yet.
+    ssh root@$IP 'cd monsterpaws && git fetch origin && git checkout topdog && git pull &&
+      sed -i "s/^IMAGE_TAG=.*/IMAGE_TAG=<sha>/" .env &&
+      docker compose -f docker-compose.prod.yml pull'
+Verify: `docker compose config` resolves both images to `<sha>`; the pull
+fetched them; nothing restarted yet.
+Rollback: `git checkout hotfix/next-16.3.8` and restore the oplog-0002
+`IMAGE_TAG` — nothing is running from the new images yet.
 
 ### 5. Migrate the new database
     ssh root@$IP 'cd monsterpaws && docker compose -f docker-compose.prod.yml \
@@ -83,7 +92,8 @@ Rollback: drop and recreate the database — it is empty.
 Verify: `/api/health` returns the deployed sha (not `"dev"` — `doc/issues.md`)
 and reports the database reachable; the worker log says `ingest.poll
 registered (0 7 * * *)`; `/animals` renders an empty browse, not a 500.
-Rollback: pin the step-1 tags in compose and `up -d`; the landing page returns.
+Rollback: set `IMAGE_TAG` back to the step-1 sha, `git checkout
+hotfix/next-16.3.8`, and `up -d`; the landing page returns.
 
 ### 7. Run the first poll by hand
     ssh root@$IP 'cd monsterpaws && docker compose -f docker-compose.prod.yml \
