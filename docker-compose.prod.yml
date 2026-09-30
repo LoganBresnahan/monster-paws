@@ -28,7 +28,9 @@ services:
       - app
 
   app:
-    image: ghcr.io/loganbresnahan/monster-paws-app:latest
+    # Pinned by IMAGE_TAG in .env, never :latest — every topdog push moves
+    # :latest, so an implicit tag deploys whatever CI built last (oplog 0002).
+    image: ghcr.io/loganbresnahan/monster-paws-app:${IMAGE_TAG:?set IMAGE_TAG in .env}
     build:
       context: .
       target: app
@@ -39,7 +41,7 @@ services:
       - "3000"
 
   worker:
-    image: ghcr.io/loganbresnahan/monster-paws-worker:latest
+    image: ghcr.io/loganbresnahan/monster-paws-worker:${IMAGE_TAG:?set IMAGE_TAG in .env}
     build:
       context: .
       target: worker

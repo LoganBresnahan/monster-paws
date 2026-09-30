@@ -16,7 +16,8 @@ RUN npm run build
 # --- app: minimal standalone runtime ---
 FROM node:24-alpine AS app
 WORKDIR /app
-ENV NODE_ENV=production
+ARG BUILD_SHA=dev
+ENV NODE_ENV=production BUILD_SHA=$BUILD_SHA
 COPY --from=build /app/.next/standalone ./
 COPY --from=build /app/.next/static ./.next/static
 COPY --from=build /app/public ./public

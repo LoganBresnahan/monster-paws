@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [main, topdog]
+    branches: [main, topdog, 'hotfix/**']
   pull_request:
 
 jobs:
@@ -35,7 +35,9 @@ jobs:
     # Build + push production images after verification (ADR-0007 amended:
     # droplet pulls from GHCR; no on-droplet builds — 1GB box can't).
     needs: verify
-    if: github.event_name == 'push' && github.ref == 'refs/heads/topdog'
+    # A hotfix builds sha-tagged images only — never :latest, which production
+    # no longer references (oplog 0002, ADR-0023).
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/topdog' || startsWith(github.ref, 'refs/heads/hotfix/'))
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -46,13 +48,11 @@ jobs:
         run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
       - name: Build and push app image
         run: |
-          docker build --target app \
-            -t ghcr.io/loganbresnahan/monster-paws-app:latest \
+          docker build --target app --build-arg BUILD_SHA=${{ github.sha }} \
             -t ghcr.io/loganbresnahan/monster-paws-app:${{ github.sha }} .
-          docker push --all-tags ghcr.io/loganbresnahan/monster-paws-app
+          docker push ghcr.io/loganbresnahan/monster-paws-app:${{ github.sha }}
       - name: Build and push worker image
         run: |
           docker build --target worker \
-            -t ghcr.io/loganbresnahan/monster-paws-worker:latest \
             -t ghcr.io/loganbresnahan/monster-paws-worker:${{ github.sha }} .
-          docker push --all-tags ghcr.io/loganbresnahan/monster-paws-worker
+          docker push ghcr.io/loganbresnahan/monster-paws-worker:${{ github.sha }}
