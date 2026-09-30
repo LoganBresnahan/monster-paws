@@ -36,13 +36,7 @@ is the record, and a file of ticked boxes stops being read.
 
 ## Ops
 
-- **Production `/api/health` reports `sha: "dev"`**, so the running build
-  cannot be identified from outside the box. Its uptime puts the container
-  start at about 2026-07-30 21:08 UTC, four minutes after the commit that
-  added the `BUILD_SHA` stamp, so the image most likely predates the stamp
-  rather than the stamp being broken — unconfirmed. `/deploy`'s smoke step
-  should assert the sha equals the commit it rolled; if the next deploy still
-  says `dev`, the build arg is not reaching the image. Found 2026-09-28.
+- (empty)
 
 ## Compliance
 

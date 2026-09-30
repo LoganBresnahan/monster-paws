@@ -12,7 +12,7 @@ is an ADR; the daily numbers brief is `doc/ops/` (ADR-0010 as amended).
 | # | Operation | Status | Run on |
 | --- | --- | --- | --- |
 | [0001](0001-production-launch.md) | Production launch: database, animal pages, worker, error reporting | planned | — |
-| [0002](0002-next-security-hotfix.md) | Security hotfix: Next.js 16.2.12 → 16.3.8 on the live landing page, image tag pinned | planned | — |
+| [0002](0002-next-security-hotfix.md) | Security hotfix: Next.js 16.2.12 → 16.3.8 on the live landing page, image tag pinned | run | 2026-09-30 |
 
 ## Entry format
 
