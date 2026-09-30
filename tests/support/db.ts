@@ -1,6 +1,6 @@
 import { sql } from "drizzle-orm";
 import { getDb, type Db } from "@/db/client";
-import { animalDisplay, animalIdentities, animals, eventLog, rawPayloads } from "@/db/schema";
+import { animalDisplay, animalIdentities, animals, eventLog, ingestRuns, rawPayloads } from "@/db/schema";
 
 /**
  * The one door every Postgres suite goes through (ADR-0017). It exists because
@@ -38,7 +38,7 @@ export function testDb(): Db {
 export async function truncateCorpus(db: Db): Promise<void> {
   await assertTestDatabase(db);
   await db.execute(
-    sql`truncate table ${rawPayloads}, ${animals}, ${animalIdentities}, ${animalDisplay}, ${eventLog} restart identity`,
+    sql`truncate table ${rawPayloads}, ${animals}, ${animalIdentities}, ${animalDisplay}, ${eventLog}, ${ingestRuns} restart identity`,
   );
 }
 

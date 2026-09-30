@@ -1,17 +1,43 @@
 import { NextResponse } from "next/server";
+import { assessHealth, newestCompleteRuns, type DbState } from "@/core/health";
+import { getDb } from "@/db/client";
 
 export const dynamic = "force-dynamic";
 
+const DB_TIMEOUT_MS = 5_000;
+
 /**
- * Liveness endpoint (ADR-0010) — target of the external uptime check and
- * /deploy smoke. Grows with the stack: DB reachability and last-poller-run
- * age land with ingest (roadmap item 2) so silent worker death becomes
- * externally visible.
+ * Target of the external uptime check and /deploy smoke (ADR-0010). It fails
+ * with 503 when the database is unreachable or the poll is stale, because
+ * the monitor pages a person on either one. Never let a silently dead
+ * worker return 200 here.
  */
-export function GET() {
-  return NextResponse.json({
-    ok: true,
-    sha: process.env.BUILD_SHA ?? "dev",
-    uptimeSec: Math.round(process.uptime()),
-  });
+export async function GET() {
+  let db: DbState = "unconfigured";
+  let runs: Date[] = [];
+  if (process.env.DATABASE_URL) {
+    let timer: NodeJS.Timeout | undefined;
+    try {
+      runs = await Promise.race([
+        newestCompleteRuns(getDb()),
+        new Promise<never>((_, reject) => {
+          timer = setTimeout(() => reject(new Error("health: database timeout")), DB_TIMEOUT_MS);
+        }),
+      ]);
+      db = "up";
+    } catch {
+      db = "down";
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+  const health = assessHealth(db, runs, new Date());
+  return NextResponse.json(
+    {
+      ...health,
+      sha: process.env.BUILD_SHA ?? "dev",
+      uptimeSec: Math.round(process.uptime()),
+    },
+    { status: health.ok ? 200 : 503 },
+  );
 }

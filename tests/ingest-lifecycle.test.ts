@@ -151,3 +151,50 @@ describe("ADR-0014 lifecycle — disappearance from absence", () => {
     expect(corpus.identities.get("rescuegroups:b")!.disappearedAt).toBeNull();
   });
 });
+
+describe("ADR-0010 run record — what /api/health ages", () => {
+  it("records a reconciled run as complete, with its counts and events by kind", async () => {
+    const { stages, corpus } = createMemoryStages([normalizerFor(AGG)]);
+    await runIngest(adapterOf(AGG, [obs(AGG, "a", D1), obs(AGG, "b", D1)]), stages, { complete: true, now: () => D1 });
+    await runIngest(adapterOf(AGG, [obs(AGG, "a", D2)]), stages, { complete: true, now: () => D2 });
+
+    expect(corpus.runs).toHaveLength(2);
+    expect(corpus.runs[1]).toMatchObject({
+      source: AGG,
+      startedAt: D2,
+      finishedAt: D2,
+      complete: true,
+      lifecycleSkipped: null,
+      observed: 1,
+      failures: 0,
+      events: { "animal.disappeared": 1 },
+    });
+  });
+
+  // A caller's `complete: true` is a claim; only stage 5 running makes it so.
+  it("never records a partial or empty run as complete", async () => {
+    const { stages, corpus } = createMemoryStages([normalizerFor(AGG)]);
+    await runIngest(adapterOf(AGG, [obs(AGG, "a", D1)]), stages, { complete: false, now: () => D1 });
+    await runIngest(adapterOf(AGG, []), stages, { complete: true, now: () => D2 });
+
+    expect(corpus.runs.map((r) => [r.complete, r.lifecycleSkipped])).toEqual([
+      [false, "run declared partial by caller"],
+      [false, "run observed nothing"],
+    ]);
+  });
+
+  it("records nothing for a run that threw, or for replay", async () => {
+    const { stages, corpus } = createMemoryStages([normalizerFor(AGG)]);
+    const broken: SourceAdapter<Payload> = {
+      source: AGG,
+      async *fetch() {
+        yield obs(AGG, "a", D1);
+        throw new Error("page 2 failed: 502");
+      },
+    };
+    await expect(runIngest(broken, stages, { complete: true, now: () => D1 })).rejects.toThrow("502");
+    await replay(AGG, corpus.stored(), stages);
+
+    expect(corpus.runs).toEqual([]);
+  });
+});

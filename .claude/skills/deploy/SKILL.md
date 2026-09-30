@@ -91,10 +91,14 @@ the exact tags.
 
 Machine checks against production, through Cloudflare:
 
-- `curl -fsS https://<domain>/api/health` — app up, DB reachable.
+- `curl -fsS https://<domain>/api/health` — 200 only when the DB answers and
+  the newest complete poll is under 27 h old; the body's `sha` is the deployed
+  one. A 503 names which (`db`, `pollStale`) — never shrug one off as "the
+  poll hasn't run yet" unless this deploy created the database.
 - Load an animal page anonymously — ISR serving, images from R2 resolving.
-- Worker heartbeat: latest poller run timestamp visible (log or admin
-  endpoint) — the queue is alive, not just the web tier.
+- Worker: `lastCompletePollAt` in the health body is under a day old, and the
+  worker log shows `ingest.poll registered` — the queue is alive, not just the
+  web tier.
 
 ## 5. Dogfood handoff
 

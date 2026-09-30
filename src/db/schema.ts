@@ -226,6 +226,35 @@ export const animalDisplay = pgTable(
 );
 
 /**
+ * One row per ingest run that reached its end (ADR-0010) — the poller's own
+ * record, which `/api/health` ages and the disappearance-rate gate divides by.
+ * Append-only like `event_log`: never UPDATE a run, and never write one from
+ * replay, which fetches nothing and so proves nothing about the feed.
+ */
+export const ingestRuns = pgTable(
+  "ingest_runs",
+  {
+    id: bigserial("id", { mode: "number" }).primaryKey(),
+    source: text("source").$type<Source>().notNull(),
+    startedAt: timestamp("started_at", { withTimezone: true }).notNull(),
+    finishedAt: timestamp("finished_at", { withTimezone: true }).notNull(),
+    /** true only when stage 5 reconciled — a caller's `complete: true` over an empty feed is not (ADR-0014) */
+    complete: boolean("complete").notNull(),
+    lifecycleSkipped: text("lifecycle_skipped"),
+    observed: integer("observed").notNull(),
+    persisted: integer("persisted").notNull(),
+    deduped: integer("deduped").notNull(),
+    normalized: integer("normalized").notNull(),
+    conflicted: integer("conflicted").notNull(),
+    failures: integer("failures").notNull(),
+    /** event counts by kind, e.g. `{"animal.disappeared": 21034}` */
+    events: jsonb("events").$type<Record<string, number>>().notNull(),
+    clockSteppedBackMs: integer("clock_stepped_back_ms"),
+  },
+  (t) => [index("ingest_runs_source_finished_idx").on(t.source, t.finishedAt)],
+);
+
+/**
  * Embeddings are DERIVED data (ADR-0003): rebuildable from the corpus,
  * every row carries embedding_model. The vector column itself arrives with
  * the pgvector migration once ingestion exists — the discipline is encoded

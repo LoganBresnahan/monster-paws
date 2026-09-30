@@ -152,7 +152,9 @@ against the application's Advanced settings).
 Monitors (uptime, 3-minute checks, email): `4995720` HTTP status on
 `https://monsterpaws.org/` (made by hand 2026-09-29 — it proved Bot Fight Mode
 lets the checker through); `4995794` keyword `"ok":true` on
-`https://monsterpaws.org/api/health`.
+`https://monsterpaws.org/api/health` — which returns 503 and `"ok":false` when
+the database is unreachable or the poll is stale, so this one monitor carries
+the silent-worker alert (ADR-0010 as amended 2026-09-30).
 
 ```sh
 U=$(pass show betterstack/uptime-token)
@@ -288,8 +290,10 @@ ssh root@$IP 'sed -i "s/^#\?PasswordAuthentication.*/PasswordAuthentication no/;
 #   # (emails must be DO account members — hello@ silently fails)
 #     Logs: docker json-file rotation set in compose (10m×3); read via
 #     `ssh <droplet> docker logs monsterpaws-app-1 --since 1h`.
-#     Health: /api/health (ok + sha + uptime) — point external uptime check
-#     here; extended with DB + poller-age at ingest.
+#     Health: /api/health (ok + db + lastCompletePollAt + sha + uptime) —
+#     503 unless the database answers AND the newest complete poll is under
+#     27 h old (ADR-0010 as amended 2026-09-30); so it is 503 from migration
+#     until the first complete poll, by design.
 
 # 6d. Better Stack (ADR-0010 as amended 2026-09-29) — DONE 2026-09-29.
 #     Errors + uptime + heartbeats on the free tier; ids and pass entries in

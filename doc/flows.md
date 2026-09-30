@@ -88,8 +88,20 @@ producing a short report: a partial fetch must never reach stage 5.
             IngestRunReport {observed, persisted, deduped, normalized,
                              conflicted, lifecycleSkipped?, events,
                              failures[stage]}
+                               │
+                               ▼            never on replay, never for a run
+            RunStore.record(toRunRecord)    that threw (ADR-0010)
+              complete = stage 5 ran        ingest_runs (append-only)
+                               │                 │
+                               │                 └→ /api/health: newestCompleteRuns
+                               │                    → assessHealth: 503 once the
+                               │                    OLDEST source's newest complete
+                               │                    run is > 24 h + 3 h grace
+                               ▼
                                             → health gates (planned, phase 9:
-                                              ratio gate passes complete:false)
+                                              ratio gate passes complete:false,
+                                              dividing by the last ingest_runs
+                                              complete row's age)
 ```
 
 A failure at any derived stage is recorded in `failures` with its stage and

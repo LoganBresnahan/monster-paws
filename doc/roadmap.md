@@ -245,8 +245,12 @@ slice or change build order.
             worker failure reports + heartbeat (`/fail` only on attempt 3/3),
             source maps proven end to end and uploaded by their own CI job,
             which `/deploy` requires green. Next.js 16.3.8 on topdog too.
-      - [ ] **`lastCompletePollAt` in `/api/health`** (7c) — failing once it is
-            older than one poll interval plus slack.
+      - [x] **`lastCompletePollAt` in `/api/health`** (7c; ADR-0010 as
+            amended 2026-09-30) — done 2026-09-30: `ingest_runs`, one
+            append-only row per run written by `runIngest` (worker and CLI
+            alike); the endpoint is 503 unless the database answers and the
+            oldest source's newest complete run is under 27 h old. The
+            rate gate below divides by that row.
       - [ ] **The disappearance-rate gate** (item 2 phase 9): per day since the
             last complete run, never a flat share (ADR-0010 as amended).
       - [ ] **The revalidation decision** (7c carry-in) — on-demand ISR from
@@ -332,10 +336,10 @@ slice or change build order.
       poller on. **Provider provisioned 2026-09-29 (ADR-0010 as amended):**
       Better Stack — the Errors application, a keyword monitor on
       `/api/health`, and the poll heartbeat, created paused (`doc/infra.md`
-      step 6d). Left to build: the Sentry-SDK integration in app and worker
-      with a source-map proof on the Turbopack build, the worker's heartbeat
-      pings, and `lastCompletePollAt` in `/api/health`; unpause the heartbeat
-      in the poller deploy. Carry-in: **on-demand revalidation from the worker**
+      step 6d). The SDK integration, source maps, the worker's heartbeat
+      pings and `lastCompletePollAt` were built 2026-09-30 (item 3b); left:
+      the heartbeat and health monitor armed in the poller deploy (oplog
+      0001), and the `ops.daily` brief. Carry-in: **on-demand revalidation from the worker**
       (ADR-0015 revisit trigger) — once the poller runs in production, an
       animal adopted this morning stays on its ISR-cached detail page for up
       to the hour, and a revoked display license does too. Decide it with the

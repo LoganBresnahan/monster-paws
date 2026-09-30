@@ -312,3 +312,38 @@ Sentry does not share.
   count, or report it to Better Stack with the timings above. The first full
   run (2026-09-30, 33 MB export) confirmed on attempt 4 of 4, after 15 minutes —
   which is why the limit is six.
+
+## Amendment (2026-09-30): what `/api/health` promises
+
+The 2026-09-28 amendment says the endpoint "must include `lastCompletePollAt`
+and fail when it is older than one poll interval plus slack". Building it
+fixed four things that sentence left open.
+
+### Decisions
+1. **`ingest_runs` is the record, written by `runIngest` itself** — one
+   append-only row per run that reached its end, from the worker's job and the
+   CLI's hand-run poll alike. Never from replay (it fetches nothing), never for
+   a run that threw (Sentry and the heartbeat's `/fail` carry those). A row is
+   `complete` only when stage 5 reconciled — a caller's `complete: true` over
+   an empty feed is not. Not derived from `max(last_seen_at)`: that column is
+   rebuildable, and the disappearance-rate gate needs a per-run denominator
+   anyway.
+2. **Slack is the heartbeat's grace: 24 h + 3 h = 27 h.** The uptime check and
+   the heartbeat alert on the same missed poll, and neither fires while its
+   retries are still inside the window.
+3. **The oldest source wins.** The endpoint ages each source's newest complete
+   run and reports the oldest, so one live source never masks a dead one.
+4. **503 unless the database answers and the poll is fresh — including when
+   `DATABASE_URL` is unset.** The landing page was the only build that ran
+   without a database; for anything after it, a missing one is a broken deploy.
+   The body names which failed (`db`: up / down / unconfigured, `pollStale`),
+   and one keyword monitor on `"ok":true` carries both alerts.
+
+### Consequences (added)
+- The endpoint is 503 from a fresh database's migration until its first complete
+  poll. The launch pauses the monitor across that window (oplog 0001, steps 6–8).
+- `/api/health` reads one indexed aggregate per request, behind a 5-second
+  timeout that reports `db: "down"` rather than hanging the checker.
+- Not built: pg-boss's failed-job state in the endpoint (2026-09-28 §4). The
+  heartbeat's `/fail` on the last attempt, plus staleness here, covers the poll;
+  the next job that matters gets it with `ops.daily`.

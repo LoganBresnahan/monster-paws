@@ -8,6 +8,9 @@ export const INGEST_POLL = "ingest.poll";
  */
 export const INGEST_POLL_CRON = "0 7 * * *";
 
+/** What the cron above means in hours — change them together, or `/api/health` ages the poll against the wrong clock. */
+export const INGEST_POLL_INTERVAL_HOURS = 24;
+
 export interface IngestPollPlan {
   register: boolean;
   cron: string;

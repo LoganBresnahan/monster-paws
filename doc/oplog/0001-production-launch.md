@@ -84,16 +84,25 @@ Rollback: `git checkout hotfix/next-16.3.8` and restore the oplog-0002
     ssh root@$IP 'cd monsterpaws && docker compose -f docker-compose.prod.yml \
       run --rm worker npx drizzle-kit migrate'
 Verify: every migration under `drizzle/` applied; `\dt` shows `raw_payloads`,
-`animals`, `animal_identities`, `animal_display`, `event_log`.
+`animals`, `animal_identities`, `animal_display`, `event_log`, `ingest_runs`.
 Rollback: drop and recreate the database — it is empty.
 
 ### 6. Start the new images
+From here until step 7's poll completes, `/api/health` is 503 by design — no
+complete poll exists yet (ADR-0010 as amended 2026-09-30) — so pause its
+monitor first, or it opens an incident mid-launch:
+
+    U=$(pass show betterstack/uptime-token)
+    curl -s -X PATCH -H "Authorization: Bearer $U" -H "Content-Type: application/json" \
+      -d '{"paused":true}' https://uptime.betterstack.com/api/v2/monitors/4995794
     ssh root@$IP 'cd monsterpaws && docker compose -f docker-compose.prod.yml up -d'
-Verify: `/api/health` returns the deployed sha (not `"dev"` — `doc/issues.md`)
-and reports the database reachable; the worker log says `ingest.poll
-registered (0 7 * * *)`; `/animals` renders an empty browse, not a 500.
+    curl -sS https://monsterpaws.org/api/health     # -sS, not -f: a 503 is expected here
+Verify: health is **503** with `"db":"up"`, `"lastCompletePollAt":null` and the
+deployed sha (not `"dev"` — `doc/issues.md`); any other `db` value is a real
+failure — stop. The worker log says `ingest.poll registered (0 7 * * *)`;
+`/animals` renders an empty browse, not a 500.
 Rollback: set `IMAGE_TAG` back to the step-1 sha, `git checkout
-hotfix/next-16.3.8`, and `up -d`; the landing page returns.
+hotfix/next-16.3.8`, `up -d`, and unpause 4995794; the landing page returns.
 
 ### 7. Run the first poll by hand
     ssh root@$IP 'cd monsterpaws && docker compose -f docker-compose.prod.yml \
@@ -101,23 +110,29 @@ hotfix/next-16.3.8`, and `up -d`; the landing page returns.
     # in a second session, the whole time:
     ssh root@$IP 'docker stats --no-stream; free -m'
 Verify: the run summary reports ~64–85k observed, 0 failures, and a complete
-run; memory stays under the DO alert (90%); `/animals` lists animals and a
+run (no `lifecycleSkipped`); `/api/health` is now **200**, its
+`lastCompletePollAt` this run's finish — the CLI records its run in
+`ingest_runs` exactly as the worker's job does; memory stays under the DO alert (90%); `/animals` lists animals and a
 detail page renders with its photos and tracker. Record the counts and the
 duration in **Run**.
 Rollback: the corpus is append-only and correct even if the run is partial;
 a failed run is re-run, never cleaned up by hand.
 
-### 8. Arm the heartbeat
+### 8. Arm the heartbeat and the health monitor
     U=$(pass show betterstack/uptime-token)
     curl -s -X PATCH -H "Authorization: Bearer $U" -H "Content-Type: application/json" \
       -d '{"paused":false}' https://uptime.betterstack.com/api/v2/heartbeats/499765
+    curl -s -X PATCH -H "Authorization: Bearer $U" -H "Content-Type: application/json" \
+      -d '{"paused":false}' https://uptime.betterstack.com/api/v2/monitors/4995794
     curl -fsS "$(pass show betterstack/heartbeat-ingest-poll)"   # the manual run counts as today's
-Verify: the heartbeat shows "up" in Better Stack. The ingest CLI does not ping
-it — only the worker's job does — hence the manual ping.
-Rollback: PATCH `{"paused":true}`.
+Verify: the heartbeat and monitor 4995794 both show "up" in Better Stack. The
+ingest CLI does not ping the heartbeat — only the worker's job does — hence
+the manual ping; it does write `ingest_runs`, which is what the monitor reads.
+Rollback: PATCH `{"paused":true}` on both.
 
 ### 9. Smoke and dogfood (`/deploy` steps 4–5)
-Verify: both uptime monitors green; one deliberate error reaches Better Stack
+Verify: both uptime monitors green (4995794 is the silent-worker alert now: it
+goes red 27 h after the last complete poll); one deliberate error reaches Better Stack
 tagged with the deployed sha and `environment=production`; browse, filter,
 open a detail page, follow the listing link; the next morning's 07:00 UTC
 poll pings the heartbeat on its own.

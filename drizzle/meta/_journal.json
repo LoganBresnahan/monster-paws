@@ -71,6 +71,13 @@
       "when": 1788539481948,
       "tag": "0009_chemical_dreadnoughts",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1790791618990,
+      "tag": "0010_secret_the_initiative",
+      "breakpoints": true
     }
   ]
 }

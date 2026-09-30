@@ -7,10 +7,12 @@ import type {
   DisplayContent,
   EntityResolver,
   IngestEvent,
+  IngestRunRecord,
   IngestStages,
   LifecycleStore,
   Normalizer,
   RawStore,
+  RunStore,
 } from "@/core/ingest/pipeline";
 import { inLifecycleOrder, resolveReconcileAt } from "@/core/ingest/pipeline";
 import type { Source } from "@/core/sources";
@@ -62,6 +64,7 @@ export interface MemoryCorpus {
   events: IngestEvent[];
   /** every stored observation, in insert order — replay's input */
   stored(): StoredObservation<unknown>[];
+  runs: IngestRunRecord[];
 }
 
 const key = (source: Source, externalId: string) => `${source}:${externalId}`;
@@ -76,6 +79,7 @@ export function createMemoryStages(normalizers: Normalizer[]): {
   const events: IngestEvent[] = [];
   const identities = new Map<string, MemoryIdentity>();
   const display = new Map<string, MemoryDisplay>();
+  const runs: IngestRunRecord[] = [];
   let nextRawId = 1;
   let nextAnimalId = 1;
 
@@ -233,7 +237,14 @@ export function createMemoryStages(normalizers: Normalizer[]): {
     },
   };
 
+  const runStore: RunStore = {
+    async record(run) {
+      runs.push(run);
+    },
+  };
+
   const corpus: MemoryCorpus = {
+    runs,
     rawRows,
     animals,
     identities,
@@ -257,6 +268,7 @@ export function createMemoryStages(normalizers: Normalizer[]): {
       resolver,
       writer,
       lifecycle,
+      runs: runStore,
     },
     corpus,
   };

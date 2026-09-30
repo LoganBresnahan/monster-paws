@@ -1,6 +1,6 @@
 import { and, desc, eq, isNotNull, isNull, max, sql } from "drizzle-orm";
 import type { Db } from "@/db/client";
-import { animalDisplay, animalIdentities, animals, eventLog, rawPayloads } from "@/db/schema";
+import { animalDisplay, animalIdentities, animals, eventLog, ingestRuns, rawPayloads } from "@/db/schema";
 import type { Observation, StoredObservation } from "@/core/ingest/observation";
 import {
   MERGED_FIELDS,
@@ -16,6 +16,7 @@ import {
   type LifecycleStore,
   type Normalizer,
   type RawStore,
+  type RunStore,
 } from "@/core/ingest/pipeline";
 import type { Claim } from "@/core/trust";
 import { mergeClaims, viableFirstObservation } from "@/core/ingest/merge";
@@ -371,6 +372,15 @@ export function createPgLifecycleStore(db: Db): LifecycleStore {
   };
 }
 
+/** Append-only: one INSERT per run, never an UPDATE (ADR-0010). */
+export function createPgRunStore(db: Db): RunStore {
+  return {
+    async record(run) {
+      await db.insert(ingestRuns).values(run);
+    },
+  };
+}
+
 /** The five stages wired to one database — what the worker and replay run. */
 export function createPgStages(db: Db, normalizers: Normalizer[]): IngestStages {
   return {
@@ -379,5 +389,6 @@ export function createPgStages(db: Db, normalizers: Normalizer[]): IngestStages 
     resolver: createPgEntityResolver(db),
     writer: createPgCanonicalWriter(db),
     lifecycle: createPgLifecycleStore(db),
+    runs: createPgRunStore(db),
   };
 }

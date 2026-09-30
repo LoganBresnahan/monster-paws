@@ -242,6 +242,52 @@ export function inLifecycleOrder(events: IngestEvent[]): IngestEvent[] {
   );
 }
 
+/** What a finished run leaves behind (ADR-0010): the row `/api/health` ages. */
+export interface IngestRunRecord {
+  source: Source;
+  startedAt: Date;
+  finishedAt: Date;
+  /** stage 5 reconciled — the only meaning of "complete" anything downstream may use */
+  complete: boolean;
+  lifecycleSkipped: string | null;
+  observed: number;
+  persisted: number;
+  deduped: number;
+  normalized: number;
+  conflicted: number;
+  failures: number;
+  events: Record<string, number>;
+  clockSteppedBackMs: number | null;
+}
+
+export interface RunStore {
+  record(run: IngestRunRecord): Promise<void>;
+}
+
+export function toRunRecord(
+  report: IngestRunReport,
+  startedAt: Date,
+  finishedAt: Date,
+): IngestRunRecord {
+  const events: Record<string, number> = {};
+  for (const e of report.events) events[e.kind] = (events[e.kind] ?? 0) + 1;
+  return {
+    source: report.source,
+    startedAt,
+    finishedAt,
+    complete: report.lifecycleSkipped === undefined,
+    lifecycleSkipped: report.lifecycleSkipped ?? null,
+    observed: report.observed,
+    persisted: report.persisted,
+    deduped: report.deduped,
+    normalized: report.normalized,
+    conflicted: report.conflicted,
+    failures: report.failures.length,
+    events,
+    clockSteppedBackMs: report.clockSteppedBackMs ?? null,
+  };
+}
+
 export interface IngestStages {
   rawStore: RawStore;
   /** keyed by source — the pluggability seam (ADR-0009) */
@@ -249,6 +295,7 @@ export interface IngestStages {
   resolver: EntityResolver;
   writer: CanonicalWriter;
   lifecycle: LifecycleStore;
+  runs: RunStore;
 }
 
 export interface IngestFailure {
@@ -284,7 +331,7 @@ export interface RunOptions {
    * (ADR-0014). Never default this to true at a call site that can truncate.
    */
   complete: boolean;
-  /** the reconcile clock — stage-5 events are dated by it, never by a payload (ADR-0014) */
+  /** the run's clock — stage-5 events are dated by it, never by a payload (ADR-0014) */
   now?: () => Date;
 }
 
@@ -386,6 +433,8 @@ export async function runIngest(
   stages: IngestStages,
   options: RunOptions,
 ): Promise<IngestRunReport> {
+  const now = options.now ?? (() => new Date());
+  const startedAt = now();
   const report = emptyReport(adapter.source);
   const stored: StoredObservation<unknown>[] = [];
   const seen = new Set<string>();
@@ -416,7 +465,7 @@ export async function runIngest(
     // would disappear every animal the source has (ADR-0014).
     report.lifecycleSkipped = "run observed nothing";
   } else {
-    const at = (options.now ?? (() => new Date()))();
+    const at = now();
     const { events, clockSteppedBackMs } = await stages.lifecycle.reconcile(
       adapter.source,
       seen,
@@ -428,6 +477,9 @@ export async function runIngest(
     if (clockSteppedBackMs) report.clockSteppedBackMs = clockSteppedBackMs;
   }
 
+  // Every caller records through here — the worker's job and the CLI's first
+  // poll alike — or a hand-run poll leaves `/api/health` reporting it stale.
+  await stages.runs.record(toRunRecord(report, startedAt, now()));
   return report;
 }
 
