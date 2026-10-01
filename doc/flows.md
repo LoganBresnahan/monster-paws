@@ -182,9 +182,10 @@ is available one-shot as `npm run ingest -- poll [--max-pages N]`, and
        │
        ◆ disappearance gate: does today's loss make sense?   (ADR-0014 am.
        │   ≥100 gone at > 5%/day since the last complete run   2026-09-30)
-       ├── no ──► nothing marked gone; Sentry.captureMessage(level error,
-       │          gate: disappearance) — a person looks today, the job still
-       │          succeeds (a retry re-fetches the same feed)
+       ├── no ──► nothing marked gone; gateAlert(report) →
+       │          Sentry.captureMessage(level error, gate: disappearance) —
+       │          a person looks today, the job still succeeds (a retry
+       │          re-fetches the same feed)
        │ yes
        ▼
   RunStore.record → ingest_runs   (complete only if stage 5 ran)

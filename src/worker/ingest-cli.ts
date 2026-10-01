@@ -19,7 +19,7 @@ import { createPgStages, loadStoredObservations } from "@/core/ingest/pg";
 import { purgeDisplay } from "@/core/purge";
 import { replay, runIngest, type IngestRunReport } from "@/core/ingest/pipeline";
 import { createRescueGroupsAdapter, rescueGroupsNormalizer } from "@/core/ingest/rescuegroups";
-import { planIngestPoll } from "@/worker/ingest-poll";
+import { parsePollArgs, planIngestPoll } from "@/worker/ingest-poll";
 
 function print(report: IngestRunReport) {
   const { events, failures, ...counts } = report;
@@ -37,24 +37,14 @@ async function main([command, ...rest]: string[]) {
     if (command === "poll") {
       const plan = planIngestPoll(process.env);
       if (!plan.register) throw new Error(plan.skipReason);
-      const flag = (name: string) => {
-        const i = rest.indexOf(name);
-        return i === -1 ? undefined : Number(rest[i + 1]);
-      };
-      const maxPages = flag("--max-pages");
-      const maxRate = flag("--max-daily-disappearance");
-      // NaN compares false against every rate, so a typo here would switch the
-      // gate off rather than raise it (ADR-0014 as amended 2026-09-30).
-      if (maxRate !== undefined && !(maxRate > 0 && maxRate <= 1)) {
-        throw new Error("--max-daily-disappearance takes a rate in (0, 1], e.g. 0.3");
-      }
+      const { maxPages, maxDailyDisappearanceRate } = parsePollArgs(rest);
       // A page-capped run is partial by construction: it must never
       // disappear the animals it did not fetch (ADR-0014).
       const adapter = createRescueGroupsAdapter({ apiKey: plan.apiKey!, maxPages });
       print(
         await runIngest(adapter, stages, {
           complete: maxPages === undefined,
-          maxDailyDisappearanceRate: maxRate,
+          maxDailyDisappearanceRate,
         }),
       );
     } else if (command === "replay" && rest[0]) {

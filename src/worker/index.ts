@@ -10,7 +10,7 @@ import { getDb } from "@/db/client";
 import { createPgStages } from "@/core/ingest/pg";
 import { runIngest } from "@/core/ingest/pipeline";
 import { createRescueGroupsAdapter, rescueGroupsNormalizer } from "@/core/ingest/rescuegroups";
-import { INGEST_POLL, planIngestPoll } from "@/worker/ingest-poll";
+import { gateAlert, INGEST_POLL, planIngestPoll } from "@/worker/ingest-poll";
 import { heartbeatPing, INGEST_POLL_RETRY } from "@/worker/heartbeat";
 import { reportingOptions } from "@/core/observability";
 
@@ -46,15 +46,8 @@ async function registerIngestPoll(boss: PgBoss) {
       console.log(
         JSON.stringify({ event: "ingest.run.completed", ...report, events: events.length }),
       );
-      // A refused reconcile is not a failed job — retrying re-fetches the same
-      // feed — but it needs a person today, not when health goes stale in
-      // 27 h (ADR-0014 as amended 2026-09-30).
-      if (report.gateRefused) {
-        Sentry.captureMessage(report.lifecycleSkipped!, {
-          level: "error",
-          tags: { job: INGEST_POLL, gate: "disappearance" },
-        });
-      }
+      const alert = gateAlert(report);
+      if (alert) Sentry.captureMessage(alert.message, { level: alert.level, tags: alert.tags });
       await ping(heartbeatPing(process.env.HEARTBEAT_INGEST_POLL_URL, "success", attempt));
     } catch (err) {
       // Every attempt's failure is an event, not a log line — docker logs are
