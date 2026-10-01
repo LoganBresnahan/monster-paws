@@ -265,7 +265,7 @@ function photosOf(payload: RescueGroupsAnimal): DisplayPhoto[] {
 
 /**
  * Still bounded by retractability (ADR-0006 decision 4) — every field promoted
- * here purges with the `rescuegroups` set — but no longer identity-only: the
+ * here purges with the `rescuegroups` set — and is not identity-only: the
  * ADR-0006 amendment of 2026-08-25 licenses the listing description and photo
  * URLs under `aggregator-display`, and ADR-0015 carries them as `display`,
  * never as claims. The line that has not moved: prose and photos are

@@ -304,15 +304,21 @@ displaying verbatim are different permissions.
                     │ <shelter>"                (planned, item 4)   │
                     └──────────────────────────────────────────────┘
 
-  every revocation commits onEnd {corpus, keepsakes, evidence} first
-  (planned, ADR-0006 as amended 2026-09-28) — the purge reads it
-  revoke "scrape"  → onEnd.corpus = "purge": purgeSource (planned) deletes
-                     prefix + rows + events, rebuilds survivors from scratch;
-                     "retain": corpus stays. Downstream grants moot either way
   revoke "display" → pages fall back to facts + our words; purgeDisplay
                      (src/core/purge.ts) deletes that source's animal_display
                      rows once the revocation is committed; corpus untouched
   revoke "digify"  → no new art; existing cards keep their credit line
+```
+
+Revocation terms — the part of this flow not yet built:
+
+```
+  (planned, ADR-0006 as amended 2026-09-28 — the ADR's contract, not yet code)
+  every revocation commits onEnd {corpus, keepsakes, evidence} first;
+  the purge reads it
+  revoke "scrape"  → onEnd.corpus = "purge": purgeSource deletes prefix +
+                     rows + events, rebuilds survivors from scratch;
+                     "retain": corpus stays. Downstream grants moot either way
 ```
 
 The registry is checked in and empty until item 5; the commit that adds a
