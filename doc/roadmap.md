@@ -259,8 +259,15 @@ slice or change build order.
             reports a refusal to Better Stack, and
             `ingest poll --max-daily-disappearance R` lets a person accept one
             wave. The 2026-09-28 wave measures 1.2%/day and passes.
-      - [ ] **The revalidation decision** (7c carry-in) — on-demand ISR from
-            the worker, or the hour accepted in writing.
+      - [x] **The revalidation decision** (7c carry-in; ADR-0015 as amended
+            2026-10-01) — decided 2026-10-01: the hour is accepted; freshness
+            is checked live at the donate step instead (item 4 carry-in).
+      - [ ] **UI + user-flow audit** (Logan, 2026-10-01) — walk every page
+            this launch makes public (landing, browse, detail, `/claim`) and
+            every promise it makes about donating, before any of it is live;
+            findings go to `doc/issues.md` (ADR-0019). Also reviews the
+            planned donation flow (item 4) on paper, since the launch copy
+            already promises it.
       - [ ] **Provision + deploy** — run oplog 0001: Managed Postgres
             (~$15/mo), migrations, `.env`, first poll by hand, heartbeat
             unpaused, smoke.
@@ -278,6 +285,9 @@ slice or change build order.
       (ADR-0020); the two kinds projectable today, `status.changed` and
       `listing.reappeared`, are enough for a first card and may pull the
       projector forward from item 6.
+      Carry-in: **the donate step checks the animal's live visibility**
+      (ADR-0015 as amended 2026-10-01) and says "no longer listed" — never
+      "adopted" — then proceeds; the page cache is an hour old by design.
       Carry-in: **the keepsake is its own entity (ADR-0022)** — snapshotted
       at donation, append-only, every field a row carrying the basis it is
       held on (`donation`, `grant:<slug>:<permission>`,
@@ -345,11 +355,9 @@ slice or change build order.
       step 6d). The SDK integration, source maps, the worker's heartbeat
       pings and `lastCompletePollAt` were built 2026-09-30 (item 3b); left:
       the heartbeat and health monitor armed in the poller deploy (oplog
-      0001), and the `ops.daily` brief. Carry-in: **on-demand revalidation from the worker**
-      (ADR-0015 revisit trigger) — once the poller runs in production, an
-      animal adopted this morning stays on its ISR-cached detail page for up
-      to the hour, and a revoked display license does too. Decide it with the
-      same deploy. The poller has never run in production, which is still the
+      0001), and the `ops.daily` brief. ~~Carry-in: on-demand revalidation from the
+      worker~~ — **decided 2026-10-01 (ADR-0015 as amended)**: the hour is
+      accepted, and the donate step checks live instead. The poller has never run in production, which is still the
       v0.1.0 landing page with no database behind it (`doc/infra.md` step 6).
 - [ ] **8. Update generation + faithfulness evals.** LLM donor updates from
       confirmed events; the no-unattested-claims harness; adoption

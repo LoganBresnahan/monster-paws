@@ -528,3 +528,37 @@ revocation.
 ### Revisit triggers (added)
 - A source's license is decided per animal or per org, not per source —
   `isDisplayLicensed` needs the candidate, not just its source.
+
+## Amendment (2026-10-01): the hour of staleness is accepted; the donate step checks live
+
+Decision 1 deferred on-demand revalidation "until the hour shows", and the
+roadmap made it a launch decision: once the poller runs in production, an
+animal that disappears this morning keeps its cached detail page for up to an
+hour, and so does an animal whose display license was revoked.
+
+### Decisions
+1. **The hour is accepted, with no worker-driven revalidation.** Browse
+   renders per request, so a disappeared animal leaves the list at the poll; only
+   someone already holding a detail URL sees the cached page, and that page
+   already lags the shelter by up to a day of polling.
+2. **Freshness that matters is checked at the action, never at the page.** The
+   donate step (roadmap item 4) reads the animal's live visibility server-side
+   and says so when it has changed — *"Rex is no longer listed. Your donation
+   still goes 100% to Happy Tails"* — and then proceeds. A donation to the
+   shelter of an animal that just left is still a good donation. Revalidation
+   could never cover this: a tab left open for three days is staler than any
+   cache.
+3. **The copy says "no longer listed", never "adopted".** A disappearance is
+   inferred from absence (ADR-0014); an outcome is a shelter's sentence
+   (ADR-0020).
+
+### Consequences (added)
+- No signed worker→app route and no new secret. A revoked display license keeps
+  its photos on a cached detail page for up to an hour after the purge.
+- Item 4 carries the live check as a build requirement, not a nicety.
+
+### Revisit triggers (added)
+- A licensor's terms require removal faster than an hour → revalidate the
+  purged animals' paths from `purgeDisplay`.
+- Detail pages gain anything time-critical besides donating (a countdown, a
+  "needs a home by" date) → on-demand revalidation from the worker.

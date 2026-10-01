@@ -17,7 +17,8 @@ on the day.
 ## Prerequisites
 - [ ] Roadmap item 3b's checklist is complete (SDK integration,
       `lastCompletePollAt`, the disappearance-rate gate, the revalidation
-      decision) — every box checked, none "nearly".
+      decision, the UI + user-flow audit) — every box checked, none "nearly";
+      any audit finding marked launch-blocking in `doc/issues.md` is fixed.
 - [ ] CI is green on the commit being deployed: `images` pushed
       `monster-paws-app:<sha>` and `monster-paws-worker:<sha>` (ADR-0007), and
       **`sourcemaps` is green for that sha** — errors that arrive before the
