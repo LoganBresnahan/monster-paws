@@ -177,3 +177,60 @@ a step is reported, never silently absorbed.
 - A reference clock becomes available (a monotonic-anchored source, or trusting
   Postgres as the single clock for both sighting and reconcile) — the forward
   step becomes addressable and this decision can be revisited whole.
+
+## Amendment (2026-09-30): the disappearance-rate gate
+
+Decision 3 left "the ratio gate (more than N% disappeared in one run)" to
+phase 9, and ADR-0010 as amended 2026-09-28 corrected its shape: the first poll
+after 24 days away legitimately disappeared 21,459 of 85,204 identities
+(25.2%), and any flat N that refuses an upstream bug would also have refused
+that run. The gate is a rate per day since the last complete run.
+
+### Decisions
+1. **Compounding, not linear.** `dailyDisappearanceRate` is
+   `1 − (1 − share)^(1/days)`: the daily rate that, sustained, produces the
+   observed share. The 2026-09-28 wave measures ~1.2%/day. Dividing the share
+   by the days ignores that each day's departures come from a smaller pool,
+   and so understates long gaps: 90% lost over ten days reads as 9%/day
+   linearly and 20.6%/day compounded.
+2. **The limit is 5%/day** (`MAX_DAILY_DISAPPEARANCE_RATE`), about four times
+   the one measured rate and an order above pagination drift (~0.5% a run).
+   **The floor is 100 disappearances** (`DISAPPEARANCE_GATE_FLOOR`): below it
+   the gate never refuses, because for a twelve-animal shelter a single good
+   adoption day is 25%.
+3. **The denominator is the source's last complete run in `ingest_runs`**,
+   falling back to its newest `last_seen_at` only when no run is recorded
+   (every database migrated before `ingest_runs` existed). The gap is floored at
+   one day, so two runs minutes apart cannot read pagination drift as collapse.
+4. **The gate counts inside stage 5's transaction, before any write**, and a
+   refusal writes nothing: no `disappeared_at`, no event. Stages 1–4 have already
+   landed — the corpus grows either way. The run is recorded `complete: false`
+   with the refusal as its `lifecycle_skipped`, which is exactly decision 2's
+   "a tripped gate passes `false`".
+5. **A refusal reaches a person the same day.** The worker reports it as an
+   error to Better Stack; the job itself succeeds, because retrying re-fetches
+   the same feed. If nothing is done, `/api/health` goes red 27 h after the last
+   complete run (ADR-0010 as amended 2026-09-30).
+6. **Only a person raises the gate, for one run:** `npm run ingest -- poll
+   --max-daily-disappearance <rate>`. The worker never passes it. The CLI refuses
+   a value outside (0, 1], because `NaN` compares false against every rate and
+   would silently switch the gate off.
+
+### Consequences (added)
+- **A genuine wave clears itself.** The denominator stays at the last complete
+  run, so each refused day lengthens the gap: a real 30% loss passes after about
+  eight days without anyone acting. An upstream bug that persists keeps tripping,
+  and health is red long before then.
+- Between refusal and clearance, animals that really left stay visible for up to
+  ADR-0015's eight-day window anyway; a refusal never shows a gone animal for
+  longer than that window already allows.
+- The runbook entry (`doc/infra.md`, Recurring ops) covers how to tell a wave
+  from a bug.
+
+### Revisit triggers (added)
+- A week of production runs gives a real daily-rate distribution — set the limit
+  from its tail, not from one wave.
+- The gate trips on a wave that turns out to be real more than once a quarter
+  → the limit is too low.
+- A second source with a very different turnover (a scrape of one shelter) →
+  per-source limits.

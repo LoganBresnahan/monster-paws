@@ -153,7 +153,9 @@ commit.
   kept in `pass` (idempotent; never overwrites a set value)
 - `npm run worker` — the pg-boss worker process (needs `DATABASE_URL`)
 - `npm run ingest -- poll [--max-pages N]` / `npm run ingest -- replay <source>`
-  — one-shot ingest through all four stages, or stages 2–4 over the corpus
+  — one-shot ingest through all five stages, or stages 2–4 over the corpus;
+  `--max-daily-disappearance R` raises the stage-5 gate for one run a person
+  has checked (ADR-0014 as amended)
 - `npm run db:up` — local Postgres via `docker-compose.dev.yml`
   (pgvector/pg16 image — same extensions as production)
 - `npm run db:generate` / `npm run db:migrate` — Drizzle migrations

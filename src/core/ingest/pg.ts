@@ -10,6 +10,7 @@ import {
   type AnimalClaims,
   type AnimalFields,
   type CanonicalWriter,
+  type DisappearanceGate,
   type EntityResolver,
   type IngestEvent,
   type IngestStages,
@@ -292,7 +293,7 @@ const EVENT_INSERT_CHUNK = 1_000;
 
 export function createPgLifecycleStore(db: Db): LifecycleStore {
   return {
-    async reconcile(source: Source, seen: ReadonlySet<string>, requestedAt: Date) {
+    async reconcile(source: Source, seen: ReadonlySet<string>, requestedAt: Date, gate?: DisappearanceGate) {
       let at = requestedAt;
       // One array parameter, never one `$n` per id: the nationwide feed is
       // ~65k animals and Postgres binds at most 65,535 parameters (ADR-0014).
@@ -313,6 +314,18 @@ export function createPgLifecycleStore(db: Db): LifecycleStore {
           .where(bySource);
         const resolved = resolveReconcileAt(at, newest);
         at = resolved.at;
+
+        if (gate) {
+          const [tally] = await tx
+            .select({
+              present: sql<number>`count(*) filter (where ${animalIdentities.disappearedAt} is null)`.mapWith(Number),
+              disappearing: sql<number>`count(*) filter (where ${animalIdentities.disappearedAt} is null and ${notInSeen})`.mapWith(Number),
+            })
+            .from(animalIdentities)
+            .where(bySource);
+          const refused = gate({ ...tally, newestSighting: newest, at });
+          if (refused) return { events: [], clockSteppedBackMs: resolved.clockSteppedBackMs, refused };
+        }
 
 
         const wasGone = await tx
@@ -377,6 +390,13 @@ export function createPgRunStore(db: Db): RunStore {
   return {
     async record(run) {
       await db.insert(ingestRuns).values(run);
+    },
+    async lastCompleteAt(source) {
+      const [row] = await db
+        .select({ at: max(ingestRuns.finishedAt) })
+        .from(ingestRuns)
+        .where(and(eq(ingestRuns.source, source), eq(ingestRuns.complete, true)));
+      return row?.at ?? null;
     },
   };
 }

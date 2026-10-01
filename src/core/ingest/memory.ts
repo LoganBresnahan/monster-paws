@@ -4,6 +4,7 @@ import type {
   AnimalCandidate,
   AnimalClaims,
   CanonicalWriter,
+  DisappearanceGate,
   DisplayContent,
   EntityResolver,
   IngestEvent,
@@ -196,7 +197,7 @@ export function createMemoryStages(normalizers: Normalizer[]): {
   };
 
   const lifecycle: LifecycleStore = {
-    async reconcile(source: Source, seen: ReadonlySet<string>, requestedAt: Date) {
+    async reconcile(source: Source, seen: ReadonlySet<string>, requestedAt: Date, gate?: DisappearanceGate) {
       let at = requestedAt;
       const emitted: IngestEvent[] = [];
       const event = (kind: IngestEvent["kind"], id: MemoryIdentity, data: Record<string, unknown>) =>
@@ -219,6 +220,14 @@ export function createMemoryStages(normalizers: Normalizer[]): {
       const newest = own.reduce<Date | null>((m, id) => (!m || id.lastSeenAt > m ? id.lastSeenAt : m), null);
       const resolved = resolveReconcileAt(at, newest);
       at = resolved.at;
+      const present = own.filter((id) => !id.disappearedAt);
+      const refused = gate?.({
+        present: present.length,
+        disappearing: present.filter((id) => !seen.has(id.externalId)).length,
+        newestSighting: newest,
+        at,
+      });
+      if (refused) return { events: [], clockSteppedBackMs: resolved.clockSteppedBackMs, refused };
       for (const id of own) {
         if (seen.has(id.externalId)) {
           if (id.disappearedAt) {
@@ -240,6 +249,12 @@ export function createMemoryStages(normalizers: Normalizer[]): {
   const runStore: RunStore = {
     async record(run) {
       runs.push(run);
+    },
+    async lastCompleteAt(source) {
+      return runs.reduce<Date | null>(
+        (m, r) => (r.source === source && r.complete && (!m || r.finishedAt > m) ? r.finishedAt : m),
+        null,
+      );
     },
   };
 

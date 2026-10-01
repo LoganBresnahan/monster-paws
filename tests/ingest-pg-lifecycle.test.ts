@@ -1,4 +1,4 @@
-import { eq, sql } from "drizzle-orm";
+import { desc, eq, sql } from "drizzle-orm";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { createMemoryStages, type MemoryCorpus } from "@/core/ingest/memory";
 import type { Observation, SourceAdapter, StoredObservation } from "@/core/ingest/observation";
@@ -13,7 +13,7 @@ import {
 import { scrapeSource, type Source } from "@/core/sources";
 import { closeDb, type Db } from "@/db/client";
 import { SKIP_DB_TESTS, testDb, truncateCorpus, truncateDerived } from "./support/db";
-import { animalIdentities, eventLog, rawPayloads } from "@/db/schema";
+import { animalIdentities, eventLog, ingestRuns, rawPayloads } from "@/db/schema";
 
 /**
  * Stage 5 against Postgres (ADR-0014), run in lockstep with the in-memory
@@ -83,15 +83,21 @@ describe.skipIf(SKIP_DB_TESTS)("ADR-0014 Postgres lifecycle — in lockstep with
   });
 
   /** Runs are dated by the batch's newest fetchedAt, standing in for the worker's clock. */
-  async function both(source: Source, batch: Observation<Payload>[], complete = true) {
+  async function both(
+    source: Source,
+    batch: Observation<Payload>[],
+    complete = true,
+    maxDailyDisappearanceRate?: number,
+  ) {
     const at = batch.reduce((m, o) => (o.fetchedAt > m ? o.fetchedAt : m), D1);
-    const options = { complete, now: () => at };
+    const options = { complete, now: () => at, maxDailyDisappearanceRate };
     const m = await runIngest(adapterOf(source, batch), mem.stages, options);
     const p = await runIngest(adapterOf(source, batch), pg, options);
     expect(p.events.map((e) => [e.kind, e.data.externalId])).toEqual(
       m.events.map((e) => [e.kind, e.data.externalId]),
     );
     expect(p.lifecycleSkipped).toEqual(m.lifecycleSkipped);
+    expect(p.disappearanceRatePerDay).toEqual(m.disappearanceRatePerDay);
     return p;
   }
 
@@ -286,6 +292,24 @@ describe.skipIf(SKIP_DB_TESTS)("ADR-0014 Postgres lifecycle — in lockstep with
       .from(animalIdentities)
       .where(eq(animalIdentities.disappearedAt, D2));
     expect(gone).toBe(known - seenCount);
+  });
+
+  // The gate counts inside the transaction before any write (ADR-0014 as amended 2026-09-30).
+  it("a refused wave writes nothing in either store, and an override lands it", async () => {
+    const herd = Array.from({ length: 150 }, (_, i) => `h${String(i).padStart(3, "0")}`);
+    await both(AGG, herd.map((id) => obs(AGG, id, D1)));
+    const survivors = herd.slice(0, 20).map((id) => obs(AGG, id, D2));
+
+    const refused = await both(AGG, survivors);
+    expect(refused.gateRefused).toBe(true);
+    expect(refused.events.filter((e) => e.kind === "animal.disappeared")).toEqual([]);
+    await expectParity();
+    const [pgRun] = await db.select().from(ingestRuns).orderBy(desc(ingestRuns.id)).limit(1);
+    expect(pgRun).toMatchObject({ complete: false, lifecycleSkipped: refused.lifecycleSkipped });
+
+    const accepted = await both(AGG, survivors, true, 1);
+    expect(accepted.events.filter((e) => e.kind === "animal.disappeared")).toHaveLength(130);
+    await expectParity();
   });
 
   it("a rebuild keeps true last sightings, and the next run re-establishes disappearance once", async () => {

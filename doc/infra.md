@@ -370,6 +370,18 @@ doctl compute droplet-action snapshot <droplet-id> --snapshot-name pre-<change>
 # Watch CI
 gh run watch <run-id> --exit-status
 
+# Disappearance gate refused a poll (ADR-0014 as amended 2026-09-30) — Better
+# Stack error "disappearance gate: N of M over D day(s) …". Nothing was written;
+# decide wave or bug before tomorrow's 07:00 run:
+#   1. Is RescueGroups' count down? Their page-1 meta.count is in the run log;
+#      compare against the last run: ssh <droplet> 'docker logs monsterpaws-worker-1 --since 48h | grep ingest.run.completed'
+#   2. Which orgs lost the most? A whole org vanishing is a partner leaving RG
+#      (real); every org losing a slice is a filter or API change (bug).
+#   3. Real → accept it for this run only:
+#      docker compose -f docker-compose.prod.yml run --rm worker npm run ingest -- poll --max-daily-disappearance 0.5
+#      Bug → leave it; the gate keeps refusing, and a real wave clears itself
+#      as the gap grows. Write an oplog entry either way.
+
 # Cloudflare cache purge — ONLY needed when a public/ file changed in place
 # (same filename, new bytes). HTML isn't edge-cached and /_next/static is
 # content-hashed, so normal deploys need no purge. Prefer renaming the file

@@ -46,6 +46,15 @@ async function registerIngestPoll(boss: PgBoss) {
       console.log(
         JSON.stringify({ event: "ingest.run.completed", ...report, events: events.length }),
       );
+      // A refused reconcile is not a failed job — retrying re-fetches the same
+      // feed — but it needs a person today, not when health goes stale in
+      // 27 h (ADR-0014 as amended 2026-09-30).
+      if (report.gateRefused) {
+        Sentry.captureMessage(report.lifecycleSkipped!, {
+          level: "error",
+          tags: { job: INGEST_POLL, gate: "disappearance" },
+        });
+      }
       await ping(heartbeatPing(process.env.HEARTBEAT_INGEST_POLL_URL, "success", attempt));
     } catch (err) {
       // Every attempt's failure is an event, not a log line — docker logs are

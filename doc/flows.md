@@ -71,17 +71,41 @@ producing a short report: a partial fetch must never reach stage 5.
             │    never a claim (ADR-0015 am.)   │
             └──────────────────┬───────────────┘
                                ▼
-   stage 5  ┌──────────────────────────────────┐  runs ONLY when the caller
-  lifecycle │ LifecycleStore.reconcile(source,  │  passed {complete: true}
-            │   seen ids, at)                   │  AND the run saw ≥1 animal;
-            │   at = max(at, newest sighting)   │  a stepped host clock is
-            │     — the invariant, not a        │   corrected + reported,
-            │     tolerance (ADR-0014 amended)  │   never silent, never fatal
-            │  this source's identities only:   │  never on replay (ADR-0014)
-            │   seen → last_seen_at = at        │  animal_identities (DERIVED)
-            │     (+ animal.reappeared if it    │   last_seen_at,
-            │        was disappeared)           │   disappeared_at
-            │   absent → disappeared_at = at    │  event_log (SACRED)
+   stage 5        ◆ complete run?  caller passed {complete: true}
+  lifecycle       │                AND the run saw ≥1 animal; never on replay
+                  │                (ADR-0014)
+                  ├── no ──► skip stage 5: lifecycleSkipped =
+                  │          "run declared partial" | "run observed nothing"
+                  │ yes
+                  ▼
+            LifecycleStore.reconcile(source, seen ids, at, gate)
+              at = max(at, newest sighting) — the invariant, not a tolerance;
+              a stepped host clock is corrected + reported (ADR-0014 amended)
+              count this source's identities, BEFORE any write:
+                present (not yet disappeared) · disappearing (present, unseen)
+                  │
+                  ▼
+                  ◆ does the amount make sense?  judgeDisappearances
+                  │   days = since RunStore.lastCompleteAt, ≥ 1
+                  │   rate = 1 − (1 − disappearing/present)^(1/days)
+                  │   (ADR-0014 am. 2026-09-30; normal is ~1.2%/day)
+                  │
+                  ├── ≥100 disappearing AND rate > 5%/day ──► REFUSE
+                  │      writes nothing: no disappeared_at, no event;
+                  │      lifecycleSkipped = the reason, gateRefused = true
+                  │      → worker: Sentry error today; run recorded
+                  │        complete:false, so /api/health ages from the
+                  │        last good run; a real wave clears itself as the
+                  │        gap grows, or a person reruns with
+                  │        ingest poll --max-daily-disappearance R
+                  │ passes
+                  ▼
+            ┌──────────────────────────────────┐
+            │  this source's identities only:   │  animal_identities (DERIVED)
+            │   seen → last_seen_at = at        │   last_seen_at,
+            │     (+ animal.reappeared if it    │   disappeared_at
+            │        was disappeared)           │  event_log (SACRED), same
+            │   absent → disappeared_at = at    │   transaction as the count
             │     + animal.disappeared          │
             └──────────────────┬───────────────┘
                                ▼
@@ -98,10 +122,9 @@ producing a short report: a partial fetch must never reach stage 5.
                                │                    OLDEST source's newest complete
                                │                    run is > 24 h + 3 h grace
                                ▼
-                                            → health gates (planned, phase 9:
-                                              ratio gate passes complete:false,
-                                              dividing by the last ingest_runs
-                                              complete row's age)
+                                            → further health gates (planned,
+                                              phase 9: promoted photo count,
+                                              reappear rate)
 ```
 
 A failure at any derived stage is recorded in `failures` with its stage and
@@ -109,7 +132,7 @@ the loop continues — one malformed payload must never truncate the run.
 
 ## RescueGroups daily poll — what runs today (ADR-0006, ADR-0009, ADR-0013)
 
-The only live poller. Since ADR-0013 it runs all four stages; the same path
+The only live poller. Since ADR-0013 it runs every stage; the same path
 is available one-shot as `npm run ingest -- poll [--max-pages N]`, and
 `npm run ingest -- replay rescuegroups` re-enters at stage 2 over the corpus.
 
@@ -155,7 +178,18 @@ is available one-shot as `npm run ingest -- poll [--max-pages N]`, and
   stage 3 → stage 4 → stage 5   (see the pipeline diagram above)
        │               animals + animal_identities + event_log
        │               worker: {complete: true}; CLI: complete only
-       ▼               without --max-pages
+       │               without --max-pages
+       │
+       ◆ disappearance gate: does today's loss make sense?   (ADR-0014 am.
+       │   ≥100 gone at > 5%/day since the last complete run   2026-09-30)
+       ├── no ──► nothing marked gone; Sentry.captureMessage(level error,
+       │          gate: disappearance) — a person looks today, the job still
+       │          succeeds (a retry re-fetches the same feed)
+       │ yes
+       ▼
+  RunStore.record → ingest_runs   (complete only if stage 5 ran)
+       │
+       ▼
   IngestRunReport → worker log  {event:"ingest.run.completed", …counts}
 ```
 
@@ -424,7 +458,10 @@ first projector with item 4. Nothing donor-facing reads `event_log`.
     animal.updated ──┐                     derived: rebuilt from scratch by the
     animal.reappeared│                     projector; ids unstable, never
     animal.disappeared                     referenced from outside
-    animal.seen      │                          ▲
+     (only past the stage-5                     ▲
+      disappearance gate,                       │
+      ADR-0014 am.)  │                          │
+    animal.seen      │                          │
                      │                          │ only writer
   attestations ──────┤                   projectStory()  (planned, item 4/6)
   (planned, item 7)  │                     │  newsworthiness list: status → news;
@@ -500,8 +537,10 @@ and CI's e2e send nothing.
    ─ load + idle, or 1st error ─►   ContextLines OFF — Better  ContextLines ON (real
    import("@sentry/nextjs")         Stack skips any frame that  TS source, no maps)
    (never static: ~57 KB gz)        carries source lines        poll failure → event,
-   init, replay the queue          onRequestError →            attempt n/3 tagged
-        │                            captureRequestError        heartbeatPing():
+   init, replay the queue          onRequestError →            attempt n/3 tagged;
+        │                            captureRequestError        disappearance gate
+        │                                 │                     refused → error event
+        │                                 │                     heartbeatPing():
         │                                 │                     success → URL
         │                                 │                     final fail → /fail
         ▼                                 ▼                          │        │

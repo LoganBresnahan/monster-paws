@@ -79,7 +79,8 @@ slice or change build order.
       hardened the adapter (page-1 `meta.count`/`pages`, malformed-page and
       short-batch throws) and stage 5 (array binding at the 65k-parameter
       ceiling, monotonic run time, one event order). Carry-ins → phase 9:
-      the ratio gate (a complete run that disappears more than N% is an
+      ~~the ratio gate~~ — **built 2026-09-30 (ADR-0014 as amended)**, item
+      3b (a complete run that disappears more than N% is an
       upstream bug, not an adoption wave — but N must be a rate per day
       since the last complete run, not a flat share: the first poll after
       24 days away, 2026-09-28, legitimately disappeared ~21k of 85k
@@ -251,8 +252,13 @@ slice or change build order.
             alike); the endpoint is 503 unless the database answers and the
             oldest source's newest complete run is under 27 h old. The
             rate gate below divides by that row.
-      - [ ] **The disappearance-rate gate** (item 2 phase 9): per day since the
-            last complete run, never a flat share (ADR-0010 as amended).
+      - [x] **The disappearance-rate gate** (item 2 phase 9; ADR-0014 as
+            amended 2026-09-30) — done 2026-09-30: stage 5 refuses, writing
+            nothing, when ≥100 identities go at a compounding rate above
+            5%/day since the last complete `ingest_runs` row; the worker
+            reports a refusal to Better Stack, and
+            `ingest poll --max-daily-disappearance R` lets a person accept one
+            wave. The 2026-09-28 wave measures 1.2%/day and passes.
       - [ ] **The revalidation decision** (7c carry-in) — on-demand ISR from
             the worker, or the hour accepted in writing.
       - [ ] **Provision + deploy** — run oplog 0001: Managed Postgres

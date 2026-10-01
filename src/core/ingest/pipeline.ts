@@ -202,11 +202,81 @@ export interface CanonicalWriter {
  * permanently, so `runIngest` gates it and replay never calls it.
  */
 export interface LifecycleStore {
+  /**
+   * `gate` sees the tally BEFORE any write and may refuse; a refusal writes
+   * nothing — no state, no event (ADR-0014 as amended 2026-09-30).
+   */
   reconcile(
     source: Source,
     seen: ReadonlySet<string>,
     at: Date,
-  ): Promise<{ events: IngestEvent[]; clockSteppedBackMs?: number }>;
+    gate?: DisappearanceGate,
+  ): Promise<{ events: IngestEvent[]; clockSteppedBackMs?: number; refused?: string }>;
+}
+
+/** What stage 5 is about to do, counted inside its transaction before it does it. */
+export interface DisappearanceTally {
+  /** this source's identities present before the run */
+  present: number;
+  /** of those, the ones this run did not see */
+  disappearing: number;
+  /** the source's newest `last_seen_at` — the denominator's fallback, never its first choice */
+  newestSighting: Date | null;
+  /** the resolved reconcile time */
+  at: Date;
+}
+
+/** Returns a refusal reason, or null to proceed. */
+export type DisappearanceGate = (tally: DisappearanceTally) => string | null;
+
+/**
+ * The disappearance-rate gate (ADR-0014 as amended 2026-09-30). The measured
+ * rate is ~1.2%/day (2026-09-28: 21,459 of 85,204 over 24.6 days), so 5% is
+ * about four times normal and well above pagination drift.
+ */
+export const MAX_DAILY_DISAPPEARANCE_RATE = 0.05;
+
+/** Below this many disappearances the gate never refuses: a small shelter adopting three of twelve is a good day, not a bug. */
+export const DISAPPEARANCE_GATE_FLOOR = 100;
+
+const DAY_MS = 86_400_000;
+
+/**
+ * The compounding daily rate that would produce this share over this gap —
+ * never `share / days`, which ignores the shrinking pool and passes 90% lost
+ * over ten days as 9%/day (compounding: 20.6%), and never a flat share, which
+ * refuses every legitimate run after time away. The gap is floored at one day:
+ * two runs minutes apart must not turn pagination drift into a collapse.
+ */
+export function dailyDisappearanceRate(present: number, disappearing: number, days: number): number {
+  if (present === 0 || disappearing === 0) return 0;
+  const share = Math.min(1, disappearing / present);
+  return 1 - (1 - share) ** (1 / Math.max(1, days));
+}
+
+export interface DisappearanceVerdict {
+  ratePerDay: number;
+  days: number;
+  refusal: string | null;
+}
+
+export function judgeDisappearances(
+  tally: DisappearanceTally,
+  lastCompleteAt: Date | null,
+  maxDailyRate: number,
+): DisappearanceVerdict {
+  const since = lastCompleteAt ?? tally.newestSighting;
+  const days = since ? Math.max(0, tally.at.getTime() - since.getTime()) / DAY_MS : 1;
+  const ratePerDay = dailyDisappearanceRate(tally.present, tally.disappearing, days);
+  const refused = tally.disappearing >= DISAPPEARANCE_GATE_FLOOR && ratePerDay > maxDailyRate;
+  const pct = (n: number) => `${(n * 100).toFixed(1)}%`;
+  return {
+    ratePerDay,
+    days,
+    refusal: refused
+      ? `disappearance gate: ${tally.disappearing} of ${tally.present} over ${Math.max(1, days).toFixed(1)} day(s) is ${pct(ratePerDay)}/day, above ${pct(maxDailyRate)}/day (ADR-0014)`
+      : null,
+  };
 }
 
 /**
@@ -262,6 +332,8 @@ export interface IngestRunRecord {
 
 export interface RunStore {
   record(run: IngestRunRecord): Promise<void>;
+  /** the gate's denominator: this source's newest complete run (ADR-0010 as amended 2026-09-28) */
+  lastCompleteAt(source: Source): Promise<Date | null>;
 }
 
 export function toRunRecord(
@@ -321,6 +393,10 @@ export interface IngestRunReport {
    * repeatedly is a broken clock on the host, not a quirk of the feed.
    */
   clockSteppedBackMs?: number;
+  /** the compounding rate stage 5 measured, whether or not the gate refused it */
+  disappearanceRatePerDay?: number;
+  /** stage 5 was refused by the disappearance gate — a person must look today (ADR-0014 as amended 2026-09-30) */
+  gateRefused?: boolean;
   events: IngestEvent[];
   failures: IngestFailure[];
 }
@@ -333,6 +409,12 @@ export interface RunOptions {
   complete: boolean;
   /** the run's clock — stage-5 events are dated by it, never by a payload (ADR-0014) */
   now?: () => Date;
+  /**
+   * Raises the gate for one run a person has checked by hand. Never set it in
+   * the worker: a refusal it overrides is how an upstream bug disappears the
+   * corpus (ADR-0014 as amended 2026-09-30).
+   */
+  maxDailyDisappearanceRate?: number;
 }
 
 function emptyReport(source: Source): IngestRunReport {
@@ -466,11 +548,22 @@ export async function runIngest(
     report.lifecycleSkipped = "run observed nothing";
   } else {
     const at = now();
-    const { events, clockSteppedBackMs } = await stages.lifecycle.reconcile(
+    const lastCompleteAt = await stages.runs.lastCompleteAt(adapter.source);
+    const maxRate = options.maxDailyDisappearanceRate ?? MAX_DAILY_DISAPPEARANCE_RATE;
+    const { events, clockSteppedBackMs, refused } = await stages.lifecycle.reconcile(
       adapter.source,
       seen,
       at,
+      (tally) => {
+        const verdict = judgeDisappearances(tally, lastCompleteAt, maxRate);
+        report.disappearanceRatePerDay = verdict.ratePerDay;
+        return verdict.refusal;
+      },
     );
+    if (refused) {
+      report.lifecycleSkipped = refused;
+      report.gateRefused = true;
+    }
     // A loop, never `push(...events)`: argument spread overflows the stack near
     // 200k values, and a disappearance wave is bounded only by the identity table.
     for (const e of events) report.events.push(e);

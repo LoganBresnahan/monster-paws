@@ -1,7 +1,11 @@
 /**
  * One-shot ingest commands, same stages the worker runs (ADR-0009):
  *
- *   npm run ingest -- poll [--max-pages N]   fetch → all four stages
+ *   npm run ingest -- poll [--max-pages N] [--max-daily-disappearance R]
+ *                                            fetch → all five stages; R raises
+ *                                            the disappearance gate for this
+ *                                            one run, after a person has
+ *                                            checked the wave is real
  *   npm run ingest -- replay <source>        stages 2–4 over the corpus
  *   npm run ingest -- purge-display <source> delete a source's display rows
  *                                            once its license has ended
@@ -33,12 +37,26 @@ async function main([command, ...rest]: string[]) {
     if (command === "poll") {
       const plan = planIngestPoll(process.env);
       if (!plan.register) throw new Error(plan.skipReason);
-      const flag = rest.indexOf("--max-pages");
-      const maxPages = flag === -1 ? undefined : Number(rest[flag + 1]);
+      const flag = (name: string) => {
+        const i = rest.indexOf(name);
+        return i === -1 ? undefined : Number(rest[i + 1]);
+      };
+      const maxPages = flag("--max-pages");
+      const maxRate = flag("--max-daily-disappearance");
+      // NaN compares false against every rate, so a typo here would switch the
+      // gate off rather than raise it (ADR-0014 as amended 2026-09-30).
+      if (maxRate !== undefined && !(maxRate > 0 && maxRate <= 1)) {
+        throw new Error("--max-daily-disappearance takes a rate in (0, 1], e.g. 0.3");
+      }
       // A page-capped run is partial by construction: it must never
       // disappear the animals it did not fetch (ADR-0014).
       const adapter = createRescueGroupsAdapter({ apiKey: plan.apiKey!, maxPages });
-      print(await runIngest(adapter, stages, { complete: maxPages === undefined }));
+      print(
+        await runIngest(adapter, stages, {
+          complete: maxPages === undefined,
+          maxDailyDisappearanceRate: maxRate,
+        }),
+      );
     } else if (command === "replay" && rest[0]) {
       const stored = await loadStoredObservations(db, rest[0]);
       print(await replay(rest[0] as never, stored, stages));
@@ -46,7 +64,7 @@ async function main([command, ...rest]: string[]) {
       console.log(JSON.stringify({ purged: await purgeDisplay(db, rest[0] as never) }));
     } else {
       throw new Error(
-        "usage: ingest poll [--max-pages N] | ingest replay <source> | ingest purge-display <source>",
+        "usage: ingest poll [--max-pages N] [--max-daily-disappearance R] | ingest replay <source> | ingest purge-display <source>",
       );
     }
   } finally {
