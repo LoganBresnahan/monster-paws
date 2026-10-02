@@ -52,3 +52,6 @@ next-env.d.ts
 
 # local scratch: corpus dumps (ADR-0017 — a copy, never a source of truth) and run logs
 /var/
+
+# Playwright MCP screenshots and snapshots (visual review, never committed)
+/.playwright-mcp/

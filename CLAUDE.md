@@ -131,6 +131,19 @@ commit.
 - `adr-plan` workflow (`.claude/workflows/adr-plan.js`) — decompose an
   accepted ADR into an effort-ranked, dependency-ordered build checklist
   before implementing it.
+- **Visual review** — UI is looked at together in a headed browser driven
+  through the Playwright MCP server: the window opens on Logan's Windows
+  desktop via WSLg, so both of us see the same page and either can drive.
+  Setup, once per machine (local scope, never committed):
+  `claude mcp add playwright -- npx -y @playwright/mcp@0.0.83 --browser chromium`,
+  then `npx -y -p @playwright/mcp@0.0.83 playwright install chromium`. Emoji
+  that render as empty boxes are a missing WSL font, not an app bug: unpack
+  Ubuntu's `fonts-noto-color-emoji` into `~/.local/share/fonts` (`apt download`
+  + `dpkg -x`, no sudo), run `fc-cache`, and restart the browser. Screenshots
+  land in `.playwright-mcp/` (gitignored). Findings go to `doc/issues.md`
+  (ADR-0019), never left in chat; a fix worth guaranteeing gets an e2e spec.
+  The desktop app's built-in browser is not an option — it cannot open a
+  folder that lives in WSL.
 
 ## Commands
 
@@ -166,3 +179,13 @@ commit.
   commented with the roadmap item that needs them. Next.js reads `.env`
   itself and the tsx scripts load it via `--env-file-if-exists`, so nothing
   needs exporting into the shell.
+
+<!-- BEGIN:nextjs-agent-rules -->
+
+# This is NOT the Next.js you know
+
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
+
+This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
+
+<!-- END:nextjs-agent-rules -->
