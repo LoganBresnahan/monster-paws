@@ -3,16 +3,20 @@ import Link from "next/link";
 import {
   BROWSE_PAGE_SIZE,
   STATE_CODE,
-  facetOptions,
   loadBrowsePage,
   loadCardDisplay,
   loadFacetGrid,
   parseCursor,
+  parseSort,
+  DEFAULT_SORT,
   type BrowseFilters,
+  type BrowseSort,
 } from "@/core/browse";
 import { getDb } from "@/db/client";
 import { AnimalCard, speciesEmoji } from "@/ui/animal";
+import { BrowseFilterForm } from "@/ui/browse-filters";
 import { agoInWords, formatDate } from "@/ui/dates";
+import { SiteLogo } from "@/ui/site-logo";
 
 /**
  * The browse page (ADR-0015 decision 5 as amended). Like the detail page it
@@ -36,7 +40,7 @@ export const revalidate = 0;
 export const metadata: Metadata = {
   title: "Animals — Monster Paws",
   description:
-    "Real animals waiting in real shelters, longest-waiting first. Every listing links back to the shelter that published it.",
+    "Real animals waiting in real shelters, newest listings first. Every listing links back to the shelter that published it.",
 };
 
 /**
@@ -59,10 +63,11 @@ function filtersFrom(
   };
 }
 
-function hrefWith(filters: BrowseFilters, after?: string): string {
+function hrefWith(filters: BrowseFilters, sort: BrowseSort, after?: string): string {
   const query = new URLSearchParams();
   if (filters.species) query.set("species", filters.species);
   if (filters.state) query.set("state", filters.state);
+  if (sort !== DEFAULT_SORT) query.set("sort", sort);
   if (after) query.set("after", after);
   const suffix = query.toString();
   return suffix ? `/animals?${suffix}` : "/animals";
@@ -91,13 +96,15 @@ export default async function BrowsePage({
     states: new Set(grid.flatMap((cell) => (cell.state ? [cell.state] : []))),
   };
   const filters = filtersFrom(params, known);
-  const facets = facetOptions(grid, filters);
+  const sort = parseSort(typeof params.sort === "string" ? params.sort : null);
 
   const page = await loadBrowsePage(
     db,
     filters,
     parseCursor(typeof params.after === "string" ? params.after : null),
     asOf,
+    undefined,
+    sort,
   );
   const display = await loadCardDisplay(
     db,
@@ -107,66 +114,25 @@ export default async function BrowsePage({
 
   return (
     <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col px-6 py-12">
-      <Link href="/" className="text-sm font-medium text-muted hover:text-foreground">
-        ← Monster Paws
-      </Link>
+      <SiteLogo />
 
       <h1 className="mt-8 text-3xl font-bold">Animals waiting</h1>
       <p className="mt-2 max-w-2xl text-muted">
-        Longest-waiting first — the ones who have been listed the longest come before everyone
-        else. Every animal here is real, and every listing links back to the shelter that
-        published it.
+        {sort === "longest"
+          ? "Longest-waiting first — the ones who have been listed the longest come before everyone else."
+          : "Newest listings first — new faces every day."}{" "}
+        Every animal here is real, and every listing links back to the shelter that published it.
       </p>
 
-      {/* A plain GET form: no client island, no JavaScript, and a shareable URL
-          for every combination. `after` is deliberately absent — changing a
-          filter starts at the first animal, because a cursor from the old
-          filter names a row the new one may not contain. */}
-      <form method="get" action="/animals" className="mt-8 flex flex-wrap items-end gap-4">
-        <label className="flex flex-col gap-1 text-sm font-medium">
-          Kind
-          <select
-            name="species"
-            defaultValue={filters.species ?? ""}
-            className="rounded-cuddly border-2 border-paw/40 bg-card px-3 py-2"
-          >
-            <option value="">Any animal</option>
-            {facets.species.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.value} ({option.count.toLocaleString("en-US")})
-              </option>
-            ))}
-          </select>
-        </label>
-
-        <label className="flex flex-col gap-1 text-sm font-medium">
-          State
-          <select
-            name="state"
-            defaultValue={filters.state ?? ""}
-            className="rounded-cuddly border-2 border-paw/40 bg-card px-3 py-2"
-          >
-            <option value="">Anywhere</option>
-            {facets.states.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.value} ({option.count.toLocaleString("en-US")})
-              </option>
-            ))}
-          </select>
-        </label>
-
-        <button
-          type="submit"
-          className="rounded-cuddly bg-leaf px-6 py-2.5 font-bold text-white transition-colors hover:bg-leaf-deep"
-        >
-          Show me
-        </button>
-        {(filters.species || filters.state) && (
-          <Link href="/animals" className="pb-2.5 text-sm font-medium text-muted hover:text-foreground">
-            Clear
-          </Link>
-        )}
-      </form>
+      {/* Keyed by the URL's filters: Clear and Back are client navigations that
+          keep the component mounted, and its picks would outlive the reset. */}
+      <BrowseFilterForm
+        key={`${filters.species ?? ""}|${filters.state ?? ""}|${sort}`}
+        grid={grid}
+        species={filters.species}
+        state={filters.state}
+        sort={sort}
+      />
 
       {page.animals.length === 0 ? (
         <p className="mt-12 text-lg text-muted">
@@ -203,7 +169,7 @@ export default async function BrowsePage({
       {page.nextCursor && (
         <p className="mt-10">
           <Link
-            href={hrefWith(filters, page.nextCursor)}
+            href={hrefWith(filters, sort, page.nextCursor)}
             className="inline-block rounded-cuddly border-2 border-paw px-6 py-3 font-bold transition-colors hover:bg-paw/10"
           >
             Next {BROWSE_PAGE_SIZE} animals →

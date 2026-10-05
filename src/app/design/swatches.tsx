@@ -4,15 +4,16 @@ import { useEffect, useState } from "react";
 import { COLOR_TOKENS } from "@/ui/tokens";
 
 export function ThemeToggle() {
-  const [theme, setTheme] = useState<"system" | "light" | "dark">("system");
+  const [theme, setTheme] = useState<"light" | "system" | "dark">("light");
   useEffect(() => {
     const root = document.documentElement;
-    if (theme === "system") delete root.dataset.theme;
+    // No attribute is the site's own state — light (ADR-0016 as amended 2026-10-02).
+    if (theme === "light") delete root.dataset.theme;
     else root.dataset.theme = theme;
   }, [theme]);
   return (
     <div className="flex gap-2">
-      {(["system", "light", "dark"] as const).map((t) => (
+      {(["light", "system", "dark"] as const).map((t) => (
         <button
           key={t}
           onClick={() => setTheme(t)}

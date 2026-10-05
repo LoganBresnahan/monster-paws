@@ -9,6 +9,7 @@ import { speciesEmoji, TrackerPixel } from "@/ui/animal";
 import { AnimalGallery } from "@/ui/animal-gallery";
 import { agoInWords, formatDate } from "@/ui/dates";
 import { decodeEntities, tidyWhitespace } from "@/ui/text";
+import { SiteLogo } from "@/ui/site-logo";
 
 /**
  * The animal detail page (ADR-0015). Two rules this file exists to keep, both
@@ -121,9 +122,7 @@ export default async function AnimalPage({ params }: { params: Promise<{ id: str
 
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col px-6 py-12">
-      <Link href="/" className="text-sm font-medium text-muted hover:text-foreground">
-        ← Monster Paws
-      </Link>
+      <SiteLogo />
 
       <div className="mt-8">
         {licensed && licensed.photos.length > 0 ? (

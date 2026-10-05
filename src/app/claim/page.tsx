@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import { CONTACT_EMAIL } from "@/ui/site";
+import { SiteLogo } from "@/ui/site-logo";
 
 /**
  * The opt-out destination every aggregated detail page links to (ADR-0015).
@@ -8,7 +9,6 @@ import Link from "next/link";
  * anything here that the verified tier (item 7) has not actually built.
  */
 
-const CONTACT = "hello@monsterpaws.org";
 
 export const metadata: Metadata = {
   title: "Claim your shelter — Monster Paws",
@@ -17,15 +17,13 @@ export const metadata: Metadata = {
 };
 
 function mailto(subject: string, body: string): string {
-  return `mailto:${CONTACT}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  return `mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
 }
 
 export default function ClaimPage() {
   return (
     <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col px-6 py-16">
-      <Link href="/" className="text-sm font-medium text-muted hover:text-foreground">
-        ← Monster Paws
-      </Link>
+      <SiteLogo />
 
       <h1 className="mt-8 text-3xl font-bold">Is this your shelter?</h1>
 
@@ -82,7 +80,7 @@ export default function ClaimPage() {
       </div>
 
       <p className="mt-10 text-sm text-muted">
-        Either way you reach a person at <span className="font-medium text-foreground">{CONTACT}</span>.
+        Either way you reach a person at <span className="font-medium text-foreground">{CONTACT_EMAIL}</span>.
       </p>
     </main>
   );

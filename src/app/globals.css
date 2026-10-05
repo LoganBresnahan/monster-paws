@@ -17,8 +17,13 @@
   --paw: #a97c50; /* warm brown — borders, illustrations */
 }
 
-/* Dark values live twice below by necessity — a selector list cannot span a media
- * query. Keep both blocks identical; /design renders each to make a mismatch visible. */
+/*
+ * The site is light for everyone (ADR-0016 as amended 2026-10-02). Dark and
+ * follow-the-OS apply only when <html data-theme> asks — /design's toggle is the
+ * one caller — so never put dark values under a bare prefers-color-scheme query,
+ * or every visitor on a dark OS gets the theme back. The values live twice below
+ * because a selector list cannot span a media query; keep both blocks identical.
+ */
 :root[data-theme="dark"] {
   --background: #2b2118; /* cocoa night */
   --foreground: #f3e9d8;
@@ -32,7 +37,7 @@
 }
 
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
+  :root[data-theme="system"] {
     --background: #2b2118; /* cocoa night */
     --foreground: #f3e9d8;
     --muted: #c2ab93;
@@ -58,6 +63,17 @@
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
   --radius-cuddly: 1.5rem; /* big soft corners everywhere */
+}
+
+/* Tailwind v4's preflight leaves buttons on the default arrow, and no browser
+ * gives <select> a hand, so without this nothing but a link looks clickable. */
+@layer base {
+  button:not(:disabled),
+  [role="button"]:not(:disabled),
+  select:not(:disabled),
+  summary {
+    cursor: pointer;
+  }
 }
 
 body {

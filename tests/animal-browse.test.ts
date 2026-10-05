@@ -10,6 +10,7 @@ import {
   loadCardDisplay,
   loadFacetGrid,
   parseCursor,
+  parseSort,
   type BrowseExclusion,
 } from "@/core/browse";
 import { loadAnimalDetail } from "@/core/animals";
@@ -43,6 +44,14 @@ const EXCLUSION: BrowseExclusion = {
   name: "ADOPTION-Read First",
   why: "a fixture standing in for the real administrative listings",
 };
+
+describe("ADR-0015 browse sort (as amended 2026-10-05)", () => {
+  it("defaults to newest, and treats an unknown or missing value as the default", () => {
+    expect(parseSort("longest")).toBe("longest");
+    expect(parseSort("newest")).toBe("newest");
+    for (const raw of [null, undefined, "", "LONGEST", "cutest"]) expect(parseSort(raw)).toBe("newest");
+  });
+});
 
 describe("ADR-0015 browse cursor", () => {
   it("round-trips a row's sort key", () => {
@@ -124,14 +133,38 @@ describe.skipIf(SKIP_DB_TESTS)("ADR-0015 browse page", () => {
     return page.animals.map((a) => a.name);
   }
 
-  it("sorts longest-listed first, by the source's date", async () => {
+  it("sorts newest-listed first by default, and longest-listed first on request", async () => {
     await seed([
       { name: "New", listedAt: new Date("2025-01-01T00:00:00Z") },
       { name: "Ancient", listedAt: new Date("2009-01-01T00:00:00Z") },
       { name: "Middle", listedAt: new Date("2018-01-01T00:00:00Z") },
     ]);
-    const page = await loadBrowsePage(db, NO_FILTERS, null, NOW, []);
-    expect(names(page)).toEqual(["Ancient", "Middle", "New"]);
+    expect(names(await loadBrowsePage(db, NO_FILTERS, null, NOW, []))).toEqual(["New", "Middle", "Ancient"]);
+    expect(names(await loadBrowsePage(db, NO_FILTERS, null, NOW, [], "longest"))).toEqual([
+      "Ancient",
+      "Middle",
+      "New",
+    ]);
+  });
+
+  // Descending puts a null date FIRST in Postgres: an undated animal would lead
+  // the newest page (ADR-0015 as amended 2026-10-05).
+  it("never opens newest-first on an animal no source dated", async () => {
+    await seed([
+      { name: "Dated", listedAt: new Date("2025-01-01T00:00:00Z") },
+      { name: "Undated", listedAt: null },
+    ]);
+    expect(names(await loadBrowsePage(db, NO_FILTERS, null, NOW, []))).toEqual(["Dated"]);
+  });
+
+  it("pages newest-first by keyset without skipping or repeating", async () => {
+    const listed = (n: number) => new Date(`20${10 + n}-01-01T00:00:00Z`);
+    await seed(Array.from({ length: 6 }, (_, i) => ({ name: `A${i}`, listedAt: listed(i) })));
+    const first = await loadBrowsePage(db, NO_FILTERS, null, NOW, []);
+    const boundary = first.animals[2];
+    const next = await loadBrowsePage(db, NO_FILTERS, { listedAt: boundary.listedAt!, id: boundary.id }, NOW, []);
+    expect(names(first)).toEqual(["A5", "A4", "A3", "A2", "A1", "A0"]);
+    expect(names(next)).toEqual(["A2", "A1", "A0"]);
   });
 
   it("hides an animal the one visibility predicate hides", async () => {
@@ -152,7 +185,7 @@ describe.skipIf(SKIP_DB_TESTS)("ADR-0015 browse page", () => {
       Array.from({ length: 6 }, (_, i) => ({ name: `A${i}`, listedAt: listed(i) })),
     );
 
-    const first = await loadBrowsePage(db, NO_FILTERS, null, NOW, []);
+    const first = await loadBrowsePage(db, NO_FILTERS, null, NOW, [], "longest");
     const boundary = first.animals[2];
     // Whoever is left of the boundary is gone by the time the reader clicks —
     // exactly what an offset window turns into a silently skipped animal.
@@ -167,6 +200,7 @@ describe.skipIf(SKIP_DB_TESTS)("ADR-0015 browse page", () => {
       { listedAt: boundary.listedAt!, id: boundary.id },
       NOW,
       [],
+      "longest",
     );
     expect(names(first)).toEqual(["A0", "A1", "A2", "A3", "A4", "A5"]);
     expect(names(next)).toEqual(["A3", "A4", "A5"]);
@@ -181,9 +215,9 @@ describe.skipIf(SKIP_DB_TESTS)("ADR-0015 browse page", () => {
       { name: "Tie B", listedAt: same },
       { name: "Tie C", listedAt: same },
     ]);
-    const all = await loadBrowsePage(db, NO_FILTERS, null, NOW, []);
+    const all = await loadBrowsePage(db, NO_FILTERS, null, NOW, [], "longest");
     const second = all.animals[1];
-    const next = await loadBrowsePage(db, NO_FILTERS, { listedAt: same, id: second.id }, NOW, []);
+    const next = await loadBrowsePage(db, NO_FILTERS, { listedAt: same, id: second.id }, NOW, [], "longest");
     expect(names(next)).toEqual(["Tie C"]);
   });
 
@@ -197,11 +231,11 @@ describe.skipIf(SKIP_DB_TESTS)("ADR-0015 browse page", () => {
       })),
     );
 
-    const first = await loadBrowsePage(db, NO_FILTERS, null, NOW, []);
+    const first = await loadBrowsePage(db, NO_FILTERS, null, NOW, [], "longest");
     expect(first.animals).toHaveLength(BROWSE_PAGE_SIZE);
     expect(first.nextCursor).not.toBeNull();
 
-    const last = await loadBrowsePage(db, NO_FILTERS, parseCursor(first.nextCursor), NOW, []);
+    const last = await loadBrowsePage(db, NO_FILTERS, parseCursor(first.nextCursor), NOW, [], "longest");
     expect(names(last)).toEqual([`A${BROWSE_PAGE_SIZE}`]);
     expect(last.nextCursor).toBeNull();
   });

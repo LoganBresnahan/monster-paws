@@ -81,3 +81,64 @@ test.describe("ADR-0015 detail page", () => {
     );
   });
 });
+
+test.describe("ADR-0015 browse filters — counts as you pick", () => {
+  // The island and the server run the same facetOptions over the same grid;
+  // this is the check that they really do (ADR-0015 as amended 2026-10-04).
+  // Picks a STATE, not a kind: the seed is one species, so narrowing by kind
+  // changes nothing, while every state holds only part of the herd.
+  test("picking a state recounts the Kind menu to exactly what Show me renders", async ({ page }) => {
+    await page.goto("/animals");
+    const kinds = page.locator("select[name=species] option");
+    const everyKind = await kinds.allTextContents();
+
+    const state = (await page.locator("select[name=state] option").allTextContents()).at(1)!;
+    await page.locator("select[name=state]").selectOption({ label: state });
+    const live = await kinds.allTextContents();
+    // The positive control: an island that never recounted would pass the equality below alone.
+    expect(live).not.toEqual(everyKind);
+
+    await page.getByRole("button", { name: /show me/i }).click();
+    await page.waitForURL(/state=/);
+    expect(await kinds.allTextContents()).toEqual(live);
+  });
+
+  // Clear is a client navigation that keeps the island mounted; without the
+  // key on the URL's filters, its picks outlived the reset.
+  test("Clear resets both menus, and Back restores the pick", async ({ page }) => {
+    await page.goto("/animals");
+    const state = (await page.locator("select[name=state] option").allTextContents()).at(1)!;
+    await page.locator("select[name=state]").selectOption({ label: state });
+    await page.getByRole("button", { name: /show me/i }).click();
+    await page.waitForURL(/state=/);
+
+    await page.getByRole("link", { name: "Clear" }).click();
+    await page.waitForURL((url) => url.search === "");
+    await expect(page.locator("select[name=state]")).toHaveValue("");
+    await expect(page.locator("select[name=species]")).toHaveValue("");
+
+    await page.goBack();
+    await page.waitForURL(/state=/);
+    await expect(page.locator("select[name=state] option:checked")).toHaveText(state);
+  });
+
+  // Newest first is the default; longest waiting is one deliberate pick away,
+  // and the order survives "Next" (ADR-0015 as amended 2026-10-05).
+  test("sorts newest first by default, and longest waiting on request", async ({ page }) => {
+    await page.goto("/animals");
+    await expect(page.locator("select[name=sort]")).toHaveValue("newest");
+    const listedDates = async () =>
+      (await page.locator("main a[href^='/animals/'] p:has-text('Listed ')").allTextContents()).map((t) =>
+        new Date(t.replace(/^Listed /, "").split(" · ")[0]).getTime(),
+      );
+    const newest = await listedDates();
+    expect(newest).toEqual([...newest].sort((a, b) => b - a));
+
+    await page.locator("select[name=sort]").selectOption("longest");
+    await page.getByRole("button", { name: /show me/i }).click();
+    await page.waitForURL(/sort=longest/);
+    const longest = await listedDates();
+    expect(longest).toEqual([...longest].sort((a, b) => a - b));
+    expect(longest).not.toEqual(newest);
+  });
+});

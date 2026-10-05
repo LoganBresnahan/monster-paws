@@ -562,3 +562,70 @@ hour, and so does an animal whose display license was revoked.
   purged animals' paths from `purgeDisplay`.
 - Detail pages gain anything time-critical besides donating (a countdown, a
   "needs a home by" date) → on-demand revalidation from the worker.
+
+## Amendment (2026-10-04): the browse filters recount as you pick
+
+Dogfooding found the filter menus lying until submit. Pick "pig (6)" and the
+State menu still offered every state with its all-species count, though all six
+pigs are in one state. The counts were right after "Show me", because the
+server recounts per request, but a menu that only tells the truth after you
+commit to it does not help you choose.
+
+### Decisions
+1. **The filter form is browse's one client island** (`BrowseFilterForm`,
+   `src/ui/browse-filters.tsx`), in the gallery's terms: component state, no
+   state library, and it does not pay CLAUDE.md's owed Zustand ADR.
+2. **It recounts from the server's grid, never from its own query.** The page
+   hands it `loadFacetGrid`'s cells (~300 now), and each pick re-runs the same
+   `facetOptions`, moved to the database-free `src/core/facets.ts`. The live
+   menu and the menu the server renders after "Show me" are the same function
+   over the same rows, so they cannot disagree. An e2e test compares them.
+3. **A pick that empties the other menu's choice clears it**, so "Show me"
+   can never open a page with no animals.
+4. **It stays a plain GET form.** With JavaScript off it submits exactly as
+   before, and every combination is still a shareable URL.
+
+### Consequences (added)
+- The grid ships with the page, about 10 KB before compression. It grows with
+  species × states rather than with animals, so that cost stays flat.
+- `src/core/facets.ts` must never import the database: it runs in the browser.
+
+## Amendment (2026-10-05): browse opens newest-first; longest waiting is a choice
+
+Decision 5 made **longest-listed first** the default sort, as the inversion
+DIRECTION's first bright line asks for. Dogfooding found the cost: the front page
+never changes. In the dev corpus of 2026-10-05, about 26,600 of 68,600 visible
+animals were listed in the last month and 957 were listed 5+ years ago. A
+longest-first default shows a returning visitor the same few hundred long-listed
+records on every visit, while the feed turns over daily underneath.
+
+### Decisions
+1. **The default sort is newest first** (`listed_at desc, id desc`). It is the
+   source's own listing date, the same column the other sort reads, so it ranks
+   no animal by appeal and stays inside bright line 1.
+2. **Longest waiting stays one deliberate pick away**: a Sort menu beside Kind
+   and State, `?sort=longest`. The inversion moves from the front door to a
+   choice. The fuller answer to "long-stay animals get the most celebrated
+   cards" is item 4's, not a sort default.
+3. **Paging walks the same index in either direction**: the keyset row
+   comparison flips (`<` for newest), and `animals_status_listed_idx` is
+   scanned backward. Measured on the 2026-10-05 dev corpus: 0.13 ms, an
+   index-only backward scan with no sort node.
+4. **Newest-first requires a listing date.** Postgres sorts nulls first in
+   descending order, so an animal no source dated would otherwise lead the page.
+   RescueGroups dates every visible animal today.
+5. **The default never appears in a URL we build.** An unknown `sort` value
+   reads as the default, never as an error, because a sort is a shared URL. The
+   form always submits `sort`, so it still works with JavaScript off.
+
+### Consequences (added)
+- A wait-time filter was considered and declined: with newest-first as the door,
+  the oldest listings appear only when someone asks for them.
+- Brand-new listings more often lack a photo or carry a shelter ID as a name
+  ("A435266"). Newest-first shows more of both; the second is ADR-0021's
+  listing assessment (item 7b).
+
+### Revisit triggers (added)
+- Longest waiting still opens on records no one could adopt (sanctuary and
+  permanent-foster residents, auto-touched listings). Tighten the upkeep bound
+  for very old listings rather than adding a filter.

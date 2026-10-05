@@ -1,9 +1,24 @@
-import { and, eq, inArray, sql, type SQL } from "drizzle-orm";
+import { and, eq, inArray, isNotNull, sql, type SQL } from "drizzle-orm";
 import { visibleAnimals } from "@/core/animals";
 import { pickLicensedDisplay } from "@/core/display";
 import type { Source } from "@/core/sources";
 import type { Db } from "@/db/client";
 import { animalDisplay, animalIdentities, animals } from "@/db/schema";
+import { DEFAULT_SORT, NO_FILTERS, type BrowseFilters, type BrowseSort, type FacetCell } from "@/core/facets";
+
+export {
+  BROWSE_SORTS,
+  DEFAULT_SORT,
+  parseSort,
+  type BrowseSort,
+  facetOptions,
+  NO_FILTERS,
+  STATE_CODE,
+  type BrowseFacets,
+  type BrowseFilters,
+  type FacetCell,
+  type FacetOption,
+} from "@/core/facets";
 
 /**
  * What the browse page is allowed to read (ADR-0015 as amended). Everything
@@ -14,14 +29,6 @@ import { animalDisplay, animalIdentities, animals } from "@/db/schema";
 
 /** One screenful. Not a scarcity device: there is no total, no page number and nothing counts down (bright line 3). */
 export const BROWSE_PAGE_SIZE = 24;
-
-/**
- * The only state values a filter may offer. Replay cannot retract a claim
- * (ADR-0009 phase-7 rule), so 27 animals still carry a junk state `T` that the
- * normalizer never asserts — and `select distinct state` would put it in the
- * filter as a choice nobody can use.
- */
-export const STATE_CODE = /^[A-Z]{2}$/;
 
 /**
  * Listings that are not one adoptable animal, hand-checked 2026-09-04 against
@@ -97,13 +104,6 @@ function notExcluded(exclusions: readonly BrowseExclusion[]): SQL {
   )`;
 }
 
-export interface BrowseFilters {
-  species: string | null;
-  state: string | null;
-}
-
-export const NO_FILTERS: BrowseFilters = { species: null, state: null };
-
 /**
  * A cursor names a ROW, not a position: `(listed_at, id)` is the sort key of
  * the last row shown, so the next page cannot skip or repeat an animal when a
@@ -144,6 +144,7 @@ function browseWhere(
   cursor: BrowseCursor | null,
   asOf: Date,
   exclusions: readonly BrowseExclusion[],
+  sort: BrowseSort,
 ): SQL {
   const parts: SQL[] = [visibleAnimals(asOf), notExcluded(exclusions)];
   if (filters.species) parts.push(eq(animals.species, filters.species));
@@ -151,8 +152,16 @@ function browseWhere(
   // Row comparison, not `listed_at > $1 or (listed_at = $1 and id > $2)`: the
   // two are equivalent only until someone edits one of them, and the row form
   // is what `animals_status_listed_idx` is shaped for.
+  // Newest-first descends, where Postgres puts a null date FIRST: an animal no
+  // source dated would lead the page. RescueGroups dates every visible animal
+  // today; a source that does not needs its own decision, not the top slot.
+  if (sort === "newest") parts.push(isNotNull(animals.listedAt));
   if (cursor) {
-    parts.push(sql`(${animals.listedAt}, ${animals.id}) > (${cursor.listedAt}, ${cursor.id})`);
+    parts.push(
+      sort === "newest"
+        ? sql`(${animals.listedAt}, ${animals.id}) < (${cursor.listedAt}, ${cursor.id})`
+        : sql`(${animals.listedAt}, ${animals.id}) > (${cursor.listedAt}, ${cursor.id})`,
+    );
   }
   return and(...parts)!;
 }
@@ -164,7 +173,7 @@ export interface BrowsePage {
 }
 
 /**
- * One page of browse, longest-listed first. Measured 2026-09-04 on the live
+ * One page of browse, newest-listed first by default. Measured 2026-09-04 on the live
  * 64k corpus: 0.55 ms unfiltered at page one, 8.8 ms for a deep cursor with
  * species+state — the filters are not in the sort index, so that number grows
  * with depth into the sort and is the one to re-EXPLAIN if browse slows.
@@ -175,16 +184,22 @@ export async function loadBrowsePage(
   cursor: BrowseCursor | null = null,
   asOf: Date = new Date(),
   exclusions: readonly BrowseExclusion[] = BROWSE_EXCLUSIONS,
+  sort: BrowseSort = DEFAULT_SORT,
 ): Promise<BrowsePage> {
   const rows = await db
     .select()
     .from(animals)
-    .where(browseWhere(filters, cursor, asOf, exclusions))
+    .where(browseWhere(filters, cursor, asOf, exclusions, sort))
     // A source that publishes no listing date sorts last and is unreachable by
     // cursor (nulls sort after every value in `asc`). RescueGroups publishes one
     // for every visible animal today; a second source that does not needs its
     // own decision, not a silent tail.
-    .orderBy(sql`${animals.listedAt} asc, ${animals.id} asc`)
+    // Both directions walk `animals_status_listed_idx`, newest-first backward.
+    .orderBy(
+      sort === "newest"
+        ? sql`${animals.listedAt} desc, ${animals.id} desc`
+        : sql`${animals.listedAt} asc, ${animals.id} asc`,
+    )
     // One more than the page, so "is there a next page" costs no second query
     // and no count over the same predicate.
     .limit(BROWSE_PAGE_SIZE + 1);
@@ -197,12 +212,6 @@ export async function loadBrowsePage(
     nextCursor:
       hasMore && last?.listedAt ? encodeCursor({ listedAt: last.listedAt, id: last.id }) : null,
   };
-}
-
-export interface FacetCell {
-  species: string;
-  state: string | null;
-  count: number;
 }
 
 /**
@@ -230,44 +239,6 @@ export async function loadFacetGrid(
     .where(and(visibleAnimals(asOf), notExcluded(exclusions))!)
     .groupBy(animals.species, animals.state);
   return rows;
-}
-
-export interface FacetOption {
-  value: string;
-  count: number;
-}
-
-export interface BrowseFacets {
-  species: FacetOption[];
-  states: FacetOption[];
-}
-
-function tally(cells: readonly FacetCell[], key: (cell: FacetCell) => string | null): FacetOption[] {
-  const counts = new Map<string, number>();
-  for (const cell of cells) {
-    const value = key(cell);
-    if (value === null) continue;
-    counts.set(value, (counts.get(value) ?? 0) + cell.count);
-  }
-  return [...counts].map(([value, count]) => ({ value, count }));
-}
-
-/**
- * Each menu is counted under the OTHER menu's selection, which is what makes a
- * count a promise: "dog (412)" beside a chosen state means 412 dogs in that
- * state, not 18,000 dogs somewhere.
- */
-export function facetOptions(cells: readonly FacetCell[], filters: BrowseFilters): BrowseFacets {
-  const forSpecies = cells.filter((c) => !filters.state || c.state === filters.state);
-  const forStates = cells.filter((c) => !filters.species || c.species === filters.species);
-  return {
-    species: tally(forSpecies, (c) => c.species).sort(
-      (a, b) => b.count - a.count || a.value.localeCompare(b.value),
-    ),
-    states: tally(forStates, (c) => (c.state && STATE_CODE.test(c.state) ? c.state : null)).sort(
-      (a, b) => a.value.localeCompare(b.value),
-    ),
-  };
 }
 
 /**

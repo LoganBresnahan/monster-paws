@@ -1,13 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
 
-/**
- * Dev-only navigation: `/design` is the style guide and 404s in production
- * (ADR-0016), so a link to it must not render there. `/animals` is a real page
- * now and is linked from the hero like any other reader would reach it.
- */
-const DEV_LINKS = [{ href: "/design", label: "Design" }];
-
 const LOOP = [
   {
     emoji: "🔍",
@@ -29,15 +22,6 @@ const LOOP = [
 export default function Home() {
   return (
     <main className="flex flex-1 flex-col items-center px-6 py-20 text-center">
-      {process.env.NODE_ENV !== "production" && (
-        <nav className="mb-10 flex gap-4 text-sm font-medium text-muted">
-          {DEV_LINKS.map((link) => (
-            <Link key={link.href} href={link.href} className="underline hover:text-foreground">
-              {link.label}
-            </Link>
-          ))}
-        </nav>
-      )}
       <h1>
         <Image
           src="/brand/wordmark-v1.png"
@@ -48,9 +32,6 @@ export default function Home() {
           className="h-auto w-64 sm:w-80"
         />
       </h1>
-      <p className="mt-4 text-lg font-medium text-honey-deep">
-        every monster deserves a happy ending
-      </p>
       <p className="mt-6 max-w-xl text-lg text-muted">
         Sponsor a real shelter animal, collect their story, and cheer them all
         the way to adoption day.{" "}
@@ -82,11 +63,6 @@ export default function Home() {
           </div>
         ))}
       </div>
-
-      <p className="mt-16 text-sm text-muted">
-        Built with 🐕 by people with rescue dogs. Under construction — inspiring
-        joy shortly.
-      </p>
     </main>
   );
 }

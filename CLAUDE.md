@@ -134,9 +134,13 @@ commit.
 - **Visual review** — UI is looked at together in a headed browser driven
   through the Playwright MCP server: the window opens on Logan's Windows
   desktop via WSLg, so both of us see the same page and either can drive.
-  Setup, once per machine (local scope, never committed):
-  `claude mcp add playwright -- npx -y @playwright/mcp@0.0.83 --browser chromium`,
-  then `npx -y -p @playwright/mcp@0.0.83 playwright install chromium`. Emoji
+  Setup, once per machine (local scope, never committed): write
+  `~/.config/playwright-mcp/monsterpaws.json` as
+  `{"browser":{"browserName":"chromium","launchOptions":{"args":["--ozone-platform=wayland"]}}}`,
+  then `claude mcp add playwright -- npx -y @playwright/mcp@0.0.83 --config ~/.config/playwright-mcp/monsterpaws.json`
+  and `npx -y -p @playwright/mcp@0.0.83 playwright install chromium`. The
+  Wayland flag is load-bearing: as an X11 window under WSLg, Chromium shows no
+  hand cursor and opens on a display Windows never shows. Emoji
   that render as empty boxes are a missing WSL font, not an app bug: unpack
   Ubuntu's `fonts-noto-color-emoji` into `~/.local/share/fonts` (`apt download`
   + `dpkg -x`, no sudo), run `fc-cache`, and restart the browser. Screenshots

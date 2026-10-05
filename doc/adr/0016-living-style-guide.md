@@ -39,3 +39,29 @@ same reference.
 
 - More than ~10 components in `src/ui/` → evaluate Storybook.
 - A designer joins → revisit the source of truth.
+
+## Amendment (2026-10-02): the site is light for everyone; dark is opt-in
+
+The original decision let the OS preference switch the whole site to the dark
+palette. Logan decided the site starts with one look: the cream ground is the
+brand, and a single theme is one thing to get right before launch instead of two.
+
+### Decisions
+1. **No attribute means light, on every OS.** The `prefers-color-scheme: dark`
+   block no longer applies by itself. It now matches only
+   `<html data-theme="system">`, so the follow-the-OS code is kept and
+   reviewable, but nothing turns it on for visitors.
+2. **The dark tokens stay**, reachable through `data-theme="dark"` or
+   `"system"`. `/design`'s toggle (light · system · dark) is the only thing that
+   sets them.
+
+### Consequences (added)
+- A visitor on a dark OS sees the cream site. Native controls follow the page,
+  which declares no `color-scheme`, so they stay light too.
+- Turning dark mode on for visitors later is one change in one place: either
+  set the attribute site-wide, or widen the media query's selector back to
+  `:root:not([data-theme="light"])`.
+
+### Revisit triggers (added)
+- Visitors ask for dark mode, or analytics (if they ever exist) show
+  late-night reading patterns where a dark ground would matter.

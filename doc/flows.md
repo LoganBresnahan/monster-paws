@@ -363,7 +363,7 @@ nothing here touches `raw_payloads`.
        │     else                      → facts + our own words, no photo
        ▼
   render                               src/app/animals/[id]/page.tsx
-    photos      AnimalGallery (the one client island, ADR-0015 as amended):
+    photos      AnimalGallery (detail's one client island, ADR-0015 as amended):
                 frame takes the photo's OWN ratio from animal_display.photos
                 {url,width,height} → whole photo, no crop, no bars, no jump;
                 thumbnails swap the hero. AnimalPhoto is a plain <img>, never
@@ -397,7 +397,9 @@ Browse (`/animals`) is the same predicate, one page at a time.
        │                                    (species, state, count), ~700 cells,
        │                                    30 ms on the 64k corpus
        ▼
-  facetOptions(grid, filters)               the menus ARE the corpus's values —
+  facetOptions(grid, filters)               src/core/facets.ts, database-free so
+       │                                    the filter island runs it too. The
+       │                                    menus ARE the corpus's values —
        │                                    never a hardcoded species list, and
        │                                    states must match ^[A-Z]{2}$ (replay
        │                                    cannot retract the junk `T` state).
@@ -410,7 +412,7 @@ Browse (`/animals`) is the same predicate, one page at a time.
        │                                    ignored shows animals nobody asked
        │                                    for; silently applied empties a page
        ▼
-  loadBrowsePage(db, filters, cursor, asOf)
+  loadBrowsePage(db, filters, cursor, asOf, exclusions, sort)
        │
        ├─ visibleAnimals(asOf)              THE predicate — the same one detail
        │                                    composes, never a copy
@@ -421,13 +423,18 @@ Browse (`/animals`) is the same predicate, one page at a time.
        │                                    so /animals/[id] still resolves.
        │                                    Interim only — ADR-0021 item 7b
        ├─ species / state = $               the v1 filters (ADR-0015 decision 5)
-       ├─ (listed_at, id) > (cursor)        keyset, forward only: an offset window
+       ├─ sort = parseSort(?sort)           newest (default) | longest — ADR-0015
+       │                                    as amended 2026-10-05; newest also
+       │                                    requires listed_at, which desc would
+       │                                    otherwise put first when null
+       ├─ (listed_at, id) >|< (cursor)      keyset, forward only: an offset window
        │                                    shifts as animals are adopted out and
        │                                    silently skips whoever crosses a page
        │                                    boundary. `id` is the tiebreaker the
        │                                    backfill's shared timestamps need
        ▼
-  order by listed_at asc, id asc            longest-waiting first — the source's
+  order by listed_at desc, id desc          newest first by default; asc, asc for
+       │                                    longest waiting — both the source's
   limit 24 + 1                              date, never created_at, and never
        │                                    anything resembling desirability
        │                                    (bright line 1). The +1 row is what
@@ -442,9 +449,12 @@ Browse (`/animals`) is the same predicate, one page at a time.
                 photo contained in a fixed 4:3 frame — a grid needs one card
                 height, and the alternative to ground around a photo is the crop
                 that cut a dog's head off on detail
-    filters     a plain GET form: no client island, no JS, a shareable URL per
-                combination, and no `after` field — a new filter starts at the
-                first animal
+    filters     BrowseFilterForm (src/ui/browse-filters.tsx), browse's one
+                client island (ADR-0015 as amended 2026-10-04): the server
+                hands it the grid, and each pick re-runs facetOptions so the
+                other menu recounts before "Show me". Still a plain GET form —
+                works with JS off, a shareable URL per combination, and no
+                `after` field: a new filter starts at the first animal
     paging      "Next 24 animals →" only; no `?before=`, no page number, no
                 total, so nothing on the page can imply scarcity. Back is the
                 browser's own
