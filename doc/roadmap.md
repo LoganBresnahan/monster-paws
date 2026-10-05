@@ -316,6 +316,15 @@ slice or change build order.
       (ADR-0020); the two kinds projectable today, `status.changed` and
       `listing.reappeared`, are enough for a first card and may pull the
       projector forward from item 6.
+      Carry-in: **the accounts ADR comes first** — no ADR yet decides how a
+      donor signs in, what we hold about them, how an Every.org donation is tied
+      back to an account, or deletion. DIRECTION and ADR-0022 assume accounts
+      exist; write the decision before the build, not during it.
+      Carry-in: **"Recently viewed" (ADR-0025)**, buildable any time and
+      independent of accounts: ids in the visitor's `localStorage`, a `/recent`
+      page of current cards ("no longer listed" for an animal that left),
+      "Clear history". Whether it syncs for signed-in donors is the accounts
+      ADR's question.
       Carry-in: **the donate step checks the animal's live visibility**
       (ADR-0015 as amended 2026-10-01) and says "no longer listed" — never
       "adopted" — then proceeds; the page cache is an hour old by design.
