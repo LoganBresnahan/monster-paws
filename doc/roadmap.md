@@ -259,6 +259,17 @@ slice or change build order.
             reports a refusal to Better Stack, and
             `ingest poll --max-daily-disappearance R` lets a person accept one
             wave. The 2026-09-28 wave measures 1.2%/day and passes.
+            **Corrected 2026-10-05 (ADR-0014 correction):** with no
+            `ingest_runs` row, the gap is the disappearing set's MEDIAN last
+            sighting. The first real dev poll was refused twice at "over 1.0
+            day(s)": once measured from the source's newest sighting (this
+            run's own new animals), then from the newest among the
+            disappearing (stragglers a partial run created that morning).
+            Both collapsed a 7-day gap to the one-day floor. Production was
+            never exposed: it records `ingest_runs` from an empty first poll.
+            The third dev poll that day passed at 1.78%/day: 8,509 disappeared,
+            120 reappeared, the first complete `ingest_runs` row, and dev
+            `/api/health` green.
       - [x] **The revalidation decision** (7c carry-in; ADR-0015 as amended
             2026-10-01) — decided 2026-10-01: the hour is accepted; freshness
             is checked live at the donate step instead (item 4 carry-in).
@@ -267,7 +278,27 @@ slice or change build order.
             every promise it makes about donating, before any of it is live;
             findings go to `doc/issues.md` (ADR-0019). Also reviews the
             planned donation flow (item 4) on paper, since the launch copy
-            already promises it.
+            already promises it. **Round 1 done 2026-10-05**, reviewed live in
+            the shared browser (CLAUDE.md, Visual review):
+            - browse opens newest first, with longest waiting in a Sort menu
+              (ADR-0015 as amended 2026-10-05);
+            - the filter menus recount as you pick, and Clear and Back reset
+              them (ADR-0015 as amended 2026-10-04);
+            - a site-wide footer (contact, source link, "Under construction");
+              the wordmark replaces the "← Monster Paws" back link;
+            - light-only theme (ADR-0016 as amended 2026-10-02); the hand
+              cursor on buttons and dropdowns.
+            Still open:
+            - **a "Meet the crew" home section** with Logan's own pets, each
+              beside its AI keepsake version. It waits on photos. Before it
+              ships: the chosen art style becomes an ADR-0004 note (it defines
+              the Monster Paws look the pipeline must later match), Logan's
+              consent is recorded as the first `doc/consent/` entry, photo
+              metadata (GPS) is stripped, and the files go under
+              `public/brand/crew/` (TRADEMARKS.md: all rights reserved). Label
+              them unmistakably as the founders' pets, not up for adoption;
+            - the browse disclaimer wording (`doc/issues.md`, UI);
+            - the donation flow on paper.
       - [ ] **Provision + deploy** — run oplog 0001: Managed Postgres
             (~$15/mo), migrations, `.env`, first poll by hand, heartbeat
             unpaused, smoke.

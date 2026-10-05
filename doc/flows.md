@@ -86,7 +86,9 @@ producing a short report: a partial fetch must never reach stage 5.
                   │
                   ▼
                   ◆ does the amount make sense?  judgeDisappearances
-                  │   days = since RunStore.lastCompleteAt, ≥ 1
+                  │   days = since RunStore.lastCompleteAt, ≥ 1;
+                  │   none recorded → since the disappearing
+                  │   set's MEDIAN last_seen_at (ADR-0014 corr.)
                   │   rate = 1 − (1 − disappearing/present)^(1/days)
                   │   (ADR-0014 am. 2026-09-30; normal is ~1.2%/day)
                   │

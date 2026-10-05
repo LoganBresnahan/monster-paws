@@ -19,7 +19,10 @@ is the record, and a file of ticked boxes stops being read.
   `BROWSE_EXCLUSIONS`, keyed by `(source, external_id)` and applied beside the
   visibility predicate, so their detail pages still resolve. That covers the
   head of one sort and nothing else — the rest of the corpus is unmeasured, so
-  this stays open until item 7b. Found 2026-09-04.
+  this stays open until item 7b. Found 2026-09-04. Newest-first browse (ADR-0015
+  as amended 2026-10-05) shows more of the second kind: brand-new listings named
+  with a shelter ID ("A435266", "A433767") lead the default page. Seen
+  2026-10-05.
 - **A thin tail of descriptions is the shelter's whole adoption manual** —
   deposit amounts, adoption-fair schedules, size-and-age glossaries. Re-measured
   2026-09-04 after whitespace tidying (ADR-0018 as amended), which fixed most of
@@ -32,7 +35,13 @@ is the record, and a file of ticked boxes stops being read.
 
 ## UI
 
-- (empty)
+- **The browse disclaimer says more than the rule does.** "We show animals
+  their shelter has kept up to date" reads as "updated recently". The rule
+  (`visibleAnimals`, ADR-0015 as amended) is: in the source's live listings as
+  of our last poll (within 8 days), and edited by the shelter within the last
+  **2 years**. Proposed precise wording: "We only show animals that are still
+  in their shelter's live listings and whose listing the shelter has updated in
+  the last two years." Logan to choose. Found 2026-10-02.
 
 ## Ops
 
