@@ -28,9 +28,11 @@ only — do not build from it.
   are disqualified — the poller/queue need an always-on process.
 - Image pipeline: style LoRA × per-image identity conditioning (IP-Adapter
   class), developed in ComfyUI and run on a GPU in Logan's home — the same
-  pg-boss worker, registered for `art.generate` only, behind a provider
-  interface with Replicate as the escape hatch (ADR-0004 as amended
-  2026-10-05). Generate **only on donation**, never per listing; art arrives
+  pg-boss worker, registered for `art.generate` only, beside a headless
+  ComfyUI, both CI-built containers in a WSL distro under a dedicated
+  Windows account with scoped credentials, behind a provider interface with
+  Replicate as the escape hatch (ADR-0004 as amended 2026-10-05, ADR-0007 as
+  amended). Development never happens on that account. Generate **only on donation**, never per listing; art arrives
   when it is ready, never "instantly". CLIP-similarity auto-QC picks best of
   3–4.
 - Client state: **Zustand** (Logan's preference, proven on Carton-Fit) for

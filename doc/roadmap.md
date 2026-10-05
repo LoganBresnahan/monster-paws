@@ -327,12 +327,19 @@ slice or change build order.
       ADR's question.
       Carry-in: **art is generated at home and arrives when it is ready**
       (ADR-0004 as amended 2026-10-05): pipeline v0 is a ComfyUI workflow
-      committed with its model hashes and licence record, run by the same
-      worker binary registered for `art.generate` only on Logan's A770 (ComfyUI
-      native on Windows, worker in WSL, SSH tunnel to the droplet, outbound
-      only); the droplet's worker never registers that queue. The card shows
-      the framed photo until the art lands, with its own message. Provisioning
-      the home worker is an infra.md step and an oplog entry.
+      committed with its model hashes and licence record, run as CI-built
+      containers — the worker registered for `art.generate` only, beside a
+      headless ComfyUI with the PyTorch wheel as a build argument (ADR-0007
+      as amended 2026-10-05) — in a WSL distro on the second M.2 under a
+      dedicated `monsterpaws` Windows account, with scoped credentials
+      (infra.md registry) handed over by `/deploy` on a localhost SSH port,
+      and an SSH tunnel to the droplet for Postgres, outbound only; the
+      droplet's worker never registers that queue. The card shows the framed
+      photo until the art lands, with its own message. Provisioning the home
+      worker — user, distro, Task Scheduler start, credentials — is an
+      infra.md step and an oplog entry; the unattended distro is the first
+      thing to dogfood. Nothing is bought: the owned A770 plus rented
+      training hours is the hardware plan until GPU prices normalize.
       Carry-in: **the donate step checks the animal's live visibility**
       (ADR-0015 as amended 2026-10-01) and says "no longer listed" — never
       "adopted" — then proceeds; the page cache is an hour old by design.

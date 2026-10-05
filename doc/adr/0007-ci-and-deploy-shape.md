@@ -9,6 +9,17 @@
 > rolling back = pinning the previous sha tag. Local e2e:prod still builds
 > via the retained `build:` targets. Upsize the droplet in place when real
 > traffic or worker load arrives (upsizing works; downsizing never does).
+>
+> **Amended 2026-10-05** (ADR-0004 as amended the same day): a second deploy
+> target and a third image. The home worker — Logan's GPU box, planned with
+> roadmap item 4 — runs only CI-built images, exactly as the droplet does:
+> `monster-paws-worker` plus a `monster-paws-comfyui` image whose PyTorch
+> wheel is a build argument (`xpu` for the Arc at home, `cuda` for any
+> hosted escape hatch), pulled from GHCR by sha tag. The deploy skill reaches
+> it over SSH on a localhost port of the machine it runs on, and the `.env`
+> hand-off and rollback are the same mechanism. CI cannot run the XPU image —
+> it has no GPU — so that image is built, not tested, in CI; the home
+> dogfood is its test.
 
 ## Context
 Need CI (typecheck, unit ×2, e2e vs production build — the /shipshape

@@ -100,6 +100,21 @@ curl -s -H "Authorization: Bearer $(pass show cloudflare/r2-token)" \
 Verified 2026-09-29, read side: the worker pair reads media + corpus and 403s
 on the vault; the vault pair reads the vault and 403s on both others.
 
+### Home worker (ADR-0004 as amended 2026-10-05) — *none created yet*
+
+The GPU box runs with a scoped runtime set only; `pass` holds the master
+copies as it does the droplet's. Every entry is created at provisioning (an
+oplog entry) and lands in the prod distro's `.env`, readable by the
+`monsterpaws` Windows user alone.
+
+| Entry | What it is | What it's for | Lands in |
+| --- | --- | --- | --- |
+| `digitalocean/pg-home-worker-url` | Connection string for a `home_worker` Postgres role: pg-boss's schema plus INSERT on `keepsake_fact`, nothing else | The home worker's `DATABASE_URL`, reached through the tunnel | home `.env` (not created yet) |
+| `digitalocean/droplet-tunnel-key` | SSH private key; its `authorized_keys` line on the droplet is `restrict,port-forwarding,permitopen="<pg-host>:25060"` | The home → droplet → Postgres tunnel, and nothing else | home prod distro (not created yet) |
+| `cloudflare/r2-media-write-token` | Account-owned R2 token, Object Write only, media bucket only | The pair below is derived from it; roll it to revoke the pair | dev only (not created yet) |
+| `cloudflare/r2-media-write-access-key-id` | Media write pair, access key id | Uploading card art from home — can neither read media nor touch corpus or vault | home `.env` (not created yet) |
+| `cloudflare/r2-media-write-secret-access-key` | Media write pair, secret | same | home `.env` (not created yet) |
+
 ### RescueGroups
 
 | Entry | What it is | What it's for | Lands in |
@@ -439,40 +454,53 @@ curl -X POST "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/purge_cache" \
   │  · corpus+FTS  │ │  Shelterluv/Petango (tier 1) │
   └───────▲────────┘ └──────────────────────────────┘
           │ SSH tunnel: home → droplet → Postgres
-          │ (the droplet is the trusted source;
-          │  the house opens no port — outbound only)
-  ┌───────┴──────────────────────────────────────────────┐
-  │  Logan's home  (planned, item 4;                     │
-  │  ADR-0004 as amended 2026-10-05)                     │
-  │                                                      │
-  │  ┌──────────────────┐  localhost  ┌───────────────┐  │
-  │  │ worker (WSL)     ├────────────►│ ComfyUI       │  │
-  │  │ art.generate     │  HTTP       │ Windows, XPU  │  │
-  │  │ ONLY             │◄────────────┤ Arc A770 16GB │  │
-  │  └──────────────────┘  candidates └───────────────┘  │
-  │    card art → R2 monsterpaws-media, direct,          │
-  │    with the worker key (keys in DB, as above)        │
-  └──────────────────────────────────────────────────────┘
+          │ (the droplet is the trusted source; the house
+          │  opens no port to the internet — outbound only)
+  ┌───────┴──────────────────────────────────────────────────────┐
+  │  Logan's main rig, Windows 11, 64 GB  (planned, item 4;      │
+  │  ADR-0004 as amended 2026-10-05)                             │
+  │                                                              │
+  │  ┌─ Logan's account (dev) ─┐  ┌─ "monsterpaws" std user ──┐  │
+  │  │ WSL dev distro, 16 GB   │  │ WSL prod distro, 24 GB,   │  │
+  │  │ repo · pass · /deploy   │  │ on the 2nd M.2, no C:     │  │
+  │  │ ComfyUI GUI (style work)│  │ mount, interop off        │  │
+  │  │                         │  │  systemd → docker engine  │  │
+  │  │   ssh localhost:2222 ──────►│  sshd (local port only)   │  │
+  │  │   .env (scoped) · pull  │  │  ┌─────────┐ ┌─────────┐  │  │
+  │  └─────────────────────────┘  │  │ worker  ├►│ comfyui │  │  │
+  │                               │  │ art.gen │◄┤ headless│  │  │
+  │   Arc A770 16 GB ─ shared     │  │  ONLY   │ │ xpu     │  │  │
+  │   through the host driver;    │  └────┬────┘ └─────────┘  │  │
+  │   one ComfyUI at a time       │       │ models volume,    │  │
+  │   display on the iGPU         │       │ hash-verified     │  │
+  │                               └───────┼───────────────────┘  │
+  └───────────────────────────────────────┼──────────────────────┘
+                                          ▼ card art, write-only pair
+                                   R2 monsterpaws-media (keys in DB)
 ```
 
 The home box is a second worker, not a second server: nothing there is in the
 request path, it pulls jobs and pushes results, and when it is asleep the art
-waits (ADR-0004 as amended 2026-10-05). Provisioning it — a restricted
-database role, the tunnel's SSH key, the media worker key — is a step here
-and an oplog entry when it happens.
+waits. It runs only CI-built images (ADR-0007 as amended 2026-10-05) and is
+deployed like the droplet, over SSH on a port that exists only on the
+machine itself. Development never happens on the `monsterpaws` account.
+Provisioning it — the Windows user, the distro on the M.2, the Task Scheduler
+start, and the scoped credentials in the registry above — is a step here and
+an oplog entry when it happens.
 
 ## CI / deploy pipeline
 
 ```
-  git push ──► GitHub Actions (ci.yml)                    droplet
-              ┌──────────────────────────────┐            ┌──────────────────────┐
-              │ verify                       │   manual   │ IMAGE_TAG=<sha> .env │
-              │  typecheck                   │  /deploy   │ compose pull         │
-              │  vitest ×2   (flaky bar) ◄─┐ ├───────────►│ compose up -d        │
-              │  next build  (standalone)  │ │  ship bar  │  · caddy (certs kept)│
-              │  playwright vs standalone  │ │  green     │  · app   (pulled)    │
-              │    server.js on seeded     │ │            │  · worker(pulled)    │
-              │    monsterpaws_e2e         │ │            │                      │
+  git push ──► GitHub Actions (ci.yml)                    droplet (+ the home
+              ┌──────────────────────────────┐            worker, planned, ADR-0007
+              │ verify                       │   manual   ┌─ as amended 2026-10-05)
+              │  typecheck                   │  /deploy   │ IMAGE_TAG=<sha> .env │
+              │  vitest ×2   (flaky bar) ◄─┐ ├───────────►│ compose pull         │
+              │  next build  (standalone)  │ │  ship bar  │ compose up -d        │
+              │  playwright vs standalone  │ │  green     │  · caddy (certs kept)│
+              │    server.js on seeded     │ │            │  · app   (pulled)    │
+              │    monsterpaws_e2e         │ │            │  · worker(pulled)    │
+              │                            │ │            │  · comfyui (home)    │
               │ ┌────────────────────────┐ │ │            │ smoke: /api/health   │
               │ │ service: postgres      ├─┘ │            │ rollback: pin the    │
               │ │ pgvector/pgvector:pg16 │   │            │  previous sha tag    │
@@ -483,9 +511,12 @@ and an oplog entry when it happens.
               │ └────────────────────────┘   │            │ GHCR (public)        │
               │ images  (needs verify; topdog│   push     │  monster-paws-app    │
               │  + hotfix/** pushes)         ├───────────►│  monster-paws-worker │
-              │  docker build app + worker   │            │  :<sha> only — prod  │
-              │  --target sourcemaps export  │            │  pins IMAGE_TAG      │
-              │  (debug IDs stamped offline) │            │  (ADR-0007, oplog 2) │
+              │  docker build app + worker   │            │  monster-paws-comfyui│
+              │  + comfyui (planned; built,  │            │   (planned; TORCH=xpu│
+              │  not run — CI has no GPU)    │            │   | cuda build arg)  │
+              │  --target sourcemaps export  │            │  :<sha> only — prod  │
+              │  (debug IDs stamped offline) │            │  pins IMAGE_TAG      │
+              │                              │            │  (ADR-0007, oplog 2) │
               │        │ artifact            │            └──────────────────────┘
               │ sourcemaps (needs images)    │
               │  upload, retry until         ├──────────► Better Stack Errors

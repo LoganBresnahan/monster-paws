@@ -569,18 +569,20 @@ round. Both workers are the same binary — the droplet's never registers
        │  SSH tunnel droplet → PG (the droplet is the trusted source;
        │  the house opens no port — outbound only)
        ▼                                        ── home boundary ──
-  src/worker/index.ts, art.generate only        (planned) the home worker,
-       │                                        WSL on Logan's machine
-       │  POST /prompt  (localhost HTTP)
+  src/worker/index.ts, art.generate only        (planned) the worker
+       │                                        container, prod WSL distro
+       │                                        under the "monsterpaws"
+       │  POST /prompt  (localhost HTTP)        Windows user
        ▼
-  ComfyUI, native Windows, XPU build            (planned) workflow JSON +
-       │   style LoRA × IP-Adapter identity     model hashes + licence
-       │   3–4 candidates                       record committed together
+  monster-paws-comfyui, headless, TORCH=xpu     (planned) CI-built; workflow
+       │   style LoRA × IP-Adapter identity     JSON + model hashes + licence
+       │   3–4 candidates                       record committed together;
+       │                                        models a hash-verified volume
        ▼
   CLIP-QC  (planned, item 9)                    score vs the real photos;
        │                                        serve best, flag low
        ▼
-  R2 monsterpaws-media  (worker key, direct)    keys only in the DB
+  R2 monsterpaws-media  (write-only pair)       keys only in the DB
        │
        ▼
   keepsake_fact  field='art'  basis=grant:<slug>:digify   (append)

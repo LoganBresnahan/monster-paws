@@ -5,7 +5,8 @@
 > AI art unlocks at verification. Self-amended 2026-08-02: weights licensing,
 > photo disclosure, self-hosting (below). Self-amended 2026-10-05: inference
 > runs on a GPU in Logan's home, ComfyUI is the workbench, art arrives when
-> it is ready (below).
+> it is ready; same-day addendum: the home worker is isolated under its own
+> Windows account and packaged as CI-built containers (below).
 
 ## Context
 The collector loop needs card art that is (a) unmistakably one set — the
@@ -138,20 +139,22 @@ the photo never leaves hardware we control. Discussed and decided 2026-10-05.
    tweak. Custom-node sprawl is the trap: nodes are pinned, and a node that
    needs CUDA-only kernels is not used.
 2. **Inference runs on a GPU in Logan's home.** The first GPU is the A770 in
-   the main rig. ComfyUI runs natively on Windows (the XPU build) and serves
-   its API on localhost; the Node worker runs in WSL and reaches it over
-   HTTP. "ComfyUI at a URL" is one provider behind this ADR's provider
-   interface, exactly as Replicate is — the worker never knows which GPU
-   answered.
+   the main rig. A headless ComfyUI serves its API on localhost and the Node
+   worker reaches it over HTTP; both are containers in a dedicated WSL
+   distro (addendum, below), with ComfyUI native on Windows as the fallback
+   if XPU inside WSL fights us. "ComfyUI at a URL" is one provider behind
+   this ADR's provider interface, exactly as Replicate is — the worker never
+   knows which GPU answered.
 3. **Dispatch is the queue we already have.** The home box runs the same
    pg-boss worker process, registered for the `art.generate` queue and
    nothing else, and the droplet's worker never registers `art.generate` —
    a job consumed on a box with no GPU would fail 3/3 and report. The home
    worker reaches Managed Postgres through an SSH tunnel to the droplet,
    which is already a trusted source; results upload straight to the R2
-   media bucket with the worker key. **Outbound only: nothing in the house
-   listens.** Email, webhooks and a bespoke pull API were considered and
-   rejected — a queue has retries, acknowledgement and a dead-letter path,
+   media bucket with a write-only key. **Outbound only toward the internet:
+   nothing in the house listens past the machine** — the local-only SSH port
+   the deploy uses (addendum) is not exposure in this sense. Email, webhooks
+   and a bespoke pull API were considered and rejected — a queue has retries, acknowledgement and a dead-letter path,
    and this one already exists.
 4. **Art arrives when it is ready; "instant" is withdrawn.** The box may be
    asleep, rebooting, or in use; the job waits in the queue. The card is
@@ -201,6 +204,73 @@ the photo never leaves hardware we control. Discussed and decided 2026-10-05.
 On inference alone Replicate wins for years at v1 volume. The home GPU pays
 on the development spend and on the disclosure gate, which has no price.
 
+Market note, 2026-10-05: a GDDR shortage has pushed every card up 40–150 %
+since June — a used 3090 sells near $1,000 and asks $1,200–1,550, a 5060 Ti
+16 GB is $790 against a $429 MSRP, and the next NVIDIA generation has slipped.
+Nothing is bought into that; the owned A770 plus rented training hours is the
+whole hardware plan until prices normalize (revisit trigger below). Old
+datacenter cards are not a loophole: PyTorch's current CUDA builds no longer
+target Maxwell, Pascal or Volta, so the P40, P100 and V100 are dead platforms,
+and 24 GB Turing cards lack the BF16 that FLUX-class training wants.
+
+### Addendum (2026-10-05, same day): the home worker is isolated, packaged, and deployed like the droplet
+
+Raised after the venue decision: the main rig is also Logan's daily machine,
+and nothing Monster Paws may read his files, nor he its secrets except on
+purpose. Full passthrough of the A770 to a VM is not available while Windows
+stays the host — client Hyper-V has no Discrete Device Assignment, GPU
+paravirtualization is sharing through the host driver, and bare-metal Linux
+with VFIO turns the gaming PC into a server with Alchemist's reset bug on
+top. The isolation that matters is at the OS and credential layers:
+
+9. **A dedicated standard Windows account runs production.** Everything for
+   the pipeline is installed under a `monsterpaws` user and started at boot
+   by Task Scheduler, logged in or not. ComfyUI custom nodes are arbitrary
+   code from GitHub running as whoever launches ComfyUI; under a
+   low-privilege account a bad node is contained. **Development never
+   happens on that account** — it stays on Logan's own, with `pass`, the
+   repo and the ComfyUI GUI for style work.
+10. **Its own WSL distro, on the second M.2.** The drive's Linux dual boot is
+    retired (production that only runs while Logan is booted out of Windows
+    is production that is off) and the whole disk is the prod user's: the
+    distro's disk image, the models volume, its swap. The distro mounts no
+    Windows drive and has interop off. WSL VMs are per user, so the dev and
+    prod distros never meet. Memory caps, each in its owner's WSL config:
+    prod 24 GB (ComfyUI stages models through RAM; offloaded text encoders
+    make FLUX-class inference fit the A770), dev 16 GB, the rest of the
+    64 GB to Windows.
+11. **Worker and headless ComfyUI are CI-built containers** (ADR-0007 as
+    amended 2026-10-05), run by a plain docker engine inside the distro under
+    systemd — never Docker Desktop, which needs an interactive login. Custom
+    nodes are pinned in the image; models are a volume, downloaded at first
+    start and verified against the committed hash list, never baked in. The
+    PyTorch wheel is a build argument — `xpu` for the Arc, `cuda` for
+    everything else — and the rest of the image is identical, which is what
+    makes decision 8's escape hatch real: Replicate's cog and RunPod take the
+    CUDA variant of an image CI already builds. Inside WSL the container
+    reaches the Arc through the host's GPU device and driver libraries.
+12. **Credentials are scoped so a leak cannot hurt, and handed over one way.**
+    The prod side holds only its runtime set, in an `.env` it alone can
+    read: a Postgres role limited to pg-boss's tables and `keepsake_fact`
+    inserts; an R2 token that can only write the media bucket; a tunnel key
+    whose `authorized_keys` line on the droplet is restricted to forwarding
+    the one Postgres port. `pass` on the dev account holds all of them, as
+    it holds the droplet's. The hand-off is the deploy skill over an SSH
+    server the prod distro runs on a localhost port — the home box is a
+    second deploy target beside the droplet, pulling the same way. At
+    runtime the prod side talks to Postgres through the tunnel and to R2,
+    and nothing else.
+13. **One GPU, one ComfyUI at a time.** Two processes do not share 16 GB.
+    While the GUI is open for style work, prod jobs wait, which the product
+    already tolerates (decision 4). A workflow is promoted by committing its
+    JSON and model hashes, never by copying files between accounts.
+
+Consequences added: `doc/infra.md` gains the home worker's secrets rows (not
+created yet), the second deploy target in the CI diagram, and a provisioning
+step; the deploy skill gains the home target when the box is provisioned, not
+before. The unattended WSL distro — kept alive by the worker process, started
+by Task Scheduler — is the one fragile joint and the first thing to dogfood.
+
 ### Consequences
 - The ADR-0001 single-droplet shape is unchanged: nothing at home is in the
   request path, and the droplet still runs the poller and every other job.
@@ -243,3 +313,8 @@ on the development spend and on the disclosure gate, which has no price.
 - The only model that nails likeness has no clean self-hosted licence —
   then that model runs on Replicate, and the consent copy carries the
   disclosure again.
+- GPU prices normalize after the 2026 memory shortage — reopen the dedicated
+  box question with a 24 GB, BF16-capable card as the bar.
+- The unattended WSL distro proves unreliable (a job waits because the
+  distro was not running, not because the box was asleep) — that is the
+  dedicated box's cue, prices or not.
