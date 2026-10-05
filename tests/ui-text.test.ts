@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { decodeEntities, tidyWhitespace } from "@/ui/text";
+import { decodeEntities, tidyWhitespace, waitingTeaser } from "@/ui/text";
 
 /**
  * Cases taken from the 2026-09-04 RescueGroups corpus (ADR-0018), where 72% of
@@ -48,5 +48,19 @@ describe("tidyWhitespace", () => {
     expect(tidyWhitespace("Fees:\n  Kitten    $125\n  Cat       $75")).toBe(
       "Fees:\n  Kitten    $125\n  Cat       $75",
     );
+  });
+});
+
+describe("waitingTeaser (ADR-0015 as amended 2026-10-05)", () => {
+  it("lists the next names with the right grammar for one, two or three", () => {
+    expect(waitingTeaser(["Harvey"])).toBe("Harvey is waiting…");
+    expect(waitingTeaser(["Harvey", "Daisy"])).toBe("Harvey and Daisy are waiting…");
+    expect(waitingTeaser(["Harvey", "Daisy", "Trunks"])).toBe("Harvey, Daisy, and Trunks are waiting…");
+  });
+
+  it("keeps the source's casing and says nothing when there are no names", () => {
+    expect(waitingTeaser(["LUCILLE", " RADAR "])).toBe("LUCILLE and RADAR are waiting…");
+    expect(waitingTeaser([])).toBeNull();
+    expect(waitingTeaser(["  "])).toBeNull();
   });
 });

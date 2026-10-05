@@ -139,79 +139,161 @@ export function parseCursor(raw: string | null | undefined): BrowseCursor | null
  * `asOf` is a parameter for the same reason `visibleAnimals` takes one: a
  * boundary is only testable when the caller owns the clock.
  */
-function browseWhere(
+/** Which animals a filtered browse may show — shared by the page and the random pick, so they can never disagree. */
+function matchingParts(
   filters: BrowseFilters,
-  cursor: BrowseCursor | null,
   asOf: Date,
   exclusions: readonly BrowseExclusion[],
-  sort: BrowseSort,
-): SQL {
+): SQL[] {
   const parts: SQL[] = [visibleAnimals(asOf), notExcluded(exclusions)];
   if (filters.species) parts.push(eq(animals.species, filters.species));
   if (filters.state) parts.push(eq(animals.state, filters.state));
-  // Row comparison, not `listed_at > $1 or (listed_at = $1 and id > $2)`: the
-  // two are equivalent only until someone edits one of them, and the row form
-  // is what `animals_status_listed_idx` is shaped for.
+  return parts;
+}
+
+/**
+ * The keyset comparison for one side of a row, in DISPLAY order: "after"
+ * means further down the page whichever way the sort runs. Row comparison, not
+ * `listed_at > $1 or (listed_at = $1 and id > $2)`: the two are equivalent
+ * only until someone edits one of them, and the row form is what
+ * `animals_status_listed_idx` is shaped for.
+ */
+function beyond(sort: BrowseSort, side: "after" | "before", row: BrowseCursor): SQL {
+  const descending = sort === "newest";
+  const greater = (side === "after") !== descending;
+  return greater
+    ? sql`(${animals.listedAt}, ${animals.id}) > (${row.listedAt}, ${row.id})`
+    : sql`(${animals.listedAt}, ${animals.id}) < (${row.listedAt}, ${row.id})`;
+}
+
+function sortWhere(filters: BrowseFilters, asOf: Date, exclusions: readonly BrowseExclusion[], sort: BrowseSort): SQL[] {
+  const parts = matchingParts(filters, asOf, exclusions);
   // Newest-first descends, where Postgres puts a null date FIRST: an animal no
   // source dated would lead the page. RescueGroups dates every visible animal
   // today; a source that does not needs its own decision, not the top slot.
   if (sort === "newest") parts.push(isNotNull(animals.listedAt));
-  if (cursor) {
-    parts.push(
-      sort === "newest"
-        ? sql`(${animals.listedAt}, ${animals.id}) < (${cursor.listedAt}, ${cursor.id})`
-        : sql`(${animals.listedAt}, ${animals.id}) > (${cursor.listedAt}, ${cursor.id})`,
-    );
-  }
-  return and(...parts)!;
+  return parts;
 }
 
 export interface BrowsePage {
   animals: (typeof animals.$inferSelect)[];
-  /** null on the last page — there is no `?before=` in v1, so Back is browser history (ADR-0015 as amended) */
+  /** null on the last page */
   nextCursor: string | null;
+  /** null on the first page — checked against the rows, never assumed from the URL (ADR-0015 as amended 2026-10-05) */
+  prevCursor: string | null;
+  /** the first few names on the next page, in order — the "… are waiting" line under Next */
+  nextNames: string[];
 }
+
+/** How many names of the next page the teaser under Next may show. */
+export const NEXT_TEASER_SIZE = 3;
+
+/** Where a page starts: below a row (`after`), above one (`before`), or at the top. */
+export type BrowsePosition = { after: BrowseCursor } | { before: BrowseCursor } | null;
 
 /**
  * One page of browse, newest-listed first by default. Measured 2026-09-04 on the live
  * 64k corpus: 0.55 ms unfiltered at page one, 8.8 ms for a deep cursor with
  * species+state — the filters are not in the sort index, so that number grows
  * with depth into the sort and is the one to re-EXPLAIN if browse slows.
+ *
+ * `position` takes a bare cursor as `after`, which is every caller written
+ * before Previous existed.
  */
 export async function loadBrowsePage(
   db: Db,
   filters: BrowseFilters = NO_FILTERS,
-  cursor: BrowseCursor | null = null,
+  position: BrowsePosition | BrowseCursor = null,
   asOf: Date = new Date(),
   exclusions: readonly BrowseExclusion[] = BROWSE_EXCLUSIONS,
   sort: BrowseSort = DEFAULT_SORT,
 ): Promise<BrowsePage> {
+  const at: BrowsePosition =
+    position && "listedAt" in position ? { after: position } : (position as BrowsePosition);
+  const backward = at !== null && "before" in at;
+  const anchor = at === null ? null : "before" in at ? at.before : at.after;
+
+  const parts = sortWhere(filters, asOf, exclusions, sort);
+  if (anchor) parts.push(beyond(sort, backward ? "before" : "after", anchor));
+  // Walking backward reads the rows just above the anchor nearest-first, so
+  // the order flips; the page is flipped back into display order below.
+  const ascending = (sort === "longest") !== backward;
   const rows = await db
     .select()
     .from(animals)
-    .where(browseWhere(filters, cursor, asOf, exclusions, sort))
+    .where(and(...parts)!)
     // A source that publishes no listing date sorts last and is unreachable by
     // cursor (nulls sort after every value in `asc`). RescueGroups publishes one
     // for every visible animal today; a second source that does not needs its
     // own decision, not a silent tail.
-    // Both directions walk `animals_status_listed_idx`, newest-first backward.
     .orderBy(
-      sort === "newest"
-        ? sql`${animals.listedAt} desc, ${animals.id} desc`
-        : sql`${animals.listedAt} asc, ${animals.id} asc`,
+      ascending
+        ? sql`${animals.listedAt} asc, ${animals.id} asc`
+        : sql`${animals.listedAt} desc, ${animals.id} desc`,
     )
-    // One more than the page, so "is there a next page" costs no second query
-    // and no count over the same predicate.
-    .limit(BROWSE_PAGE_SIZE + 1);
+    // A few more than the page: the first says "there is more this way" with no
+    // count over the same predicate, and they name the teaser under Next.
+    .limit(BROWSE_PAGE_SIZE + NEXT_TEASER_SIZE);
 
+  const more = rows.length > BROWSE_PAGE_SIZE;
   const page = rows.slice(0, BROWSE_PAGE_SIZE);
+  if (backward) page.reverse();
+  const first = page[0];
   const last = page[page.length - 1];
-  const hasMore = rows.length > BROWSE_PAGE_SIZE;
+
+  // The side we did not walk is probed, never assumed: rows on it may have
+  // been adopted out since the cursor was written.
+  const namesBeyond = async (side: "after" | "before", row: typeof first, count: number) => {
+    if (!row?.listedAt) return [];
+    const nearestFirst = (sort === "longest") === (side === "after");
+    const hits = await db
+      .select({ name: animals.name })
+      .from(animals)
+      .where(and(...sortWhere(filters, asOf, exclusions, sort), beyond(sort, side, { listedAt: row.listedAt, id: row.id }))!)
+      .orderBy(
+        nearestFirst
+          ? sql`${animals.listedAt} asc, ${animals.id} asc`
+          : sql`${animals.listedAt} desc, ${animals.id} desc`,
+      )
+      .limit(count);
+    return hits.map((h) => h.name);
+  };
+  const nextNames = backward
+    ? await namesBeyond("after", last, NEXT_TEASER_SIZE)
+    : rows.slice(BROWSE_PAGE_SIZE).map((r) => r.name);
+  const hasNext = nextNames.length > 0;
+  const hasPrev = backward ? more : anchor !== null && (await namesBeyond("before", first, 1)).length > 0;
+
+  const cursorOf = (row: typeof first) =>
+    row?.listedAt ? encodeCursor({ listedAt: row.listedAt, id: row.id }) : null;
   return {
     animals: page,
-    nextCursor:
-      hasMore && last?.listedAt ? encodeCursor({ listedAt: last.listedAt, id: last.id }) : null,
+    nextCursor: hasNext ? cursorOf(last) : null,
+    prevCursor: hasPrev ? cursorOf(first) : null,
+    nextNames,
   };
+}
+
+/**
+ * One animal the filtered browse would show, chosen uniformly at random — the
+ * "Surprise me" button (ADR-0015 as amended 2026-10-05). Uniform is the point:
+ * every visible animal has the same chance, however long it has been listed,
+ * so never weight this toward anything resembling appeal (bright line 1).
+ * `null` when nothing matches.
+ */
+export async function pickRandomAnimalId(
+  db: Db,
+  filters: BrowseFilters = NO_FILTERS,
+  asOf: Date = new Date(),
+  exclusions: readonly BrowseExclusion[] = BROWSE_EXCLUSIONS,
+): Promise<number | null> {
+  const [row] = await db
+    .select({ id: animals.id })
+    .from(animals)
+    .where(and(...matchingParts(filters, asOf, exclusions))!)
+    .orderBy(sql`random()`)
+    .limit(1);
+  return row?.id ?? null;
 }
 
 /**

@@ -11,6 +11,7 @@ import {
   loadFacetGrid,
   parseCursor,
   parseSort,
+  pickRandomAnimalId,
   type BrowseExclusion,
 } from "@/core/browse";
 import { loadAnimalDetail } from "@/core/animals";
@@ -238,6 +239,59 @@ describe.skipIf(SKIP_DB_TESTS)("ADR-0015 browse page", () => {
     const last = await loadBrowsePage(db, NO_FILTERS, parseCursor(first.nextCursor), NOW, [], "longest");
     expect(names(last)).toEqual([`A${BROWSE_PAGE_SIZE}`]);
     expect(last.nextCursor).toBeNull();
+  });
+
+  // "Surprise me" (ADR-0015 as amended 2026-10-05): the same conditions as the
+  // page, so a roll can never open an animal browse would hide.
+  it("picks a random animal only from what the filtered browse would show", async () => {
+    const ids = await seed([
+      { name: "Visible pig", listedAt: daysBefore(10), species: "pig", state: "WV" },
+      { name: "Adopted pig", listedAt: daysBefore(11), species: "pig", state: "WV", status: "adopted" },
+      { name: "Abandoned pig", listedAt: daysBefore(12), species: "pig", state: "WV", sourceUpdatedAt: daysBefore(800) },
+      { name: "Dog", listedAt: daysBefore(13), species: "dog", state: "WV" },
+    ]);
+    for (let roll = 0; roll < 20; roll++) {
+      expect(await pickRandomAnimalId(db, { species: "pig", state: null }, NOW, [])).toBe(ids.get("Visible pig"));
+    }
+    expect(await pickRandomAnimalId(db, { species: "pig", state: "TX" }, NOW, [])).toBeNull();
+  });
+
+  // Previous (ADR-0015 as amended 2026-10-05): a shared deep link has no Back.
+  for (const sort of ["newest", "longest"] as const) {
+    it(`walks back from page two to exactly page one (${sort})`, async () => {
+      await seed(
+        Array.from({ length: BROWSE_PAGE_SIZE + 5 }, (_, i) => ({
+          name: `A${String(i).padStart(2, "0")}`,
+          listedAt: new Date(NOW.getTime() - (i + 1) * 24 * 60 * 60 * 1000),
+        })),
+      );
+      const one = await loadBrowsePage(db, NO_FILTERS, null, NOW, [], sort);
+      expect(one.prevCursor).toBeNull();
+      const two = await loadBrowsePage(db, NO_FILTERS, { after: parseCursor(one.nextCursor)! }, NOW, [], sort);
+      expect(two.animals).toHaveLength(5);
+      expect(two.nextCursor).toBeNull();
+
+      const back = await loadBrowsePage(db, NO_FILTERS, { before: parseCursor(two.prevCursor)! }, NOW, [], sort);
+      expect(names(back)).toEqual(names(one));
+      expect(back.prevCursor).toBeNull();
+      expect(back.nextCursor).toBe(one.nextCursor);
+      // The teaser under Next names the next page's first animals, however the reader arrived.
+      expect(one.nextNames).toEqual(names(two).slice(0, 3));
+      expect(back.nextNames).toEqual(names(two).slice(0, 3));
+      expect(two.nextNames).toEqual([]);
+    });
+  }
+
+  it("offers no Previous once every animal above the page has left", async () => {
+    const ids = await seed(
+      Array.from({ length: 3 }, (_, i) => ({ name: `A${i}`, listedAt: new Date(`201${i}-01-01T00:00:00Z`) })),
+    );
+    const top = await loadBrowsePage(db, NO_FILTERS, null, NOW, [], "longest");
+    const cursor = { listedAt: top.animals[0].listedAt!, id: top.animals[0].id };
+    await db.update(animals).set({ status: "adopted" }).where(eq(animals.id, ids.get("A0")!));
+    const rest = await loadBrowsePage(db, NO_FILTERS, { after: cursor }, NOW, [], "longest");
+    expect(names(rest)).toEqual(["A1", "A2"]);
+    expect(rest.prevCursor).toBeNull();
   });
 
   it("filters by species and state", async () => {

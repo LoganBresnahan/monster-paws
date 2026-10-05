@@ -629,3 +629,71 @@ records on every visit, while the feed turns over daily underneath.
 - Longest waiting still opens on records no one could adopt (sanctuary and
   permanent-foster residents, auto-touched listings). Tighten the upkeep bound
   for very old listings rather than adding a filter.
+
+## Amendment (2026-10-05): "Surprise me" opens a uniformly random animal
+
+A button beside "Show me" opens one visible animal at random, inside whatever
+Kind and State are picked. It is the fairest exposure browse can give: every
+visible animal has the same chance, whether it was listed today or six years
+ago, with no ranking at all. That serves DIRECTION's inversion (long-stay animals
+seen) without making them the front door.
+
+### Decisions
+1. **`GET /animals/random`** redirects (307, `no-store`) to `/animals/<id>`, or
+   back to the filtered browse when nothing matches. `pickRandomAnimalId` builds
+   its query from the same conditions as `loadBrowsePage` (`matchingParts`), so a
+   roll can never open an animal browse would hide. Measured: 75 ms for
+   `order by random()` over ~69k visible animals.
+2. **Uniform, always.** Never weight the pick toward anything resembling appeal
+   (bright line 1).
+3. **The redirect is relative.** Behind Caddy and Cloudflare the request's host
+   is the container's own, so an absolute URL built from it would send the
+   visitor nowhere.
+4. **A plain `<a>`, never `<Link>`**, whose prefetch would roll for pages nobody
+   opens. `robots.txt` disallows `/animals/random` (ADR-0024): a URL that
+   answers differently every visit is a crawler trap.
+
+### Revisit triggers (added)
+- The pick's 75 ms grows past ~250 ms as the corpus grows: sample by a random
+  id range instead of sorting the whole visible set.
+
+## Amendment (2026-10-05): browse pages backward too
+
+The 2026-09-03 amendment made paging forward-only: "Back is browser history —
+there is no `?before=` in v1". That leaves out the reader who arrives by a
+shared link to page five. They have no history, so there is no way back up the
+list.
+
+### Decisions
+1. **`?before=<listed_at>,<id>`** names the first row of the page below, and
+   reads the rows just above it nearest-first before flipping them into display
+   order. Same keyset, same index, same robustness to adoptions between clicks
+   as `after`. A URL carrying both takes `after`.
+2. **Each button shows only when a row really lies that way.** The direction
+   walked is known from the `+1` probe row. The other direction is checked with
+   a one-row query, never assumed from the URL: rows above a cursor may all have
+   been adopted out since it was written.
+3. **Still no page number and no total.** Previous and Next say only "there is
+   more this way", so nothing on the page implies scarcity (bright line 3).
+4. **Next carries a teaser: "Harvey, Daisy, and Trunks are waiting…"**, the
+   next page's first names in order (`BrowsePage.nextNames`,
+   `waitingTeaser`). Going forward, the names come from the rows the page
+   query already read past the page (`limit 24 + 3`). Going backward, they come
+   from the same probe that decides Next. Names appear exactly as the source
+   wrote them, casing included, and the teaser is never a count. Some names are
+   shelter IDs ("A524951"); ADR-0021's `name_reads_as_name` verdict (item 7b)
+   is how the teaser will skip them, never a regex here.
+
+### Consequences (added)
+- `loadBrowsePage` takes a position (`{after}`, `{before}`, or null). A bare
+  cursor still means `after`, so existing callers are unchanged.
+- One extra one-row query per page whenever a cursor is present.
+- The e2e seed is under one page, so Previous is pinned by unit tests in both
+  sort orders, not e2e.
+
+## Amendment (2026-10-05): inner pages go home by the wordmark
+
+The "← Monster Paws" link above browse, detail and `/claim` read as "back to the
+list", though it went home. It is replaced by the wordmark (`SiteLogo`), which is
+the web's own convention for "home". A site Back button was tried the same day
+and removed. The browser's own Back is the one readers already use.

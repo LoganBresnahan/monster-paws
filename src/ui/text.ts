@@ -108,3 +108,16 @@ export function tidyWhitespace(text: string): string {
     .replace(/\n{3,}/g, "\n\n")
     .trim();
 }
+
+/**
+ * The line under "Next": "Harvey, Daisy, and Trunks are waiting…". Names exactly
+ * as the source wrote them — casing included, since a name is a fact — and a
+ * curiosity hook only: never a count, a countdown or "only N left" (bright line 3).
+ */
+export function waitingTeaser(names: readonly string[]): string | null {
+  const shown = names.map((n) => n.trim()).filter(Boolean);
+  if (shown.length === 0) return null;
+  if (shown.length === 1) return `${shown[0]} is waiting…`;
+  if (shown.length === 2) return `${shown[0]} and ${shown[1]} are waiting…`;
+  return `${shown.slice(0, -1).join(", ")}, and ${shown.at(-1)} are waiting…`;
+}

@@ -12,6 +12,13 @@ import { BROWSE_SORTS, DEFAULT_SORT, facetOptions, type BrowseSort, type FacetCe
  * the first animal, because a cursor from the old filter names a row the new
  * one may not contain.
  */
+function randomHref(species: string, state: string): string {
+  const query = new URLSearchParams();
+  if (species) query.set("species", species);
+  if (state) query.set("state", state);
+  return query.size ? `/animals/random?${query}` : "/animals/random";
+}
+
 export function BrowseFilterForm({
   grid,
   species: initialSpecies,
@@ -99,6 +106,13 @@ export function BrowseFilterForm({
       >
         Show me
       </button>
+      {/* A plain <a>, never <Link>: prefetching would roll the dice for pages nobody opens. */}
+      <a
+        href={randomHref(species, state)}
+        className="rounded-cuddly border-2 border-leaf px-5 py-2 font-bold text-leaf-deep transition-colors hover:bg-leaf hover:text-white"
+      >
+        Surprise me 🐾
+      </a>
       {(initialSpecies || initialState || initialSort !== DEFAULT_SORT) && (
         <Link href="/animals" className="pb-2.5 text-sm font-medium text-muted hover:text-foreground">
           Clear

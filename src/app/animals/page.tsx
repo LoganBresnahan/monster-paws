@@ -10,12 +10,14 @@ import {
   parseSort,
   DEFAULT_SORT,
   type BrowseFilters,
+  type BrowsePosition,
   type BrowseSort,
 } from "@/core/browse";
 import { getDb } from "@/db/client";
 import { AnimalCard, speciesEmoji } from "@/ui/animal";
 import { BrowseFilterForm } from "@/ui/browse-filters";
 import { agoInWords, formatDate } from "@/ui/dates";
+import { waitingTeaser } from "@/ui/text";
 import { SiteLogo } from "@/ui/site-logo";
 
 /**
@@ -63,12 +65,25 @@ function filtersFrom(
   };
 }
 
-function hrefWith(filters: BrowseFilters, sort: BrowseSort, after?: string): string {
+/** `after` wins when a hand-edited URL carries both: forward is the common path, and either is a valid page. */
+function positionFrom(params: Record<string, string | string[] | undefined>): BrowsePosition {
+  const after = parseCursor(typeof params.after === "string" ? params.after : null);
+  if (after) return { after };
+  const before = parseCursor(typeof params.before === "string" ? params.before : null);
+  return before ? { before } : null;
+}
+
+function hrefWith(
+  filters: BrowseFilters,
+  sort: BrowseSort,
+  position?: { after: string } | { before: string },
+): string {
   const query = new URLSearchParams();
   if (filters.species) query.set("species", filters.species);
   if (filters.state) query.set("state", filters.state);
   if (sort !== DEFAULT_SORT) query.set("sort", sort);
-  if (after) query.set("after", after);
+  if (position && "after" in position) query.set("after", position.after);
+  if (position && "before" in position) query.set("before", position.before);
   const suffix = query.toString();
   return suffix ? `/animals?${suffix}` : "/animals";
 }
@@ -101,11 +116,12 @@ export default async function BrowsePage({
   const page = await loadBrowsePage(
     db,
     filters,
-    parseCursor(typeof params.after === "string" ? params.after : null),
+    positionFrom(params),
     asOf,
     undefined,
     sort,
   );
+  const teaser = waitingTeaser(page.nextNames);
   const display = await loadCardDisplay(
     db,
     page.animals.map((animal) => animal.id),
@@ -166,17 +182,30 @@ export default async function BrowsePage({
         </div>
       )}
 
-      {page.nextCursor && (
-        <p className="mt-10">
-          <Link
-            href={hrefWith(filters, sort, page.nextCursor)}
-            className="inline-block rounded-cuddly border-2 border-paw px-6 py-3 font-bold transition-colors hover:bg-paw/10"
-          >
-            Next {BROWSE_PAGE_SIZE} animals →
-          </Link>
-          {/* Forward only in v1: there is no `?before=`, so Back is the
-              browser's own (ADR-0015 as amended). */}
-        </p>
+      {(page.prevCursor || page.nextCursor) && (
+        <nav aria-label="Pages" className="mt-10 flex flex-wrap items-start justify-between gap-4">
+          {page.prevCursor ? (
+            <Link
+              href={hrefWith(filters, sort, { before: page.prevCursor })}
+              className="inline-block rounded-cuddly border-2 border-paw px-6 py-3 font-bold transition-colors hover:bg-paw/10"
+            >
+              ← Previous {BROWSE_PAGE_SIZE}
+            </Link>
+          ) : (
+            <span />
+          )}
+          {page.nextCursor && (
+            <div className="flex flex-col items-end gap-2 text-right">
+              <Link
+                href={hrefWith(filters, sort, { after: page.nextCursor })}
+                className="inline-block rounded-cuddly border-2 border-paw px-6 py-3 font-bold transition-colors hover:bg-paw/10"
+              >
+                Next {BROWSE_PAGE_SIZE} animals →
+              </Link>
+              {teaser && <p className="max-w-xs text-sm text-muted">{teaser}</p>}
+            </div>
+          )}
+        </nav>
       )}
 
       <p className="mt-12 text-sm text-muted">

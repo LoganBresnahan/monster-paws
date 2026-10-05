@@ -141,4 +141,13 @@ test.describe("ADR-0015 browse filters — counts as you pick", () => {
     expect(longest).toEqual([...longest].sort((a, b) => a - b));
     expect(longest).not.toEqual(newest);
   });
+
+  test("Surprise me opens a random animal's page, inside the picked filters", async ({ page }) => {
+    await page.goto("/animals");
+    const state = (await page.locator("select[name=state] option").allTextContents()).at(1)!;
+    await page.locator("select[name=state]").selectOption({ label: state });
+    await page.getByRole("link", { name: /surprise me/i }).click();
+    await page.waitForURL(/\/animals\/\d+$/);
+    await expect(page.getByText(new RegExp(`, ${state.split(" ")[0]}\\b`)).first()).toBeVisible();
+  });
 });

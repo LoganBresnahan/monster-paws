@@ -415,6 +415,9 @@ Browse (`/animals`) is the same predicate, one page at a time.
        │                                    for; silently applied empties a page
        ▼
   loadBrowsePage(db, filters, cursor, asOf, exclusions, sort)
+       │                                    "Surprise me" → GET /animals/random:
+       │                                    pickRandomAnimalId, same matchingParts,
+       │                                    uniform random() → 307 to /animals/<id>
        │
        ├─ visibleAnimals(asOf)              THE predicate — the same one detail
        │                                    composes, never a copy
@@ -437,10 +440,11 @@ Browse (`/animals`) is the same predicate, one page at a time.
        ▼
   order by listed_at desc, id desc          newest first by default; asc, asc for
        │                                    longest waiting — both the source's
-  limit 24 + 1                              date, never created_at, and never
+  limit 24 + 3                              date, never created_at, and never
        │                                    anything resembling desirability
-       │                                    (bright line 1). The +1 row is what
-       │                                    says "there is more" without a count
+       │                                    (bright line 1). The extra rows say
+       │                                    "there is more" without a count, and
+       │                                    name the teaser under Next
        ▼
   loadCardDisplay(db, ids, asOf)            pickLicensedDisplay per animal — the
        │                                    same picker as detail; an unlicensed
@@ -457,9 +461,13 @@ Browse (`/animals`) is the same predicate, one page at a time.
                 other menu recounts before "Show me". Still a plain GET form —
                 works with JS off, a shareable URL per combination, and no
                 `after` field: a new filter starts at the first animal
-    paging      "Next 24 animals →" only; no `?before=`, no page number, no
-                total, so nothing on the page can imply scarcity. Back is the
-                browser's own
+    paging      "← Previous 24" / "Next 24 animals →" (ADR-0015 as amended
+                2026-10-05): ?before= walks the same keyset backward, and each
+                button shows only when a row really lies that way — probed,
+                never assumed from the URL. Still no page number and no total,
+                so nothing on the page can imply scarcity. Under Next:
+                waitingTeaser(nextNames) — "LUCHA, IVORY, and BOBA are
+                waiting…", the next page's first names, never a count
     no pixel    the Pet Adoption Tracker is owed on every pet DETAIL page
                 (ADR-0006 decision 2); one per card would report 24 views of
                 animals nobody opened
