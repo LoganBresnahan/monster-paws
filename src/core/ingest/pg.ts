@@ -320,10 +320,11 @@ export function createPgLifecycleStore(db: Db): LifecycleStore {
             .select({
               present: sql<number>`count(*) filter (where ${animalIdentities.disappearedAt} is null)`.mapWith(Number),
               disappearing: sql<number>`count(*) filter (where ${animalIdentities.disappearedAt} is null and ${notInSeen})`.mapWith(Number),
+              disappearingMedianLastSeen: sql<Date | null>`percentile_disc(0.5) within group (order by ${animalIdentities.lastSeenAt}) filter (where ${animalIdentities.disappearedAt} is null and ${notInSeen})`.mapWith(animalIdentities.lastSeenAt),
             })
             .from(animalIdentities)
             .where(bySource);
-          const refused = gate({ ...tally, newestSighting: newest, at });
+          const refused = gate({ ...tally, at });
           if (refused) return { events: [], clockSteppedBackMs: resolved.clockSteppedBackMs, refused };
         }
 

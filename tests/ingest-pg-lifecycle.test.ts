@@ -312,6 +312,32 @@ describe.skipIf(SKIP_DB_TESTS)("ADR-0014 Postgres lifecycle — in lockstep with
     await expectParity();
   });
 
+  // Reproduces the dev polls of 2026-10-05: a database migrated before
+  // ingest_runs existed, a week's normal turnover, new animals in the same run,
+  // and stragglers a partial run created yesterday that are gone again. The
+  // source's newest sighting, then the disappearing set's NEWEST sighting,
+  // each made the gap "1 day" and refused 1.8%/day as 11.7%; the median holds.
+  it("with no run recorded, measures the gap from when the disappearing were typically last seen", async () => {
+    const herd = Array.from({ length: 400 }, (_, i) => `h${String(i).padStart(4, "0")}`);
+    await both(AGG, herd.map((id) => obs(AGG, id, D1)));
+    await db.delete(ingestRuns);
+    mem.corpus.runs.length = 0;
+
+    const weekLater = new Date(D1.getTime() + 7 * 86_400_000);
+    const dayBefore = new Date(weekLater.getTime() - 86_400_000);
+    await both(AGG, Array.from({ length: 10 }, (_, i) => obs(AGG, `s${i}`, dayBefore)), false);
+    const survivors = herd.slice(0, 300).map((id) => obs(AGG, id, weekLater));
+    const newcomers = Array.from({ length: 40 }, (_, i) => obs(AGG, `n${i}`, weekLater));
+    const report = await both(AGG, [...survivors, ...newcomers]);
+
+    expect(report.gateRefused).toBeUndefined();
+    // 110 of 450 (newcomers count as present) over seven days: 3.9%/day, under
+    // the 5% limit. Measured over one day, as both wrong fallbacks did, 24.4%.
+    expect(report.disappearanceRatePerDay).toBeCloseTo(1 - (1 - 110 / 450) ** (1 / 7), 4);
+    expect(report.events.filter((e) => e.kind === "animal.disappeared")).toHaveLength(110);
+    await expectParity();
+  }, 30_000);
+
   it("a rebuild keeps true last sightings, and the next run re-establishes disappearance once", async () => {
     await both(AGG, [obs(AGG, "a", D1), obs(AGG, "b", D1)]);
     await both(AGG, [obs(AGG, "a", D2)]);

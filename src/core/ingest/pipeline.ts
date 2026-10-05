@@ -216,12 +216,23 @@ export interface LifecycleStore {
 
 /** What stage 5 is about to do, counted inside its transaction before it does it. */
 export interface DisappearanceTally {
-  /** this source's identities present before the run */
+  /**
+   * This source's identities not yet disappeared — including any this run's
+   * stages 2–4 just created, which dilutes the share by one run's newcomers
+   * (~1% on a daily poll): lenient by that much, never stricter.
+   */
   present: number;
   /** of those, the ones this run did not see */
   disappearing: number;
-  /** the source's newest `last_seen_at` — the denominator's fallback, never its first choice */
-  newestSighting: Date | null;
+  /**
+   * The MEDIAN `last_seen_at` among the disappearing: when they were typically
+   * last confirmed present, which is the previous complete run. The
+   * denominator's fallback, never its first choice. Never the newest — one
+   * straggler a partial run created this morning drags a maximum to today, and
+   * never the source's newest sighting overall, which this run's new animals
+   * have already moved to today (ADR-0014, corrected 2026-10-05).
+   */
+  disappearingMedianLastSeen: Date | null;
   /** the resolved reconcile time */
   at: Date;
 }
@@ -265,7 +276,7 @@ export function judgeDisappearances(
   lastCompleteAt: Date | null,
   maxDailyRate: number,
 ): DisappearanceVerdict {
-  const since = lastCompleteAt ?? tally.newestSighting;
+  const since = lastCompleteAt ?? tally.disappearingMedianLastSeen;
   const days = since ? Math.max(0, tally.at.getTime() - since.getTime()) / DAY_MS : 1;
   const ratePerDay = dailyDisappearanceRate(tally.present, tally.disappearing, days);
   const refused = tally.disappearing >= DISAPPEARANCE_GATE_FLOOR && ratePerDay > maxDailyRate;

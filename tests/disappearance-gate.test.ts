@@ -23,11 +23,11 @@ import type { Source } from "@/core/sources";
 const DAY = 86_400_000;
 const D0 = new Date("2026-09-04T01:25:00Z");
 const WAVE_AT = new Date("2026-09-28T16:15:00Z");
-const tally = (present: number, disappearing: number, at: Date, newestSighting: Date | null = null): DisappearanceTally => ({
+const tally = (present: number, disappearing: number, at: Date, disappearingMedianLastSeen: Date | null = null): DisappearanceTally => ({
   present,
   disappearing,
   at,
-  newestSighting,
+  disappearingMedianLastSeen,
 });
 
 describe("ADR-0014 disappearance rate", () => {
@@ -68,7 +68,7 @@ describe("ADR-0014 disappearance gate — verdicts", () => {
     ).not.toBeNull();
   });
 
-  it("measures from the last complete run, falling back to the newest sighting, then to one day", () => {
+  it("measures from the last complete run, falling back to when the disappearing were last seen, then to one day", () => {
     const at = new Date(D0.getTime() + 10 * DAY);
     const nineDaysAgo = new Date(at.getTime() - 9 * DAY);
     expect(judgeDisappearances(tally(1000, 300, at, nineDaysAgo), D0, 0.05).days).toBeCloseTo(10);

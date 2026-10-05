@@ -234,3 +234,36 @@ that run. The gate is a rate per day since the last complete run.
   → the limit is too low.
 - A second source with a very different turnover (a scrape of one shelter) →
   per-source limits.
+
+## Correction (2026-10-05): the fallback denominator is when the disappearing were last seen
+
+Decision 3 of the 2026-09-30 amendment fell back to "the source's newest
+`last_seen_at`" when no `ingest_runs` row exists. Its first real run proved that
+wrong. The dev poll of 2026-10-05 came seven days after the last one, on a
+database migrated before `ingest_runs` existed, and was refused at "8,483 of
+72,554 over 1.0 day(s) … 11.7%/day". The true rate was about 1.8%/day. Stages
+2–4 had already created that run's 8,809 new identities, each with `last_seen_at`
+set to its fetch time. So the source's newest sighting was the run itself, and
+the gap collapsed to the one-day floor. The fallback failed in precisely the case
+it existed for.
+
+**Corrected:** the fallback is the **median** `last_seen_at` among the
+*disappearing* identities. Nearly all of them were last confirmed by the previous
+complete run, so the median is that run: the window they left in.
+`DisappearanceTally.newestSighting` is now `disappearingMedianLastSeen`.
+
+The first attempt at this fix took the *newest* `last_seen_at` among the
+disappearing, and the rerun was refused at the same "over 1.0 day(s)". The
+refused first poll had created 8,809 identities, and a few of them were missing
+from the rerun through ordinary pagination drift. Each one counted as
+disappearing with a sighting from that morning, and one is enough to drag a
+maximum to today. A median ignores stragglers like these. A lockstep test
+reproduces both failures: no run recorded, a week's turnover, newcomers in the
+same run, and stragglers a partial run created the day before.
+
+**Clarified:** `present` counts this run's newcomers too, which dilutes the
+share by about one run's new listings (~1% on a daily poll). That leans lenient,
+never stricter, and was not worth threading the run's start time into stage 5.
+
+Production was never exposed. It has `ingest_runs` from its first poll, and that
+poll starts from an empty database with nothing to disappear.

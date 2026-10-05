@@ -75,7 +75,7 @@ describe("disappearance gate alert (ADR-0014 as amended 2026-09-30)", () => {
 
   it("raises an error carrying the gate's own reason, tagged for the poll", () => {
     const refusal = judgeDisappearances(
-      { present: 64_000, disappearing: 32_000, newestSighting: null, at: new Date("2026-10-02T07:00:00Z") },
+      { present: 64_000, disappearing: 32_000, disappearingMedianLastSeen: null, at: new Date("2026-10-02T07:00:00Z") },
       new Date("2026-10-01T07:00:00Z"),
       0.05,
     ).refusal!;

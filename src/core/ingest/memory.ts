@@ -68,6 +68,13 @@ export interface MemoryCorpus {
   runs: IngestRunRecord[];
 }
 
+/** `percentile_disc(0.5)`'s answer, so the reference and Postgres agree on even-length sets. */
+function medianDate(dates: Date[]): Date | null {
+  if (dates.length === 0) return null;
+  const sorted = [...dates].sort((a, b) => a.getTime() - b.getTime());
+  return sorted[Math.ceil(sorted.length / 2) - 1];
+}
+
 const key = (source: Source, externalId: string) => `${source}:${externalId}`;
 const displayKey = (animalId: number, source: Source) => `${animalId}:${source}`;
 
@@ -221,10 +228,11 @@ export function createMemoryStages(normalizers: Normalizer[]): {
       const resolved = resolveReconcileAt(at, newest);
       at = resolved.at;
       const present = own.filter((id) => !id.disappearedAt);
+      const disappearing = present.filter((id) => !seen.has(id.externalId));
       const refused = gate?.({
         present: present.length,
-        disappearing: present.filter((id) => !seen.has(id.externalId)).length,
-        newestSighting: newest,
+        disappearing: disappearing.length,
+        disappearingMedianLastSeen: medianDate(disappearing.map((id) => id.lastSeenAt)),
         at,
       });
       if (refused) return { events: [], clockSteppedBackMs: resolved.clockSteppedBackMs, refused };
