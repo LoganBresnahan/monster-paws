@@ -424,7 +424,8 @@ curl -X POST "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/purge_cache" \
         │  ┌──────────────┐      │      │   └─────────────────────────┘
         │  │    worker    │      │      │         ▲ writes (keys in DB)
         │  │   pg-boss    │      │      │         │
-        │  │ poller · art │◄─────┤──────┼─────────┘
+        │  │ poller, jobs │◄─────┤──────┼─────────┘
+        │  │ (never art)  │      │      │
         │  └──┬───────┬───┘ shared types│
         └─────┼───────┼────────────────-┘
               │       │
@@ -433,11 +434,32 @@ curl -X POST "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/purge_cache" \
   │  DO Managed    │ │        external APIs         │
   │  Postgres 16   │ │  RescueGroups (poll daily)   │
   │  · PITR        │ │  Every.org   (donations)     │
-  │  · pgvector    │ │  Replicate   (image gen)     │
-  │  · pg-boss q   │ │  Shelterluv/Petango (tier 1) │
-  │  · corpus+FTS  │ └──────────────────────────────┘
-  └────────────────┘
+  │  · pgvector    │ │  Replicate   (LoRA training; │
+  │  · pg-boss q   │ │     image-gen escape hatch)  │
+  │  · corpus+FTS  │ │  Shelterluv/Petango (tier 1) │
+  └───────▲────────┘ └──────────────────────────────┘
+          │ SSH tunnel: home → droplet → Postgres
+          │ (the droplet is the trusted source;
+          │  the house opens no port — outbound only)
+  ┌───────┴──────────────────────────────────────────────┐
+  │  Logan's home  (planned, item 4;                     │
+  │  ADR-0004 as amended 2026-10-05)                     │
+  │                                                      │
+  │  ┌──────────────────┐  localhost  ┌───────────────┐  │
+  │  │ worker (WSL)     ├────────────►│ ComfyUI       │  │
+  │  │ art.generate     │  HTTP       │ Windows, XPU  │  │
+  │  │ ONLY             │◄────────────┤ Arc A770 16GB │  │
+  │  └──────────────────┘  candidates └───────────────┘  │
+  │    card art → R2 monsterpaws-media, direct,          │
+  │    with the worker key (keys in DB, as above)        │
+  └──────────────────────────────────────────────────────┘
 ```
+
+The home box is a second worker, not a second server: nothing there is in the
+request path, it pulls jobs and pushes results, and when it is asleep the art
+waits (ADR-0004 as amended 2026-10-05). Provisioning it — a restricted
+database role, the tunnel's SSH key, the media worker key — is a step here
+and an oplog entry when it happens.
 
 ## CI / deploy pipeline
 

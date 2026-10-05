@@ -26,9 +26,13 @@ only — do not build from it.
 - Infra: DigitalOcean droplet (Docker Compose: Caddy / app / worker) + DO
   Managed Postgres (PITR) + Cloudflare free CDN. ~$22/mo. Serverless hosts
   are disqualified — the poller/queue need an always-on process.
-- Image pipeline: style LoRA × per-image identity conditioning (IP-Adapter /
-  Flux Kontext) on Replicate behind a provider interface. Generate **only on
-  donation**, never per listing. CLIP-similarity auto-QC picks best of 3–4.
+- Image pipeline: style LoRA × per-image identity conditioning (IP-Adapter
+  class), developed in ComfyUI and run on a GPU in Logan's home — the same
+  pg-boss worker, registered for `art.generate` only, behind a provider
+  interface with Replicate as the escape hatch (ADR-0004 as amended
+  2026-10-05). Generate **only on donation**, never per listing; art arrives
+  when it is ready, never "instantly". CLIP-similarity auto-QC picks best of
+  3–4.
 - Client state: **Zustand** (Logan's preference, proven on Carton-Fit) for
   interactive client islands (dashboard queue, donation-flow UI) — server
   data lives in Server Components, not client stores. Next.js caveat: no

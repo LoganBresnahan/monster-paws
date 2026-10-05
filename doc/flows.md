@@ -302,9 +302,9 @@ displaying verbatim are different permissions.
   └───────────┘     │ on animal pages, via pickLicensedDisplay      │
                     └──────────────────────────────────────────────┘
   ┌───────────┐     ┌──────────────────────────────────────────────┐
-  │ "digify"  ├────►│ photo → third-party AI → monster art          │
+  │ "digify"  ├────►│ photo → ComfyUI on the home GPU → monster art │
   └───────────┘     │ credited "Permission to digify <pet> given by │
-                    │ <shelter>"                (planned, item 4)   │
+                    │ <shelter>"  (planned, item 4; § Keepsake art) │
                     └──────────────────────────────────────────────┘
 
   revoke "display" → pages fall back to facts + our words; purgeDisplay
@@ -550,6 +550,50 @@ may be purged, rebuilt or merged without touching it.
                               'aggregator:rescuegroups'  (set delete)
                               card degrades to its donation half:
                               "A sponsorship at <shelter> · <date> · $<n>"
+```
+
+## Keepsake art — generated on hardware we control, arriving when ready (ADR-0004 as amended 2026-10-05)
+
+Planned: roadmap item 4 (pipeline v0), item 9 (the LoRA). The photo never
+leaves a machine we control; the job waits for the box, never the other way
+round. Both workers are the same binary — the droplet's never registers
+`art.generate`, the home's registers nothing else.
+
+```
+  snapshotKeepsake()  (planned, item 4)         keepsake_fact rows written,
+       │                                        basis = grant:<slug>:digify
+       │  boss.send('art.generate', {keepsakeId})
+       ▼
+  pg-boss queue  art.generate                   DO Managed Postgres
+       │                                        ── droplet boundary ──
+       │  SSH tunnel droplet → PG (the droplet is the trusted source;
+       │  the house opens no port — outbound only)
+       ▼                                        ── home boundary ──
+  src/worker/index.ts, art.generate only        (planned) the home worker,
+       │                                        WSL on Logan's machine
+       │  POST /prompt  (localhost HTTP)
+       ▼
+  ComfyUI, native Windows, XPU build            (planned) workflow JSON +
+       │   style LoRA × IP-Adapter identity     model hashes + licence
+       │   3–4 candidates                       record committed together
+       ▼
+  CLIP-QC  (planned, item 9)                    score vs the real photos;
+       │                                        serve best, flag low
+       ▼
+  R2 monsterpaws-media  (worker key, direct)    keys only in the DB
+       │
+       ▼
+  keepsake_fact  field='art'  basis=grant:<slug>:digify   (append)
+       │
+       ▼
+  "<pet>'s portrait is ready"  (planned)        the card's second reveal —
+                                                the framed photo was the
+                                                first (ADR-0006 decision 5)
+
+  box asleep / down      → the job waits; no Replicate fallback by default
+                           (it would re-open the §2 disclosure)
+  style LoRA training    → rented H100 hour on OUR reference set, never a
+                           shelter photo; .safetensors comes home
 ```
 
 ## Error reporting — the SDK is Sentry's, the service is a DSN (ADR-0010)

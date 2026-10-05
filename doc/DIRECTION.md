@@ -28,8 +28,10 @@ return the donor gets, for **the remainder of that animal's stay**:
   was adopted today. You were part of that."* The stay is a story with an
   ending; the adoption "graduation" is the most shareable, retention-driving
   moment the product has.
-- **AI keepsake art** — one generated image immediately after donating (the
-  thank-you dopamine hit and the viral share loop), and a second "gotcha day"
+- **AI keepsake art** — one generated image after donating (the thank-you
+  dopamine hit and the viral share loop; the framed real photo is the card
+  until the art lands, since it is generated on a GPU in Logan's home that
+  may be asleep — ADR-0004 as amended 2026-10-05), and a second "gotcha day"
   portrait at adoption. Both live permanently in the donor's account — for
   shelters that consented. A keepsake is held on the basis each field came
   from (ADR-0022): an aggregator-only sponsorship keeps its donation forever
@@ -52,9 +54,10 @@ private, verifiable even if the app dies.
 
 ### What survives
 
-- **AI art generation** (Replicate-hosted Stable Diffusion → maybe self-hosted
-  later) — reframed as a **keepsake/thank-you artwork** for sponsors, not an NFT.
-  The provider-interface/adapter pattern from the old plan is still the right shape.
+- **AI art generation** — reframed as a **keepsake/thank-you artwork** for
+  sponsors, not an NFT, and now generated on hardware we control (ADR-0004
+  as amended 2026-10-05) with Replicate as the escape hatch. The
+  provider-interface/adapter pattern from the old plan is still the right shape.
 - The general domain model (shelters, animals, sponsors, care events) — reshaped
   around attestations instead of tokens.
 
@@ -288,13 +291,19 @@ conditioning signals composed —
   photos (IP-Adapter / image-conditioned models like Flux Kontext). Never
   per-animal fine-tuning (DreamBooth-per-dog is economically absurd).
 
-Runs on **Replicate** behind the provider interface (they host LoRA training
-and inference; pennies per image). Locked-in design consequences:
+Developed in **ComfyUI** and run on a **GPU in Logan's home** behind the
+provider interface — the photo never leaves hardware we control; style-LoRA
+training is rented by the hour on our own reference art, never a shelter
+photo; Replicate stays behind the same interface as the escape hatch
+(ADR-0004 as amended 2026-10-05). Locked-in design consequences:
 
 1. **Generate only on donation, never per listing.** At aggregator scale,
    pre-generating art for hundreds of thousands of animals is real money for
    zero value — and the card being created *for you* at sponsorship is the
-   pack-opening moment.
+   pack-opening moment. The art **arrives when it is ready**, not instantly:
+   the card is a two-stage reveal, framed photo first, art announced by its
+   own message, because the home GPU may be asleep (ADR-0004 as amended
+   2026-10-05).
    **Art-rights gate (ADR-0006):** generation uses only photos we hold
    rights to. Photo **consent** (one email of written permission) unlocks
    AI art — separate from, and cheaper than, **verification** (attestation
@@ -397,7 +406,8 @@ Decisions made:
   auto-backups: the droplet is cattle, rebuildable from the runbook; sacred
   data lives in managed PG + R2) running Docker Compose:
   Caddy (auto-HTTPS reverse proxy), the Next.js app, and the worker process
-  (pg-boss jobs, Shelterluv poller, image gen). Deploys via a small GitHub
+  (pg-boss jobs, Shelterluv poller — image gen runs on the home GPU, ADR-0004
+  as amended 2026-10-05). Deploys via a small GitHub
   Action (SSH + `docker compose up -d --build`).
 - **Cloudflare free tier in front:** CDN, DNS, TLS at edge, DDoS. Public
   animal pages are ISR-cached (listings change ~every 30 min — matches the
@@ -433,5 +443,6 @@ Still to build within that stack:
 
 - Key management + signing/verification (shelter keys, later vet keys)
 - A poller (no webhooks from Shelterluv) and event diffing
-- Image generation via a provider interface (Replicate first)
+- Image generation via a provider interface (ComfyUI on the home GPU first,
+  Replicate as the escape hatch — ADR-0004 as amended 2026-10-05)
 - An LLM update-generation pipeline with a faithfulness eval harness around it

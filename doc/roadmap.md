@@ -325,6 +325,14 @@ slice or change build order.
       page of current cards ("no longer listed" for an animal that left),
       "Clear history". Whether it syncs for signed-in donors is the accounts
       ADR's question.
+      Carry-in: **art is generated at home and arrives when it is ready**
+      (ADR-0004 as amended 2026-10-05): pipeline v0 is a ComfyUI workflow
+      committed with its model hashes and licence record, run by the same
+      worker binary registered for `art.generate` only on Logan's A770 (ComfyUI
+      native on Windows, worker in WSL, SSH tunnel to the droplet, outbound
+      only); the droplet's worker never registers that queue. The card shows
+      the framed photo until the art lands, with its own message. Provisioning
+      the home worker is an infra.md step and an oplog entry.
       Carry-in: **the donate step checks the animal's live visibility**
       (ADR-0015 as amended 2026-10-01) and says "no longer listed" — never
       "adopted" — then proceeds; the page cache is an hour old by design.
@@ -411,7 +419,11 @@ slice or change build order.
       not a licensed derivative, so the ADR-0004 consent gate is the shape to
       copy before an LLM rewrites an unverified shelter's prose.
 - [ ] **9. Style LoRA.** Fine-tune the "Monster Paws look"; identity conditioning;
-      CLIP-QC harness proper.
+      CLIP-QC harness proper. Carry-in (ADR-0004 as amended 2026-10-05): a
+      style brief and reference set come first, and never contain a shelter
+      photo; SDXL trains on the A770, a FLUX-class train rents an H100 hour;
+      every model's licence is recorded before it touches a card, and FLUX
+      [dev] at home needs BFL's paid licence — Replicate's does not travel.
 - [ ] **10. Entity resolution at scale.** Second/third listing source; dedup
       across feeds; trust-hierarchy merge.
       Carry-in: **display precedence between two licensed rows** (ADR-0015

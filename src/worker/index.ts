@@ -85,7 +85,9 @@ async function main() {
   await registerIngestPoll(boss);
 
   // Job registrations land with their features:
-  //   art.generate       — keepsake card generation (roadmap item 4)
+  //   art.generate       — keepsake card generation (roadmap item 4); never
+  //                        registered on the droplet, which has no GPU — only
+  //                        the home worker (ADR-0004 as amended 2026-10-05)
   //   attestation.publish — sign + R2 mirror (roadmap item 7)
 
   const shutdown = async () => {
