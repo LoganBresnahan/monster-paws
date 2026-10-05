@@ -342,6 +342,10 @@ take it then — it's a component, not a pillar.
 
 0. **ToS research (blocking).** Read Petfinder, RescueGroups.org, and
    Adopt-a-Pet API terms; pick the aggregation backbone.
+Gate added 2026-10-05: **no production database until the basic loop works
+end to end on the dev one** — animal list, a donation, keepsake art. Until
+then the public site is the landing page; `doc/roadmap.md` carries the order.
+
 1. **Demo weekend → v1 seed.** Pull real local shelters' public adoptable
    listings (via the chosen API) and render their actual animals in the
    sponsor-page UI with sample attestations and generated keepsake art. Real

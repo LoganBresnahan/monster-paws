@@ -14,6 +14,13 @@ as each item 3b prerequisite lands** — it was drafted before they were built,
 and a step that changed underneath it must be rewritten here, not improvised
 on the day.
 
+**Re-scoped 2026-10-05:** item 3b is now the *MVP* launch. It waits for the
+loop to work end to end on the dev database — animal list, the donate flow
+(item 4) and keepsake art (item 3c, one real grant from item 5) — and turns
+those on in the same run, including the home worker's scoped credentials
+(`doc/infra.md`, Home worker). The prerequisite list below grows those steps
+as they land.
+
 ## Prerequisites
 - [ ] Roadmap item 3b's checklist is complete (SDK integration,
       `lastCompletePollAt`, the disappearance-rate gate, the revalidation

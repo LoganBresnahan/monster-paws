@@ -1,7 +1,10 @@
 # Monster Paws roadmap
 
-Frontier = first unchecked item under **Now**. Check items off as they ship;
-pin deferred sub-tasks to items as carry-ins. Dogfood findings live in
+Frontier = first unchecked item under **Now**. Numbers are identifiers, not
+order — order is build order (re-sequenced 2026-10-05: the MVP loop — list,
+donate, art — ships before the production database, so 3c, 4 and 5 precede
+3b). Check items off as they ship; pin deferred sub-tasks to items as
+carry-ins. Dogfood findings live in
 `doc/issues.md` (ADR-0019) and are pinned here as well only when they block a
 slice or change build order.
 
@@ -235,77 +238,24 @@ slice or change build order.
       (7c), per-org opt-out (5), CDN hotlink failure (2, phase 9), display
       precedence (10). "Near me" stays in the ADR; no item plans it.
 
-- [ ] **3b. Production launch.** Item 3's pages, the worker's daily poll and
-      error reporting go live together, on Managed Postgres. Prerequisites,
-      in order — the launch itself is planned step by step in
-      `doc/oplog/0001-production-launch.md` (ADR-0023), which is revised as
-      each lands and never improvised on the day:
-      - [x] **SDK integration** (7c; ADR-0010 as amended 2026-09-29,
-            2026-09-30) — done 2026-09-30: app server (ContextLines off),
-            browser SDK deferred behind a stub (first-load JS unchanged),
-            worker failure reports + heartbeat (`/fail` only on attempt 3/3),
-            source maps proven end to end and uploaded by their own CI job,
-            which `/deploy` requires green. Next.js 16.3.8 on topdog too.
-      - [x] **`lastCompletePollAt` in `/api/health`** (7c; ADR-0010 as
-            amended 2026-09-30) — done 2026-09-30: `ingest_runs`, one
-            append-only row per run written by `runIngest` (worker and CLI
-            alike); the endpoint is 503 unless the database answers and the
-            oldest source's newest complete run is under 27 h old. The
-            rate gate below divides by that row.
-      - [x] **The disappearance-rate gate** (item 2 phase 9; ADR-0014 as
-            amended 2026-09-30) — done 2026-09-30: stage 5 refuses, writing
-            nothing, when ≥100 identities go at a compounding rate above
-            5%/day since the last complete `ingest_runs` row; the worker
-            reports a refusal to Better Stack, and
-            `ingest poll --max-daily-disappearance R` lets a person accept one
-            wave. The 2026-09-28 wave measures 1.2%/day and passes.
-            **Corrected 2026-10-05 (ADR-0014 correction):** with no
-            `ingest_runs` row, the gap is the disappearing set's MEDIAN last
-            sighting. The first real dev poll was refused twice at "over 1.0
-            day(s)": once measured from the source's newest sighting (this
-            run's own new animals), then from the newest among the
-            disappearing (stragglers a partial run created that morning).
-            Both collapsed a 7-day gap to the one-day floor. Production was
-            never exposed: it records `ingest_runs` from an empty first poll.
-            The third dev poll that day passed at 1.78%/day: 8,509 disappeared,
-            120 reappeared, the first complete `ingest_runs` row, and dev
-            `/api/health` green.
-      - [x] **The revalidation decision** (7c carry-in; ADR-0015 as amended
-            2026-10-01) — decided 2026-10-01: the hour is accepted; freshness
-            is checked live at the donate step instead (item 4 carry-in).
-      - [ ] **UI + user-flow audit** (Logan, 2026-10-01) — walk every page
-            this launch makes public (landing, browse, detail, `/claim`) and
-            every promise it makes about donating, before any of it is live;
-            findings go to `doc/issues.md` (ADR-0019). Also reviews the
-            planned donation flow (item 4) on paper, since the launch copy
-            already promises it. **Round 1 done 2026-10-05**, reviewed live in
-            the shared browser (CLAUDE.md, Visual review):
-            - browse opens newest first, with longest waiting in a Sort menu
-              (ADR-0015 as amended 2026-10-05);
-            - the filter menus recount as you pick, and Clear and Back reset
-              them (ADR-0015 as amended 2026-10-04);
-            - a site-wide footer (contact, source link, "Under construction");
-              the wordmark replaces the "← Monster Paws" back link;
-            - light-only theme (ADR-0016 as amended 2026-10-02); the hand
-              cursor on buttons and dropdowns.
-            Still open:
-            - **a "Meet the crew" home section** with Logan's own pets, each
-              beside its AI keepsake version. It waits on photos. Before it
-              ships: the chosen art style becomes an ADR-0004 note (it defines
-              the Monster Paws look the pipeline must later match), Logan's
-              consent is recorded as the first `doc/consent/` entry, photo
-              metadata (GPS) is stripped, and the files go under
-              `public/brand/crew/` (TRADEMARKS.md: all rights reserved). Label
-              them unmistakably as the founders' pets, not up for adoption;
-            - the browse disclaimer wording (`doc/issues.md`, UI);
-            - the donation flow on paper.
-      - [ ] **Provision + deploy** — run oplog 0001: Managed Postgres
-            (~$15/mo), migrations, `.env`, first poll by hand, heartbeat
-            unpaused, smoke.
-
-## Next
-
-- [ ] **4. Donation flow.** Every.org integration + donor accounts; card on
+- [ ] **3c. Style discovery → "Meet the crew".** The first art slice, on
+      the owned A770 and nothing bought (ADR-0004 as amended 2026-10-05).
+      ComfyUI under Logan's own account (never the prod one), display on the
+      iGPU; SDXL + IP-Adapter first — the smoothest path on XPU — with every
+      model's licence read and recorded before use (ADR-0004 §1). Find the
+      Monster Paws look with Logan's own pets as the identity photos: one set,
+      unmistakably that animal. The chosen style becomes an ADR-0004 note
+      with the reference set and the API-format workflow JSON committed (it
+      defines the look the pipeline must later match). Then ship the home
+      section: each pet beside its keepsake version, Logan's consent recorded
+      as the first `doc/consent/` entry, photo metadata (GPS) stripped, files
+      under `public/brand/crew/` (TRADEMARKS.md: all rights reserved),
+      labelled unmistakably as the founders' pets, not up for adoption. The
+      ten-minute first move: does PyTorch see the A770 at all. Nothing here
+      touches production or the prod Windows account; those are built at item
+      4 once a workflow is worth deploying.
+- [ ] **4. Donation flow.** *Moved into Now 2026-10-05: part of the MVP that
+      gates the production database (3b).* Every.org integration + donor accounts; card on
       donate — framed real photo by default; AI art (ADR-0004 pipeline v0,
       built and exercised internally) ships in production **only for
       consented shelters**, credited "Permission to digify <pet> given by
@@ -356,7 +306,9 @@ slice or change build order.
       is owed once a shelter is a user-facing entity that donations route to
       and attestations are signed by. Migration stays mechanical if the
       registry slug is the natural key from day one.
-- [ ] **5. Local consent outreach.** Permission emails to 3–5 local
+- [ ] **5. Local consent outreach.** *Moved into Now 2026-10-05: the MVP needs
+      ONE shelter's digify grant so one real animal carries real art (ADR-0006
+      decision 6); the rest of the outreach continues after launch.* Permission emails to 3–5 local
       shelters: **scrape + display + digify are three separate grants**
       (ADR-0006 as amended), each recorded with granter, date, basis and a
       pointer to the email. Each grant lands as an entry in the checked-in
@@ -377,6 +329,78 @@ slice or change build order.
       **Milestone: one real donation reaches one real shelter.** Verified-
       tier pitch (Shelterluv key, attestations) follows with whichever
       shelter warms up first.
+- [ ] **3b. MVP launch.** Item 3's pages, the donate flow (item 4) and
+      keepsake art go live together, with the worker's daily poll and error
+      reporting, on Managed Postgres. **Re-sequenced 2026-10-05 (Logan): no
+      production database until the basic loop works end to end — animal
+      list, donations, AI art.** Until then monsterpaws.org stays the v0.1.0
+      landing page and the dev corpus plus `db:dump` is the copy of record
+      (ADR-0017), so dump after every full poll. Prerequisites, in order — the
+      launch itself is planned step by step in
+      `doc/oplog/0001-production-launch.md` (ADR-0023), which is revised as
+      each lands and never improvised on the day:
+      - [x] **SDK integration** (7c; ADR-0010 as amended 2026-09-29,
+            2026-09-30) — done 2026-09-30: app server (ContextLines off),
+            browser SDK deferred behind a stub (first-load JS unchanged),
+            worker failure reports + heartbeat (`/fail` only on attempt 3/3),
+            source maps proven end to end and uploaded by their own CI job,
+            which `/deploy` requires green. Next.js 16.3.8 on topdog too.
+      - [x] **`lastCompletePollAt` in `/api/health`** (7c; ADR-0010 as
+            amended 2026-09-30) — done 2026-09-30: `ingest_runs`, one
+            append-only row per run written by `runIngest` (worker and CLI
+            alike); the endpoint is 503 unless the database answers and the
+            oldest source's newest complete run is under 27 h old. The
+            rate gate below divides by that row.
+      - [x] **The disappearance-rate gate** (item 2 phase 9; ADR-0014 as
+            amended 2026-09-30) — done 2026-09-30: stage 5 refuses, writing
+            nothing, when ≥100 identities go at a compounding rate above
+            5%/day since the last complete `ingest_runs` row; the worker
+            reports a refusal to Better Stack, and
+            `ingest poll --max-daily-disappearance R` lets a person accept one
+            wave. The 2026-09-28 wave measures 1.2%/day and passes.
+            **Corrected 2026-10-05 (ADR-0014 correction):** with no
+            `ingest_runs` row, the gap is the disappearing set's MEDIAN last
+            sighting. The first real dev poll was refused twice at "over 1.0
+            day(s)": once measured from the source's newest sighting (this
+            run's own new animals), then from the newest among the
+            disappearing (stragglers a partial run created that morning).
+            Both collapsed a 7-day gap to the one-day floor. Production was
+            never exposed: it records `ingest_runs` from an empty first poll.
+            The third dev poll that day passed at 1.78%/day: 8,509 disappeared,
+            120 reappeared, the first complete `ingest_runs` row, and dev
+            `/api/health` green.
+      - [x] **The revalidation decision** (7c carry-in; ADR-0015 as amended
+            2026-10-01) — decided 2026-10-01: the hour is accepted; freshness
+            is checked live at the donate step instead (item 4 carry-in).
+      - [ ] **UI + user-flow audit** (Logan, 2026-10-01) — walk every page
+            this launch makes public (landing, browse, detail, `/claim`) and
+            every promise it makes about donating, before any of it is live;
+            findings go to `doc/issues.md` (ADR-0019). Also reviews the
+            planned donation flow (item 4) on paper, since the launch copy
+            already promises it. **Round 1 done 2026-10-05**, reviewed live in
+            the shared browser (CLAUDE.md, Visual review):
+            - browse opens newest first, with longest waiting in a Sort menu
+              (ADR-0015 as amended 2026-10-05);
+            - the filter menus recount as you pick, and Clear and Back reset
+              them (ADR-0015 as amended 2026-10-04);
+            - a site-wide footer (contact, source link, "Under construction");
+              the wordmark replaces the "← Monster Paws" back link;
+            - light-only theme (ADR-0016 as amended 2026-10-02); the hand
+              cursor on buttons and dropdowns.
+            Still open, folded into the launch dogfood:
+            - the browse disclaimer wording (`doc/issues.md`, UI);
+            - the donation flow on paper — now item 4 itself, reviewed built;
+            - "Meet the crew" moved to item 3c, 2026-10-05.
+      - [ ] **Items 3c, 4 and 5's first grant are done** — a card can be
+            bought for a real animal, and at least one real animal has real
+            art. The loop is dogfooded on the dev database first: a real test
+            donation, a real card, a real portrait from the home worker.
+      - [ ] **Provision + deploy** — run oplog 0001: Managed Postgres
+            (~$15/mo), migrations, `.env`, first poll by hand, heartbeat
+            unpaused, the home worker's scoped credentials, smoke.
+
+## Next
+
 - [ ] **6. Shelterluv integration.** Approval → poller → care-event diffing.
       Lands the `animal_story` table and its projector (ADR-0020) — care
       `kind`s are named against real care events here, not before; the
