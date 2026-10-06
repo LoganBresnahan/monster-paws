@@ -45,13 +45,23 @@ if ! command -v doctl >/dev/null; then
   curl -fsSL "https://github.com/digitalocean/doctl/releases/download/v${ver}/doctl-${ver}-linux-amd64.tar.gz" | tar -xz -C /usr/local/bin doctl
 fi
 
+# The distro's hostname is its own name, never the Windows machine's: two
+# distros that both say `oof@alchemist` are indistinguishable at a prompt.
 cat > /etc/wsl.conf <<WSLCONF
 [boot]
 systemd=true
 
 [user]
 default=${USER_NAME}
+
+[network]
+hostname=${WSL_DISTRO_NAME:-$(hostname)}
 WSLCONF
+
+install -m 644 "$(dirname "$0")/distro-prompt.sh" /etc/monsterpaws-prompt.sh
+if [ -d "/home/${USER_NAME}" ] && ! grep -q monsterpaws-prompt "/home/${USER_NAME}/.bashrc"; then
+  printf '\n[ -r /etc/monsterpaws-prompt.sh ] && . /etc/monsterpaws-prompt.sh\n' >> "/home/${USER_NAME}/.bashrc"
+fi
 
 su - "$USER_NAME" -c "bash -s" <<USERPART
 set -euo pipefail

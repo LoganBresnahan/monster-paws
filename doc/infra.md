@@ -426,7 +426,7 @@ The machine, as found:
 | Windows 11, i7 12th gen, 64 GB | WSL2 kernel 6.18, Ubuntu 24.04, mirrored networking, `.wslconfig` memory=24GB since 2026-10-06 (Logan's VM cap, shared by the general Ubuntu and `monsterpaws-dev`, ADR-0004 decision 10 as revised; takes effect at the next `wsl --shutdown`; the prod account's own `.wslconfig` gets its 24 GB) |
 | Intel Arc A770 16 GB | Windows driver 32.0.101.8992 — compute-runtime's WSL support is tested against ≥ 101.8991 |
 | Intel UHD 770 (iGPU) | driver 32.0.101.7088; drives both monitors since 2026-10-06 (the MSI G271CQP on the board's DisplayPort, the LG on its HDMI), BIOS Primary Display = IGFX, so the Arc idles for us |
-| C: 2 TB NVMe | Holds the general Ubuntu (`C:\wsl\Ubuntu`) and Docker Desktop, nothing of Monster Paws. 138 GB free on 2026-10-06 evening, after Ubuntu's vhdx was compacted 204 → 154 GB (131 GB used inside; see *Reclaiming vhdx space* below) and the two redundant copies of Docker's data left from the junction episode were deleted |
+| C: 2 TB NVMe | Holds the general Ubuntu (`C:\wsl\Ubuntu`) and Docker Desktop, nothing of Monster Paws. 191 GB free at the end of 2026-10-06, after Ubuntu's vhdx was compacted 204 → 154 GB (131 GB used inside), Docker's 81 → 28 GB once its build cache and the Monster Paws leftovers were pruned (see *Reclaiming vhdx space* below), and the two redundant copies of Docker's data left from the junction episode were deleted |
 | M: 477 GB, the second M.2 (LiteOn) | **Retired from Linux 2026-10-06**: `Clear-Disk` + GPT + one NTFS volume labelled `monsterpaws`. Ubuntu's shim had been installed to the *Windows* EFI partition, not its own — `\EFI\ubuntu` removed and the firmware entry deleted with `bcdedit /delete '{guid}'` (quoted: PowerShell reads braces as a script block). Fast startup off (`powercfg /h off`) so the prod worker's at-boot trigger sees a real boot. Holds `M:\monsterpaws\dev` and, later, the prod account's distro (ADR-0004 decision 10) — nothing else. The general Ubuntu passed through here (`wsl --manage Ubuntu --move`, WSL 3.0, in place, default user kept) and went back to C: the same evening. 457 GB free |
 | Docker Desktop's data | Back in its default `C:\Users\<user>\AppData\Local\Docker\wsl` since 2026-10-06 evening; the interim junction to M: of that afternoon is gone. Lessons kept: `docker_data.vhdx` stays attached to the WSL VM after Quit, so `wsl --unmount <vhdx>` before touching it (this is why Docker 4.93's own move failed to delete its source); `DataFolder` in `settings-store.json` is the Hyper-V key and the WSL path is hardcoded, so editing the file does nothing; Docker rebuilds its `docker-desktop` system distro from the ISO on every start, so unregistering it costs nothing |
 | `M:\monsterpaws\dev` — the `monsterpaws-dev` distro | Created 2026-10-06 (`wsl --install Ubuntu-24.04 --name monsterpaws-dev --location M:\monsterpaws\dev`, user `oof`), bootstrapped by `scripts/bootstrap-distro.sh`, identity carried over by hand (GPG export/import, pass store, ssh), repo + corpus dump + ComfyUI image carried over; Arc smoke passes from its own docker engine. The general Ubuntu is back at `C:\wsl\Ubuntu` and **stays the default distro**: Docker Desktop integrates with the default (`IntegratedWslDistros: [Ubuntu]` in its settings store), so making `monsterpaws-dev` the default would put Docker's CLI inside the distro decision 11 keeps it out of. Open it explicitly — `wsl -d monsterpaws-dev`, VS Code *Connect to WSL using Distro…*, a Windows Terminal profile |
@@ -483,8 +483,12 @@ container carries the GPU runtime:
 3. The distro itself: `wsl --install Ubuntu-24.04 --name monsterpaws-dev
    --location M:\monsterpaws\dev`, then as root once
    `bash scripts/bootstrap-distro.sh oof` (docker engine under systemd, node
-   via nvm, gh, pass, rclone, doctl, Claude Code) and `wsl --terminate` it so
-   the docker group applies. Identity is carried over by hand: GPG secret key
+   via nvm, gh, pass, rclone, doctl, Claude Code, and the distro's own
+   hostname plus a colour-coded prompt from `scripts/distro-prompt.sh` — dev
+   magenta, prod red — because every distro otherwise says `oof@alchemist`)
+   and `wsl --terminate` it so the docker group, hostname and wsl.conf apply.
+   On the Windows side the `monsterpaws-dev` Windows Terminal profile has a
+   leaf-green tab and VS Code's `window.title` includes `${remoteName}`. Identity is carried over by hand: GPG secret key
    export/import needs a terminal for the passphrase, then the pass store,
    `~/.ssh`, `~/.gitconfig`.
 4. `npm run comfy:build` then `npm run comfy:smoke` — the smoke prints the
