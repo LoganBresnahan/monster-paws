@@ -538,7 +538,7 @@ was not needed.
   │   through the host driver;    │  └────┬────┘ └─────────┘  │  │
   │   one ComfyUI at a time       │       │ models store: its │  │
   │   display on the iGPU         │       │ own, filled from  │  │
-  │   dev models: D:\ (NTFS)      │       │ the manifest,     │  │
+  │   dev distro + models: M.2    │       │ the manifest,     │  │
   │                               │       │ hash-verified     │  │
   │                               └───────┼───────────────────┘  │
   └───────────────────────────────────────┼──────────────────────┘

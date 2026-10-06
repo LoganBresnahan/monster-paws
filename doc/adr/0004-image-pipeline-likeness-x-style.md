@@ -253,9 +253,12 @@ top. The isolation that matters is at the OS and credential layers:
     **Models are two stores filled from one manifest, never a shared folder**
     (refined 2026-10-05): `comfyui/` commits a manifest — file, source,
     sha256, licence, date checked — which is §1's licence record with the
-    hash beside it. Dev's store is an NTFS partition of the second M.2,
-    browsable from Windows; prod's is inside its own distro's disk on the
-    same M.2, filled by a fetcher that downloads each manifest entry and
+    hash beside it. Dev's store stays inside the dev distro (native ext4,
+    `var/comfyui/`), and the dev distro's disk image moves to the second M.2
+    along with Docker Desktop's — never a Windows-formatted folder read
+    through the 9p bridge, which is slow for multi-gigabyte loads from WSL
+    and from Docker alike (corrected 2026-10-06); prod's is inside its own
+    distro's disk on the same M.2, filled by a fetcher that downloads each manifest entry and
     verifies the hash, and the worker refuses to start on a mismatch. A
     shared live directory would reopen the dev/prod boundary (a dev-writable
     surface, read through the slow Windows filesystem bridge), and a raw
