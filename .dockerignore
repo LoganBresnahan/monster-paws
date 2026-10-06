@@ -7,3 +7,5 @@ doc
 .claude
 .env*
 !.env.example
+# local scratch: corpus dumps and ComfyUI models — gigabytes, never build context
+var

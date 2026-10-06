@@ -32,9 +32,9 @@ only — do not build from it.
   ComfyUI, both CI-built containers in a WSL distro under a dedicated
   Windows account with scoped credentials, behind a provider interface with
   Replicate as the escape hatch (ADR-0004 as amended 2026-10-05, ADR-0007 as
-  amended). Development never happens on that account. Generate **only on donation**, never per listing; art arrives
-  when it is ready, never "instantly". CLIP-similarity auto-QC picks best of
-  3–4.
+  amended). Development never happens on that account. Generate **only on
+  donation**, never per listing; art arrives when it is ready, never
+  "instantly". CLIP-similarity auto-QC picks best of 3–4.
 - Client state: **Zustand** (Logan's preference, proven on Carton-Fit) for
   interactive client islands (dashboard queue, donation-flow UI) — server
   data lives in Server Components, not client stores. Next.js caveat: no
@@ -182,6 +182,11 @@ commit.
 - `npm run db:up` — local Postgres via `docker-compose.dev.yml`
   (pgvector/pg16 image — same extensions as production)
 - `npm run db:generate` / `npm run db:migrate` — Drizzle migrations
+- `npm run comfy:build` / `npm run comfy:smoke` / `npm run comfy` — build the
+  ComfyUI image for the Arc (`TORCH=xpu`, the default; `cu128` for CUDA),
+  prove PyTorch sees the GPU, serve the GUI on http://127.0.0.1:8188. Models
+  live in `var/comfyui/` or `$COMFYUI_DATA`. Host-side facts: `doc/infra.md`,
+  Home GPU (ADR-0004 as amended 2026-10-05)
 - `npm run db:dump` — gzipped `pg_dump` of the dev database to `var/dumps/`;
   run it after a full poll, because that corpus is currently the only copy
   (ADR-0017)

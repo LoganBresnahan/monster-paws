@@ -1,0 +1,34 @@
+# ComfyUI on the home GPU (ADR-0004 as amended 2026-10-05). Dev use today —
+# the GUI at http://127.0.0.1:8188 for style work (roadmap item 3c); the same
+# image runs headless for the worker later (item 4).
+#
+#   docker compose -f comfyui/compose.yml build
+#   docker compose -f comfyui/compose.yml run --rm comfyui python /home/comfy/smoke.py
+#   docker compose -f comfyui/compose.yml up
+#
+# Models, inputs and outputs live under var/comfyui/ (gitignored) or wherever
+# COMFYUI_DATA points — on the prod box, the second M.2.
+services:
+  comfyui:
+    build:
+      context: .
+      args:
+        TORCH: ${TORCH:-xpu}
+    image: monster-paws-comfyui:dev
+    # WSL2: the GPU is /dev/dxg and the Windows driver mirror is /usr/lib/wsl.
+    # Both `lib` and `drivers` are needed — mounting only `lib` finds no GPU.
+    devices:
+      - /dev/dxg
+    volumes:
+      - /usr/lib/wsl:/usr/lib/wsl:ro
+      - ${COMFYUI_DATA:-../var/comfyui}/models:/home/comfy/ComfyUI/models
+      - ${COMFYUI_DATA:-../var/comfyui}/input:/home/comfy/ComfyUI/input
+      - ${COMFYUI_DATA:-../var/comfyui}/output:/home/comfy/ComfyUI/output
+      - ${COMFYUI_DATA:-../var/comfyui}/user:/home/comfy/ComfyUI/user
+    ports:
+      - "127.0.0.1:8188:8188"
+    # Sysman (zes) is unavailable under WSL2; the warning it prints is benign.
+    environment:
+      LD_LIBRARY_PATH: /usr/lib/wsl/lib
+    shm_size: 2g
+    restart: unless-stopped

@@ -142,7 +142,8 @@ the photo never leaves hardware we control. Discussed and decided 2026-10-05.
    the main rig. A headless ComfyUI serves its API on localhost and the Node
    worker reaches it over HTTP; both are containers in a dedicated WSL
    distro (addendum, below), with ComfyUI native on Windows as the fallback
-   if XPU inside WSL fights us. "ComfyUI at a URL" is one provider behind
+   if XPU inside WSL fights us — it did not: verified from a container the
+   same day (`doc/infra.md`, Home GPU). "ComfyUI at a URL" is one provider behind
    this ADR's provider interface, exactly as Replicate is — the worker never
    knows which GPU answered.
 3. **Dispatch is the queue we already have.** The home box runs the same
@@ -249,6 +250,21 @@ top. The isolation that matters is at the OS and credential layers:
     makes decision 8's escape hatch real: Replicate's cog and RunPod take the
     CUDA variant of an image CI already builds. Inside WSL the container
     reaches the Arc through the host's GPU device and driver libraries.
+    **Models are two stores filled from one manifest, never a shared folder**
+    (refined 2026-10-05): `comfyui/` commits a manifest — file, source,
+    sha256, licence, date checked — which is §1's licence record with the
+    hash beside it. Dev's store is an NTFS partition of the second M.2,
+    browsable from Windows; prod's is inside its own distro's disk on the
+    same M.2, filled by a fetcher that downloads each manifest entry and
+    verifies the hash, and the worker refuses to start on a mismatch. A
+    shared live directory would reopen the dev/prod boundary (a dev-writable
+    surface, read through the slow Windows filesystem bridge), and a raw
+    partition cannot be attached to two WSL VMs at once. Weights we make
+    ourselves — the style LoRA — flow dev → R2 → prod exactly as code flows
+    dev → GHCR → prod: a dev-side script uploads the file under a models
+    prefix and records its hash in the manifest; prod reads it with a
+    read-only credential of its own. Two copies cost well under 200 GB of
+    the 512 and buy provisioning that never copies from Logan's account.
 12. **Credentials are scoped so a leak cannot hurt, and handed over one way.**
     The prod side holds only its runtime set, in an `.env` it alone can
     read: a Postgres role limited to pg-boss's tables and `keepsake_fact`
@@ -266,7 +282,8 @@ top. The isolation that matters is at the OS and credential layers:
     JSON and model hashes, never by copying files between accounts.
 
 Consequences added: `doc/infra.md` gains the home worker's secrets rows (not
-created yet), the second deploy target in the CI diagram, and a provisioning
+created yet, now six: a read-only R2 credential for the models prefix joins
+the five), the second deploy target in the CI diagram, and a provisioning
 step; the deploy skill gains the home target when the box is provisioned, not
 before. The unattended WSL distro — kept alive by the worker process, started
 by Task Scheduler — is the one fragile joint and the first thing to dogfood.

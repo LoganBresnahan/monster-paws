@@ -250,10 +250,29 @@ slice or change build order.
       section: each pet beside its keepsake version, Logan's consent recorded
       as the first `doc/consent/` entry, photo metadata (GPS) stripped, files
       under `public/brand/crew/` (TRADEMARKS.md: all rights reserved),
-      labelled unmistakably as the founders' pets, not up for adoption. The
-      ten-minute first move: does PyTorch see the A770 at all. Nothing here
-      touches production or the prod Windows account; those are built at item
-      4 once a workflow is worth deploying.
+      labelled unmistakably as the founders' pets, not up for adoption. Nothing
+      here touches production or the prod Windows account; those are built at
+      item 4 once a workflow is worth deploying.
+      - [x] **PyTorch sees the A770** — done 2026-10-05, from a container:
+            `comfyui/` (Dockerfile, compose, smoke) and `npm run comfy:*`;
+            the host-side facts are in `doc/infra.md`, Home GPU. Intel's
+            runtime had to be ≥ 25.x and the whole of `/usr/lib/wsl` mounted.
+      - [x] **ComfyUI serves on :8188 from that image** — done 2026-10-05:
+            ComfyUI 0.38.0 pinned by sha, `Device: xpu:0`, GUI reachable from
+            the Windows browser via mirrored networking.
+      - [ ] **A first SDXL + IP-Adapter workflow runs on the Arc**, with the
+            model licences recorded beside the hashes (ADR-0004 §1) and the
+            custom nodes pinned in the image.
+      - [ ] **The models manifest and its fetcher** (ADR-0004 decision 11 as
+            refined 2026-10-05): `comfyui/models.manifest` — file, source
+            (`hf:` or `r2:`), sha256, licence, date checked — and a fetcher
+            that fills a store from it and verifies every file, refusing to
+            start on a mismatch. Dev's store moves to the M.2 (`COMFYUI_DATA`)
+            in the same job as retiring the Linux dual boot and moving Docker
+            Desktop's data root off C:. The LoRA upload script and the
+            read-only R2 models credential come with item 9's first LoRA.
+      - [ ] **The look**, with Logan's pets; the ADR-0004 style note.
+      - [ ] **The home section**, with the consent entry.
 - [ ] **4. Donation flow.** *Moved into Now 2026-10-05: part of the MVP that
       gates the production database (3b).* Every.org integration + donor accounts; card on
       donate — framed real photo by default; AI art (ADR-0004 pipeline v0,

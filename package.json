@@ -18,7 +18,10 @@
     "db:migrate": "drizzle-kit migrate",
     "env:dev": "scripts/env-dev.sh",
     "db:up": "docker compose -f docker-compose.dev.yml up -d",
-    "db:dump": "tsx scripts/db-dump.ts"
+    "db:dump": "tsx scripts/db-dump.ts",
+    "comfy:build": "docker compose -f comfyui/compose.yml build",
+    "comfy:smoke": "docker compose -f comfyui/compose.yml run --rm comfyui python /home/comfy/smoke.py",
+    "comfy": "docker compose -f comfyui/compose.yml up"
   },
   "dependencies": {
     "@sentry/nextjs": "^11.1.0",

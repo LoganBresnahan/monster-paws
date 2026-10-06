@@ -114,6 +114,9 @@ oplog entry) and lands in the prod distro's `.env`, readable by the
 | `cloudflare/r2-media-write-token` | Account-owned R2 token, Object Write only, media bucket only | The pair below is derived from it; roll it to revoke the pair | dev only (not created yet) |
 | `cloudflare/r2-media-write-access-key-id` | Media write pair, access key id | Uploading card art from home — can neither read media nor touch corpus or vault | home `.env` (not created yet) |
 | `cloudflare/r2-media-write-secret-access-key` | Media write pair, secret | same | home `.env` (not created yet) |
+| `cloudflare/r2-models-read-token` | Account-owned R2 token, Object Read only, the models prefix only | The pair below is derived from it; the style LoRA and any weights we make travel dev → R2 → prod through it (ADR-0004 decision 11 as refined) | dev only (not created yet) |
+| `cloudflare/r2-models-read-access-key-id` | Models read pair, access key id | The prod fetcher's download of manifest entries whose source is `r2:`; can write nothing | home `.env` (not created yet) |
+| `cloudflare/r2-models-read-secret-access-key` | Models read pair, secret | same | home `.env` (not created yet) |
 
 ### RescueGroups
 
@@ -409,6 +412,68 @@ curl -X POST "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/purge_cache" \
 # token (or make a dedicated one) the first time this is actually needed.
 ```
 
+## Home GPU — the Arc A770 through WSL2 (ADR-0004 as amended 2026-10-05)
+
+Verified 2026-10-05 on Logan's main rig. Everything reproducible lives in
+`comfyui/` (Dockerfile, `compose.yml`, `smoke.py`); this section holds what a
+container cannot carry — the host side — and the facts that were load-bearing
+when it was first made to work.
+
+The machine, as found:
+
+| | |
+| --- | --- |
+| Windows 11, i7 12th gen, 64 GB | WSL2 kernel 6.18, Ubuntu 24.04, mirrored networking, `.wslconfig` memory=32GB (to become 16 GB dev / 24 GB prod per ADR-0004) |
+| Intel Arc A770 16 GB | Windows driver 32.0.101.8992 — compute-runtime's WSL support is tested against ≥ 101.8991 |
+| Intel UHD 770 (iGPU) | driver 32.0.101.7088; takes the display so the Arc idles for us |
+| C: 2 TB NVMe | **61 GB free** — models and the prod distro cannot live here |
+| second M.2, 512 GB LiteOn | the Linux dual boot today; the prod user's disk per ADR-0004 decision 10 |
+| Docker Desktop 4.93 | dev only; prod runs a plain docker engine inside its own distro (decision 11) |
+
+Host prerequisites — nothing is installed inside the WSL distro itself, the
+container carries the GPU runtime:
+
+1. Intel Arc Windows driver current (Intel Arc Control or the Intel Driver &
+   Support Assistant). `powershell.exe Get-CimInstance Win32_VideoController`
+   from WSL shows the version.
+2. `wsl --update`; the distro sees `/dev/dxg` (the GPU) and `/usr/lib/wsl/`
+   (`lib/` = libdxcore, `drivers/` = a mirror of the Windows driver store).
+3. Docker able to run Linux containers in that distro.
+4. `npm run comfy:build` then `npm run comfy:smoke` — the smoke prints the
+   device and an FP16 matmul rate, or says which of the facts below broke.
+
+What was load-bearing, in the order it was found:
+
+- **Pass `/dev/dxg` and bind-mount all of `/usr/lib/wsl`, not only `lib/`.**
+  With `lib/` alone the Intel runtime finds no device (Ubuntu's own build
+  aborts in `create_um_km_data_translator.cpp`): the user-mode driver needs
+  `drivers/` too.
+- **`LD_LIBRARY_PATH=/usr/lib/wsl/lib` inside the container.** WSL adds that
+  path to the distro's `ld.so.conf`; a container has no such entry.
+- **Intel's compute runtime must be 25.x or newer, from the `noble unified`
+  apt channel.** The `client` channel pins 24.39, which finds the GPU for
+  OpenCL but segfaults in `zeInit` (Level Zero) under WSL2 — PyTorch dies in
+  `device_count`. Ubuntu's packaged 23.43 has no Level Zero at all. Pinned
+  in the Dockerfile as `INTEL_RUNTIME`; GitHub releases of
+  `intel/compute-runtime` (26.35 at the time) are the alternative when apt
+  lags.
+- **"Can't initialize Level Zero Sysman" is benign.** Sysman (`zes`) is not
+  available through `/dev/dxg`; PyTorch warns and enumerates the other way.
+- **The free-threaded Python 3.14t the dev shell defaults to has no XPU
+  wheel.** The container uses Ubuntu's 3.12; wheels exist for 3.12–3.14.
+- **Mirrored networking** makes the container's `127.0.0.1:8188` reachable
+  from Windows as well as the distro, so the ComfyUI GUI opens in the normal
+  browser.
+
+The smoke result on first success: `torch 2.14.1+xpu`, one device
+`Intel(R) Graphics [0x56a0]` with 15,932 MiB, FP16 matmul ≈ 35 TFLOPS once
+warm (the first kernel includes JIT compilation and reads ten times slower).
+`npm run comfy` then served ComfyUI 0.38.0 on :8188 reporting
+`Device: xpu:0 Intel(R) Graphics [0x56a0]`, 15,933 MB VRAM, NORMAL_VRAM; its
+"Could not autodetect AIMDO implementation, assuming Nvidia" warning is
+cosmetic. The native-Windows ComfyUI fallback named in ADR-0004 decision 2
+was not needed.
+
 ## Deployment architecture
 
 ```
@@ -471,8 +536,10 @@ curl -X POST "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/purge_cache" \
   │                               │  │ art.gen │◄┤ headless│  │  │
   │   Arc A770 16 GB ─ shared     │  │  ONLY   │ │ xpu     │  │  │
   │   through the host driver;    │  └────┬────┘ └─────────┘  │  │
-  │   one ComfyUI at a time       │       │ models volume,    │  │
-  │   display on the iGPU         │       │ hash-verified     │  │
+  │   one ComfyUI at a time       │       │ models store: its │  │
+  │   display on the iGPU         │       │ own, filled from  │  │
+  │   dev models: D:\ (NTFS)      │       │ the manifest,     │  │
+  │                               │       │ hash-verified     │  │
   │                               └───────┼───────────────────┘  │
   └───────────────────────────────────────┼──────────────────────┘
                                           ▼ card art, write-only pair
