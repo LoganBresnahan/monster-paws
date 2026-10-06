@@ -423,14 +423,54 @@ The machine, as found:
 
 | | |
 | --- | --- |
-| Windows 11, i7 12th gen, 64 GB | WSL2 kernel 6.18, Ubuntu 24.04, mirrored networking, `.wslconfig` memory=32GB (to become 16 GB dev / 24 GB prod per ADR-0004) |
+| Windows 11, i7 12th gen, 64 GB | WSL2 kernel 6.18, Ubuntu 24.04, mirrored networking, `.wslconfig` memory=24GB since 2026-10-06 (Logan's VM cap, shared by the general Ubuntu and `monsterpaws-dev`, ADR-0004 decision 10 as revised; takes effect at the next `wsl --shutdown`; the prod account's own `.wslconfig` gets its 24 GB) |
 | Intel Arc A770 16 GB | Windows driver 32.0.101.8992 — compute-runtime's WSL support is tested against ≥ 101.8991 |
 | Intel UHD 770 (iGPU) | driver 32.0.101.7088; drives both monitors since 2026-10-06 (the MSI G271CQP on the board's DisplayPort, the LG on its HDMI), BIOS Primary Display = IGFX, so the Arc idles for us |
-| C: 2 TB NVMe | 288 GB free after the moves below; holds nothing of ours any more |
-| M: 477 GB, the second M.2 (LiteOn) | **Retired from Linux 2026-10-06**: `Clear-Disk` + GPT + one NTFS volume labelled `monsterpaws`. Ubuntu's shim had been installed to the *Windows* EFI partition, not its own — `\EFI\ubuntu` removed and the firmware entry deleted with `bcdedit /delete '{guid}'` (quoted: PowerShell reads braces as a script block). Fast startup off (`powercfg /h off`) so the prod worker's at-boot trigger sees a real boot. Holds the dev distro (`wsl --manage Ubuntu --move M:\wsl\Ubuntu`, WSL 3.0, in place, default user kept), Docker Desktop's disk images, and later the prod user's distro (ADR-0004 decision 10). 205 GB free after both moves |
+| C: 2 TB NVMe | Holds the general Ubuntu (`C:\wsl\Ubuntu`) and Docker Desktop, nothing of Monster Paws. 138 GB free on 2026-10-06 evening, after Ubuntu's vhdx was compacted 204 → 154 GB (131 GB used inside; see *Reclaiming vhdx space* below) and the two redundant copies of Docker's data left from the junction episode were deleted |
+| M: 477 GB, the second M.2 (LiteOn) | **Retired from Linux 2026-10-06**: `Clear-Disk` + GPT + one NTFS volume labelled `monsterpaws`. Ubuntu's shim had been installed to the *Windows* EFI partition, not its own — `\EFI\ubuntu` removed and the firmware entry deleted with `bcdedit /delete '{guid}'` (quoted: PowerShell reads braces as a script block). Fast startup off (`powercfg /h off`) so the prod worker's at-boot trigger sees a real boot. Holds `M:\monsterpaws\dev` and, later, the prod account's distro (ADR-0004 decision 10) — nothing else. The general Ubuntu passed through here (`wsl --manage Ubuntu --move`, WSL 3.0, in place, default user kept) and went back to C: the same evening. 457 GB free |
 | Docker Desktop's data | Back in its default `C:\Users\<user>\AppData\Local\Docker\wsl` since 2026-10-06 evening; the interim junction to M: of that afternoon is gone. Lessons kept: `docker_data.vhdx` stays attached to the WSL VM after Quit, so `wsl --unmount <vhdx>` before touching it (this is why Docker 4.93's own move failed to delete its source); `DataFolder` in `settings-store.json` is the Hyper-V key and the WSL path is hardcoded, so editing the file does nothing; Docker rebuilds its `docker-desktop` system distro from the ISO on every start, so unregistering it costs nothing |
-| `M:\monsterpaws\dev` — the `monsterpaws-dev` distro | Created 2026-10-06 (`wsl --install Ubuntu-24.04 --name monsterpaws-dev --location M:\monsterpaws\dev`, user `oof`), bootstrapped by `scripts/bootstrap-distro.sh`, identity carried over by hand (GPG export/import, pass store, ssh), repo + corpus dump + ComfyUI image carried over; Arc smoke passes from its own docker engine. The general Ubuntu (`M:\wsl\Ubuntu` today) moves back to C: — pending |
-| Docker Desktop 4.94 | Logan's other projects only; never in the Monster Paws path (decision 11). Its WSL integration stays OFF for `monsterpaws-*` distros, or it injects its CLI over the engine inside them |
+| `M:\monsterpaws\dev` — the `monsterpaws-dev` distro | Created 2026-10-06 (`wsl --install Ubuntu-24.04 --name monsterpaws-dev --location M:\monsterpaws\dev`, user `oof`), bootstrapped by `scripts/bootstrap-distro.sh`, identity carried over by hand (GPG export/import, pass store, ssh), repo + corpus dump + ComfyUI image carried over; Arc smoke passes from its own docker engine. The general Ubuntu is back at `C:\wsl\Ubuntu` and **stays the default distro**: Docker Desktop integrates with the default (`IntegratedWslDistros: [Ubuntu]` in its settings store), so making `monsterpaws-dev` the default would put Docker's CLI inside the distro decision 11 keeps it out of. Open it explicitly — `wsl -d monsterpaws-dev`, VS Code *Connect to WSL using Distro…*, a Windows Terminal profile |
+| Docker Desktop 4.94 | Logan's other projects only; never in the Monster Paws path (decision 11). Its last Monster Paws leftovers — the ComfyUI image, a local app image, the old dev database container and volume — were removed 2026-10-06 after the corpus counts matched the dev distro's. Its WSL integration stays OFF for `monsterpaws-*` distros, or it injects its CLI over the engine inside them |
+
+Reclaiming vhdx space — a distro's `ext4.vhdx` grows and never shrinks on its
+own, so compact it whenever the file is far larger than `df` inside says is
+used (`monsterpaws-dev` is 22 GB on disk for 20 GB used and needs nothing
+yet; Ubuntu's first pass took 13 minutes for 204 → 154 GB). **Never `wsl --manage <distro> --set-sparse true`**: WSL itself warns
+that sparse VHDs can corrupt data, and the corpus lives on one of these disks.
+Both distros already mount `/` with `discard`, so freed blocks are unmapped
+continuously; the only thing sparse would add is the file shrinking on its
+own, and that is the part that corrupts. The compaction is therefore a manual
+chore, decided 2026-10-06 against a sign-in or nightly task: it needs the
+whole VM down, and nothing else on the box needs it on a schedule. Docker
+Desktop's `docker_data.vhdx` (87 GB on 2026-10-06) grows the same way and is
+compacted by the same script; `docker builder prune -a` first is what makes
+that worthwhile (39 GB of build cache went that day; the file shrinks at the
+next compaction, not at the prune).
+Neither disk is sparse today (`fsutil sparse queryflag <vhdx>`, 2026-10-06);
+the inert `sparseVhd=true` line that `.wslconfig` carried under
+`[experimental]` was removed the same day. Compaction is offline, and *offline
+means the whole VM*: `wsl --terminate Ubuntu` is not enough, the VM keeps a
+stopped distro's vhdx open (`0x80070020` from `Optimize-VHD`, verified
+2026-10-06) and `wsl --unmount` only knows disks attached with `--mount`. So
+every WSL session on the account dies with the `wsl --shutdown`, Claude Code
+included, and it must be run by hand from Windows. Quit Docker Desktop first:
+its integration restarts Ubuntu seconds after a terminate.
+
+```
+# inside the distro first, so freed ext4 blocks are handed back as discards
+sudo fstrim -v /
+# then quit Docker Desktop and, in an elevated PowerShell
+wsl --shutdown
+powershell -ExecutionPolicy Bypass -File C:\wsl\compact.ps1   # Optimize-VHD -Mode Full over the three disks, logs to C:\wsl\compact.log
+# the same by hand, or without the Hyper-V module, which diskpart replaces:
+Optimize-VHD -Path C:\wsl\Ubuntu\ext4.vhdx -Mode Full
+diskpart
+  select vdisk file="C:\wsl\Ubuntu\ext4.vhdx"
+  attach vdisk readonly
+  compact vdisk
+  detach vdisk
+  exit
+```
 
 Host prerequisites — nothing is installed inside the WSL distro itself, the
 container carries the GPU runtime:

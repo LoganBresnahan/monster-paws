@@ -12,7 +12,7 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-CONTAINER=${PG_CONTAINER:-dogchain-db-1}
+CONTAINER=${PG_CONTAINER:-monsterpaws-db-1}
 STALE_DAYS=${STALE_DAYS:-7}   # one day inside the 8-day window
 psql() { docker exec "$CONTAINER" psql -U monsterpaws -d monsterpaws -tAc "$1"; }
 

@@ -12,7 +12,7 @@ import path from "node:path";
  * on the host.
  */
 
-const CONTAINER = process.env.PG_CONTAINER ?? "dogchain-db-1";
+const CONTAINER = process.env.PG_CONTAINER ?? "monsterpaws-db-1";
 const DATABASE = process.env.PG_DATABASE ?? "monsterpaws";
 const USER = process.env.PG_USER ?? "monsterpaws";
 const OUT_DIR = path.resolve("var/dumps");

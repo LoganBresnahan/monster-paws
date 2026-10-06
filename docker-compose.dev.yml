@@ -1,5 +1,8 @@
 # Local dev database. pgvector image = same extension set as production
 # (DO Managed Postgres supports pgvector — ADR-0003).
+# The project name is pinned so containers and volumes never inherit the
+# checkout directory's name.
+name: monsterpaws
 services:
   db:
     image: pgvector/pgvector:pg16
