@@ -231,18 +231,30 @@ top. The isolation that matters is at the OS and credential layers:
    low-privilege account a bad node is contained. **Development never
    happens on that account** — it stays on Logan's own, with `pass`, the
    repo and the ComfyUI GUI for style work.
-10. **Its own WSL distro, on the second M.2.** The drive's Linux dual boot is
-    retired (production that only runs while Logan is booted out of Windows
-    is production that is off) and the whole disk is the prod user's: the
-    distro's disk image, the models volume, its swap. The distro mounts no
-    Windows drive and has interop off. WSL VMs are per user, so the dev and
-    prod distros never meet. Memory caps, each in its owner's WSL config:
-    prod 24 GB (ComfyUI stages models through RAM; offloaded text encoders
-    make FLUX-class inference fit the A770), dev 16 GB, the rest of the
-    64 GB to Windows.
+10. **Dedicated distros on the second M.2, and nothing else there.** The
+    drive's Linux dual boot is retired (production that only runs while Logan
+    is booted out of Windows is production that is off). The M.2 holds two
+    distros and only them: `monsterpaws-dev` under Logan's account and
+    `monsterpaws-prod` under the `monsterpaws` account, each with its own
+    repo clone, docker engine and models. Logan's general Ubuntu and Docker
+    Desktop stay on C: with his other projects (revised 2026-10-06 from "the
+    general dev distro moves to the M.2": a dedicated dev distro has the same
+    shape as prod — decision 11 — so the home-worker dogfood is not the first
+    time that shape runs, and Docker Desktop's move, which needed a directory
+    junction to complete, becomes unnecessary). The prod distro mounts no
+    Windows drive and has interop off; the dev one keeps both. All distros
+    under one Windows account share one WSL VM and one memory cap, so the
+    caps are per account: Logan's VM 24 GB (general Ubuntu and
+    `monsterpaws-dev` together), prod's VM 24 GB (ComfyUI stages models
+    through RAM; offloaded text encoders make FLUX-class inference fit the
+    A770), 16 GB left for Windows when everything is awake.
 11. **Worker and headless ComfyUI are CI-built containers** (ADR-0007 as
     amended 2026-10-05), run by a plain docker engine inside the distro under
-    systemd — never Docker Desktop, which needs an interactive login. Custom
+    systemd — never Docker Desktop, which needs an interactive login. The
+    dev distro runs the same engine, so Docker Desktop is out of the Monster
+    Paws path entirely and `scripts/bootstrap-distro.sh` builds dev and prod
+    from one list (verified 2026-10-06: the Arc smoke test passes from the
+    engine inside `monsterpaws-dev`). Custom
     nodes are pinned in the image; models are a volume, downloaded at first
     start and verified against the committed hash list, never baked in. The
     PyTorch wheel is a build argument — `xpu` for the Arc, `cuda` for
@@ -253,12 +265,11 @@ top. The isolation that matters is at the OS and credential layers:
     **Models are two stores filled from one manifest, never a shared folder**
     (refined 2026-10-05): `comfyui/` commits a manifest — file, source,
     sha256, licence, date checked — which is §1's licence record with the
-    hash beside it. Dev's store stays inside the dev distro (native ext4,
-    `var/comfyui/`), and the dev distro's disk image moves to the second M.2
-    along with Docker Desktop's — never a Windows-formatted folder read
-    through the 9p bridge, which is slow for multi-gigabyte loads from WSL
-    and from Docker alike (corrected 2026-10-06); prod's is inside its own
-    distro's disk on the same M.2, filled by a fetcher that downloads each manifest entry and
+    hash beside it. Dev's store is `var/comfyui/` inside `monsterpaws-dev`
+    on the M.2 (native ext4) — never a Windows-formatted folder read through
+    the 9p bridge, which is slow for multi-gigabyte loads from WSL and from
+    Docker alike (corrected 2026-10-06); prod's is inside its own distro's
+    disk on the same M.2, filled by a fetcher that downloads each manifest entry and
     verifies the hash, and the worker refuses to start on a mismatch. A
     shared live directory would reopen the dev/prod boundary (a dev-writable
     surface, read through the slow Windows filesystem bridge), and a raw

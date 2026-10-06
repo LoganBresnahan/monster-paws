@@ -267,10 +267,15 @@ slice or change build order.
             refined 2026-10-05): `comfyui/models.manifest` — file, source
             (`hf:` or `r2:`), sha256, licence, date checked — and a fetcher
             that fills a store from it and verifies every file, refusing to
-            start on a mismatch. Dev's store moves to the M.2 (`COMFYUI_DATA`)
-            in the same job as retiring the Linux dual boot and moving Docker
-            Desktop's data root off C:. The LoRA upload script and the
+            start on a mismatch. Dev's store is `var/comfyui/` inside the
+            `monsterpaws-dev` distro on the M.2. The LoRA upload script and the
             read-only R2 models credential come with item 9's first LoRA.
+      - [x] **A dedicated dev distro on the M.2** — done 2026-10-06
+            (ADR-0004 decision 10 as revised): dual boot retired,
+            `monsterpaws-dev` bootstrapped by `scripts/bootstrap-distro.sh`,
+            corpus (94,029 animals) and the ComfyUI image carried over, Arc
+            smoke green from its own docker engine. Pending: the general
+            Ubuntu back to C: and Docker Desktop's junction undone.
       - [ ] **The look**, with Logan's pets; the ADR-0004 style note.
       - [ ] **The home section**, with the consent entry.
 - [ ] **4. Donation flow.** *Moved into Now 2026-10-05: part of the MVP that

@@ -428,8 +428,9 @@ The machine, as found:
 | Intel UHD 770 (iGPU) | driver 32.0.101.7088; drives both monitors since 2026-10-06 (the MSI G271CQP on the board's DisplayPort, the LG on its HDMI), BIOS Primary Display = IGFX, so the Arc idles for us |
 | C: 2 TB NVMe | 288 GB free after the moves below; holds nothing of ours any more |
 | M: 477 GB, the second M.2 (LiteOn) | **Retired from Linux 2026-10-06**: `Clear-Disk` + GPT + one NTFS volume labelled `monsterpaws`. Ubuntu's shim had been installed to the *Windows* EFI partition, not its own — `\EFI\ubuntu` removed and the firmware entry deleted with `bcdedit /delete '{guid}'` (quoted: PowerShell reads braces as a script block). Fast startup off (`powercfg /h off`) so the prod worker's at-boot trigger sees a real boot. Holds the dev distro (`wsl --manage Ubuntu --move M:\wsl\Ubuntu`, WSL 3.0, in place, default user kept), Docker Desktop's disk images, and later the prod user's distro (ADR-0004 decision 10). 205 GB free after both moves |
-| Docker Desktop's data on M: | **By directory junction, not by the setting** — `C:\Users\<user>\AppData\Local\Docker\wsl` is a junction to `M:\docker\wsl\DockerDesktopWSL`, and Docker's "Disk image location" still reads the C: path. Sanctioned exception, 2026-10-06: Docker 4.93's own move copied the 81 GB image but failed to delete the source, because `docker_data.vhdx` stays attached to the WSL VM after Quit — `wsl --unmount <vhdx>` releases it; the `DataFolder` key in `settings-store.json` is the Hyper-V folder and the WSL path is hardcoded, so editing the file does nothing; and the picker then refused a non-empty target. Docker resolves the junction itself: its `docker-desktop` distro registered under `M:\...\main` and the data disk kept its id. Undo: quit Docker, `wsl --unmount` the vhdx, remove the junction, move the folder back |
-| Docker Desktop 4.93 | dev only; prod runs a plain docker engine inside its own distro (decision 11) |
+| Docker Desktop's data on M: | **Interim, 2026-10-06 — undone when the general Ubuntu moves back to C:.** By directory junction, not by the setting — `C:\Users\<user>\AppData\Local\Docker\wsl` is a junction to `M:\docker\wsl\DockerDesktopWSL`, and Docker's "Disk image location" still reads the C: path. Sanctioned exception, 2026-10-06: Docker 4.93's own move copied the 81 GB image but failed to delete the source, because `docker_data.vhdx` stays attached to the WSL VM after Quit — `wsl --unmount <vhdx>` releases it; the `DataFolder` key in `settings-store.json` is the Hyper-V folder and the WSL path is hardcoded, so editing the file does nothing; and the picker then refused a non-empty target. Docker resolves the junction itself: its `docker-desktop` distro registered under `M:\...\main` and the data disk kept its id. Undo: quit Docker, `wsl --unmount` the vhdx, remove the junction, move the folder back |
+| `M:\monsterpaws\dev` — the `monsterpaws-dev` distro | Created 2026-10-06 (`wsl --install Ubuntu-24.04 --name monsterpaws-dev --location M:\monsterpaws\dev`, user `oof`), bootstrapped by `scripts/bootstrap-distro.sh`, identity carried over by hand (GPG export/import, pass store, ssh), repo + corpus dump + ComfyUI image carried over; Arc smoke passes from its own docker engine. The general Ubuntu (`M:\wsl\Ubuntu` today) moves back to C: — pending |
+| Docker Desktop 4.94 | Logan's other projects only; never in the Monster Paws path (decision 11). Its WSL integration stays OFF for `monsterpaws-*` distros, or it injects its CLI over the engine inside them |
 
 Host prerequisites — nothing is installed inside the WSL distro itself, the
 container carries the GPU runtime:
@@ -439,7 +440,13 @@ container carries the GPU runtime:
    from WSL shows the version.
 2. `wsl --update`; the distro sees `/dev/dxg` (the GPU) and `/usr/lib/wsl/`
    (`lib/` = libdxcore, `drivers/` = a mirror of the Windows driver store).
-3. Docker able to run Linux containers in that distro.
+3. The distro itself: `wsl --install Ubuntu-24.04 --name monsterpaws-dev
+   --location M:\monsterpaws\dev`, then as root once
+   `bash scripts/bootstrap-distro.sh oof` (docker engine under systemd, node
+   via nvm, gh, pass, rclone, doctl, Claude Code) and `wsl --terminate` it so
+   the docker group applies. Identity is carried over by hand: GPG secret key
+   export/import needs a terminal for the passphrase, then the pass store,
+   `~/.ssh`, `~/.gitconfig`.
 4. `npm run comfy:build` then `npm run comfy:smoke` — the smoke prints the
    device and an FP16 matmul rate, or says which of the facts below broke.
 
@@ -527,9 +534,9 @@ was not needed.
   │  ADR-0004 as amended 2026-10-05)                             │
   │                                                              │
   │  ┌─ Logan's account (dev) ─┐  ┌─ "monsterpaws" std user ──┐  │
-  │  │ WSL dev distro, 16 GB   │  │ WSL prod distro, 24 GB,   │  │
-  │  │ repo · pass · /deploy   │  │ on the 2nd M.2, no C:     │  │
-  │  │ ComfyUI GUI (style work)│  │ mount, interop off        │  │
+  │  │ monsterpaws-dev (M.2)   │  │ monsterpaws-prod (M.2)    │  │
+  │  │ repo · pass · /deploy   │  │ 24 GB cap, no C: mount,   │  │
+  │  │ docker engine · ComfyUI │  │ interop off               │  │
   │  │                         │  │  systemd → docker engine  │  │
   │  │   ssh localhost:2222 ──────►│  sshd (local port only)   │  │
   │  │   .env (scoped) · pull  │  │  ┌─────────┐ ┌─────────┐  │  │
@@ -539,7 +546,7 @@ was not needed.
   │   through the host driver;    │  └────┬────┘ └─────────┘  │  │
   │   one ComfyUI at a time       │       │ models store: its │  │
   │   display on the iGPU         │       │ own, filled from  │  │
-  │   dev distro + models: M.2    │       │ the manifest,     │  │
+  │   one WSL VM per account      │       │ the manifest,     │  │
   │                               │       │ hash-verified     │  │
   │                               └───────┼───────────────────┘  │
   └───────────────────────────────────────┼──────────────────────┘

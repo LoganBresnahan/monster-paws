@@ -65,7 +65,10 @@ only — do not build from it.
 `doc/infra.md` is the runbook: CLI roster (doctl / wrangler / CF API /
 rclone / gh), provisioning commands, recurring ops, and the ASCII deployment
 diagrams. Change the deployment shape → update the diagrams in the same
-commit.
+commit. Its "Home GPU" section is the dev-machine runbook: Monster Paws is
+developed in the `monsterpaws-dev` WSL distro on the M.2, bootstrapped by
+`scripts/bootstrap-distro.sh`, with a docker engine inside — Docker Desktop
+is not in the Monster Paws path (ADR-0004 as amended 2026-10-05).
 
 ## Conventions
 
