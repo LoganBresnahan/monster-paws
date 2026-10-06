@@ -425,9 +425,9 @@ The machine, as found:
 | --- | --- |
 | Windows 11, i7 12th gen, 64 GB | WSL2 kernel 6.18, Ubuntu 24.04, mirrored networking, `.wslconfig` memory=32GB (to become 16 GB dev / 24 GB prod per ADR-0004) |
 | Intel Arc A770 16 GB | Windows driver 32.0.101.8992 — compute-runtime's WSL support is tested against ≥ 101.8991 |
-| Intel UHD 770 (iGPU) | driver 32.0.101.7088; takes the display so the Arc idles for us |
-| C: 2 TB NVMe | **61 GB free** — models and the prod distro cannot live here |
-| second M.2, 512 GB LiteOn | the Linux dual boot today; the prod user's disk per ADR-0004 decision 10 |
+| Intel UHD 770 (iGPU) | driver 32.0.101.7088; drives both monitors since 2026-10-06 (the MSI G271CQP on the board's DisplayPort, the LG on its HDMI), BIOS Primary Display = IGFX, so the Arc idles for us |
+| C: 2 TB NVMe | 75 GB free with the dev distro's 190 GB image and Docker Desktop's 81 GB still on it — both move to M: |
+| M: 477 GB, the second M.2 (LiteOn) | **Retired from Linux 2026-10-06**: `Clear-Disk` + GPT + one NTFS volume labelled `monsterpaws`. Ubuntu's shim had been installed to the *Windows* EFI partition, not its own — `\EFI\ubuntu` removed and the firmware entry deleted with `bcdedit /delete '{guid}'` (quoted: PowerShell reads braces as a script block). Fast startup off (`powercfg /h off`) so the prod worker's at-boot trigger sees a real boot. Holds the dev distro, Docker's disk image, and later the prod user's distro (ADR-0004 decision 10) |
 | Docker Desktop 4.93 | dev only; prod runs a plain docker engine inside its own distro (decision 11) |
 
 Host prerequisites — nothing is installed inside the WSL distro itself, the
