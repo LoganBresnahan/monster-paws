@@ -277,11 +277,8 @@ slice or change build order.
             smoke green from its own docker engine; the general Ubuntu is
             back on C: and Docker Desktop's junction undone; the 24 GB cap is
             live, Ubuntu's vhdx compacted 204 → 154 GB, Docker's redundant
-            copies deleted (C: back to 138 GB free). Pending: rename the
-            checkout `/home/oof/dogchain` →
-            `/home/oof/monsterpaws` at a session boundary (it breaks the open
-            VS Code window and moves Claude's memory folder); the compose
-            project is already pinned to `monsterpaws` so nothing else
+            copies deleted, and the checkout renamed to `~/monsterpaws` with
+            the compose project pinned to the same name, so nothing live
             carries the old name.
       - [ ] **The look**, with Logan's pets; the ADR-0004 style note.
       - [ ] **The home section**, with the consent entry.

@@ -528,9 +528,9 @@ check before commit. Playwright coverage lands in animal-pages-e2e.
 ### `brand-tokens-in-pages` — low · mechanical · risk low
 depends on: `animal-detail-page`, `animal-browse-page`
 
-The token half is already done: /home/oof/dogchain/src/app/globals.css defines
+The token half is already done: src/app/globals.css defines
 the cuddly palette (cream/bark/honey/leaf/paw, radius-cuddly, dark variant)
-under Tailwind 4 @theme, and /home/oof/dogchain/src/app/layout.tsx is a
+under Tailwind 4 @theme, and src/app/layout.tsx is a
 server-component root layout with the wordmark in
 public/brand/wordmark-v1.png. What remains is applying those tokens to the
 browse card and detail layouts as responsive server components — pure
