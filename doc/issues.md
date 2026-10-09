@@ -45,6 +45,22 @@ is the record, and a file of ticked boxes stops being read.
 
 ## Ops
 
+- **The dev box freezes hard every few days, mostly within minutes of
+  waking from S3 sleep — hardware or firmware, not the pipeline.** Twelve
+  unexpected shutdowns in thirty days from 2026-09-14; nine within 1–14
+  minutes of a firmware S3 resume, two under GPU batch load, one at idle
+  40 minutes after a resume (2026-10-09, the one that prompted this). WHEA
+  fatal firmware record at every boot since 10-03; no bugcheck file, no
+  TDR. Facts and hardware in `doc/infra.md`, Home GPU. Logan's actions, in
+  the order of cheapness: (1) stop using S3 — hibernate or stay on; the
+  "never sleep" setting is not holding, resumes are logged nightly;
+  (2) update the BIOS from 1805 (2024-10) to ASUS's current one for the
+  TUF GAMING B760M-PLUS WIFI D4 and load Intel default power limits;
+  (3) run XMP off (DDR4-3200 JEDEC) for a week, or MemTest86 overnight —
+  2 × 32 GB at 3600 is the usual suspect for S3-resume WHEA freezes;
+  (4) remove the third-party Virtual Display Driver if it is not needed.
+  Re-read the System log after a week (`Get-WinEvent` for ids 6008 and
+  WHEA-Logger 1). Found 2026-10-09.
 - **A LoRA switch on the Arc eventually takes ~12 GB of host memory in one
   step; the mechanism is unknown.** Five switches run flat, the sixth drops
   Windows free memory by 12 GB inside a single image while the driver pool,

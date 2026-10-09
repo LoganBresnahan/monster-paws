@@ -579,19 +579,27 @@ What was load-bearing, in the order it was found:
   flat. The cost is that PyTorch holds its peak (12 GiB here) for the life
   of the process — which is the production shape anyway. The engine's
   1024-descriptor default stays as the safety wall; never raise it.
-- **Three hard host freezes in two days (2026-10-07/08), all during
-  generation, in the state above.** Frozen display, one
-  CLOCK_WATCHDOG_TIMEOUT, no GPU timeout-recovery event, a WHEA fatal
-  firmware record on the next boot. Two came with host memory exhausted by
-  the leak; the third struck a fresh process at its first image with 28 GB
-  free, on Arc driver 101.8992. Since the driver went to 101.9034
-  (2026-10-08 afternoon) nothing has frozen through four fresh-process
-  cycles, a batch chunk, and some twenty experiments, several of which the
-  watchdog had to kill at the 20 GB floor. Driver and leak together are the
-  best explanation; neither alone is proven. Batch 1 of the look then ran
-  its remaining 93 images clean under `comfyui/guard.sh` the same
-  afternoon (15 s median, every counter flat across eight restarts), which
-  closed the issue; the guard stays the way batches run.
+- **The box freezes on its own, and did before any of this: twelve
+  unexpected shutdowns in the thirty days to 2026-10-09, the first on
+  2026-09-14, three weeks before ComfyUI touched the Arc.** Read from the
+  System log after the fourth freeze of the GPU work (2026-10-09 09:18,
+  nothing of ours running, the card idle since the previous evening): nine
+  of the twelve came 1–14 minutes after a firmware S3 resume (Kernel-Power
+  130), two came under batch load ten hours after a resume (the 2026-10-07
+  pair, with the leak filling host memory), one 29 minutes after a resume.
+  Each leaves the same trace: no bugcheck written, no GPU timeout-recovery
+  event, a WHEA-Logger fatal record at the next boot whose CPER section is a
+  *firmware error record reference* under the boot notification type — the
+  BIOS logged a fatal hardware error and Windows found it on restart. The
+  symptom Logan sees is a stutter (keys repeat, the mouse jumps), then a
+  frozen display or a CLOCK_WATCHDOG_TIMEOUT screen that itself freezes.
+  Hardware: i7-12700K on an ASUS TUF GAMING B760M-PLUS WIFI D4, BIOS 1805
+  (2024-10-29), 2 × 32 GB DDR4 at 3600 MT/s (XMP), Arc A770 on 101.9034,
+  a third-party "Virtual Display Driver" also loaded. No memory diagnostic
+  has ever run. The leak and the driver made the GPU batches a second
+  trigger; they were never the cause. Actions are Logan's and listed in
+  `doc/issues.md`, Ops; until a week passes clean after them, treat every
+  freeze as the machine, and keep the guard for the load it adds.
 - **Switching LoRAs from image to image costs ~12 GB of host memory in one
   step after about five switches (2026-10-08 evening, batch 1b).** One LoRA
   held for six images: every counter flat at 14 s. LoRA changed every image
