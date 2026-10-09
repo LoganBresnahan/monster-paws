@@ -1,0 +1,18 @@
+{
+  "_": "Batch 1b — identity with the subject in frame (doc/plans/the-look-exploration.md, 2026-10-08). Adapter graph only, linear, full range: what batch 1 could not separate — crops before the encoder (explore/boxes.json), the listing's description in the prompt, a style LoRA beside the adapter.",
+  "animals": {
+    "Plum":  { "kind": "dog", "describe": "grey cane corso puppy with a white chest patch", "clean": "downloadfile.jpg", "hard": "PXL_20250422_224209397.jpg" },
+    "Ducky": { "kind": "dog", "describe": "tan pit bull mix with a white chest and white paws", "clean": "PXL_20250621_160612271.PORTRAIT.jpg", "hard": "PXL_20250411_123028993.jpg" }
+  },
+  "photos": ["clean", "hard"],
+  "crops": ["full", "subject", "head"],
+  "describe": ["generic", "listing"],
+  "graphs": ["adapter"],
+  "prompts": ["photo", "storybook"],
+  "loras": [null, "watercolor", "tinies"],
+  "weights": [0.6, 0.8],
+  "weight_types": ["linear"],
+  "end_at": [1.0],
+  "denoise": [],
+  "seeds": [7]
+}

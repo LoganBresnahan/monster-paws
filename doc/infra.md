@@ -368,6 +368,16 @@ ssh root@$IP 'git clone <repo-url> monsterpaws && cd monsterpaws &&
 ## Recurring ops
 
 ```sh
+# Monthly, or before any look/art work after a Windows driver, WSL or kernel
+# update — the home GPU stack (Home GPU section): check the four pinned
+# versions in comfyui/Dockerfile against intel/compute-runtime,
+# intel-graphics-compiler and oneapi-src/level-zero releases and the torch
+# xpu wheel; bump the four together; `npm run comfy:build && npm run
+# comfy:smoke`. The smoke prints descriptors leaked per image: a runtime
+# that prints 0 retires the nofile ulimit in comfyui/compose.yml.
+powershell.exe Get-CimInstance Win32_VideoController   # Windows driver version
+grep -n "^ARG" comfyui/Dockerfile                        # what we pin
+
 # Deploy (also in /deploy skill) — images from GHCR, built by CI
 ssh <droplet> 'cd monsterpaws && git pull && docker compose -f docker-compose.prod.yml pull && docker compose -f docker-compose.prod.yml up -d'
 
@@ -493,6 +503,20 @@ container carries the GPU runtime:
    `~/.ssh`, `~/.gitconfig`.
 4. `npm run comfy:build` then `npm run comfy:smoke` — the smoke prints the
    device and an FP16 matmul rate, or says which of the facts below broke.
+5. `npm run comfy:models` fills `var/comfyui/models/` from
+   `comfyui/models.manifest` (~10 GB for the SDXL + IP-Adapter set; the
+   fetcher streams each file's sha256 and only names it on a match), and
+   `npm run comfy` re-verifies every file before ComfyUI serves. A mismatch
+   is a refusal, never a re-download — read the manifest's rule. Both scripts
+   create the four data directories as the invoking user first
+   (`comfy:dirs`): a bind-mount path that does not exist is created by the
+   docker engine as root, and the container, which writes as uid 1000,
+   then cannot fill it — the first fetch on 2026-10-07 died exactly so, on
+   directories a day-old `up` had left behind. The manifest is baked into
+   the image (the image is the decision), so after editing it run
+   `comfy:build` before `comfy:models`: the fetcher reads the copy inside
+   the container, and an unrebuilt image fetches the old list and says
+   `ok` (2026-10-08, the LoRA lines).
 
 What was load-bearing, in the order it was found:
 
@@ -502,13 +526,31 @@ What was load-bearing, in the order it was found:
   `drivers/` too.
 - **`LD_LIBRARY_PATH=/usr/lib/wsl/lib` inside the container.** WSL adds that
   path to the distro's `ld.so.conf`; a container has no such entry.
-- **Intel's compute runtime must be 25.x or newer, from the `noble unified`
-  apt channel.** The `client` channel pins 24.39, which finds the GPU for
-  OpenCL but segfaults in `zeInit` (Level Zero) under WSL2 — PyTorch dies in
-  `device_count`. Ubuntu's packaged 23.43 has no Level Zero at all. Pinned
-  in the Dockerfile as `INTEL_RUNTIME`; GitHub releases of
-  `intel/compute-runtime` (26.35 at the time) are the alternative when apt
-  lags.
+- **Intel's compute runtime must be at least as new as the Windows driver,
+  and that means GitHub releases, not apt.** The `noble unified` channel
+  topped out at 25.18 (mid-2025) against driver 101.8992 (2026), and that
+  pairing is the worst kind of broken: the device enumerates, kernels run
+  at full speed, and **every host↔device copy returns garbage in both
+  directions with no error** — over Level Zero and OpenCL alike, from a
+  clean Windows boot, while the iGPU through the same `/dev/dxg` is fine.
+  `dmesg` shows `dxgkio_lock2: Ioctl failed: -22` behind every copy — but under runtime
+  26.35 the same lock2 failures appear by the thousand during *correct*
+  runs (2026-10-08, 2,000–5,000 per minute of generation), so neither
+  lock2 nor `dxgkio_reserve_gpu_va: -75` (seen on the working iGPU too)
+  tells a broken stack from a working one. Only the smoke's round trip does. Found 2026-10-07 when
+  the first generation died in a gather kernel, after a smoke that had only
+  timed matmuls. The Dockerfile now pins compute-runtime 26.35.39758.10
+  (Intel's own WSL test pairing for driver 101.8991), IGC 2.41.5 and
+  libigdgmm 22.10.0 from `intel/compute-runtime` releases, and Level Zero
+  loader 1.34.0 from `oneapi-src/level-zero` — the loader must be newer than
+  the runtime or torch segfaults in `device_count` (`ZE_ENABLE_LOADER_DEBUG_TRACE=1`
+  shows the dispatch-table check failing). Bump the four together, then
+  `npm run comfy:smoke`. Older runtimes for the record: 24.39 segfaults in
+  `zeInit`, Ubuntu's 23.43 has no Level Zero.
+- **Level Zero caps a single allocation at 1 GiB on the A770 and calls it
+  "out of memory" with 15 GiB free.** `UR_L0_ENABLE_RELAXED_ALLOCATION_LIMITS=1`,
+  set in the image, allocates up to the card (6 GiB verified). Without it
+  SDXL at 1024² fails in the sampler.
 - **"Can't initialize Level Zero Sysman" is benign.** Sysman (`zes`) is not
   available through `/dev/dxg`; PyTorch warns and enumerates the other way.
 - **The free-threaded Python 3.14t the dev shell defaults to has no XPU
@@ -517,9 +559,90 @@ What was load-bearing, in the order it was found:
   from Windows as well as the distro, so the ComfyUI GUI opens in the normal
   browser.
 
-The smoke result on first success: `torch 2.14.1+xpu`, one device
-`Intel(R) Graphics [0x56a0]` with 15,932 MiB, FP16 matmul ≈ 35 TFLOPS once
-warm (the first kernel includes JIT compilation and reads ten times slower).
+- **ComfyUI's per-prompt cache flush fills the card and then the host —
+  the leak, found 2026-10-08 and fixed in the image.** After every prompt
+  ComfyUI calls `torch.xpu.empty_cache()`, handing hundreds of oddly sized
+  blocks back to the driver. Under GPU paravirtualisation the Intel driver
+  retains what it is handed and reuses none of it (the retained total shows
+  as `dedicated` in Windows' counters while PyTorch's own reserved figure
+  stays flat), so the card fills with dead blocks in two or three images and
+  every image after that lands in the driver's *shared* pool — ~2 GB of
+  Windows host memory per image, held until the process exits, and ~28
+  descriptors per image with it. The adapter is irrelevant (text-only does
+  the same two images later), VRAM is never actually full from PyTorch's
+  view, and no driver or runtime switch changes it (NEO allocation caches
+  off, the UR pool off, ComfyUI's memory modes — all tried, all identical).
+  `custom_nodes/monsterpaws_xpu` makes `empty_cache` a no-op when
+  `MONSTERPAWS_KEEP_XPU_CACHE=1`, the image's default: PyTorch reuses its
+  own blocks, the driver sees no frees, and six adapter images ran at a
+  flat 14 s with the shared pool, host memory and descriptor count all
+  flat. The cost is that PyTorch holds its peak (12 GiB here) for the life
+  of the process — which is the production shape anyway. The engine's
+  1024-descriptor default stays as the safety wall; never raise it.
+- **Three hard host freezes in two days (2026-10-07/08), all during
+  generation, in the state above.** Frozen display, one
+  CLOCK_WATCHDOG_TIMEOUT, no GPU timeout-recovery event, a WHEA fatal
+  firmware record on the next boot. Two came with host memory exhausted by
+  the leak; the third struck a fresh process at its first image with 28 GB
+  free, on Arc driver 101.8992. Since the driver went to 101.9034
+  (2026-10-08 afternoon) nothing has frozen through four fresh-process
+  cycles, a batch chunk, and some twenty experiments, several of which the
+  watchdog had to kill at the 20 GB floor. Driver and leak together are the
+  best explanation; neither alone is proven. Batch 1 of the look then ran
+  its remaining 93 images clean under `comfyui/guard.sh` the same
+  afternoon (15 s median, every counter flat across eight restarts), which
+  closed the issue; the guard stays the way batches run.
+- **Switching LoRAs from image to image costs ~12 GB of host memory in one
+  step after about five switches (2026-10-08 evening, batch 1b).** One LoRA
+  held for six images: every counter flat at 14 s. LoRA changed every image
+  (none → watercolor → tinies → …): flat through five switches, then
+  Windows free memory fell from 31.5 to 19.2 GB inside the sixth image and
+  the watchdog killed the process — with the driver's shared pool,
+  PyTorch's reserved pool and VRAM all unchanged, so this is the ComfyUI
+  process's own RAM at a re-patch, not the card. The same step hit the
+  batch at its tenth image. Mitigation in place: `explore.py` runs a batch
+  grouped by LoRA (one or two switches per batch, a fresh process between
+  chunks) and `leak_probe.py lora6 loraswitch6` reproduces both results.
+  Production holds one LoRA for the life of the process and never meets
+  it. The mechanism is open (`doc/issues.md`, Ops).
+- **Nothing drives the Arc except through `comfyui/guard.sh`** (built
+  2026-10-08, kept after the fix): `guard.sh mem` prints host free, the
+  driver's shared pool, dedicated and the descriptor count; `guard.sh up
+  [flags]` refuses to start ComfyUI below `FLOOR_GB` (20) and passes flags
+  through `COMFY_ARGS` and env through `GPU_ENV`; `guard.sh watch` kills it
+  the moment the floor is crossed; `guard.sh batch <batch> [chunk]` runs the
+  explore harness in chunks with a fresh process each time;
+  `comfyui/leak_probe.py` is the experiment runner behind it, and
+  `restart: "no"` keeps ComfyUI from coming back on its own after a crash.
+  The history that earns it: before the fix the leak took host free from
+  36.6 to 7.9 GB over nine adapter images (2026-10-07), each leaked
+  allocation holding an `anon_inode` descriptor, so the engine's 1024
+  `nofile` default stopped a run at "Too many open files" after ~10 images
+  — raising it to 1 M (done that morning, undone that evening) removed the
+  wall and **Windows froze hard twice**. Diagnose with `ls /proc/1/fd | wc
+  -l` inside the container and `guard.sh mem`; the smoke prints descriptors
+  per cycle.
+- **Restarts, cheapest first — and "VRAM full" is not one of them.** A
+  running batch shows the whole 16 GiB allocated: that is PyTorch's cache
+  and ComfyUI's model cache, released on demand and at idle, never a reason
+  to restart. The ComfyUI *process* is what holds any leaked host memory
+  (the guard restarts it between chunks; by hand `docker compose -f
+  comfyui/compose.yml restart comfyui`, models reload in ~30 s, a running
+  job is retried by the queue). The WSL VM needs `wsl --shutdown` only for a
+  kernel or `.wslconfig` change. Windows needs a reboot only for its GPU
+  driver. None of these recovered the 2026-10-07 garbage copies — that was
+  the runtime pairing, fixed in the Dockerfile.
+- **A fast matmul proves nothing about correctness** — see the runtime
+  bullet above. The smoke now round-trips values at several sizes, checks a
+  3 GiB allocation and a ones-matmul's result, and only then times. Run it
+  after any Windows driver, WSL or kernel update, and read
+  `dmesg | grep dxg` when it fails.
+
+The smoke result on the working stack (2026-10-07): `torch 2.14.1+xpu`, one
+device `Intel(R) Graphics [0x56a0]` with 15,932 MiB, every round trip ok,
+FP16 matmul ≈ 79 TFLOPS once warm (the first kernel includes JIT
+compilation). The first SDXL generation followed: 1024², 25 steps at
+2.3 it/s.
 `npm run comfy` then served ComfyUI 0.38.0 on :8188 reporting
 `Device: xpu:0 Intel(R) Graphics [0x56a0]`, 15,933 MB VRAM, NORMAL_VRAM; its
 "Could not autodetect AIMDO implementation, assuming Nvidia" warning is

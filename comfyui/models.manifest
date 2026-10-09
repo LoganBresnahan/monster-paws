@@ -1,0 +1,40 @@
+# The models the ComfyUI image loads, and nothing else (ADR-0004 decision 11
+# as refined 2026-10-05). One line per file:
+#
+#   <path under models/>  <source>  <sha256>  <licence>  <checked>
+#
+# `source` is `hf:<owner>/<repo>/<path in repo>` (resolved at `main`; the hash
+# is the pin, not the revision) or `r2:<key>` (the models prefix, first
+# filled by our own LoRA at roadmap item 9). `licence` is the weights
+# licence as read on `checked` — this line IS the licence record ADR-0004 §1
+# requires, so a model with no line here never runs. Never edit a hash to
+# make a download pass: a changed file is a changed decision.
+
+# SDXL 1.0 base — CreativeML Open RAIL++-M (LICENSE.md in the repo, dated
+# 2023-07-26). Commercial use and derivative outputs permitted; Attachment A's
+# use restrictions (unlawful use, harming minors, disinformation, harassment,
+# automated decisions about individuals, medical/legal use) touch nothing we
+# do. Read 2026-10-07.
+checkpoints/sd_xl_base_1.0.safetensors  hf:stabilityai/stable-diffusion-xl-base-1.0/sd_xl_base_1.0.safetensors  31e35c80fc4829d14f90153f4c74cd59c90b779f6afe05a74cd6120b893f7e5b  CreativeML-OpenRAIL++-M  2026-10-07
+
+# IP-Adapter Plus for SDXL (ViT-H conditioning) — Apache-2.0, the licence of
+# the h94/IP-Adapter repo as a whole (model card, repo revision 018e402).
+# Read 2026-10-07.
+ipadapter/ip-adapter-plus_sdxl_vit-h.safetensors  hf:h94/IP-Adapter/sdxl_models/ip-adapter-plus_sdxl_vit-h.safetensors  3f5062b8400c94b7159665b21ba5c62acdcd7682262743d7f2aefedef00e6581  Apache-2.0  2026-10-07
+
+# The CLIP image encoder IP-Adapter conditions through: OpenCLIP ViT-H/14
+# (laion2B-s32B-b79K; hidden 1280, projection 1024, 224 px), redistributed
+# in h94/IP-Adapter under Apache-2.0; LAION's original is MIT. The file name
+# is the one ComfyUI's IP-Adapter node documents. Read 2026-10-07.
+clip_vision/CLIP-ViT-H-14-laion2B-s32B-b79K.safetensors  hf:h94/IP-Adapter/models/image_encoder/model.safetensors  6ca9667da1ca9e0b0f75e46bb030f7e011f44f86cbfb8d5a36590fcd7507b030  Apache-2.0  2026-10-07
+
+# Style LoRAs for the look exploration (doc/plans/the-look-exploration.md,
+# batch 1b): does a style survive the adapter where a prompt alone does not?
+# Stand-ins for our own LoRA (roadmap item 9) — never the shipped look.
+# ostris "Watercolor Style" — Apache-2.0 (model card; no trigger words).
+# Read 2026-10-08.
+loras/watercolor_v1_sdxl.safetensors  hf:ostris/watercolor_style_lora_sdxl/watercolor_v1_sdxl.safetensors  d375ae7e68e1377305c168b0550a0fda33925421f570f87870fb19278786e9ac  Apache-2.0  2026-10-08
+# alvdansen "Little Tinies" — CreativeML Open RAIL-M (model card; no trigger
+# words): the same RAIL family and use restrictions as the base checkpoint.
+# Read 2026-10-08.
+loras/Little_Tinies.safetensors  hf:alvdansen/littletinies/Little_Tinies.safetensors  7d43ff67299f2412b994f021bb9b3a7713484b8a615e468542959f00fd0098a3  CreativeML-OpenRAIL-M  2026-10-08

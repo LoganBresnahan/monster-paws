@@ -45,7 +45,17 @@ is the record, and a file of ticked boxes stops being read.
 
 ## Ops
 
-- (empty)
+- **A LoRA switch on the Arc eventually takes ~12 GB of host memory in one
+  step; the mechanism is unknown.** Five switches run flat, the sixth drops
+  Windows free memory by 12 GB inside a single image while the driver pool,
+  PyTorch's reserved pool and VRAM stay put (`comfyui/leak_probe.py
+  loraswitch6`; facts in `doc/infra.md`, Home GPU). Worked around — batches
+  run grouped by LoRA with a fresh process between chunks, and production
+  holds one LoRA — not understood: whether it is ComfyUI's weight backups
+  on the offload device, a model clone unloaded through CPU on the sixth
+  patch, or the CPU allocator holding freed arenas is unread. Read
+  `comfy/model_patcher.py` and `model_management.py` at the pinned
+  ComfyUI sha before anything switches LoRAs per job. Found 2026-10-08.
 
 ## Compliance
 

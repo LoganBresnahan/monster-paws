@@ -21,7 +21,11 @@
     "db:dump": "tsx scripts/db-dump.ts",
     "comfy:build": "docker compose -f comfyui/compose.yml build",
     "comfy:smoke": "docker compose -f comfyui/compose.yml run --rm comfyui python /home/comfy/smoke.py",
-    "comfy": "docker compose -f comfyui/compose.yml up"
+    "comfy:models": "npm run -s comfy:dirs && docker compose -f comfyui/compose.yml run --rm comfyui python /home/comfy/models.py fetch",
+    "comfy:dirs": "d=${COMFYUI_DATA:-var/comfyui}; mkdir -p $d/models $d/input $d/output $d/user && touch comfyui/gpu.env",
+    "comfy": "npm run -s comfy:dirs && docker compose -f comfyui/compose.yml up",
+    "explore": "mkdir -p var/crew var/explore && docker compose -f comfyui/compose.yml run --rm --no-deps explore",
+    "explore:guarded": "comfyui/guard.sh batch"
   },
   "dependencies": {
     "@sentry/nextjs": "^11.1.0",

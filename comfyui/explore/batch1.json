@@ -1,0 +1,15 @@
+{
+  "_": "Batch 1 — identity, one photo (doc/plans/the-look-exploration.md). Photos are file names under var/crew/<Animal>/.",
+  "animals": {
+    "Plum":  { "kind": "dog", "clean": "downloadfile.jpg", "hard": "PXL_20250422_224209397.jpg" },
+    "Ducky": { "kind": "dog", "clean": "PXL_20250621_160612271.PORTRAIT.jpg", "hard": "PXL_20250411_123028993.jpg" }
+  },
+  "photos": ["clean", "hard"],
+  "graphs": ["adapter", "both", "img2img"],
+  "prompts": ["photo", "storybook"],
+  "weights": [0.5, 0.8],
+  "weight_types": ["linear", "style and composition"],
+  "end_at": [1.0, 0.6],
+  "denoise": [0.6],
+  "seeds": [7]
+}

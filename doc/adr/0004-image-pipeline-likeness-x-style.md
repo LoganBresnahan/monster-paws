@@ -349,3 +349,11 @@ by Task Scheduler — is the one fragile joint and the first thing to dogfood.
 - The unattended WSL distro proves unreliable (a job waits because the
   distro was not running, not because the box was asleep) — that is the
   dedicated box's cue, prices or not.
+- A compute-runtime, Level Zero loader or torch-xpu release changes what the
+  Arc does under WSL2 — the 2026-10-07 shakedown found a runtime a year
+  older than the Windows driver returning garbage copies without an error,
+  a 1 GiB single-allocation ceiling, and ~100 file descriptors leaked per
+  image (`doc/infra.md`, Home GPU). The four are pinned together in
+  `comfyui/Dockerfile` and re-checked monthly (infra.md, Recurring ops); a
+  release that stops the leak retires the `nofile` ulimit, and one that
+  breaks the smoke is not adopted.

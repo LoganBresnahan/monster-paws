@@ -68,7 +68,16 @@ diagrams. Change the deployment shape → update the diagrams in the same
 commit. Its "Home GPU" section is the dev-machine runbook: Monster Paws is
 developed in the `monsterpaws-dev` WSL distro on the M.2, bootstrapped by
 `scripts/bootstrap-distro.sh`, with a docker engine inside — Docker Desktop
-is not in the Monster Paws path (ADR-0004 as amended 2026-10-05).
+is not in the Monster Paws path (ADR-0004 as amended 2026-10-05). Read that
+section before touching `comfyui/`: the Arc under WSL2 has traps that fail
+silently (a compute runtime older than the Windows driver returns garbage
+copies at full speed; the driver retains every freed allocation, so
+ComfyUI's per-prompt cache flush fills the card and then ~2 GB of host
+memory per image until Windows freezes — `custom_nodes/monsterpaws_xpu`
+keeps the cache instead, never disable it), the four runtime pins in
+`comfyui/Dockerfile` move together, and `npm run comfy:smoke` is the only
+proof — run it after any driver, WSL or kernel update, and bump the pins on
+the monthly check in infra.md's Recurring ops.
 
 ## Conventions
 
@@ -185,11 +194,20 @@ is not in the Monster Paws path (ADR-0004 as amended 2026-10-05).
 - `npm run db:up` — local Postgres via `docker-compose.dev.yml`
   (pgvector/pg16 image — same extensions as production)
 - `npm run db:generate` / `npm run db:migrate` — Drizzle migrations
-- `npm run comfy:build` / `npm run comfy:smoke` / `npm run comfy` — build the
-  ComfyUI image for the Arc (`TORCH=xpu`, the default; `cu128` for CUDA),
-  prove PyTorch sees the GPU, serve the GUI on http://127.0.0.1:8188. Models
-  live in `var/comfyui/` or `$COMFYUI_DATA`. Host-side facts: `doc/infra.md`,
-  Home GPU (ADR-0004 as amended 2026-10-05)
+- `npm run comfy:build` / `npm run comfy:smoke` / `npm run comfy:models` /
+  `npm run comfy` — build the ComfyUI image for the Arc (`TORCH=xpu`, the
+  default; `cu128` for CUDA), prove PyTorch sees the GPU, fill the models
+  store from `comfyui/models.manifest` (the licence record with the hash
+  beside it — a model with no line there never runs), serve the GUI on
+  http://127.0.0.1:8188. `up` re-verifies every model before serving. Models
+  live in `var/comfyui/` or `$COMFYUI_DATA`; workflows are committed in API
+  format under `comfyui/workflows/` and run with `comfyui/run_workflow.py`.
+  **Batches and experiments go through `comfyui/guard.sh`** (`batch
+  <name> [chunk]`, `up`, `down`, `mem`): it restarts ComfyUI between chunks
+  and kills it below a host-memory floor, because the per-prompt cache flush
+  leaked Windows memory and froze the box (2026-10-07/08), and a LoRA
+  switch per image still spikes it. Host-side facts:
+  `doc/infra.md`, Home GPU (ADR-0004 as amended 2026-10-05)
 - `npm run db:dump` — gzipped `pg_dump` of the dev database to `var/dumps/`;
   run it after a full poll, because that corpus is currently the only copy
   (ADR-0017)

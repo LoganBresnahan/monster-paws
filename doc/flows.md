@@ -574,10 +574,13 @@ round. Both workers are the same binary — the droplet's never registers
        │                                        under the "monsterpaws"
        │  POST /prompt  (localhost HTTP)        Windows user
        ▼
-  monster-paws-comfyui, headless, TORCH=xpu     (planned) CI-built; workflow
-       │   style LoRA × IP-Adapter identity     JSON + model hashes + licence
-       │   3–4 candidates                       record committed together;
-       │                                        models a hash-verified volume
+  monster-paws-comfyui, headless, TORCH=xpu     (planned) CI-built. Built:
+       │   subject crop → ViT-H encoder          comfyui/workflows/*.api.json,
+       │   (planned: a detector draws the box;  comfyui/models.manifest (hash
+       │   the companion animal stays outside)  + licence), models.py fetch at
+       │   style LoRA × IP-Adapter identity     start — mismatch = no serve.
+       │   3–4 candidates                       Crops by hand so far:
+       │                                        comfyui/explore/boxes.json
        ▼
   CLIP-QC  (planned, item 9)                    score vs the real photos;
        │                                        serve best, flag low
