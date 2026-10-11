@@ -43,3 +43,24 @@ loras/Little_Tinies.safetensors  hf:alvdansen/littletinies/Little_Tinies.safeten
 # outline come from the photo, the adapter supplies colour and features.
 # xinsir — Apache-2.0 (model card), the V2 training. Read 2026-10-09.
 controlnet/xinsir-canny-sdxl-1.0-v2.safetensors  hf:xinsir/controlnet-canny-sdxl-1.0/diffusion_pytorch_model_V2.safetensors  b3e4ac47bc814019d50dc842f579301440deb6d8f09ee1b91a30f527ace1b852  Apache-2.0  2026-10-09
+
+# Base-model bake-off (doc/plans/base-model-candidates.md, Experiment B,
+# 2026-10-11): three shippable candidates beside SDXL. None serves a donor
+# until ADR-0004 names it. All read 2026-10-11.
+# Z-Image-Turbo (Tongyi-MAI; Apache-2.0), ComfyUI repackage by Comfy-Org.
+diffusion_models/z_image_turbo_bf16.safetensors  hf:Comfy-Org/z_image_turbo/split_files/diffusion_models/z_image_turbo_bf16.safetensors  2407613050b809ffdff18a4ac99af83ea6b95443ecebdf80e064a79c825574a6  Apache-2.0  2026-10-11
+# Qwen3-4B text encoder (Apache-2.0) — shared by Z-Image-Turbo and FLUX.2 klein 4B, byte-identical in both repackages.
+text_encoders/qwen_3_4b.safetensors  hf:Comfy-Org/vae-text-encorder-for-flux-klein-4b/split_files/text_encoders/qwen_3_4b.safetensors  6c671498573ac2f7a5501502ccce8d2b08ea6ca2f661c458e708f36b36edfc5a  Apache-2.0  2026-10-11
+# FLUX.1 autoencoder (Apache-2.0, released with schnell) — Z-Image-Turbo and Chroma decode through it.
+vae/ae.safetensors  hf:Comfy-Org/z_image_turbo/split_files/vae/ae.safetensors  afc8e28272cd15db3919bacdb6918ce9c1ed22e96cb12c4d5ed0fba823529e38  Apache-2.0  2026-10-11
+# FLUX.2 [klein] 4B (Black Forest Labs; Apache-2.0 on its card) and its VAE, Comfy-Org repackage.
+diffusion_models/flux-2-klein-4b.safetensors  hf:Comfy-Org/vae-text-encorder-for-flux-klein-4b/split_files/diffusion_models/flux-2-klein-4b.safetensors  ec3d4e733a771f61c052fb4856c48b336c55eaf2c65487c2a1faeb9bbda7a343  Apache-2.0  2026-10-11
+vae/flux2-vae.safetensors  hf:Comfy-Org/vae-text-encorder-for-flux-klein-4b/split_files/vae/flux2-vae.safetensors  868fe7b343cc8f3a19dbcfcafbc3d5f888802be3f89bd81b65b3621a066ce8f3  Apache-2.0  2026-10-11
+# Chroma1-HD (lodestones; Apache-2.0) in a third-party fp8 quantisation (silveroxides) — the bf16 original is 16.6 GB, over the card. Provenance is the quantiser's, licence the original's.
+diffusion_models/chroma1-hd-fp8mixed.safetensors  hf:silveroxides/Chroma1-HD-fp8-scaled/Chroma1-HD-fp8mixed-final.safetensors  c25284ddf89df1678ac4dd7bd8a59ec68fb2e484296d75977c549d58618eee91  Apache-2.0  2026-10-11
+# T5-XXL fp8 (Apache-2.0; comfyanonymous' encoder pack) — Chroma's text encoder.
+text_encoders/t5xxl_fp8_e4m3fn_scaled.safetensors  hf:comfyanonymous/flux_text_encoders/t5xxl_fp8_e4m3fn_scaled.safetensors  a498f0485dc9536735258018417c3fd7758dc3bccc0a645feaa472b34955557a  Apache-2.0  2026-10-11
+# The same Qwen3-4B encoder in fp8 (Comfy-Org's mixed quantisation, Apache-2.0): the bf16 one beside klein's or Z-Image's transformer spilled the card into the driver pool (2026-10-11).
+text_encoders/qwen_3_4b_fp8_mixed.safetensors  hf:Comfy-Org/z_image_turbo/split_files/text_encoders/qwen_3_4b_fp8_mixed.safetensors  72450b19758172c5a7273cf7de729d1c17e7f434a104a00167624cba94f68f15  Apache-2.0  2026-10-11
+# Z-Image-Turbo Fun ControlNet Union (alibaba-pai; Apache-2.0): canny/depth/pose/HED for Z-Image through ComfyUI's model-patch loader — the outline path for the Z-Image track (2026-10-11).
+model_patches/z-image-turbo-fun-controlnet-union.safetensors  hf:alibaba-pai/Z-Image-Turbo-Fun-Controlnet-Union/Z-Image-Turbo-Fun-Controlnet-Union.safetensors  86c085c0d7853f12ce5183499934b54d08371c60f549c5a6b20615cd23989388  Apache-2.0  2026-10-11

@@ -110,8 +110,86 @@ def bucket(size: tuple[int, int]) -> tuple[int, int]:
 
 # ---------------------------------------------------------------- graphs
 
+# Base-model bake-off (doc/plans/base-model-candidates.md, Experiment B): the
+# three shippable candidates beside SDXL, each with the sampler settings its
+# own release notes give. Unaided (txt2img), helped by the photo in the
+# latent (img2img), or — klein only — the photo as a reference the model
+# reads (reference). No adapter, ControlNet or LoRA exists for them yet.
+ZIMAGE_CONTROL = "z-image-turbo-fun-controlnet-union.safetensors"
+FAMILIES = {
+    # fp8 weights and the fp8 encoder for both: in bf16 either transformer beside the 7.5 GB Qwen3 encoder spilled the card (pool 4.4 GB, 2026-10-11)
+    "zimage": {"unet": "z_image_turbo_bf16.safetensors", "dtype": "fp8_e4m3fn", "clip": ("qwen_3_4b_fp8_mixed.safetensors", "lumina2"), "vae": "ae.safetensors",
+               "steps": 8, "cfg": 1.0, "sampler": "euler", "scheduler": "simple", "shift": 3.0},
+    "klein":  {"unet": "flux-2-klein-4b.safetensors", "dtype": "fp8_e4m3fn", "clip": ("qwen_3_4b_fp8_mixed.safetensors", "flux2"), "vae": "flux2-vae.safetensors",
+               "steps": 4, "cfg": 1.0, "sampler": "euler", "scheduler": "simple"},
+    "chroma": {"unet": "chroma1-hd-fp8mixed.safetensors", "clip": ("t5xxl_fp8_e4m3fn_scaled.safetensors", "chroma"), "vae": "ae.safetensors",
+               "steps": 26, "cfg": 4.0, "sampler": "euler", "scheduler": "beta"},
+}
+
+
+def build_family_graph(run: dict, prefix: str) -> dict:
+    f = FAMILIES[run["family"]]
+    dtype = run.get("dtype") or f.get("dtype", "default")
+    steps = run.get("steps") or f["steps"]
+    raw = run.get("crop", "full") != "full"
+    photo = input_name(run["animal"], run["photos"][0], run.get("crop", "full"), raw=raw)
+    width, height = (1024, 1024)
+    if raw:
+        from PIL import Image
+        width, height = bucket(Image.open(INPUT / photo).size)
+    g = {
+        "unet": {"class_type": "UNETLoader", "inputs": {"unet_name": f["unet"], "weight_dtype": dtype}},
+        "clip": {"class_type": "CLIPLoader", "inputs": {"clip_name": f["clip"][0], "type": f["clip"][1]}},
+        "vae": {"class_type": "VAELoader", "inputs": {"vae_name": f["vae"]}},
+        "pos": {"class_type": "CLIPTextEncode", "inputs": {"clip": ["clip", 0], "text": run["prompt_text"]}},
+        "img0": {"class_type": "LoadImage", "inputs": {"image": photo}},
+        "scale": {"class_type": "ImageScale", "inputs": {"image": ["img0", 0], "upscale_method": "lanczos", "width": width, "height": height, "crop": "center"}},
+        "decode": {"class_type": "VAEDecode", "inputs": {"samples": ["sampler", 0], "vae": ["vae", 0]}},
+        "save": {"class_type": "SaveImage", "inputs": {"images": ["decode", 0], "filename_prefix": prefix}},
+    }
+    model = ["unet", 0]
+    if "shift" in f:
+        g["shift"] = {"class_type": "ModelSamplingAuraFlow", "inputs": {"model": model, "shift": f["shift"]}}
+        model = ["shift", 0]
+    if run["family"] == "zimage" and run.get("control_strength"):
+        # the outline from the same crop, through Z-Image's own control patch (a model patch, not a ControlNet node)
+        g["canny"] = {"class_type": "Canny", "inputs": {"image": ["scale", 0], "low_threshold": 0.3, "high_threshold": 0.7}}
+        g["patch"] = {"class_type": "ModelPatchLoader", "inputs": {"name": ZIMAGE_CONTROL}}
+        g["ctl"] = {"class_type": "ZImageFunControlnet", "inputs": {"model": model, "model_patch": ["patch", 0], "vae": ["vae", 0], "strength": run["control_strength"],
+                                                                     "image": ["canny", 0], "start_percent": 0.0, "end_percent": run["control_end"]}}
+        model = ["ctl", 0]
+    if f["cfg"] > 1.0:
+        g["neg"] = {"class_type": "CLIPTextEncode", "inputs": {"clip": ["clip", 0], "text": run["negative"]}}
+    else:  # distilled models take no negative; a zeroed conditioning is the documented stand-in
+        g["neg"] = {"class_type": "ConditioningZeroOut", "inputs": {"conditioning": ["pos", 0]}}
+    pos = ["pos", 0]
+    empty = "EmptyFlux2LatentImage" if run["family"] == "klein" else "EmptySD3LatentImage"
+    if run["graph"] == "img2img":
+        g["latent"] = {"class_type": "VAEEncode", "inputs": {"pixels": ["scale", 0], "vae": ["vae", 0]}}
+        denoise = run["denoise"]
+    else:
+        g["latent"] = {"class_type": empty, "inputs": {"width": width, "height": height, "batch_size": 1}}
+        denoise = 1.0
+        if run["graph"] in ("reference", "reference2"):
+            g["ref"] = {"class_type": "VAEEncode", "inputs": {"pixels": ["scale", 0], "vae": ["vae", 0]}}
+            g["refcond"] = {"class_type": "ReferenceLatent", "inputs": {"conditioning": pos, "latent": ["ref", 0]}}
+            pos = ["refcond", 0]
+        if run["graph"] == "reference2":  # the head crop as a second reference the model reads after the subject
+            g["head"] = {"class_type": "LoadImage", "inputs": {"image": input_name(run["animal"], run["photos"][0], "head", raw=True)}}
+            g["head_scale"] = {"class_type": "ImageScale", "inputs": {"image": ["head", 0], "upscale_method": "lanczos", "width": 768, "height": 768, "crop": "center"}}
+            g["ref2"] = {"class_type": "VAEEncode", "inputs": {"pixels": ["head_scale", 0], "vae": ["vae", 0]}}
+            g["refcond2"] = {"class_type": "ReferenceLatent", "inputs": {"conditioning": pos, "latent": ["ref2", 0]}}
+            pos = ["refcond2", 0]
+    g["sampler"] = {"class_type": "KSampler", "inputs": {
+        "model": model, "positive": pos, "negative": ["neg", 0], "latent_image": ["latent", 0],
+        "seed": run["seed"], "steps": steps, "cfg": f["cfg"], "sampler_name": f["sampler"], "scheduler": f["scheduler"], "denoise": denoise}}
+    return g
+
+
 def build_graph(run: dict, prefix: str) -> dict:
     """One API-format ComfyUI graph from a run record. The record is the contract."""
+    if run.get("family", "sdxl") != "sdxl":
+        return build_family_graph(run, prefix)
     g = {
         "ckpt": {"class_type": "CheckpointLoaderSimple", "inputs": {"ckpt_name": "sd_xl_base_1.0.safetensors"}},
         "decode": {"class_type": "VAEDecode", "inputs": {"samples": ["sampler", 0], "vae": ["ckpt", 2]}},
@@ -195,15 +273,24 @@ def expand(spec: dict) -> list[dict]:
     """The cartesian product of a batch spec's axes, minus knobs a graph does not have."""
     runs = []
     for animal, info in spec["animals"].items():
-        for photo_key, crop, describe, aspect in itertools.product(spec["photos"], spec.get("crops", ["full"]), spec.get("describe", ["generic"]), spec.get("aspect", ["square"])):
+        for photo_key, crop, describe, aspect, family in itertools.product(spec["photos"], spec.get("crops", ["full"]), spec.get("describe", ["generic"]), spec.get("aspect", ["square"]), spec.get("families", ["sdxl"])):
             photos = info[photo_key] if isinstance(info[photo_key], list) else [info[photo_key]]
             subject = info["kind"] if describe == "generic" else info["describe"]
             for graph, prompt, seed in itertools.product(spec["graphs"], spec["prompts"], spec["seeds"]):
-                base = {"animal": animal, "kind": info["kind"], "photo": photo_key, "photos": photos, "crop": crop, "describe": describe, "aspect": aspect,
+                base = {"animal": animal, "kind": info["kind"], "photo": photo_key, "photos": photos, "crop": crop, "describe": describe, "aspect": aspect, "family": family,
                         "graph": graph, "prompt": prompt, "prompt_text": PROMPTS[prompt].format(kind=subject),
                         "negative": NEGATIVE if prompt == "photo" else NEGATIVE_STYLED, "seed": seed}
-                loras = [None] if prompt == "photo" else spec.get("loras", [None])
                 controls = [(st, en) for st in spec.get("control_strength", [0]) for en in (spec.get("control_end", [1.0]) if st else [None])]
+                if family != "sdxl":
+                    if graph not in ("txt2img", "img2img", "reference", "reference2") or (graph.startswith("reference") and family != "klein"):
+                        continue
+                    fam_controls = controls if family == "zimage" else [(0, None)]
+                    for denoise, dtype, steps, (cs, ce) in itertools.product(spec["denoise"] if graph == "img2img" else [None], spec.get("dtypes", [None]), spec.get("steps", [None]), fam_controls):
+                        runs.append({**base, "lora": None, "dtype": dtype, "steps": steps, "control_strength": cs, "control_end": ce, "denoise": denoise, "weight": None, "weight_type": None, "end_at": None})
+                    continue
+                if graph in ("txt2img", "reference", "reference2"):
+                    continue
+                loras = [None] if prompt == "photo" else spec.get("loras", [None])
                 if graph == "img2img":
                     for denoise, lora, (cs, ce) in itertools.product(spec["denoise"], loras, controls):
                         runs.append({**base, "lora": lora, "control_strength": cs, "control_end": ce, "denoise": denoise, "weight": None, "weight_type": None, "end_at": None})
@@ -216,6 +303,9 @@ def expand(spec: dict) -> list[dict]:
                     runs.append({**base, "lora": lora, "control_strength": cs, "control_end": ce, "weight": weight, "weight_type": wtype, "end_at": end_at, "denoise": denoise, "multi": multi, "combine": combine})
     for i, r in enumerate(runs):
         bits = [r["animal"], r["photo"], r["graph"], r["prompt"], f"s{r['seed']}"]
+        if r.get("family", "sdxl") != "sdxl":
+            bits.insert(2, r["family"])
+            bits += [b for b in ({"fp8_e4m3fn": "fp8", "default": "bf16"}.get(r.get("dtype") or "", ""), f"st{r['steps']}" if r.get("steps") else "") if b]
         bits += [b for b in (r["crop"], r["describe"], r["lora"], r.get("aspect")) if b and b not in ("full", "generic", "square")]
         if r.get("control_strength"):
             bits.append(f"cn{r['control_strength']}e{r['control_end']}")
@@ -267,7 +357,7 @@ def run_batch(batch: str, limit: int | None, dry: bool, only: str | None = None)
     todo = [r for r in runs if r["id"] not in done and (not only or only in r["id"])]
     # Grouped by LoRA so the model is patched once per chunk: every switch
     # re-patches the UNet, and on the Arc that cost host memory (2026-10-08).
-    todo = sorted(todo, key=lambda r: r.get("lora") or "")[: limit or None]
+    todo = sorted(todo, key=lambda r: (r.get("family", "sdxl"), r.get("dtype") or "", r.get("lora") or ""))[: limit or None]
     print(f"{batch}: {len(runs)} runs in spec, {len(done)} done, {len(todo)} to go")
     if dry:
         for r in todo:
@@ -289,7 +379,7 @@ def run_batch(batch: str, limit: int | None, dry: bool, only: str | None = None)
 
 # ---------------------------------------------------------------- sheet
 
-AXES = ["animal", "photo", "graph", "prompt", "crop", "describe", "aspect", "lora", "control_strength", "control_end", "weight", "weight_type", "end_at", "denoise", "seed", "multi", "combine"]
+AXES = ["animal", "photo", "family", "dtype", "steps", "graph", "prompt", "crop", "describe", "aspect", "lora", "control_strength", "control_end", "weight", "weight_type", "end_at", "denoise", "seed", "multi", "combine"]
 
 
 def sheet(batch: str) -> None:

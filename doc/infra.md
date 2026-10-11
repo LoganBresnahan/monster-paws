@@ -660,6 +660,18 @@ What was load-bearing, in the order it was found:
   shutdown is the adjustment (the process high-water is 17 GB). Anything
   heavier than this graph (SD 3.5, a second ControlNet) needs the card,
   not the VM.
+- **The pool rule is also the card's size gauge (2026-10-11).** Loading a
+  model set that does not fit shows as the shared pool rising to 4.4–4.8 GB
+  during the load and staying there, and the guard kills it: bf16 klein or
+  Z-Image beside the 7.5 GB Qwen3 encoder, bf16 Z-Image beside the fp8
+  one, Z-Image's 2.9 GB control patch beside its fp8 transformer and fp8
+  encoder. What fits: SDXL + adapter + LoRA + ControlNet (14 GB), klein 4B
+  fp8 + fp8 encoder (13 GB), Z-Image fp8 + fp8 encoder, Chroma fp8 + T5
+  fp8 (full, 2.9 GB pool, slow). The idle pool rose from 1.0 to 1.9–2.1 GB
+  across the day's model switching and stayed there after the server
+  stopped — retained by the driver, not growing further; watch it. The
+  guard now stops a batch whose chunk produced nothing instead of retrying
+  it forever.
 - **Restarts, cheapest first — and "VRAM full" is not one of them.** A
   running batch shows the whole 16 GiB allocated: that is PyTorch's cache
   and ComfyUI's model cache, released on demand and at idle, never a reason

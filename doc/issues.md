@@ -86,7 +86,27 @@ is the record, and a file of ticked boxes stops being read.
   2026-10-10 16:42: BIOS optimized defaults loaded by Logan (XMP and the
   ASUS performance preset both off); memory now at the sticks' base JEDEC
   2666 MT/s, virtualisation on, smoke exact with no leak. The clean week
-  counts from here.
+  counts from here. **2026-10-11: S3 is still on** — the Balanced plan
+  sleeps after 30 minutes on AC, and the box slept 00:22–09:14 last night,
+  woken by the Realtek NIC; it survived that resume (the first since the
+  flash and JEDEC). Action (4) is withdrawn: the Virtual Display Driver
+  (MTT VDD) is Logan's remote-streaming display, and
+  `C:\VirtualDisplayDriver\vdd_settings.xml` pins it to the UHD 770, so it
+  never touches the Arc. One WHEA
+  *corrected* AER error 2026-10-10 17:54 on root port 0:1.0 — the CPU's
+  x16 slot, the Arc's — and Windows PCIe link-state power management is
+  at Moderate on AC. A physical HDMI dummy plug on the Arc was considered
+  and is not recommended: it changes nothing at S3 (the card loses power either
+  way) and VDD already gives Windows a display; the free test of the
+  "card's power state" theory is link-state power management Off.
+  Checked 2026-10-11: standby idle 0x708 = 30 min on the Balanced plan,
+  ASPM index 1 = Moderate, the 00:22→09:14 sleep and the Realtek wake
+  source in the power-troubleshooter event, the corrected AER on root
+  port 0:1.0 (device 460D, the CPU's x16) at 17:54, and the VDD xml's
+  `<friendlyname>Intel(R) UHD GRAPHICS 770</friendlyname>` — all as stated.
+  Set 2026-10-11 (Claude, via `powercfg`): standby and hibernate timeouts
+  on AC to never, PCIe link-state power management on AC to Off. The
+  clean week restarts from here with S3 genuinely off.
 - **The WSL VM froze three times on 2026-10-10 (Windows stayed up), each
   time while the explore container loaded the ViT-H encoder into CPU
   memory for the likeness scorer.** No Windows event, no kernel message,

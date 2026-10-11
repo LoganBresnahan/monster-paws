@@ -77,6 +77,8 @@ batch() {
     echo "guard: chunk finished, $(mem)"
     # the harness reports how many runs remain before it starts the chunk
     if grep -q " 0 to go" "$out"; then rm -f "$out"; break; fi
+    # a chunk that produced nothing would be retried forever (the bf16 Z-Image cells, 2026-10-11): stop instead
+    if ! grep -qE "^\[[0-9]+/[0-9]+\] .* [0-9.]+s$" "$out"; then echo "guard: chunk made no progress — stopping; fix the spec or the graph" >&2; rm -f "$out"; exit 6; fi
     rm -f "$out"
     if below_floor; then echo "guard: below floor after chunk — stopping" >&2; exit 3; fi
   done

@@ -1,0 +1,17 @@
+{
+  "_": "Batch 3a — base-model bake-off (doc/plans/base-model-candidates.md, Experiment B, 2026-10-11): Z-Image-Turbo, FLUX.2 klein 4B and Chroma1-HD on the v1-check photos, unaided (txt2img), with the photo in the latent (img2img 0.6), and for klein with the photo as a read reference. The SDXL baseline is batchv1. Chunk 4 keeps each process on one family.",
+  "animals": {
+    "Plum":  { "kind": "dog", "describe": "grey cane corso puppy with a white chest patch", "new": "PXL_20250423_185424061.PORTRAIT.jpg" },
+    "Ducky": { "kind": "dog", "describe": "tan pit bull mix with a white chest and white paws", "new": "PXL_20241229_195311064.RAW-01.COVER.jpg" }
+  },
+  "photos": ["new"],
+  "crops": ["subject"],
+  "aspect": ["box"],
+  "describe": ["listing"],
+  "families": ["zimage", "klein", "chroma"],
+  "graphs": ["txt2img", "img2img", "reference"],
+  "prompts": ["storybook"],
+  "denoise": [0.6],
+  "weights": [], "weight_types": [], "end_at": [], "loras": [null],
+  "seeds": [7, 11]
+}

@@ -1,0 +1,11 @@
+{
+  "_": "Batch 3b — klein forward (base-model-candidates.md, 2026-10-11): the photo as a read reference, alone and with the head crop as a second reference; two style families; three seeds — enough for the auto-QC rule.",
+  "animals": {
+    "Plum":  { "kind": "dog", "describe": "grey cane corso puppy with a white chest patch", "new": "PXL_20250423_185424061.PORTRAIT.jpg" },
+    "Ducky": { "kind": "dog", "describe": "tan pit bull mix with a white chest and white paws", "new": "PXL_20241229_195311064.RAW-01.COVER.jpg" }
+  },
+  "photos": ["new"], "crops": ["subject"], "aspect": ["box"], "describe": ["listing"],
+  "families": ["klein"], "graphs": ["reference", "reference2"], "prompts": ["storybook", "cartoon"],
+  "denoise": [], "weights": [], "weight_types": [], "end_at": [], "loras": [null],
+  "seeds": [7, 11, 19]
+}

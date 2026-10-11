@@ -69,3 +69,7 @@ remove any `comfyui-explore-run-*` container.
 - Switch LoRA per image, or run `--gpu-only` / `--highvram` on the Arc.
 - Run `npm run explore -- run` against a long-lived server outside the guard.
 - Leave a finding in chat: the plan, the issues inbox, or the runbook.
+- Put a kill and a new `guard.sh batch …` launch in the same command: the
+  pgrep pattern matches the launch text in your own command line and kills
+  the chain before it starts (2026-10-11, twice). Stop in one command, launch
+  in the next.

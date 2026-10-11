@@ -1,0 +1,13 @@
+{
+  "_": "Batch 3c — Z-Image forward (base-model-candidates.md, 2026-10-11): the speckle (8 vs 16 steps; bf16 weights spilled the pool to 4.8 GB six times on 2026-10-11 and are out) unaided; the Fun ControlNet (2.9 GB) beside the fp8 transformer and fp8 encoder spilled the pool to 4.4 GB on 2026-10-11 and waits for a smaller encoder.",
+  "animals": {
+    "Plum":  { "kind": "dog", "describe": "grey cane corso puppy with a white chest patch", "new": "PXL_20250423_185424061.PORTRAIT.jpg" },
+    "Ducky": { "kind": "dog", "describe": "tan pit bull mix with a white chest and white paws", "new": "PXL_20241229_195311064.RAW-01.COVER.jpg" }
+  },
+  "photos": ["new"], "crops": ["subject"], "aspect": ["box"], "describe": ["listing"],
+  "families": ["zimage"], "graphs": ["txt2img"], "prompts": ["storybook"],
+  "dtypes": ["fp8_e4m3fn"], "steps": [8, 16],
+  "control_strength": [0], "control_end": [0.8],
+  "denoise": [], "weights": [], "weight_types": [], "end_at": [], "loras": [null],
+  "seeds": [7, 11]
+}
