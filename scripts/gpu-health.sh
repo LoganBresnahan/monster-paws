@@ -29,6 +29,16 @@ ps1 "
 \$ev = Get-WinEvent -FilterHashtable @{LogName='System'; StartTime=\$since} -ErrorAction SilentlyContinue | Where-Object { \$_.Id -in 6008,41,4101,130 -or \$_.ProviderName -like '*WHEA*' } | Sort-Object TimeCreated
 if (-not \$ev) { '   none' } else { \$ev | ForEach-Object { '   {0:MM-dd HH:mm} {1,5} {2}' -f \$_.TimeCreated, \$_.Id, (((\$_.Message -split \"\`n\")[0]) -replace '\s+',' ').Substring(0,[Math]::Min(90,((\$_.Message -split \"\`n\")[0]).Length)) } }
 "
+echo "-- who is on the Arc right now (Windows routes 'high performance' apps to it with no cable attached; nothing but ComfyUI should be here)"
+ps1 '
+$arc = ((Get-Counter "\GPU Local Adapter Memory(*)\Local Usage" -ErrorAction SilentlyContinue).CounterSamples | Where-Object CookedValue -gt 0 | Select-Object -First 1).InstanceName -replace "^luid_","" -replace "_phys.*$",""
+if (-not $arc) { "   (no adapter reports local VRAM — the Arc is idle or absent)" } else {
+  $rows = (Get-Counter "\GPU Engine(*)\Utilization Percentage").CounterSamples | Where-Object { $_.CookedValue -gt 0.5 -and $_.InstanceName -like "*$arc*" }
+  if (-not $rows) { "   nothing above 0.5% on adapter $arc" }
+  foreach ($r in $rows) { $procId = [int](($r.InstanceName -split "_")[1]); $pr = Get-Process -Id $procId -ErrorAction SilentlyContinue; "   {0,5:N1}%  {1}  (pid {2})" -f $r.CookedValue, ($(if ($pr) { $pr.ProcessName } else { "gone" })), $procId }
+  "   per-app routing: HKCU\Software\Microsoft\DirectX\UserGpuPreferences — GpuPreference=1 pins an app to the UHD 770"
+}
+'
 echo "-- .wslconfig"
 f=$(ls /mnt/c/Users/*/.wslconfig 2>/dev/null | head -1); [ -n "$f" ] && grep -E "^(memory|swap|processors|autoMemoryReclaim|networkingMode)=" "$f" | sed 's/^/   /' || echo "   none found"
 

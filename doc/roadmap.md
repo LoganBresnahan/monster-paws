@@ -351,6 +351,12 @@ slice or change build order.
       infra.md step and an oplog entry; the unattended distro is the first
       thing to dogfood. Nothing is bought: the owned A770 plus rented
       training hours is the hardware plan until GPU prices normalize.
+      Carry-in: **provision the production account's graphics routing and
+      the one-ComfyUI rule before the first job** (`doc/infra.md`, Home
+      GPU, 2026-10-11): per-app `GpuPreference=1` so nothing but ComfyUI
+      touches the Arc from that account; dev and production WSL caps sized
+      together; the guard refuses to start when the other account's
+      ComfyUI holds the card; production's worker has the card by default.
       Carry-in: **the home distro's WSL cap is 32 GB** — measured
       2026-10-09: ComfyUI parks models in CPU memory once the card is full
       (17 GB high-water with adapter, LoRA and ControlNet) and the VM needs

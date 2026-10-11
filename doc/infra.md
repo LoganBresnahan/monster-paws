@@ -672,6 +672,30 @@ What was load-bearing, in the order it was found:
   stopped — retained by the driver, not growing further; watch it. The
   guard now stops a batch whose chunk produced nothing instead of retrying
   it forever.
+- **Windows renders desktop apps on the Arc with nothing cabled to it
+  (2026-10-11).** Edge, Firefox, the terminal and the compositor draw on
+  the Arc as Windows' "high performance" GPU and the frames are copied to
+  the UHD 770 for display; the Arc is never idle while a browser is open,
+  Arc-software readings include that work, and the cross-adapter copy is
+  the likely source of the black-and-white window flicker. Windows 11 Pro
+  26H2 on this box shows no "Default high performance GPU" dropdown
+  (Settings › System › Display › Graphics › Default settings), so the
+  routing is set per app on that page, or by the same key it writes:
+  `HKCU\Software\Microsoft\DirectX\UserGpuPreferences`, one value per
+  executable path, `GpuPreference=1;` (power saving = UHD 770). Dev account:
+  Edge, Firefox, Windows Terminal. **Production account: the same, before
+  the first job** — it is per user, and the provisioning step below says so.
+- **Two accounts, one card — the coordination rule.** WSL is per user: the
+  `monsterpaws` account runs its own VM with its own `.wslconfig`, and the
+  two caps add against 64 GB (production 32; dev drops to 24 while both are
+  live). The Arc is shared, not split, and two ComfyUI processes do not fit
+  16 GB, so **one ComfyUI on the card at a time, production's by default**:
+  a dev batch starts only when the production queue is idle and the guard
+  sees an idle pool (dedicated 0, pool ≤ 2 GB); the guard gains a check for
+  the other account's container before the first production job. Nothing
+  of the dev account needs to be logged in for production to run (Task
+  Scheduler, "whether the user is logged on or not"), and nothing of
+  production's is reachable from the dev session.
 - **Restarts, cheapest first — and "VRAM full" is not one of them.** A
   running batch shows the whole 16 GiB allocated: that is PyTorch's cache
   and ComfyUI's model cache, released on demand and at idle, never a reason
