@@ -59,6 +59,10 @@ hostname=${WSL_DISTRO_NAME:-$(hostname)}
 WSLCONF
 
 install -m 644 "$(dirname "$0")/distro-prompt.sh" /etc/monsterpaws-prompt.sh
+if [ -d "/home/${USER_NAME}" ] && ! grep -q MESA_D3D12_DEFAULT_ADAPTER_NAME "/home/${USER_NAME}/.profile" 2>/dev/null; then
+  # WSLg GUI apps render through Mesa d3d12 and would take the Arc, which is ComfyUI's (doc/infra.md, Home GPU)
+  printf '\nexport MESA_D3D12_DEFAULT_ADAPTER_NAME=UHD\n' >> "/home/${USER_NAME}/.profile"
+fi
 if [ -d "/home/${USER_NAME}" ] && ! grep -q monsterpaws-prompt "/home/${USER_NAME}/.bashrc"; then
   printf '\n[ -r /etc/monsterpaws-prompt.sh ] && . /etc/monsterpaws-prompt.sh\n' >> "/home/${USER_NAME}/.bashrc"
 fi

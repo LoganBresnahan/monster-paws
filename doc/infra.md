@@ -682,9 +682,20 @@ What was load-bearing, in the order it was found:
   (Settings › System › Display › Graphics › Default settings), so the
   routing is set per app on that page, or by the same key it writes:
   `HKCU\Software\Microsoft\DirectX\UserGpuPreferences`, one value per
-  executable path, `GpuPreference=1;` (power saving = UHD 770). Dev account:
-  Edge, Firefox, Windows Terminal. **Production account: the same, before
-  the first job** — it is per user, and the provisioning step below says so.
+  executable path, `GpuPreference=1;` (power saving = UHD 770). Pinned in
+  the dev account 2026-10-11: Edge, Firefox, Chrome, Windows Terminal,
+  Steam and `steamwebhelper`, the Xbox app and Game Bar overlay, Claude and
+  ChatGPT desktop (Store identities), Discord (keyed by its `app-<version>`
+  folder, so an update un-pins it until the readout shows it again), VS
+  Code, Zed. Explorer, Settings and Task Manager are composited rather than
+  self-rendered and are left alone unless the readout names them. The
+  readout is `/gpu-health`'s "who is on the Arc" section; whatever it names
+  that is not ComfyUI gets an entry. Linux GUI apps under WSLg (the
+  Playwright browser) render through Mesa d3d12 and pick the Arc by
+  default: `MESA_D3D12_DEFAULT_ADAPTER_NAME=UHD` in `~/.profile`, written by
+  `scripts/bootstrap-distro.sh`, keeps them on the UHD 770. **Production
+  account: the same per-app pins before the first job** — it is per user,
+  and the provisioning step below says so.
 - **Two accounts, one card — the coordination rule.** WSL is per user: the
   `monsterpaws` account runs its own VM with its own `.wslconfig`, and the
   two caps add against 64 GB (production 32; dev drops to 24 while both are
