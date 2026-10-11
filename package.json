@@ -25,7 +25,9 @@
     "comfy:dirs": "d=${COMFYUI_DATA:-var/comfyui}; mkdir -p $d/models $d/input $d/output $d/user && touch comfyui/gpu.env",
     "comfy": "npm run -s comfy:dirs && docker compose -f comfyui/compose.yml up",
     "explore": "mkdir -p var/crew var/explore && docker compose -f comfyui/compose.yml run --rm --no-deps explore",
-    "explore:guarded": "comfyui/guard.sh batch"
+    "explore:guarded": "comfyui/guard.sh batch",
+    "explore:score": "docker compose -f comfyui/compose.yml run --rm --entrypoint python explore /home/comfy/harness/likeness.py score",
+    "explore:consensus": "docker compose -f comfyui/compose.yml run --rm --entrypoint python explore /home/comfy/harness/likeness.py consensus"
   },
   "dependencies": {
     "@sentry/nextjs": "^11.1.0",

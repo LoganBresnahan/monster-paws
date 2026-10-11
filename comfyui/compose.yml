@@ -51,9 +51,15 @@ services:
     image: monster-paws-comfyui:dev
     profiles: ["explore"]
     entrypoint: ["python", "/home/comfy/harness/explore.py"]
+    # the CPU-side encoder load for the likeness scorer stalled the whole WSL VM
+    # three times on 2026-10-10 (doc/issues.md, Ops): bounded here, never unbounded
+    mem_limit: 12g
+    environment:
+      OMP_NUM_THREADS: "4"
     volumes:
       - ./:/home/comfy/harness:ro
       - ../var/crew:/home/comfy/crew:ro
       - ../var/explore:/home/comfy/explore
       - ${COMFYUI_DATA:-../var/comfyui}/input:/home/comfy/ComfyUI/input
       - ${COMFYUI_DATA:-../var/comfyui}/output:/home/comfy/ComfyUI/output:ro
+      - ${COMFYUI_DATA:-../var/comfyui}/models:/home/comfy/ComfyUI/models:ro

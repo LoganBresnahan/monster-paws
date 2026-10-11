@@ -1,7 +1,87 @@
 {
   "_": "Subject boxes per crew photo, fractions [x0, y0, x1, y1] of the upright photo, drawn by hand on a tenths grid 2026-10-08 so the encoder sees the animal rather than the frame (doc/plans/the-look-exploration.md, batch 1b). The companion animal stays outside every box. Production gets these from a detector, not a person (roadmap item 4 carry-in).",
-  "Plum/downloadfile":                       { "subject": [0.17, 0.12, 0.90, 0.97], "head": [0.18, 0.15, 0.60, 0.48] },
-  "Plum/PXL_20250422_224209397":             { "subject": [0.22, 0.30, 0.63, 0.78], "head": [0.27, 0.32, 0.58, 0.60] },
-  "Ducky/PXL_20250621_160612271.PORTRAIT":   { "subject": [0.00, 0.10, 0.88, 0.98], "head": [0.57, 0.12, 0.86, 0.52] },
-  "Ducky/PXL_20250411_123028993":            { "subject": [0.46, 0.27, 0.86, 0.86], "head": [0.48, 0.27, 0.84, 0.60] }
+  "Plum/downloadfile": {
+    "subject": [
+      0.17,
+      0.12,
+      0.9,
+      0.97
+    ],
+    "head": [
+      0.18,
+      0.15,
+      0.6,
+      0.48
+    ]
+  },
+  "Plum/PXL_20250422_224209397": {
+    "subject": [
+      0.22,
+      0.3,
+      0.63,
+      0.78
+    ],
+    "head": [
+      0.27,
+      0.32,
+      0.58,
+      0.6
+    ]
+  },
+  "Ducky/PXL_20250621_160612271.PORTRAIT": {
+    "subject": [
+      0.0,
+      0.1,
+      0.88,
+      0.98
+    ],
+    "head": [
+      0.57,
+      0.12,
+      0.86,
+      0.52
+    ]
+  },
+  "Ducky/PXL_20250411_123028993": {
+    "subject": [
+      0.46,
+      0.27,
+      0.86,
+      0.86
+    ],
+    "head": [
+      0.48,
+      0.27,
+      0.84,
+      0.6
+    ]
+  },
+  "Ducky/PXL_20241229_195311064.RAW-01.COVER": {
+    "subject": [
+      0.27,
+      0.17,
+      1.0,
+      0.8
+    ],
+    "head": [
+      0.3,
+      0.19,
+      0.72,
+      0.62
+    ]
+  },
+  "Plum/PXL_20250423_185424061.PORTRAIT": {
+    "subject": [
+      0.0,
+      0.12,
+      0.97,
+      1.0
+    ],
+    "head": [
+      0.08,
+      0.13,
+      0.72,
+      0.6
+    ]
+  }
 }

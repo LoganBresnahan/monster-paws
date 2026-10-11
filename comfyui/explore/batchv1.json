@@ -1,0 +1,21 @@
+{
+  "_": "v1 check (2026-10-10): the picked settings on photos the exploration never used — production's shape, four candidates per animal, the auto-QC v0 rule chooses (doc/plans/the-look-exploration.md, Step 2).",
+  "animals": {
+    "Plum":  { "kind": "dog", "describe": "grey cane corso puppy with a white chest patch", "new": "PXL_20250423_185424061.PORTRAIT.jpg" },
+    "Ducky": { "kind": "dog", "describe": "tan pit bull mix with a white chest and white paws", "new": "PXL_20241229_195311064.RAW-01.COVER.jpg" }
+  },
+  "photos": ["new"],
+  "crops": ["subject"],
+  "aspect": ["box"],
+  "describe": ["listing"],
+  "graphs": ["adapter"],
+  "prompts": ["storybook"],
+  "loras": ["tinies"],
+  "control_strength": [0.4],
+  "control_end": [0.8],
+  "weights": [0.6],
+  "weight_types": ["linear"],
+  "end_at": [1.0],
+  "denoise": [],
+  "seeds": [3, 7, 11, 19]
+}

@@ -38,3 +38,8 @@ loras/watercolor_v1_sdxl.safetensors  hf:ostris/watercolor_style_lora_sdxl/water
 # words): the same RAIL family and use restrictions as the base checkpoint.
 # Read 2026-10-08.
 loras/Little_Tinies.safetensors  hf:alvdansen/littletinies/Little_Tinies.safetensors  7d43ff67299f2412b994f021bb9b3a7713484b8a615e468542959f00fd0098a3  CreativeML-OpenRAIL-M  2026-10-08
+
+# SDXL canny ControlNet for the look exploration (batch 1c): the pose and
+# outline come from the photo, the adapter supplies colour and features.
+# xinsir — Apache-2.0 (model card), the V2 training. Read 2026-10-09.
+controlnet/xinsir-canny-sdxl-1.0-v2.safetensors  hf:xinsir/controlnet-canny-sdxl-1.0/diffusion_pytorch_model_V2.safetensors  b3e4ac47bc814019d50dc842f579301440deb6d8f09ee1b91a30f527ace1b852  Apache-2.0  2026-10-09

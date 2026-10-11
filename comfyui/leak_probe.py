@@ -57,6 +57,12 @@ EXPERIMENTS = {
     # 136 flat. One LoRA held, versus a switch every image.
     "lora6":       ("", {"graph": "adapter", "lora": "watercolor"}, 6),
     "loraswitch6": ("", {"graph": "adapter", "lora_cycle": [None, "watercolor", "tinies"]}, 6),
+    # 2026-10-09, batch 1c: adapter + LoRA + canny ControlNet killed the
+    # server at the second image (host free 30 → 16 GB). Same graph held,
+    # then with ComfyUI told to keep everything on the card.
+    "cn6":        ("", {"graph": "adapter", "lora": "tinies", "weight": 0.6, "control_strength": 0.7, "control_end": 0.8}, 6),
+    "cn6gpuonly": ("--gpu-only", {"graph": "adapter", "lora": "tinies", "weight": 0.6, "control_strength": 0.7, "control_end": 0.8}, 6),
+    "cn6highvram": ("--highvram", {"graph": "adapter", "lora": "tinies", "weight": 0.6, "control_strength": 0.7, "control_end": 0.8}, 6),
 }
 
 

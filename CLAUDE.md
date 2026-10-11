@@ -146,6 +146,12 @@ the monthly check in infra.md's Recurring ops.
   conventions hold.
 - `/deploy` — ship bar → build → e2e against the production build → roll onto
   the droplet with rollback kept → smoke prod → dogfood handoff.
+- `/gpu-health` — bearing on the home GPU box: Windows crash/WHEA events,
+  memory, BIOS and RAM speed, the WSL cap, the driver pool, the smoke,
+  read against infra.md's Home GPU numbers. After any driver, BIOS, WSL or
+  kernel change, and after a freeze. Read-only apart from the smoke.
+- `/explore-batch` — run one look-exploration batch under the guard and
+  read it (grids, likeness score, first read in the plan, Logan's picks).
 - `adr-plan` workflow (`.claude/workflows/adr-plan.js`) — decompose an
   accepted ADR into an effort-ranked, dependency-ordered build checklist
   before implementing it.
@@ -202,11 +208,14 @@ the monthly check in infra.md's Recurring ops.
   http://127.0.0.1:8188. `up` re-verifies every model before serving. Models
   live in `var/comfyui/` or `$COMFYUI_DATA`; workflows are committed in API
   format under `comfyui/workflows/` and run with `comfyui/run_workflow.py`.
+  `npm run explore -- grid <batch> --rows … --cols …` lays a batch out as
+  one JPEG; `npm run explore:score -- <batch>` scores likeness (CPU).
   **Batches and experiments go through `comfyui/guard.sh`** (`batch
   <name> [chunk]`, `up`, `down`, `mem`): it restarts ComfyUI between chunks
-  and kills it below a host-memory floor, because the per-prompt cache flush
-  leaked Windows memory and froze the box (2026-10-07/08), and a LoRA
-  switch per image still spikes it. Host-side facts:
+  and kills it when the driver's shared pool grows, because the per-prompt
+  cache flush leaked Windows memory through that pool and froze the box
+  (2026-10-07/08); the WSL VM filling to its cap is bounded and is sized
+  in infra.md. Host-side facts:
   `doc/infra.md`, Home GPU (ADR-0004 as amended 2026-10-05)
 - `npm run db:dump` — gzipped `pg_dump` of the dev database to `var/dumps/`;
   run it after a full poll, because that corpus is currently the only copy

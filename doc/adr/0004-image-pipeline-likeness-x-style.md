@@ -335,6 +335,14 @@ by Task Scheduler — is the one fragile joint and the first thing to dogfood.
   nothing has bitten yet.
 
 ### Revisit triggers (added)
+- **Fired 2026-10-10 — the auto-QC metric.** Cosine between CLIP ViT-H
+  embeddings of a candidate and the photo ranks photocopies first and
+  stylised images last, and is near a coin flip against Logan's picks
+  among candidates of one workflow (`doc/plans/the-look-exploration.md`,
+  Step 2). "CLIP similarity picks best of 3–4" stands only in a
+  style-invariant form — a styled reference, candidate consensus, or a
+  shape-first embedding — chosen by rank against the labelled picks. The
+  amendment lands with that choice.
 - Jobs wait more than 48 h because the box is down, more than once.
 - Donations outpace what the A770 generates in its idle hours.
 - Logan's other work needs the card at the same time — two ComfyUI

@@ -7,6 +7,8 @@ Pillow and ComfyUI's input/output mounts, not the GPU):
     npm run explore -- run batch1           # every run the spec expands to; resumable
     npm run explore -- run batch1 --limit 4 # a taste
     npm run explore -- sheet batch1         # rebuild index.html from runs.jsonl
+    npm run explore -- grid batch1d --rows animal,photo,seed --cols control_strength,control_end --where lora=tinies
+                                            # one JPEG, a cell per (row, col): a batch read at a glance
 
 The plan behind the batches is doc/plans/the-look-exploration.md. A run's
 record in runs.jsonl is enough to rebuild its graph exactly.
@@ -32,6 +34,9 @@ NEGATIVE = "blurry, text, watermark, extra limbs, deformed, two animals"
 NEGATIVE_STYLED = NEGATIVE + ", photograph, photorealistic"
 # style LoRAs beside the adapter — stand-ins for our own (roadmap item 9), licensed in models.manifest
 LORAS = {"watercolor": "watercolor_v1_sdxl.safetensors", "tinies": "Little_Tinies.safetensors"}
+CONTROLNET = "xinsir-canny-sdxl-1.0-v2.safetensors"
+# SDXL's native buckets near the box aspects we meet (batch 1d): render a tall box tall, never pad it
+BUCKETS = [(1024, 1024), (896, 1152), (832, 1216), (1152, 896), (1216, 832)]
 PROMPTS = {
     "photo": "a photo of a {kind}, soft natural light, shallow depth of field",
     "storybook": "a gentle storybook illustration of a {kind}, soft watercolor, warm pastel palette, plain background",
@@ -55,7 +60,8 @@ def prep() -> None:
         key = f"{src.parent.name}/{src.stem}"
         wanted = {"full": None, **{k: v for k, v in boxes.get(key, {}).items() if not k.startswith("_")}}
         outs = {crop: INPUT / input_name(src.parent.name, src.name, crop) for crop in wanted}
-        if all(o.exists() for o in outs.values()):
+        raws = [INPUT / input_name(src.parent.name, src.name, crop, raw=True) for crop in wanted if crop != "full"]
+        if all(o.exists() for o in list(outs.values()) + raws):
             continue
         outs["full"].parent.mkdir(parents=True, exist_ok=True)
         # ImageOps.exif_transpose bakes the orientation in; `convert` then
@@ -63,13 +69,17 @@ def prep() -> None:
         im = ImageOps.exif_transpose(Image.open(src)).convert("RGB")
         im.thumbnail((1536, 1536), Image.LANCZOS)
         for crop, box in wanted.items():
-            if outs[crop].exists():
-                continue
-            part = im if box is None else squared(im, box)
-            clean = Image.new("RGB", part.size)
-            clean.paste(part)
-            clean.save(outs[crop], "PNG")
-            print(f"prep  {key} -> {outs[crop].relative_to(INPUT)} {clean.size}")
+            variants = {outs[crop]: None if box is None else squared(im, box)}
+            if box is not None:
+                variants[INPUT / input_name(src.parent.name, src.name, crop, raw=True)] = im.crop(tuple(round(b * d) for b, d in zip(box, im.size * 2)))
+            for dst, part in variants.items():
+                if dst.exists():
+                    continue
+                part = im if part is None else part
+                clean = Image.new("RGB", part.size)
+                clean.paste(part)
+                clean.save(dst, "PNG")
+                print(f"prep  {key} -> {dst.relative_to(INPUT)} {clean.size}")
 
 
 def squared(im, box: list[float]):
@@ -88,8 +98,14 @@ def squared(im, box: list[float]):
     return out
 
 
-def input_name(animal: str, photo: str, crop: str = "full") -> str:
-    return f"crew/{animal}/{Path(photo).stem}{'' if crop == 'full' else '.' + crop}.png"
+def input_name(animal: str, photo: str, crop: str = "full", raw: bool = False) -> str:
+    return f"crew/{animal}/{Path(photo).stem}{'' if crop == 'full' else '.' + crop}{'.raw' if raw else ''}.png"
+
+
+def bucket(size: tuple[int, int]) -> tuple[int, int]:
+    """The SDXL resolution whose aspect is nearest the image's."""
+    w, h = size
+    return min(BUCKETS, key=lambda b: abs(b[0] / b[1] - w / h))
 
 
 # ---------------------------------------------------------------- graphs
@@ -108,13 +124,18 @@ def build_graph(run: dict, prefix: str) -> dict:
     g["pos"] = {"class_type": "CLIPTextEncode", "inputs": {"clip": clip, "text": run["prompt_text"]}}
     g["neg"] = {"class_type": "CLIPTextEncode", "inputs": {"clip": clip, "text": run["negative"]}}
     # the crop is what the encoder sees; the latent (img2img) always starts from the whole photo
-    photos = [input_name(run["animal"], p, run.get("crop", "full")) for p in run["photos"]]
+    raw = run.get("aspect") == "box" and run.get("crop", "full") != "full"
+    photos = [input_name(run["animal"], p, run.get("crop", "full"), raw=raw) for p in run["photos"]]
     for i, name in enumerate(photos):
         g[f"img{i}"] = {"class_type": "LoadImage", "inputs": {"image": name}}
+    width, height = (1024, 1024)
+    if raw:
+        from PIL import Image
+        width, height = bucket(Image.open(INPUT / photos[0]).size)
 
     # latent: noise, or the first photo encoded (img2img)
     if run["graph"] == "adapter":
-        g["latent"] = {"class_type": "EmptyLatentImage", "inputs": {"width": 1024, "height": 1024, "batch_size": 1}}
+        g["latent"] = {"class_type": "EmptyLatentImage", "inputs": {"width": width, "height": height, "batch_size": 1}}
         denoise = 1.0
     else:
         g["img_full"] = {"class_type": "LoadImage", "inputs": {"image": input_name(run["animal"], run["photos"][0])}}
@@ -127,7 +148,7 @@ def build_graph(run: dict, prefix: str) -> dict:
         g["clipvision"] = {"class_type": "CLIPVisionLoader", "inputs": {"clip_name": "CLIP-ViT-H-14-laion2B-s32B-b79K.safetensors"}}
         g["ipa_model"] = {"class_type": "IPAdapterModelLoader", "inputs": {"ipadapter_file": "ip-adapter-plus_sdxl_vit-h.safetensors"}}
         for i in range(len(photos)):
-            g[f"prep{i}"] = {"class_type": "PrepImageForClipVision", "inputs": {"image": [f"img{i}", 0], "interpolation": "LANCZOS", "crop_position": "center", "sharpening": 0.0}}
+            g[f"prep{i}"] = {"class_type": "PrepImageForClipVision", "inputs": {"image": [f"img{i}", 0], "interpolation": "LANCZOS", "crop_position": "top" if height > width else "center", "sharpening": 0.0}}
         if run.get("multi", "batch") == "encoder":
             for i in range(len(photos)):
                 g[f"enc{i}"] = {"class_type": "IPAdapterEncoder", "inputs": {"ipadapter": ["ipa_model", 0], "image": [f"prep{i}", 0], "weight": 1.0, "clip_vision": ["clipvision", 0]}}
@@ -152,8 +173,18 @@ def build_graph(run: dict, prefix: str) -> dict:
                 "start_at": 0.0, "end_at": run["end_at"], "embeds_scaling": "V only"}}
         model = ["ipa", 0]
 
+    pos, neg = ["pos", 0], ["neg", 0]
+    if run.get("control_strength"):
+        # the outline comes from the same picture the encoder sees, so pose and crop agree (batch 1c)
+        g["cn_scale"] = {"class_type": "ImageScale", "inputs": {"image": ["img0", 0], "upscale_method": "lanczos", "width": width, "height": height, "crop": "center"}}
+        g["canny"] = {"class_type": "Canny", "inputs": {"image": ["cn_scale", 0], "low_threshold": 0.3, "high_threshold": 0.7}}
+        g["cn_model"] = {"class_type": "ControlNetLoader", "inputs": {"control_net_name": CONTROLNET}}
+        g["cn"] = {"class_type": "ControlNetApplyAdvanced", "inputs": {
+            "positive": pos, "negative": neg, "control_net": ["cn_model", 0], "image": ["canny", 0], "vae": ["ckpt", 2],
+            "strength": run["control_strength"], "start_percent": 0.0, "end_percent": run["control_end"]}}
+        pos, neg = ["cn", 0], ["cn", 1]
     g["sampler"] = {"class_type": "KSampler", "inputs": {
-        "model": model, "positive": ["pos", 0], "negative": ["neg", 0], "latent_image": ["latent", 0],
+        "model": model, "positive": pos, "negative": neg, "latent_image": ["latent", 0],
         "seed": run["seed"], "steps": run.get("steps", 25), "cfg": 6.0, "sampler_name": "dpmpp_2m", "scheduler": "karras", "denoise": denoise}}
     return g
 
@@ -164,27 +195,30 @@ def expand(spec: dict) -> list[dict]:
     """The cartesian product of a batch spec's axes, minus knobs a graph does not have."""
     runs = []
     for animal, info in spec["animals"].items():
-        for photo_key, crop, describe in itertools.product(spec["photos"], spec.get("crops", ["full"]), spec.get("describe", ["generic"])):
+        for photo_key, crop, describe, aspect in itertools.product(spec["photos"], spec.get("crops", ["full"]), spec.get("describe", ["generic"]), spec.get("aspect", ["square"])):
             photos = info[photo_key] if isinstance(info[photo_key], list) else [info[photo_key]]
             subject = info["kind"] if describe == "generic" else info["describe"]
             for graph, prompt, seed in itertools.product(spec["graphs"], spec["prompts"], spec["seeds"]):
-                base = {"animal": animal, "kind": info["kind"], "photo": photo_key, "photos": photos, "crop": crop, "describe": describe,
+                base = {"animal": animal, "kind": info["kind"], "photo": photo_key, "photos": photos, "crop": crop, "describe": describe, "aspect": aspect,
                         "graph": graph, "prompt": prompt, "prompt_text": PROMPTS[prompt].format(kind=subject),
                         "negative": NEGATIVE if prompt == "photo" else NEGATIVE_STYLED, "seed": seed}
                 loras = [None] if prompt == "photo" else spec.get("loras", [None])
+                controls = [(st, en) for st in spec.get("control_strength", [0]) for en in (spec.get("control_end", [1.0]) if st else [None])]
                 if graph == "img2img":
-                    for denoise, lora in itertools.product(spec["denoise"], loras):
-                        runs.append({**base, "lora": lora, "denoise": denoise, "weight": None, "weight_type": None, "end_at": None})
+                    for denoise, lora, (cs, ce) in itertools.product(spec["denoise"], loras, controls):
+                        runs.append({**base, "lora": lora, "control_strength": cs, "control_end": ce, "denoise": denoise, "weight": None, "weight_type": None, "end_at": None})
                     continue
                 denoises = spec["denoise"] if graph == "both" else [None]
                 multis = spec.get("multi", ["batch"]) if len(photos) > 1 else ["batch"]
                 combines = spec.get("combine", ["concat"]) if len(photos) > 1 else ["concat"]
-                for weight, wtype, end_at, denoise, multi, combine, lora in itertools.product(
-                        spec["weights"], spec["weight_types"], spec["end_at"], denoises, multis, combines, loras):
-                    runs.append({**base, "lora": lora, "weight": weight, "weight_type": wtype, "end_at": end_at, "denoise": denoise, "multi": multi, "combine": combine})
+                for weight, wtype, end_at, denoise, multi, combine, lora, (cs, ce) in itertools.product(
+                        spec["weights"], spec["weight_types"], spec["end_at"], denoises, multis, combines, loras, controls):
+                    runs.append({**base, "lora": lora, "control_strength": cs, "control_end": ce, "weight": weight, "weight_type": wtype, "end_at": end_at, "denoise": denoise, "multi": multi, "combine": combine})
     for i, r in enumerate(runs):
         bits = [r["animal"], r["photo"], r["graph"], r["prompt"], f"s{r['seed']}"]
-        bits += [b for b in (r["crop"], r["describe"], r["lora"]) if b and b not in ("full", "generic")]
+        bits += [b for b in (r["crop"], r["describe"], r["lora"], r.get("aspect")) if b and b not in ("full", "generic", "square")]
+        if r.get("control_strength"):
+            bits.append(f"cn{r['control_strength']}e{r['control_end']}")
         if r["weight"] is not None:
             bits += [f"w{r['weight']}", r["weight_type"].replace(" ", "-"), f"e{r['end_at']}"]
         if r["denoise"] is not None:
@@ -255,13 +289,14 @@ def run_batch(batch: str, limit: int | None, dry: bool, only: str | None = None)
 
 # ---------------------------------------------------------------- sheet
 
-AXES = ["animal", "photo", "graph", "prompt", "crop", "describe", "lora", "weight", "weight_type", "end_at", "denoise", "seed", "multi", "combine"]
+AXES = ["animal", "photo", "graph", "prompt", "crop", "describe", "aspect", "lora", "control_strength", "control_end", "weight", "weight_type", "end_at", "denoise", "seed", "multi", "combine"]
 
 
 def sheet(batch: str) -> None:
     from PIL import Image
     out = EXPLORE / batch
     runs = list({json.loads(l)["id"]: json.loads(l) for l in (out / "runs.jsonl").read_text().splitlines()}.values())
+    scores = {json.loads(l)["id"]: json.loads(l)["likeness"] for l in (out / "scores.jsonl").read_text().splitlines()} if (out / "scores.jsonl").exists() else {}
     thumbs = out / "thumbs"
     thumbs.mkdir(exist_ok=True)
     cards = []
@@ -279,9 +314,11 @@ def sheet(batch: str) -> None:
         for a in AXES:
             values[a].add(str(r.get(a)))
         caption = " · ".join(f"{a} {r[a]}" for a in AXES if r.get(a) is not None and a not in ("animal",))
+        if r["id"] in scores:
+            caption = f"likeness {scores[r['id']]:.3f} · " + caption
         full = "../../comfyui/output/" + r["output"]
         cards.append(
-            f'<figure class="card" {attrs} data-id="{r["id"]}">'
+            f'<figure class="card" {attrs} data-id="{r["id"]}" data-likeness="{scores.get(r["id"], 0)}">'
             f'<a href="{html.escape(full)}" target="_blank"><img src="thumbs/{r["id"]}.jpg" alt="{html.escape(r["id"])}" loading="lazy"></a>'
             f'<figcaption><b>{html.escape(r["animal"])}</b> <label><input type="checkbox" class="pick"> pick</label><br><small>{html.escape(caption)}</small></figcaption></figure>')
     filters = []
@@ -299,7 +336,7 @@ select{{margin-left:4px}} .grid{{display:grid;grid-template-columns:repeat(auto-
 .card.picked{{outline:3px solid #6a994e}} figcaption{{padding:6px 8px}} small{{color:#8a715c;line-height:1.3}}
 textarea{{width:100%;height:80px;font:12px monospace}} .hidden{{display:none}}
 </style>
-<header><b>{batch}</b> <span id="count"></span> {"".join(filters)} <button id="copy">picks → text</button></header>
+<header><b>{batch}</b> <span id="count"></span> {"".join(filters)} {"<button id=\"sort\">sort by likeness</button>" if scores else ""} <button id="copy">picks → text</button></header>
 <div class="grid">{"".join(cards)}</div>
 <div style="padding:16px"><textarea id="picks" placeholder="your picks appear here — paste them back to Claude"></textarea></div>
 <script>
@@ -309,10 +346,45 @@ sels.forEach(s=>s.addEventListener('change',apply));apply();
 const key='picks:{batch}';let picks=new Set();try{{picks=new Set(JSON.parse(localStorage.getItem(key)||'[]'))}}catch(e){{}}
 function paint(){{for(const c of cards){{const on=picks.has(c.dataset.id);c.classList.toggle('picked',on);c.querySelector('.pick').checked=on;}}document.getElementById('picks').value=[...picks].join('\\n');try{{localStorage.setItem(key,JSON.stringify([...picks]))}}catch(e){{}}}}
 cards.forEach(c=>c.querySelector('.pick').addEventListener('change',e=>{{e.target.checked?picks.add(c.dataset.id):picks.delete(c.dataset.id);paint();}}));paint();
+const sb=document.getElementById('sort');if(sb)sb.onclick=()=>{{const g=document.querySelector('.grid');[...g.children].sort((a,b)=>b.dataset.likeness-a.dataset.likeness).forEach(c=>g.appendChild(c));}};
 document.getElementById('copy').onclick=()=>{{const t=document.getElementById('picks');t.select();try{{navigator.clipboard.writeText(t.value)}}catch(e){{}}}};
 </script>"""
     (out / "index.html").write_text(page)
     print(f"sheet: {out / 'index.html'} ({len(cards)} images)")
+
+
+def grid(batch: str, rows: list[str], cols: list[str], where: dict[str, str], size: int, name: str | None) -> Path:
+    """One image per (row, col) cell of the batch, labelled, so a read of forty images is one look."""
+    from PIL import Image, ImageDraw
+    out = EXPLORE / batch
+    runs = [json.loads(l) for l in (out / "runs.jsonl").read_text().splitlines()]
+    runs = [r for r in runs if "output" in r and all(str(r.get(k)) == v for k, v in where.items())]
+    def key(r, axes):
+        return tuple(r.get(a) for a in axes)
+    def order(vals):
+        return sorted(vals, key=lambda t: tuple((0, v) if isinstance(v, (int, float)) and v is not None else (1, str(v)) for v in t))
+    rkeys = order({key(r, rows) for r in runs})
+    ckeys = order({key(r, cols) for r in runs})
+    cell = {}
+    for r in runs:
+        cell.setdefault((key(r, rows), key(r, cols)), r)
+    def label(axes, k):
+        return " ".join(f"{v}" if a in ("animal", "photo", "lora", "crop") else f"{a.replace('control_', 'cn ').replace('_', ' ')} {v}" for a, v in zip(axes, k) if v is not None)
+    sheet = Image.new("RGB", (size * len(ckeys), size * len(rkeys)), "white")
+    d = ImageDraw.Draw(sheet)
+    for i, rk in enumerate(rkeys):
+        for j, ck in enumerate(ckeys):
+            r = cell.get((rk, ck))
+            if not r:
+                continue
+            im = Image.open(OUTPUT / r["output"]).convert("RGB")
+            im.thumbnail((size, size))
+            sheet.paste(im, (j * size + (size - im.width) // 2, i * size + (size - im.height) // 2))
+            d.text((j * size + 3, i * size + 3), f"{label(rows, rk)} | {label(cols, ck)}", fill="red")
+    dst = out / f"grid-{name or ('-'.join(rows) + '-x-' + '-'.join(cols))}.jpg"
+    sheet.save(dst, "JPEG", quality=82)
+    print(f"grid: {dst} ({len(rkeys)} rows × {len(ckeys)} cols, {len(cell)} cells)")
+    return dst
 
 
 def main() -> int:
@@ -321,12 +393,16 @@ def main() -> int:
     sub.add_parser("prep")
     r = sub.add_parser("run"); r.add_argument("batch"); r.add_argument("--limit", type=int); r.add_argument("--dry-run", action="store_true"); r.add_argument("--only", help="run only ids containing this text")
     s = sub.add_parser("sheet"); s.add_argument("batch")
+    g = sub.add_parser("grid"); g.add_argument("batch"); g.add_argument("--rows", required=True); g.add_argument("--cols", required=True)
+    g.add_argument("--where", action="append", default=[], help="axis=value, repeatable"); g.add_argument("--size", type=int, default=230); g.add_argument("--name")
     a = ap.parse_args()
     if a.cmd == "prep":
         prep()
     elif a.cmd == "run":
         prep()
         run_batch(a.batch, a.limit, a.dry_run, a.only)
+    elif a.cmd == "grid":
+        grid(a.batch, a.rows.split(","), a.cols.split(","), dict(w.split("=", 1) for w in a.where), a.size, a.name)
     else:
         sheet(a.batch)
     return 0

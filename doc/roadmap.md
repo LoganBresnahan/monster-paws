@@ -351,6 +351,10 @@ slice or change build order.
       infra.md step and an oplog entry; the unattended distro is the first
       thing to dogfood. Nothing is bought: the owned A770 plus rented
       training hours is the hardware plan until GPU prices normalize.
+      Carry-in: **the home distro's WSL cap is 32 GB** — measured
+      2026-10-09: ComfyUI parks models in CPU memory once the card is full
+      (17 GB high-water with adapter, LoRA and ControlNet) and the VM needs
+      that plus the model files' page cache (`doc/infra.md`, Home GPU).
       Carry-in: **a throughput sweep before the worker is sized** —
       candidates as one batched sampler call, Arc Control limits, XPU
       precision/attention flags (`doc/plans/the-look-exploration.md`,
@@ -370,9 +374,25 @@ slice or change build order.
       exploration crops by hand (`comfyui/explore/boxes.json`); the worker
       needs a detector that draws the box and a rule for which animal is
       the subject — the one present in every photo of the listing. The box
-      grows to a square inside the photo, stopping at any other animal's
-      box, and only the remainder is padded: padding shows as bands at
-      adapter weight 0.8 (batch 1b).
+      is rendered at its own aspect, snapped to an SDXL bucket, never padded
+      (batches 1b–1d: padding shows as bands, with or without the outline).
+      Which animal: a listing's photos are all of one animal by the
+      shelter's word, so the subject is the detection that recurs across
+      them — embed every dog/cat box with the same ViT-H the adapter uses,
+      cluster, take the cluster present in the most photos (ties: largest,
+      most central), and let the listing's species and colour veto a
+      cluster that contradicts them; a single photo with two animals and no
+      tiebreak gets the framed photo, never a guess. No language model
+      anywhere in this: the description is a template over the listing's
+      structured fields (colour, breed, age group, species — "grey cane
+      corso puppy"), and the judge is an embedding comparison that runs on
+      the card or the CPU. The photo never leaves the machine (ADR-0004), so
+      a hosted model may only ever see generated candidates, never the
+      reference — which rules it out as the likeness judge and leaves it a
+      possible anatomy check at most (its own ADR if ever).
+      The same stage picks *which* photo: with the pose locked from the
+      outline, a top-down shot gives a top-down keepsake (batch 1d), so the
+      listing's best shot by a pose/quality score is the one rendered.
       Carry-in: **the prompt carries the listing's own description** —
       breed, colour, age — not "a dog": it is the one identity input the
       shelter already gives us for free. `animals` has breed and age group
