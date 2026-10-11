@@ -612,13 +612,16 @@ What was load-bearing, in the order it was found:
   grouped by LoRA (one or two switches per batch, a fresh process between
   chunks) and `leak_probe.py lora6 loraswitch6` reproduces both results.
   Production holds one LoRA for the life of the process and never meets
-  it. The mechanism is open (`doc/issues.md`, Ops).
+  it. Explained the next day: the step is the WSL VM reaching its cap as
+  ComfyUI parks the swapped-out model copies in CPU memory — bounded, and
+  sized in the memory bullet below.
 - **Nothing drives the Arc except through `comfyui/guard.sh`** (built
   2026-10-08, kept after the fix): `guard.sh mem` prints host free, the
   driver's shared pool, dedicated and the descriptor count; `guard.sh up
-  [flags]` refuses to start ComfyUI below `FLOOR_GB` (20) and passes flags
+  [flags]` refuses to start ComfyUI below `FLOOR_GB` (10) and passes flags
   through `COMFY_ARGS` and env through `GPU_ENV`; `guard.sh watch` kills it
-  the moment the floor is crossed; `guard.sh batch <batch> [chunk]` runs the
+  the moment the shared pool passes `SHARED_MAX_GB` (4 — the leak's
+  signature, idle is ~1) or host free crosses the floor; `guard.sh batch <batch> [chunk]` runs the
   explore harness in chunks with a fresh process each time;
   `comfyui/leak_probe.py` is the experiment runner behind it, and
   `restart: "no"` keeps ComfyUI from coming back on its own after a crash.
@@ -630,6 +633,33 @@ What was load-bearing, in the order it was found:
   wall and **Windows froze hard twice**. Diagnose with `ls /proc/1/fd | wc
   -l` inside the container and `guard.sh mem`; the smoke prints descriptors
   per cycle.
+- **Two memories, one cap: size the WSL VM for the models ComfyUI parks
+  in CPU RAM (2026-10-09).** Windows free memory drops of 12–14 GB in one
+  step turned out to be the WSL VM growing to its `.wslconfig` cap (24 GB on
+  the dev distro), not the driver: the shared pool stayed at 0.8 GB each
+  time. With adapter + style LoRA + canny ControlNet the card is at its
+  edge (PyTorch reserved 14.4 GiB, 4.7 free), so ComfyUI's default loader
+  parks whatever is not in use in CPU memory — the process reaches 14 GB
+  resident, 17 GB high-water, and 1 GB of swap under the 24 GB cap, and
+  spikes to the cap about every fifth image. That is bounded and harmless;
+  the earlier floor of 20 GB killed it anyway, which is why the guard now
+  watches the pool. The two loader flags are not the answer: `--gpu-only`
+  pushed the shared pool to 5.3 GB before the first image, `--highvram`
+  took 184 s for one image at 18.3 GiB reserved on a 16 GiB card and 4.2 GB
+  of pool — both the leak's shape, both killed. Sizing: the production
+  distro gets `memory=32GB` in its `.wslconfig` (17 GB process + ~10 GB
+  page cache for the model files + headroom; the box has 64); the dev
+  distro moved to it on 2026-10-10, with `autoMemoryReclaim=disabled` in
+  the same edit after the VM froze three times under a CPU-side model load
+  (`doc/issues.md`, Ops). The trade: with reclaim off the VM keeps its page
+  cache, so once a batch has touched 32 GB the VM holds 32 GB until the
+  next `wsl --shutdown`, and Windows free memory with a browser open fell
+  to 7.7 GB mid-batch the same evening — the guard's 10 GB floor killed one
+  chunk (pool flat at 1.2 GB) and the batch resumed. That is the floor
+  doing its job, not a fault; if it repeats, `memory=28GB` at the next
+  shutdown is the adjustment (the process high-water is 17 GB). Anything
+  heavier than this graph (SD 3.5, a second ControlNet) needs the card,
+  not the VM.
 - **Restarts, cheapest first — and "VRAM full" is not one of them.** A
   running batch shows the whole 16 GiB allocated: that is PyTorch's cache
   and ComfyUI's model cache, released on demand and at idle, never a reason
@@ -640,6 +670,10 @@ What was load-bearing, in the order it was found:
   kernel or `.wslconfig` change. Windows needs a reboot only for its GPU
   driver. None of these recovered the 2026-10-07 garbage copies — that was
   the runtime pairing, fixed in the Dockerfile.
+- **Resizable BAR is on** (BIOS and Intel Graphics Software both say so,
+  2026-10-09). Windows' `Win32_DeviceMemoryAddress` does not show the 16 GB
+  window — it listed the Arc at 256 MB with ReBAR enabled — so never read
+  ReBAR from that class; Intel's own software is the check.
 - **A fast matmul proves nothing about correctness** — see the runtime
   bullet above. The smoke now round-trips values at several sizes, checks a
   3 GiB allocation and a ones-matmul's result, and only then times. Run it

@@ -60,18 +60,43 @@ is the record, and a file of ticked boxes stops being read.
   2 × 32 GB at 3600 is the usual suspect for S3-resume WHEA freezes;
   (4) remove the third-party Virtual Display Driver if it is not needed.
   Re-read the System log after a week (`Get-WinEvent` for ids 6008 and
-  WHEA-Logger 1). Found 2026-10-09.
-- **A LoRA switch on the Arc eventually takes ~12 GB of host memory in one
-  step; the mechanism is unknown.** Five switches run flat, the sixth drops
-  Windows free memory by 12 GB inside a single image while the driver pool,
-  PyTorch's reserved pool and VRAM stay put (`comfyui/leak_probe.py
-  loraswitch6`; facts in `doc/infra.md`, Home GPU). Worked around — batches
-  run grouped by LoRA with a fresh process between chunks, and production
-  holds one LoRA — not understood: whether it is ComfyUI's weight backups
-  on the offload device, a model clone unloaded through CPU on the sixth
-  patch, or the CPU allocator holding freed arenas is unread. Read
-  `comfy/model_patcher.py` and `model_management.py` at the pinned
-  ComfyUI sha before anything switches LoRAs per job. Found 2026-10-08.
+  WHEA-Logger 1). Found 2026-10-09. Status 2026-10-09 afternoon: S3 is
+  off since this morning (Logan); the display glitches that followed are
+  reproducible from Firefox (screens go black and white whenever it is
+  used), on an idle box with 33 GB free — the Arc's Windows driver with
+  Firefox's GPU compositing is the suspect for those, separate from the
+  freezes. The BIOS flash was attempted before and did not take; ASUS
+  boards of this family are flashed with EZ Flash 3 from the BIOS: FAT32
+  stick, the .CAP renamed by the BIOSRenamer tool in the download, a USB
+  2.0 port, and an intermediate version first when the jump from 1805 is
+  refused. This board has no USB BIOS FlashBack (Logan). **2026-10-10: BIOS
+  1836 (2026-04-15) is on**, flashed by Logan after another episode; the
+  box feels snappier and the Intel overlay works again after a long time.
+  Two more unexpected shutdowns before the flash — 10-09 19:20 (WHEA
+  record) and 10-10 12:01 (no record) — make fourteen in a month. The new
+  symptom in between: black flicker, program windows going white, which
+  looks like the display driver resetting, though Windows logged no
+  timeout-recovery (4101) event for it. Windows' "Memory Compression"
+  process held 16 GB on an idle box before the flash and 0 after. The
+  flash also reset the memory to JEDEC 3200 MT/s (it was 3600 under XMP),
+  which is action (3) by accident — leave XMP off until a week has passed
+  clean, so the test means something. Smoke after the flash: exact, no
+  leak, 72–76 TFLOPS warm (the first run reads 30 cold). All four actions
+  are now in effect except the memtest; the clean week is the open item.
+  2026-10-10 16:42: BIOS optimized defaults loaded by Logan (XMP and the
+  ASUS performance preset both off); memory now at the sticks' base JEDEC
+  2666 MT/s, virtualisation on, smoke exact with no leak. The clean week
+  counts from here.
+- **The WSL VM froze three times on 2026-10-10 (Windows stayed up), each
+  time while the explore container loaded the ViT-H encoder into CPU
+  memory for the likeness scorer.** No Windows event, no kernel message,
+  nothing written. The GPU batches never did this: their big allocations
+  live on the card. Suspect: `autoMemoryReclaim=gradual` stalling the VM
+  under a sudden multi-GB allocation. Changed in `.wslconfig` 2026-10-10
+  (backup beside it): `autoMemoryReclaim=disabled`, and `memory=32GB` as
+  sized in infra.md. The scorer does not run again until the first test
+  after the shutdown: load the encoder without ComfyUI's loader, 12 GB
+  container limit, four threads, VM memory watched from a second shell.
 
 ## Compliance
 
