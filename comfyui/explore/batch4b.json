@@ -1,0 +1,11 @@
+{
+  "_": "Batch 4b — klein, the production template and poses (2026-10-11): sex in the description, markings as colours in the listing's own field form, three-quarter sitting and standing poses that do not present the underside; two references (the listing's best two photos) plus the first photo's head. Two seeds.",
+  "animals": {
+    "Plum":  { "kind": "dog", "describe": "male grey and white cane corso puppy", "two": ["PXL_20250423_185424061.PORTRAIT.jpg", "downloadfile.jpg"] },
+    "Ducky": { "kind": "dog", "describe": "female tan and white pit bull mix", "two": ["PXL_20241229_195311064.RAW-01.COVER.jpg", "PXL_20250621_160612271.PORTRAIT.jpg"] }
+  },
+  "photos": ["two"], "crops": ["subject"], "aspect": ["box"], "describe": ["listing"],
+  "families": ["klein"], "graphs": ["reference2"], "prompts": ["storybook", "storybook_sit34", "storybook_stand34"],
+  "denoise": [], "weights": [], "weight_types": [], "end_at": [], "loras": [null],
+  "seeds": [7, 11, 19]
+}

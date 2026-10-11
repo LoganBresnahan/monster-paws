@@ -1,0 +1,13 @@
+{
+  "_": "Batch 4c — klein, the colour fields (2026-10-11): 'grey and white' painted Ducky's blaze and socks on Plum (Logan, 4b). Primary colour only, primary with the secondary as minor, and the joined form; sitting three-quarter; two references plus head; two seeds.",
+  "animals": {
+    "Plum":  { "kind": "dog", "describe": "male grey cane corso puppy", "minor": "male cane corso puppy, mostly grey with a little white", "joined": "male grey and white cane corso puppy",
+               "two": ["PXL_20250423_185424061.PORTRAIT.jpg", "downloadfile.jpg"] },
+    "Ducky": { "kind": "dog", "describe": "female tan pit bull mix", "minor": "female pit bull mix, mostly tan with a little white", "joined": "female tan and white pit bull mix",
+               "two": ["PXL_20241229_195311064.RAW-01.COVER.jpg", "PXL_20250621_160612271.PORTRAIT.jpg"] }
+  },
+  "photos": ["two"], "crops": ["subject"], "aspect": ["box"], "describe": ["listing", "minor", "joined"],
+  "families": ["klein"], "graphs": ["reference2"], "prompts": ["storybook_sit34"],
+  "denoise": [], "weights": [], "weight_types": [], "end_at": [], "loras": [null],
+  "seeds": [7, 11]
+}

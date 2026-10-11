@@ -575,15 +575,18 @@ round. Both workers are the same binary — the droplet's never registers
        │  POST /prompt  (localhost HTTP)        Windows user
        ▼
   monster-paws-comfyui, headless, TORCH=xpu     (planned) CI-built. Built:
-       │   subject crop → ViT-H encoder          comfyui/workflows/*.api.json,
+       │   subject box at its aspect + head     comfyui/workflows/*.api.json,
        │   (planned: a detector draws the box;  comfyui/models.manifest (hash
        │   the companion animal stays outside)  + licence), models.py fetch at
-       │   style LoRA × IP-Adapter identity     start — mismatch = no serve.
-       │   3–4 candidates                       Crops by hand so far:
-       │                                        comfyui/explore/boxes.json
+       │   description from the listing's       start — mismatch = no serve.
+       │   fields (sex, colours, breed, age)    Crops by hand so far:
+       │   painter: FLUX.2 klein 4B reading     comfyui/explore/boxes.json.
+       │   the crops as references (leader,     Fallback: SDXL × IP-Adapter ×
+       │   2026-10-11) · 3–4 candidates         outline × style LoRA
        ▼
-  CLIP-QC  (planned, item 9)                    score vs the real photos;
-       │                                        serve best, flag low
+  auto-QC v0  (planned, item 9)                 agreement among candidates
+       │                                        rejects the outlier; cosine to
+       │                                        the crop ranks; taste is human
        ▼
   R2 monsterpaws-media  (write-only pair)       keys only in the DB
        │

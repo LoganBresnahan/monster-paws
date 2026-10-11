@@ -1,0 +1,13 @@
+{
+  "_": "Batch 4a — klein only (base-model-candidates.md, 2026-10-11): the two tells from 3b. Words: the chest patch read as a bandana, Ducky stubby. Levers: reworded descriptions, a pose in the prompt, and one, two or three of the animal's photos as references (production has a listing's whole set). Head crop of the first photo always included. Storybook only — cartoon is out (Logan).",
+  "animals": {
+    "Plum":  { "kind": "dog", "describe": "grey cane corso puppy with a white chest patch", "describe2": "grey cane corso puppy with a small patch of white fur on his chest",
+               "one": ["PXL_20250423_185424061.PORTRAIT.jpg"], "two": ["PXL_20250423_185424061.PORTRAIT.jpg", "downloadfile.jpg"], "three": ["PXL_20250423_185424061.PORTRAIT.jpg", "downloadfile.jpg", "PXL_20250422_224209397.jpg"] },
+    "Ducky": { "kind": "dog", "describe": "tan pit bull mix with a white chest and white paws", "describe2": "solid tan pit bull mix with white fur on her chest and paws",
+               "one": ["PXL_20241229_195311064.RAW-01.COVER.jpg"], "two": ["PXL_20241229_195311064.RAW-01.COVER.jpg", "PXL_20250621_160612271.PORTRAIT.jpg"], "three": ["PXL_20241229_195311064.RAW-01.COVER.jpg", "PXL_20250621_160612271.PORTRAIT.jpg", "PXL_20250411_123028993.jpg"] }
+  },
+  "photos": ["one", "two", "three"], "crops": ["subject"], "aspect": ["box"], "describe": ["listing", "describe2"],
+  "families": ["klein"], "graphs": ["reference2"], "prompts": ["storybook", "storybook_sit"],
+  "denoise": [], "weights": [], "weight_types": [], "end_at": [], "loras": [null],
+  "seeds": [7, 11]
+}

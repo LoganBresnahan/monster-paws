@@ -237,6 +237,101 @@ seeds per dog, unaided). What ran and what could not:
   is zero without a reference path, and Z-Image's reference path (Omni)
   needs an image encoder we have not located.
 
+## Direction: klein only for now (Logan, 2026-10-11 evening)
+
+Logan's read of 3b: "cartoon looks awful so we don't have to go that
+route for now. The Plum portraits with the storybook prompt look really
+good, though it does think his chest mark is a bandana sometimes. The
+Ducky photos are less accurate as far as anatomy goes — the storybook
+versions make her look very stubby. It's good we are testing with these
+variations because other photos from shelters will be all over the place."
+
+So: storybook family only; the two tells become the next batch's axes.
+The stubbiness is the reference doing its job too well — Ducky's couch
+photo is foreshortened, lying toward the camera, and the reference fixes
+the pose, foreshortening included. Three levers, one batch (**4a**):
+
+| lever | values |
+| --- | --- |
+| description | as listed · reworded: "a small patch of white fur on his chest", "solid tan … white fur on her chest and paws" |
+| pose in the prompt | none · "sitting upright and facing the viewer" |
+| references | the one photo · plus the clean portrait · plus the hard photo too — a listing's whole set, each a further reference the model reads |
+
+Head crop of the first photo always included. Two seeds. 48 images at
+~10 s. What success looks like: a Ducky with legs, Plum with fur on his
+chest rather than cloth, identity holding or improving as references are
+added — which is production's shape, since a listing arrives with several
+photos.
+
+## Batch 4a — first read (2026-10-11 evening)
+
+Grids `var/explore/batch4a/grid-Plum.jpg` and `grid-Ducky.jpg`: rows
+prompt × wording × seed, columns one, three, two photos (alphabetical).
+48 images, 10–17 s.
+
+- **The bandana was the wording.** "A small patch of white fur on his
+  chest" paints fur in every cell; "white chest patch" paints cloth in
+  every one-photo cell. Production's template therefore names markings as
+  colours in the listing's own field form and never as positioned nouns
+  (roadmap item 4 carry-in, updated).
+- **A pose in the prompt beats the reference's pose.** "Sitting upright
+  and facing the viewer" seats both dogs front-on with identity intact,
+  which removes Ducky's foreshortened stubbiness — and presents the
+  underside, where the painter guesses the sex (Logan: Ducky is female;
+  the listing says so, the template now does too). Three-quarter poses
+  are the fix, batch 4b.
+- **A second photo changes the pose and can bring a second dog.** With
+  Ducky's standing portrait as the second reference, every storybook cell
+  stands her up in profile, proportions right, collar from that photo;
+  with the hard photo as a third, one cell composed *two* Duckys. More
+  references steady identity and loosen the first photo's pose, and past
+  two the model starts arranging them as a scene. Two references plus the
+  head is the working number; the judge's outlier rule is what catches
+  the two-dog cell.
+
+**Batch 4b**: the production template ("male grey and white cane corso
+puppy", "female tan and white pit bull mix"), two references plus head,
+three poses (as photographed, sitting three-quarter, standing
+three-quarter), three seeds — 18 images, the first run of the recipe as
+the worker would build it.
+
+## Batch 4b — first read (2026-10-11 evening)
+
+Grid `var/explore/batch4b/grid-poses.jpg`: rows animal × seed, columns as
+photographed, sitting three-quarter, standing three-quarter. 18 images.
+
+- **The three-quarter poses are keepsake poses.** Both dogs sit and stand
+  in clean, well-proportioned three-quarter views with the underside out
+  of frame, identity intact across three seeds, Ducky's collar carried
+  from her second photo. This is the pose set for production.
+- **"grey and white" paints Ducky's markings on Plum** (Logan saw it in
+  the first images): a face blaze and white socks appear in every
+  three-quarter cell and fade only in the as-photographed cells, where
+  the reference's own white patch dominates. The listing's two colour
+  fields cannot be joined with "and"; batch 4c tests primary-only and
+  "mostly grey with a little white" against it.
+- Ducky's "female tan and white" produced no such error, because her
+  white *is* a blaze and socks. The failure is the template meeting a dog
+  whose secondary colour is a small patch, which shelter listings will
+  present constantly.
+
+## Batch 4c — first read (2026-10-11 evening)
+
+Grid `var/explore/batch4c/grid-colours.jpg`: columns "grey and white" ·
+primary colour only · "mostly grey with a little white"; sitting
+three-quarter, two references plus head, two seeds.
+
+- **Primary colour only is the rule.** "Male grey cane corso puppy" gives
+  a solid grey Plum with his real white chest patch, carried from the
+  reference; "grey and white" gives the blaze and socks again; "mostly
+  grey with a little white" is also right but says nothing the photo does
+  not already say. Ducky is right in all three, because her white *is* a
+  blaze and socks and the reference supplies it either way.
+- So the secondary and tertiary colour fields are dropped from the
+  template. The photo carries the markings; the words carry sex, the
+  primary colour, breed, age and species. Written into the roadmap item 4
+  carry-in.
+
 ## Avenues (Logan, 2026-10-11)
 
 "Just because we find something that works doesn't mean I don't want to

@@ -384,9 +384,17 @@ slice or change build order.
       cluster that contradicts them; a single photo with two animals and no
       tiebreak gets the framed photo, never a guess. No language model
       anywhere in this: the description is a template over the listing's
-      structured fields (colour, breed, age group, species — "grey cane
-      corso puppy"), and the judge is an embedding comparison that runs on
-      the card or the CPU. The photo never leaves the machine (ADR-0004), so
+      structured fields — sex, the *primary* colour only, breed, age group,
+      species — as "female tan pit bull mix", "male grey cane corso puppy".
+      The photo carries the markings: a secondary colour in the words
+      painted another dog's pattern ("grey and white" gave Plum a blaze and
+      socks, batch 4c), a positioned noun painted clothing ("white chest
+      patch" gave a bandana, batch 4a), and sex is always said because the
+      painter otherwise guesses it (Logan, 2026-10-11).
+      Keepsake poses face three-quarter or stand; a front-on sit shows the
+      underside and the judge should reject what a keepsake must not show.
+      The judge is an embedding comparison that runs on the card or the
+      CPU. The photo never leaves the machine (ADR-0004), so
       a hosted model may only ever see generated candidates, never the
       reference — which rules it out as the likeness judge and leaves it a
       possible anatomy check at most (its own ADR if ever).

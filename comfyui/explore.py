@@ -19,6 +19,7 @@ import itertools
 import json
 import sys
 import time
+import urllib.error
 import urllib.request
 import uuid
 from pathlib import Path
@@ -40,6 +41,9 @@ BUCKETS = [(1024, 1024), (896, 1152), (832, 1216), (1152, 896), (1216, 832)]
 PROMPTS = {
     "photo": "a photo of a {kind}, soft natural light, shallow depth of field",
     "storybook": "a gentle storybook illustration of a {kind}, soft watercolor, warm pastel palette, plain background",
+    "storybook_sit": "a gentle storybook illustration of a {kind} sitting upright and facing the viewer, soft watercolor, warm pastel palette, plain background",
+    "storybook_sit34": "a gentle storybook illustration of a {kind} sitting in three-quarter view, looking toward the viewer, soft watercolor, warm pastel palette, plain background",
+    "storybook_stand34": "a gentle storybook illustration of a {kind} standing in three-quarter view, looking toward the viewer, soft watercolor, warm pastel palette, plain background",
     "cartoon": "a cel-shaded cartoon of a {kind}, bold clean outlines, flat colors, friendly expression",
     "anime": "an anime illustration of a {kind}, soft shading, expressive eyes, clean lineart",
     "clay": "a claymation {kind}, stop-motion figure, fingerprints in the clay, studio lighting",
@@ -174,12 +178,21 @@ def build_family_graph(run: dict, prefix: str) -> dict:
             g["ref"] = {"class_type": "VAEEncode", "inputs": {"pixels": ["scale", 0], "vae": ["vae", 0]}}
             g["refcond"] = {"class_type": "ReferenceLatent", "inputs": {"conditioning": pos, "latent": ["ref", 0]}}
             pos = ["refcond", 0]
+            for i, extra in enumerate(run["photos"][1:], 1):  # a listing's other photos, each a further reference
+                from PIL import Image
+                name = input_name(run["animal"], extra, run.get("crop", "full"), raw=raw)
+                w, h = bucket(Image.open(INPUT / name).size) if raw else (1024, 1024)
+                g[f"img{i}"] = {"class_type": "LoadImage", "inputs": {"image": name}}
+                g[f"scale{i}"] = {"class_type": "ImageScale", "inputs": {"image": [f"img{i}", 0], "upscale_method": "lanczos", "width": w, "height": h, "crop": "center"}}
+                g[f"ref{i}"] = {"class_type": "VAEEncode", "inputs": {"pixels": [f"scale{i}", 0], "vae": ["vae", 0]}}
+                g[f"refcond{i}"] = {"class_type": "ReferenceLatent", "inputs": {"conditioning": pos, "latent": [f"ref{i}", 0]}}
+                pos = [f"refcond{i}", 0]
         if run["graph"] == "reference2":  # the head crop as a second reference the model reads after the subject
             g["head"] = {"class_type": "LoadImage", "inputs": {"image": input_name(run["animal"], run["photos"][0], "head", raw=True)}}
             g["head_scale"] = {"class_type": "ImageScale", "inputs": {"image": ["head", 0], "upscale_method": "lanczos", "width": 768, "height": 768, "crop": "center"}}
-            g["ref2"] = {"class_type": "VAEEncode", "inputs": {"pixels": ["head_scale", 0], "vae": ["vae", 0]}}
-            g["refcond2"] = {"class_type": "ReferenceLatent", "inputs": {"conditioning": pos, "latent": ["ref2", 0]}}
-            pos = ["refcond2", 0]
+            g["head_ref"] = {"class_type": "VAEEncode", "inputs": {"pixels": ["head_scale", 0], "vae": ["vae", 0]}}
+            g["head_cond"] = {"class_type": "ReferenceLatent", "inputs": {"conditioning": pos, "latent": ["head_ref", 0]}}
+            pos = ["head_cond", 0]
     g["sampler"] = {"class_type": "KSampler", "inputs": {
         "model": model, "positive": pos, "negative": ["neg", 0], "latent_image": ["latent", 0],
         "seed": run["seed"], "steps": steps, "cfg": f["cfg"], "sampler_name": f["sampler"], "scheduler": f["scheduler"], "denoise": denoise}}
@@ -275,7 +288,7 @@ def expand(spec: dict) -> list[dict]:
     for animal, info in spec["animals"].items():
         for photo_key, crop, describe, aspect, family in itertools.product(spec["photos"], spec.get("crops", ["full"]), spec.get("describe", ["generic"]), spec.get("aspect", ["square"]), spec.get("families", ["sdxl"])):
             photos = info[photo_key] if isinstance(info[photo_key], list) else [info[photo_key]]
-            subject = info["kind"] if describe == "generic" else info["describe"]
+            subject = info["kind"] if describe == "generic" else info["describe" if describe == "listing" else describe]
             for graph, prompt, seed in itertools.product(spec["graphs"], spec["prompts"], spec["seeds"]):
                 base = {"animal": animal, "kind": info["kind"], "photo": photo_key, "photos": photos, "crop": crop, "describe": describe, "aspect": aspect, "family": family,
                         "graph": graph, "prompt": prompt, "prompt_text": PROMPTS[prompt].format(kind=subject),
@@ -314,7 +327,7 @@ def expand(spec: dict) -> list[dict]:
         if r["denoise"] is not None:
             bits.append(f"d{r['denoise']}")
         if len(r["photos"]) > 1:
-            bits += [r["multi"], r["combine"]]
+            bits += [r["multi"], r["combine"]] if r.get("multi") else [f"{len(r['photos'])}photos"]
         r["id"] = f"{i:03d}-" + "-".join(bits)
     return runs
 
@@ -323,8 +336,11 @@ def expand(spec: dict) -> list[dict]:
 
 def post(path: str, data: dict) -> dict:
     req = urllib.request.Request(f"{HOST}{path}", data=json.dumps(data).encode(), headers={"Content-Type": "application/json"})
-    with urllib.request.urlopen(req) as r:
-        return json.load(r)
+    try:
+        with urllib.request.urlopen(req) as r:
+            return json.load(r)
+    except urllib.error.HTTPError as e:  # a 400 carries ComfyUI's validation report; keep it, it names the bad node
+        raise RuntimeError(f"HTTP {e.code}: {e.read().decode(errors='replace')[:1500]}") from None
 
 
 def run_one(batch: str, run: dict) -> str:
