@@ -354,6 +354,14 @@ by Task Scheduler — is the one fragile joint and the first thing to dogfood.
   disclosure again.
 - GPU prices normalize after the 2026 memory shortage — reopen the dedicated
   box question with a 24 GB, BF16-capable card as the bar.
+- **A second card in the board's x4 slot (asked 2026-10-12, deferred).**
+  Reopen when the art worker is live and production's claim on the A770
+  blocks Logan's exploration, when jobs queue past what "arrives when it
+  is ready" absorbs, and not before a week with no watchdog dumps on the
+  headless A770 (`doc/issues.md`, Ops — the black flickers). The bar is a
+  second 16 GB card (another A770), since klein's set takes 13.2–14.4 GB;
+  a 6 GB card (A380) holds only what already runs on the CPU. Check the
+  PSU for a second 225 W card; the x4 link slows only the model load.
 - The unattended WSL distro proves unreliable (a job waits because the
   distro was not running, not because the box was asleep) — that is the
   dedicated box's cue, prices or not.
