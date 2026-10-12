@@ -383,9 +383,12 @@ slice or change build order.
       (`doc/plans/subject-detection.md`). A companion animal in the frame is
       otherwise copied as faithfully as the subject (batch 1, 2026-10-08).
       The box is rendered at its own aspect, never padded (batches 1b–1d:
-      padding shows as bands). Still to do, in order: a batch with nothing
-      drawn by hand (detector boxes in place of `comfyui/explore/boxes.json`,
-      the batch-4c recipe on the crew); the **best-two-photos rule** —
+      padding shows as bands). Batch 5a (2026-10-12) painted from detector
+      boxes instead of hand-drawn ones: Plum indistinguishable; Ducky's boxes
+      clipped her muzzle and one of four portraits came out as two dogs,
+      which the judge's agreement rule rejected. Still to do, in order: grow
+      the chosen box to its SAM outline and re-run (batch 5b); the
+      **best-two-photos rule** —
       subject size, head found, margin, sharpness, checked against the
       batch-4c hand picks; the photo still sets the view even with the pose
       fixed (a top-down shot gave a top-down keepsake, batch 1d); then the

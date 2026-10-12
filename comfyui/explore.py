@@ -3,7 +3,7 @@
 Runs inside the ComfyUI image via the `explore` compose service (it needs
 Pillow and ComfyUI's input/output mounts, not the GPU):
 
-    npm run explore -- prep                 # crew photos → input/crew/, EXIF stripped, subject crops from explore/boxes.json
+    npm run explore -- prep                 # crew photos → input/crew/, EXIF stripped, subject crops from explore/boxes.json (by hand) and boxes-detected.json (ADR-0026)
     npm run explore -- run batch1           # every run the spec expands to; resumable
     npm run explore -- run batch1 --limit 4 # a taste
     npm run explore -- sheet batch1         # rebuild index.html from runs.jsonl
@@ -58,6 +58,9 @@ def prep() -> None:
     """Copy every crew photo into input/crew/ as an upright PNG with no metadata at all, plus one PNG per subject box."""
     from PIL import Image, ImageOps
     boxes = json.loads((HERE / "explore" / "boxes.json").read_text())
+    for key, found in json.loads((HERE / "explore" / "boxes-detected.json").read_text()).items():
+        if not key.startswith("_"):
+            boxes.setdefault(key, {}).update(found)
     for src in sorted(CREW.glob("*/*")):
         if src.suffix.lower() not in (".jpg", ".jpeg", ".png", ".webp"):
             continue
@@ -188,7 +191,9 @@ def build_family_graph(run: dict, prefix: str) -> dict:
                 g[f"refcond{i}"] = {"class_type": "ReferenceLatent", "inputs": {"conditioning": pos, "latent": [f"ref{i}", 0]}}
                 pos = [f"refcond{i}", 0]
         if run["graph"] == "reference2":  # the head crop as a second reference the model reads after the subject
-            g["head"] = {"class_type": "LoadImage", "inputs": {"image": input_name(run["animal"], run["photos"][0], "head", raw=True)}}
+            # A detector-cut subject reads the detector's head too, so a batch never mixes hand and detector boxes (ADR-0026).
+            head = "dethead" if run.get("crop") == "detsubject" else "head"
+            g["head"] = {"class_type": "LoadImage", "inputs": {"image": input_name(run["animal"], run["photos"][0], head, raw=True)}}
             g["head_scale"] = {"class_type": "ImageScale", "inputs": {"image": ["head", 0], "upscale_method": "lanczos", "width": 768, "height": 768, "crop": "center"}}
             g["head_ref"] = {"class_type": "VAEEncode", "inputs": {"pixels": ["head_scale", 0], "vae": ["vae", 0]}}
             g["head_cond"] = {"class_type": "ReferenceLatent", "inputs": {"conditioning": pos, "latent": ["head_ref", 0]}}

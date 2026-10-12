@@ -1,0 +1,162 @@
+{
+  "_": "Subject and head boxes per crew photo as the detector chose them (ADR-0026), fractions [x0, y0, x1, y1] of the upright photo like boxes.json: comfyui/detect.py run 4 (OWLv2 alone), 2026-10-12, var/explore/detect-v4/results.jsonl. `_margin` is the lead over the runner-up, null when the subject was the only candidate. explore.py prep cuts these as `detsubject` and `dethead` beside the hand-drawn `subject` and `head`, so a batch can compare the two.",
+  "Plum/PXL_20250410_144425752": {
+    "detsubject": [
+      0.0,
+      0.1163,
+      0.9778,
+      0.942
+    ],
+    "dethead": [
+      0.0,
+      0.0972,
+      0.6654,
+      0.5295
+    ],
+    "_margin": null
+  },
+  "Plum/PXL_20250422_224206531": {
+    "detsubject": [
+      0.1483,
+      0.1919,
+      0.6131,
+      0.6843
+    ],
+    "dethead": [
+      0.1535,
+      0.2568,
+      0.578,
+      0.53
+    ],
+    "_margin": null
+  },
+  "Plum/PXL_20250422_224209397": {
+    "detsubject": [
+      0.1876,
+      0.2456,
+      0.6194,
+      0.7528
+    ],
+    "dethead": [
+      0.1841,
+      0.3525,
+      0.5739,
+      0.6798
+    ],
+    "_margin": 0.58
+  },
+  "Plum/PXL_20250423_185424061.PORTRAIT": {
+    "detsubject": [
+      0.0101,
+      0.1896,
+      0.7652,
+      1.0
+    ],
+    "dethead": [
+      0.0822,
+      0.1795,
+      0.7322,
+      0.6128
+    ],
+    "_margin": null
+  },
+  "Plum/PXL_20250423_185435181.PORTRAIT": {
+    "detsubject": [
+      0.1591,
+      0.0244,
+      0.9973,
+      0.8406
+    ],
+    "dethead": [
+      0.168,
+      0.1362,
+      0.8605,
+      0.6229
+    ],
+    "_margin": null
+  },
+  "Plum/downloadfile": {
+    "detsubject": [
+      0.2055,
+      0.121,
+      0.9081,
+      0.9378
+    ],
+    "dethead": [
+      0.243,
+      0.1158,
+      0.6434,
+      0.4855
+    ],
+    "_margin": null
+  },
+  "Ducky/PXL_20241027_160550748": {
+    "detsubject": [
+      0.0515,
+      0.1961,
+      0.9645,
+      0.8253
+    ],
+    "dethead": [
+      0.4133,
+      0.1908,
+      0.6683,
+      0.4421
+    ],
+    "_margin": null
+  },
+  "Ducky/PXL_20241229_195311064.RAW-01.COVER": {
+    "detsubject": [
+      0.4563,
+      0.2071,
+      1.0,
+      0.7951
+    ],
+    "dethead": [
+      0.4626,
+      0.2063,
+      0.733,
+      0.6291
+    ],
+    "_margin": null
+  },
+  "Ducky/PXL_20250411_123028993": {
+    "detsubject": [
+      0.3763,
+      0.3342,
+      0.6722,
+      0.6102
+    ],
+    "dethead": [
+      0.4058,
+      0.3278,
+      0.6273,
+      0.4467
+    ],
+    "_margin": 0.57
+  },
+  "Ducky/PXL_20250415_182318586.PORTRAIT": {
+    "detsubject": [
+      0.1245,
+      0.3487,
+      0.9907,
+      1.0
+    ],
+    "dethead": [
+      0.3289,
+      0.274,
+      1.0,
+      0.7817
+    ],
+    "_margin": 0.52
+  },
+  "Ducky/PXL_20250621_160612271.PORTRAIT": {
+    "detsubject": [
+      0.0,
+      0.1711,
+      0.7586,
+      0.9982
+    ],
+    "_margin": null
+  }
+}

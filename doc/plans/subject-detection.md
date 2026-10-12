@@ -83,6 +83,63 @@ kitchen shot, and most Commons animals. Weak: a black cat whose face is
 tucked away (the crop is black fur), a grey rabbit's crop taking in its
 neighbour's ear, and 640-pixel photos giving tiny heads.
 
+## Batch 5a — nothing drawn by hand, first read (Claude, 2026-10-12; Logan's picks decide)
+
+`comfyui/explore/batch5a.json`: the batch-4c recipe (klein, two references
+plus head, "male grey cane corso puppy" / "female tan pit bull mix",
+sitting and standing three-quarter, seeds 7 and 11) with the hand-drawn
+crops (`subject`, `head`) beside the detector's (`detsubject`, `dethead`,
+from `comfyui/explore/boxes-detected.json`, run 4). 16 images, 16–21 s
+each, pool flat at 1.2 GB. Grids `var/explore/batch5a/grid-plum.jpg` and
+`grid-ducky.jpg`, hand on the right.
+
+- **Plum: no difference that matters.** The detector's boxes are within a
+  few percent of the hand ones, and the eight portraits are the same dog.
+  The detector versions sit a little more front-on and paint the white
+  chest patch a little larger; the hand versions keep the chain and tag
+  more often. Likeness 0.68–0.72 against 0.70–0.74.
+- **Ducky: the detector clipped her muzzle** in both reference photos —
+  the cover shot loses her nose at the left edge (her head rests on a leg
+  the box left out), the standing shot the tip of her nose at the right.
+  Three of four portraits are still plainly Ducky, scoring at or above the
+  hand ones (0.66, 0.67, 0.66 against 0.62–0.65).
+- **One broken image: two Duckys** (`014`, standing, seed 7, detector
+  crops), the same failure batch 4a met with three references. The
+  likely reading: a body crop with no face plus a large face crop read as
+  two animals. The judge's agreement rule catches it — 0.907 against its
+  siblings' 0.95 — so production would have rejected it.
+
+So detector crops paint as well as hand crops when the box holds the whole
+animal, and the one way they fall short is the known partial-box limit.
+**Next: grow the chosen box to its SAM outline's extent, then batch 5b**
+(the same spec, regrown boxes) — yours to overrule.
+
+## Crop comparison — how the chosen animal is cut out (2026-10-12)
+
+`comfyui/crops.py` (`npm run explore:crops`, CPU) cuts each of set 1's 29
+chosen animals four ways: the detector's box; the box grown to its SAM
+outline; that plus a 10% margin; and SAM asked again with a box 20% looser,
+cut to the new outline. Growth stops at another candidate's box unless it
+already touches. Sheets: `var/explore/detect-v4/crops-{1,2,3}.jpg`.
+
+- **Growing fixes the clipped animals.** Ducky's cover shot gets her whole
+  muzzle back with the margin or the re-ask (the outline alone just
+  reaches her nose); her standing shot gets the tip of her nose back with
+  any of the three.
+- **Growing brings neighbours back where they touch.** The grey rabbit's
+  outline runs into the dark rabbit, so every grown crop holds both; the
+  same for the guinea pigs, the black cat (more tabby each step), the cat
+  pile, and Plum's ear at the edge of Ducky's kitchen crop. The box alone
+  was the cleanest cut in each of those.
+- **The re-ask over-grows.** Given room, SAM traced the whole scene on
+  seven photos (Plum in his cone, the county dog, the iguana, the longhair,
+  the orange cat, Lulu, the cat pile): crops near the full frame.
+
+No method wins outright. The next shape to try: grow only by the outline
+pixels that belong to no other candidate's outline, and add the margin
+only on a side where that outline reaches the box's edge — the animal
+continues there — never where it stops inside the box.
+
 ## Open
 
 Each is a roadmap item 4 carry-in.

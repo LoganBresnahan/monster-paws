@@ -1,0 +1,13 @@
+{
+  "_": "Batch 5a — nothing drawn by hand (ADR-0026, 2026-10-12): the batch-4c recipe (klein, two references plus head, the primary-colour description, three-quarter poses) with the subject and head cut by hand (`subject`) beside the same cut by the detector (`detsubject`, its head from boxes-detected.json). Same photos, seeds and words, so any difference is the boxes.",
+  "animals": {
+    "Plum":  { "kind": "dog", "describe": "male grey cane corso puppy",
+               "two": ["PXL_20250423_185424061.PORTRAIT.jpg", "downloadfile.jpg"] },
+    "Ducky": { "kind": "dog", "describe": "female tan pit bull mix",
+               "two": ["PXL_20241229_195311064.RAW-01.COVER.jpg", "PXL_20250621_160612271.PORTRAIT.jpg"] }
+  },
+  "photos": ["two"], "crops": ["subject", "detsubject"], "aspect": ["box"], "describe": ["listing"],
+  "families": ["klein"], "graphs": ["reference2"], "prompts": ["storybook_sit34", "storybook_stand34"],
+  "denoise": [], "weights": [], "weight_types": [], "end_at": [], "loras": [null],
+  "seeds": [7, 11]
+}
