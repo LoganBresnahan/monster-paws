@@ -107,6 +107,10 @@ is the record, and a file of ticked boxes stops being read.
   Set 2026-10-11 (Claude, via `powercfg`): standby and hibernate timeouts
   on AC to never, PCIe link-state power management on AC to Off. The
   clean week restarts from here with S3 genuinely off.
+  2026-10-12: the AC standby timer is back at 15 minutes, set by Logan
+  on purpose — sleep is allowed on the dev box until production deploys,
+  and the production account's provisioning turns it off (roadmap item 4
+  carry-in). No crash since 10-10 12:01.
 - **The WSL VM froze three times on 2026-10-10 (Windows stayed up), each
   time while the explore container loaded the ViT-H encoder into CPU
   memory for the likeness scorer.** No Windows event, no kernel message,

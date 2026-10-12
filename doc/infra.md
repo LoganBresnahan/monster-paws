@@ -675,7 +675,8 @@ What was load-bearing, in the order it was found:
   1.3 GB — 1.5–2.7 GB of the card left), Z-Image fp8 + fp8 encoder, Chroma fp8 + T5
   fp8 (full, 2.9 GB pool, slow). The idle pool rose from 1.0 to 1.9–2.1 GB
   across the day's model switching and stayed there after the server
-  stopped — retained by the driver, not growing further; watch it. The
+  stopped — retained by the driver, not growing further; a reboot returns
+  it to ~0.9 GB (2026-10-12). The
   guard now stops a batch whose chunk produced nothing instead of retrying
   it forever.
 - **Windows renders desktop apps on the Arc with nothing cabled to it
@@ -696,7 +697,21 @@ What was load-bearing, in the order it was found:
   Code, Zed. Explorer, Settings and Task Manager are composited rather than
   self-rendered and are left alone unless the readout names them. The
   readout is `/gpu-health`'s "who is on the Arc" section; whatever it names
-  that is not ComfyUI gets an entry. Linux GUI apps under WSLg (the
+  that is not ComfyUI gets an entry. Windows Terminal ignores its entry
+  (`Microsoft.WindowsTerminal_8wekyb3d8bbwe!App`, correct identity, still
+  on the Arc at ~2% after a fresh boot, 2026-10-12); its renderer picks
+  its own adapter, and the compositor's ~1% follows it. Two users the per-app key does not
+  move (read 2026-10-11, after the pins): Sunshine, the remote-streaming
+  host, encodes the stream on the Arc's media engine (its config sets no
+  `adapter_name`, so it picks the best encoder) and pulls the compositor's
+  capture onto the Arc with it; and Edge's video playback (decode plus
+  video processing, likely its "Enhance videos" upscaler) stays on the
+  Arc after its drawing moved. Fixed 2026-10-12: both Sunshine instances
+  (`sunshine.conf`, `sunshine_2.conf`) carry `adapter_name = Intel(R) UHD
+  Graphics 770`, backups beside them, so stream and capture stay on the
+  UHD 770 (HEVC/H.264 there, no AV1 encode); hardware acceleration is off
+  in Edge and Firefox (Logan), which takes their video decode off too.
+  Linux GUI apps under WSLg (the
   Playwright browser) render through Mesa d3d12 and pick the Arc by
   default: `MESA_D3D12_DEFAULT_ADAPTER_NAME=UHD` in `~/.profile`, written by
   `scripts/bootstrap-distro.sh`, keeps them on the UHD 770. **Production
