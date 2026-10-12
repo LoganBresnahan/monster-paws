@@ -1,0 +1,29 @@
+{
+  "_": "Detector experiment set 1 (ADR-0026, doc/plans/subject-detection.md; 2026-10-12): each entry stands in for a listing — its species and colour as the listing's fields would give them, and its photos. Crew attributes are Logan's dogs as their listings would read; Commons attributes were written by Claude from looking at each photo, and `subject` says which animal the listing means, for reading the overlays. `either` marks a photo where the attributes cannot separate the animals.",
+  "listings": {
+    "Plum":  { "species": "dog", "colour": "grey", "subject": "Plum, the grey cane corso puppy",
+               "photos": ["crew:Plum/PXL_20250410_144425752.jpg", "crew:Plum/PXL_20250422_224206531.jpg", "crew:Plum/PXL_20250422_224209397.jpg",
+                          "crew:Plum/PXL_20250423_185424061.PORTRAIT.jpg", "crew:Plum/PXL_20250423_185435181.PORTRAIT.jpg", "crew:Plum/downloadfile.jpg"] },
+    "Ducky": { "species": "dog", "colour": "tan", "subject": "Ducky, the tan pit bull mix",
+               "photos": ["crew:Ducky/PXL_20241027_160550748.jpg", "crew:Ducky/PXL_20241229_195311064.RAW-01.COVER.jpg", "crew:Ducky/PXL_20250411_123028993.jpg",
+                          "crew:Ducky/PXL_20250415_182318586.PORTRAIT.jpg", "crew:Ducky/PXL_20250621_160612271.PORTRAIT.jpg"] },
+    "tabbies":     { "species": "cat", "colour": "brown tabby", "subject": "either", "photos": ["commons:2010-09-13-Two-tabby-cats-sleeping-together.tiff"] },
+    "white-dog":   { "species": "dog", "colour": "white", "subject": "the white dog lying on the grass", "photos": ["commons:3-leg-dog.jpg"] },
+    "county-dog":  { "species": "dog", "colour": "black and white", "subject": "the black-and-white dog", "photos": ["commons:Adoptable-dog-44006495232.jpg"] },
+    "parakeet":    { "species": "bird", "colour": "green", "subject": "the green parakeet behind the bars", "photos": ["commons:Aratinga-canicularis-pet-in-small-cage-4a.jpg"] },
+    "held-dog":    { "species": "dog", "colour": "black", "subject": "the small black dog the volunteer holds", "photos": ["commons:FEMA-38421-A-Volunteer-holds-a-dog-being-checked-in-to-a-tem.jpg"] },
+    "rabbits":     { "species": "rabbit", "colour": "grey", "subject": "the grey rabbit, not the dark one", "photos": ["commons:FEMA-38424-Caged-rabbits-ready-to-go-to-a-shelter-for-displa.jpg"] },
+    "kitten":      { "species": "cat", "colour": "orange", "subject": "the orange kitten on the bars, not the tabbies in the carrier", "photos": ["commons:Flooding-Minot-N-D-June-24-2011-Kittens-play-in-their-cage-a.jpg"] },
+    "goat":        { "species": "goat", "colour": "white", "subject": "the white goat", "photos": ["commons:Goat-Farm-Sanctuary-14361449806.jpg"] },
+    "great-dane":  { "species": "dog", "colour": "black and white", "subject": "the three-legged harlequin Great Dane", "photos": ["commons:Great-Dane-three-legged-harlequin-standing.jpg"] },
+    "iguana":      { "species": "iguana", "colour": "green", "subject": "the iguana", "photos": ["commons:Iguana-iguana-pet-upper-body-8a.jpg"] },
+    "longhair":    { "species": "cat", "colour": "brown tabby", "subject": "the longhaired tabby-and-white cat in the centre", "photos": ["commons:Longhaired-Cat-at-Hearts-Alive-Village.jpg"] },
+    "orange-cat":  { "species": "cat", "colour": "orange", "subject": "the orange cat", "photos": ["commons:Three-legged-cat.jpg"] },
+    "cat-pile":    { "species": "cat", "colour": "white", "subject": "the white-and-grey cat, not the tabby kittens", "photos": ["commons:Three-sleeping-cats-hug-each-other.jpg"] },
+    "lulu":        { "species": "dog", "colour": "tan", "subject": "Lulu, the tan dog", "photos": ["commons:Tripedal-dog-Lulu-years-after-amputation.jpg"] },
+    "black-cat":   { "species": "cat", "colour": "black", "subject": "the black cat, not the tabby", "photos": ["commons:Two-DHS-cats-resting-on-a-chair.jpg"] },
+    "guinea-pigs": { "species": "guinea pig", "colour": "brown and white", "subject": "either", "photos": ["commons:Two-Guinea-Pigs-Snuggling.jpg"] },
+    "step-cats":   { "species": "cat", "colour": "black", "subject": "the black cat on the step", "photos": ["commons:Two-cats-sleeping-4238436990.jpg"] },
+    "pigs":        { "species": "pig", "colour": "black", "subject": "either", "photos": ["commons:Two-pigs-at-Rikki-s-Refuge-Animal-Sanctuary-14608225386.jpg"] }
+  }
+}

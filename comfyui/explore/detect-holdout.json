@@ -1,0 +1,24 @@
+{
+  "_": "Held-out set for the detector experiment (ADR-0026, 2026-10-12): 19 Commons photos never seen while the iteration-3 rules were written, run with those rules unchanged. Attributes written by Claude from the photos before the run; `subject` says which animal the listing means. The budgerigar pair's subject is the green one because the colour table has no blue yet.",
+  "listings": {
+    "snow-dog":     { "species": "dog", "colour": "black and white", "subject": "the black-and-white dog", "photos": ["commons:holdout/Black-and-white-dog-on-snow.jpg"] },
+    "cat-and-dog":  { "species": "dog", "colour": "white", "subject": "the dog, not the cat curled against it", "photos": ["commons:holdout/Cat-and-dog-sleeping-together.jpg"] },
+    "carrier-cat":  { "species": "cat", "colour": "orange", "subject": "the orange cat in the carrier", "photos": ["commons:holdout/Cat-in-transport-cage-0926.jpg"] },
+    "cone-dog":     { "species": "dog", "colour": "white", "subject": "the white dog in the cone", "photos": ["commons:holdout/Cone-of-shame.jpg"] },
+    "fence-dog":    { "species": "dog", "colour": "tan", "subject": "the pale dog behind the chain-link", "photos": ["commons:holdout/Dog-in-animal-shelter-in-Washington-Iowa.jpg"] },
+    "event-dog":    { "species": "dog", "colour": "brown and white", "subject": "the bulldog the man is hugging", "photos": ["commons:holdout/Families-adoption-event-001.jpg"] },
+    "rat":          { "species": "rat", "colour": "white", "subject": "the rat", "photos": ["commons:holdout/Fancy-rat-husky.jpg"] },
+    "chickens":     { "species": "chicken", "colour": "black", "subject": "the black hen, not the brown one", "photos": ["commons:holdout/Man-feeds-his-chickens.jpg"] },
+    "chinchilla":   { "species": "chinchilla", "colour": "grey", "subject": "the chinchilla", "photos": ["commons:holdout/Napoleon-chinchilla-in-box.jpg"] },
+    "budgies":      { "species": "bird", "colour": "green", "subject": "the green-and-yellow budgerigar, not the blue one", "photos": ["commons:holdout/Pair-of-colorful-budgerigars-in-a-cage.jpg"] },
+    "ferret":       { "species": "ferret", "colour": "white", "subject": "the ferret", "photos": ["commons:holdout/Pet-ferret-geograph-org-uk-8007550.jpg"] },
+    "horses":       { "species": "horse", "colour": "black", "subject": "the black horse in front, not the white or brown ones behind", "photos": ["commons:holdout/Rescued-horses-on-Hapton-Estate-geograph-org-uk-1385774.jpg"] },
+    "hamster":      { "species": "hamster", "colour": "tan", "subject": "the hamster", "photos": ["commons:holdout/Syrian-hamster-on-blanket.jpg"] },
+    "sepia-dogs":   { "species": "dog", "colour": "black and white", "subject": "either", "photos": ["commons:holdout/Three-dogs-lying-on-blanket-beside-white-fence-photo-DPLA-9f.jpg"] },
+    "tripod-dog":   { "species": "dog", "colour": "black and white", "subject": "the three-legged dog, not the woman", "photos": ["commons:holdout/Three-legged-dog-arp.jpg"] },
+    "turtle":       { "species": "turtle", "colour": "brown", "subject": "the box turtle", "photos": ["commons:holdout/Three-toed-Box-Turtle.jpg"] },
+    "puppies":      { "species": "dog", "colour": "tan", "subject": "either", "photos": ["commons:holdout/Two-puppies-playing-in-the-countryside-one-standing-over-the.jpg"] },
+    "sepia-rabbits":{ "species": "rabbit", "colour": "white", "subject": "either", "photos": ["commons:holdout/Two-rabbits-on-a-cushion.jpg"] },
+    "kennel-pups":  { "species": "dog", "colour": "white", "subject": "the white puppy among the black ones", "photos": ["commons:holdout/US-Navy-110618-N-UE250-057-Boatswain-s-Mate-3rd-Justin-Bey-p.jpg"] }
+  }
+}

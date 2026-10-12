@@ -209,7 +209,11 @@ the monthly check in infra.md's Recurring ops.
   live in `var/comfyui/` or `$COMFYUI_DATA`; workflows are committed in API
   format under `comfyui/workflows/` and run with `comfyui/run_workflow.py`.
   `npm run explore -- grid <batch> --rows … --cols …` lays a batch out as
-  one JPEG; `npm run explore:score -- <batch>` scores likeness (CPU).
+  one JPEG; `npm run explore:score -- <batch>` scores likeness (CPU);
+  `npm run explore:detect` finds the listing's animal in each photo
+  (ADR-0026; CPU only, so no guard) — test photos are Wikimedia Commons
+  files in `var/photos/commons/`, each recorded with its licence in
+  `comfyui/explore/commons-photos.tsv`, never RescueGroups photos.
   **Batches and experiments go through `comfyui/guard.sh`** (`batch
   <name> [chunk]`, `up`, `down`, `mem`): it restarts ComfyUI between chunks
   and kills it when the driver's shared pool grows, because the per-prompt

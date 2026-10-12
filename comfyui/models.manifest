@@ -64,3 +64,35 @@ text_encoders/t5xxl_fp8_e4m3fn_scaled.safetensors  hf:comfyanonymous/flux_text_e
 text_encoders/qwen_3_4b_fp8_mixed.safetensors  hf:Comfy-Org/z_image_turbo/split_files/text_encoders/qwen_3_4b_fp8_mixed.safetensors  72450b19758172c5a7273cf7de729d1c17e7f434a104a00167624cba94f68f15  Apache-2.0  2026-10-11
 # Z-Image-Turbo Fun ControlNet Union (alibaba-pai; Apache-2.0): canny/depth/pose/HED for Z-Image through ComfyUI's model-patch loader — the outline path for the Z-Image track (2026-10-11).
 model_patches/z-image-turbo-fun-controlnet-union.safetensors  hf:alibaba-pai/Z-Image-Turbo-Fun-Controlnet-Union/Z-Image-Turbo-Fun-Controlnet-Union.safetensors  86c085c0d7853f12ce5183499934b54d08371c60f549c5a6b20615cd23989388  Apache-2.0  2026-10-11
+
+# Subject detection (ADR-0026; doc/plans/subject-detection.md): read by
+# transformers from the explore service on the CPU, never by ComfyUI. Each model is its repo's weights plus the
+# small config and tokenizer files from_pretrained needs, all hashed — a changed config is a changed model too.
+# RT-DETRv2 R18 (PekingU; COCO's 80 classes) — the fixed-class yardstick for the detector experiment, never the production detector. Apache-2.0 on its card and in lyuwenyu/RT-DETR. Read 2026-10-12.
+detect/rtdetr_v2_r18vd/config.json  hf:PekingU/rtdetr_v2_r18vd/config.json  ed051ec77cb41c5d9d5e3af21a979b1e890599dfd68434d7636ff82ded4c1527  Apache-2.0  2026-10-12
+detect/rtdetr_v2_r18vd/preprocessor_config.json  hf:PekingU/rtdetr_v2_r18vd/preprocessor_config.json  cd38cd59999e7a95d68e487fbe5132df3d4e5c32a0836add57e6126ba0c4eaf1  Apache-2.0  2026-10-12
+detect/rtdetr_v2_r18vd/model.safetensors  hf:PekingU/rtdetr_v2_r18vd/model.safetensors  d18309d0d7ea57048138885c4c6ecfcb1e24506fc6153b94ad484f8ab62c7115  Apache-2.0  2026-10-12
+# OWLv2 base/16 ensemble (Google) — open-vocabulary detector, candidate A: a text prompt in, boxes out. Apache-2.0 on its card and in google-research/scenic. Read 2026-10-12.
+detect/owlv2-base-patch16-ensemble/added_tokens.json  hf:google/owlv2-base-patch16-ensemble/added_tokens.json  e5dc0da35d20111e8ff3fdfc03682beca23d5f94ed74331bce81786b2636a24f  Apache-2.0  2026-10-12
+detect/owlv2-base-patch16-ensemble/config.json  hf:google/owlv2-base-patch16-ensemble/config.json  ba9df8c25a4b8461887dd0a93d9252c9cd84697fe8d49a9d8794ce409af9acb2  Apache-2.0  2026-10-12
+detect/owlv2-base-patch16-ensemble/merges.txt  hf:google/owlv2-base-patch16-ensemble/merges.txt  9fd691f7c8039210e0fced15865466c65820d09b63988b0174bfe25de299051a  Apache-2.0  2026-10-12
+detect/owlv2-base-patch16-ensemble/preprocessor_config.json  hf:google/owlv2-base-patch16-ensemble/preprocessor_config.json  cf3e396635b797ee1a464e1b2836e98748f8edac19e89aaa2c93b55ac15b0064  Apache-2.0  2026-10-12
+detect/owlv2-base-patch16-ensemble/special_tokens_map.json  hf:google/owlv2-base-patch16-ensemble/special_tokens_map.json  d6e2b9cf664efbad2d22998b8d3da986abcbeed3e0825ad33605c9401f9cf73e  Apache-2.0  2026-10-12
+detect/owlv2-base-patch16-ensemble/tokenizer_config.json  hf:google/owlv2-base-patch16-ensemble/tokenizer_config.json  b55cda6198e152ded427c8a9b3faf1cccf27a7fa080697a62f6ff143f511f44f  Apache-2.0  2026-10-12
+detect/owlv2-base-patch16-ensemble/vocab.json  hf:google/owlv2-base-patch16-ensemble/vocab.json  e089ad92ba36837a0d31433e555c8f45fe601ab5c221d4f607ded32d9f7a4349  Apache-2.0  2026-10-12
+detect/owlv2-base-patch16-ensemble/model.safetensors  hf:google/owlv2-base-patch16-ensemble/model.safetensors  e1e130b9e404cf91a75ad45644c1da9d7fa5284085eecc864266a6923efb99e7  Apache-2.0  2026-10-12
+# Grounding DINO tiny (IDEA-Research) — open-vocabulary detector, candidate B. Apache-2.0 on its card and in IDEA-Research/GroundingDINO. Read 2026-10-12.
+detect/grounding-dino-tiny/added_tokens.json  hf:IDEA-Research/grounding-dino-tiny/added_tokens.json  909e96cb32d92ce728a01bc99850cbba26196d74115c17ebeb019275412588f2  Apache-2.0  2026-10-12
+detect/grounding-dino-tiny/config.json  hf:IDEA-Research/grounding-dino-tiny/config.json  eec82c5ab66e16df12a9a212e68ac011779927c2536cf9078658e35d85f0c67a  Apache-2.0  2026-10-12
+detect/grounding-dino-tiny/preprocessor_config.json  hf:IDEA-Research/grounding-dino-tiny/preprocessor_config.json  8454179ba95e2ad22947835aad7b45862a601fc0055ab88bf1ee70892d3aea60  Apache-2.0  2026-10-12
+detect/grounding-dino-tiny/special_tokens_map.json  hf:IDEA-Research/grounding-dino-tiny/special_tokens_map.json  b6d346be366a7d1d48332dbc9fdf3bf8960b5d879522b7799ddba59e76237ee3  Apache-2.0  2026-10-12
+detect/grounding-dino-tiny/tokenizer.json  hf:IDEA-Research/grounding-dino-tiny/tokenizer.json  d241a60d5e8f04cc1b2b3e9ef7a4921b27bf526d9f6050ab90f9267a1f9e5c66  Apache-2.0  2026-10-12
+detect/grounding-dino-tiny/tokenizer_config.json  hf:IDEA-Research/grounding-dino-tiny/tokenizer_config.json  d40ab645b68211910b9170d22433d43186a6ec8ee6fd10ba170524b25bf4fb56  Apache-2.0  2026-10-12
+detect/grounding-dino-tiny/vocab.txt  hf:IDEA-Research/grounding-dino-tiny/vocab.txt  07eced375cec144d27c900241f3e339478dec958f92fddbc551f295c992038a3  Apache-2.0  2026-10-12
+detect/grounding-dino-tiny/model.safetensors  hf:IDEA-Research/grounding-dino-tiny/model.safetensors  1a2412ef99bd74bcd3c2a246fa1e48581f8889a1300c9051974741314fc042f3  Apache-2.0  2026-10-12
+# SAM 2.1 Hiera small (Meta) — box in, pixel mask out: the outline the colour vote measures. Checkpoints Apache-2.0 per facebookresearch/sam2's README (only the demo's fonts are OFL). Read 2026-10-12.
+detect/sam2.1-hiera-small/config.json  hf:facebook/sam2.1-hiera-small/config.json  97ff9f65b76d107acda4247885f0a5555d0048850ae3c5f97183df289aaecde9  Apache-2.0  2026-10-12
+detect/sam2.1-hiera-small/preprocessor_config.json  hf:facebook/sam2.1-hiera-small/preprocessor_config.json  6ebf229ee259368ce4a8d4f2fe893a72b053023710853e257253939e601f583d  Apache-2.0  2026-10-12
+detect/sam2.1-hiera-small/processor_config.json  hf:facebook/sam2.1-hiera-small/processor_config.json  f8a68e865cfad115c1c2763f3d93eca7b1c622da06da2a9273eb437fb2389b6d  Apache-2.0  2026-10-12
+detect/sam2.1-hiera-small/video_preprocessor_config.json  hf:facebook/sam2.1-hiera-small/video_preprocessor_config.json  9fccfe5f464ec38c2f236d0e6a68e95511c80c22132fc2fa4b9f7b65f24fad95  Apache-2.0  2026-10-12
+detect/sam2.1-hiera-small/model.safetensors  hf:facebook/sam2.1-hiera-small/model.safetensors  0a4067b11ce1e23d5229203f11c718a823060d15a4b23fa2372a7d4b77cbbc60  Apache-2.0  2026-10-12

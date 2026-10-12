@@ -27,7 +27,8 @@ describe("comfyui/models.manifest (ADR-0004 decision 11)", () => {
       .filter((l) => l.trim() && !l.trim().startsWith("#"));
     for (const line of lines) {
       const [file, source, sha, licence, checked] = line.trim().split(/\s+/);
-      expect(file, line).toMatch(/^(checkpoints|ipadapter|clip_vision|loras|controlnet|diffusion_models|text_encoders|vae|model_patches)\//);
+      // `detect/` is read by transformers for subject detection (ADR-0026), never by ComfyUI.
+      expect(file, line).toMatch(/^(checkpoints|ipadapter|clip_vision|loras|controlnet|diffusion_models|text_encoders|vae|model_patches|detect)\//);
       expect(source, line).toMatch(/^(hf:[^/]+\/[^/]+\/.+|r2:.+)$/);
       expect(sha, line).toMatch(/^[0-9a-f]{64}$/);
       expect(licence, line).toMatch(/^[A-Za-z0-9.+-]+$/);

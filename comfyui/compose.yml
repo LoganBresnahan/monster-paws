@@ -59,6 +59,7 @@ services:
     volumes:
       - ./:/home/comfy/harness:ro
       - ../var/crew:/home/comfy/crew:ro
+      - ../var/photos:/home/comfy/photos:ro
       - ../var/explore:/home/comfy/explore
       - ${COMFYUI_DATA:-../var/comfyui}/input:/home/comfy/ComfyUI/input
       - ${COMFYUI_DATA:-../var/comfyui}/output:/home/comfy/ComfyUI/output:ro

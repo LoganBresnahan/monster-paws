@@ -1,0 +1,25 @@
+{
+  "_": "Third blind set for the detector experiment (ADR-0026, 2026-10-12): 20 Commons photos, weighted to dogs and cats (97% of the corpus). Attributes written by Claude from the photos before any detector has seen them and before the post-holdout fixes are written; `subject` says which animal the listing means. Colours the table lacks were mapped to its nearest entries — brindle as brown, calico as orange and white — itself a finding for the lookup table.",
+  "listings": {
+    "brindle-boxer":  { "species": "dog", "colour": "brown", "subject": "the brindle boxer on a leash", "photos": ["commons:blind3/1-Brindle-boxer-dog-female.jpg"] },
+    "lap-kitten":     { "species": "cat", "colour": "brown tabby", "subject": "the tabby kitten asleep on a lap", "photos": ["commons:blind3/4-5-months-blotched-tabby-kitten-sleeping-on-the.jpg"] },
+    "car-beagle":     { "species": "dog", "colour": "brown and white", "subject": "the beagle in the car", "photos": ["commons:blind3/A-Beagle-sitting-in-a-car-looking-outside-the-wi.jpg"] },
+    "black-and-orange": { "species": "cat", "colour": "black", "subject": "the black cat, not the orange tabby", "photos": ["commons:blind3/Black-Cat-and-Creamy-Orange-Tabby.jpg"] },
+    "calico":         { "species": "cat", "colour": "orange and white", "subject": "the calico cat", "photos": ["commons:blind3/Calico-cat-Lebanon-4.jpg"] },
+    "cafe-cat":       { "species": "cat", "colour": "orange and white", "subject": "the cat behind the cafe window", "photos": ["commons:blind3/Cat-in-La-Ronronnerie-cat-cafe-window-Nice-2026.jpg"] },
+    "walking-dog":    { "species": "dog", "colour": "tan", "subject": "the dog on the leash", "photos": ["commons:blind3/Dog-with-owner-walking.jpg"] },
+    "dog-run":        { "species": "dog", "colour": "black", "subject": "either (every dog is tiny and far away)", "photos": ["commons:blind3/Dogs-Playing-at-Yingfeng-DogRun-Area-in-Afternoo.jpg"] },
+    "playing-dogs":   { "species": "dog", "colour": "black and white", "subject": "either", "photos": ["commons:blind3/Dogs-playing-at-Marymoor-Park-112299350.jpg"] },
+    "persian-mother": { "species": "cat", "colour": "white", "subject": "the white mother cat, not her white kittens", "photos": ["commons:blind3/Doll-Faced-Persian-Cat-Matahari-and-her-family-o.jpg"] },
+    "kennel-ellen":   { "species": "dog", "colour": "tan", "subject": "the dog behind the kennel mesh", "photos": ["commons:blind3/Ellen-4479833732.jpg"] },
+    "army-dogs":      { "species": "dog", "colour": "tan", "subject": "the tan dog standing on the right, not the black dog lying by the man", "photos": ["commons:blind3/Flickr-The-U-S-Army-Homeless-dogs-help-healing-t.jpg"] },
+    "pariah-litter":  { "species": "dog", "colour": "brown", "subject": "the dark brown puppy at the lower left, not the cream ones", "photos": ["commons:blind3/Indian-pariah-dog-puppy-litter.jpg"] },
+    "singing-mother": { "species": "dog", "colour": "tan", "subject": "the tan mother, not the dark puppies", "photos": ["commons:blind3/Mother-New-Guinea-Singing-Dog-with-litter-of-pup.jpg"] },
+    "black-dog":      { "species": "dog", "colour": "black", "subject": "the black dog", "photos": ["commons:blind3/Portrait-og-black-dog-in-the-garden.jpg"] },
+    "shelter-kitten": { "species": "cat", "colour": "black and white", "subject": "the black-and-white kitten in the cage", "photos": ["commons:blind3/Shleter-kitten-6.jpg"] },
+    "marine-dog":     { "species": "dog", "colour": "tan", "subject": "the tan dog on the leash", "photos": ["commons:blind3/Single-Marine-Program-visits-the-local-Humane-So.jpg"] },
+    "senior-cat":     { "species": "cat", "colour": "brown tabby", "subject": "the old cat", "photos": ["commons:blind3/Tired-20-year-old-cat.jpg"] },
+    "tuxedo-tabby":   { "species": "cat", "colour": "brown tabby and white", "subject": "the tabby-and-white cat", "photos": ["commons:blind3/Tuxedo-patterned-black-mackerel-tabby-and-white-.jpg"] },
+    "bichons":        { "species": "dog", "colour": "white", "subject": "either", "photos": ["commons:blind3/Two-dogs-on-a-couch.jpg"] }
+  }
+}

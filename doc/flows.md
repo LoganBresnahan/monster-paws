@@ -552,7 +552,7 @@ may be purged, rebuilt or merged without touching it.
                               "A sponsorship at <shelter> · <date> · $<n>"
 ```
 
-## Keepsake art — generated on hardware we control, arriving when ready (ADR-0004 as amended 2026-10-05)
+## Keepsake art — generated on hardware we control, arriving when ready (ADR-0004 as amended 2026-10-05, ADR-0026)
 
 Planned: roadmap item 4 (pipeline v0), item 9 (the LoRA). The photo never
 leaves a machine we control; the job waits for the box, never the other way
@@ -572,17 +572,28 @@ round. Both workers are the same binary — the droplet's never registers
   src/worker/index.ts, art.generate only        (planned) the worker
        │                                        container, prod WSL distro
        │                                        under the "monsterpaws"
-       │  POST /prompt  (localhost HTTP)        Windows user
+       │                                        Windows user
+       ▼
+  subject detection, CPU  (planned, ADR-0026)   experiment: comfyui/detect.py
+       │   OWLv2 asked for the listing's        (19/20 blind). Every box past
+       │   species, colour, head → SAM 2.1      the floors outlined; groups,
+       │   outlines → clean-up rules → six      duplicates, parts dropped.
+       │   votes → ALWAYS one animal chosen,    Never the framed photo for an
+       │   margin recorded; under 0.1 a second  unclear subject (Logan,
+       │   look on crops · head box inside it   2026-10-12)
+       │
+       │  POST /prompt  (localhost HTTP)
        ▼
   monster-paws-comfyui, headless, TORCH=xpu     (planned) CI-built. Built:
        │   subject box at its aspect + head     comfyui/workflows/*.api.json,
-       │   (planned: a detector draws the box;  comfyui/models.manifest (hash
-       │   the companion animal stays outside)  + licence), models.py fetch at
+       │   (the companion animal stays          comfyui/models.manifest (hash
+       │   outside, never padded)               + licence), models.py fetch at
        │   description from the listing's       start — mismatch = no serve.
-       │   fields (sex, colours, breed, age)    Crops by hand so far:
-       │   painter: FLUX.2 klein 4B reading     comfyui/explore/boxes.json.
-       │   the crops as references (leader,     Fallback: SDXL × IP-Adapter ×
-       │   2026-10-11) · 3–4 candidates         outline × style LoRA
+       │   fields through a reviewed table      Crops by hand so far:
+       │   (sex, colour, breed, age, species)   comfyui/explore/boxes.json.
+       │   painter: FLUX.2 klein 4B reading     Fallback: SDXL × IP-Adapter ×
+       │   the crops as references (leader,     outline × style LoRA
+       │   2026-10-11) · 3–4 candidates
        ▼
   auto-QC v0  (planned, item 9)                 agreement among candidates
        │                                        rejects the outlier; cosine to

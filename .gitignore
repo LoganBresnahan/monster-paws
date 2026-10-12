@@ -57,3 +57,6 @@ next-env.d.ts
 /.playwright-mcp/
 __pycache__/
 comfyui/gpu.env
+
+# ephemeral thinking-session notes (never committed)
+/scratch/
