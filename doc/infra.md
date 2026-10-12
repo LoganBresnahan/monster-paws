@@ -657,7 +657,10 @@ What was load-bearing, in the order it was found:
   to 7.7 GB mid-batch the same evening — the guard's 10 GB floor killed one
   chunk (pool flat at 1.2 GB) and the batch resumed. That is the floor
   doing its job, not a fault; if it repeats, `memory=28GB` at the next
-  shutdown is the adjustment (the process high-water is 17 GB). Anything
+  shutdown is the adjustment (the process high-water is 17 GB). It repeated
+  2026-10-12 (batch 5b): free fell from 21.5 to 8.3 GB between two
+  samples 13 s apart, pool 1.3 GB, and the floor stopped one chunk after
+  12 images; the batch resumed and finished. Anything
   heavier than this graph (SD 3.5, a second ControlNet) needs the card,
   not the VM.
 - **The pool rule is also the card's size gauge (2026-10-11).** Loading a
@@ -666,7 +669,10 @@ What was load-bearing, in the order it was found:
   Z-Image beside the 7.5 GB Qwen3 encoder, bf16 Z-Image beside the fp8
   one, Z-Image's 2.9 GB control patch beside its fp8 transformer and fp8
   encoder. What fits: SDXL + adapter + LoRA + ControlNet (14 GB), klein 4B
-  fp8 + fp8 encoder (13 GB), Z-Image fp8 + fp8 encoder, Chroma fp8 + T5
+  fp8 + fp8 encoder (measured in batch 5b, 2026-10-12: ComfyUI loads the
+  encoder at 5.4 GB, klein cast to fp8 at 3.7 GB and the VAE at 0.2 GB, all
+  resident; Windows reads 13.2–14.4 GB dedicated mid-batch, pool flat at
+  1.3 GB — 1.5–2.7 GB of the card left), Z-Image fp8 + fp8 encoder, Chroma fp8 + T5
   fp8 (full, 2.9 GB pool, slow). The idle pool rose from 1.0 to 1.9–2.1 GB
   across the day's model switching and stayed there after the server
   stopped — retained by the driver, not growing further; watch it. The

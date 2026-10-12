@@ -56,6 +56,9 @@ services:
     mem_limit: 12g
     environment:
       OMP_NUM_THREADS: "4"
+      DETECT_OUT: ${DETECT_OUT:-/home/comfy/explore/detect}
+      DETECT_SPEC: ${DETECT_SPEC:-detect.json}
+      DETECT_PIPELINES: ${DETECT_PIPELINES:-owlv2}
     volumes:
       - ./:/home/comfy/harness:ro
       - ../var/crew:/home/comfy/crew:ro

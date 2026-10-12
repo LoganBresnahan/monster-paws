@@ -192,7 +192,7 @@ def build_family_graph(run: dict, prefix: str) -> dict:
                 pos = [f"refcond{i}", 0]
         if run["graph"] == "reference2":  # the head crop as a second reference the model reads after the subject
             # A detector-cut subject reads the detector's head too, so a batch never mixes hand and detector boxes (ADR-0026).
-            head = "dethead" if run.get("crop") == "detsubject" else "head"
+            head = "dethead" if run.get("crop") in ("detsubject", "grownsubject") else "head"
             g["head"] = {"class_type": "LoadImage", "inputs": {"image": input_name(run["animal"], run["photos"][0], head, raw=True)}}
             g["head_scale"] = {"class_type": "ImageScale", "inputs": {"image": ["head", 0], "upscale_method": "lanczos", "width": 768, "height": 768, "crop": "center"}}
             g["head_ref"] = {"class_type": "VAEEncode", "inputs": {"pixels": ["head_scale", 0], "vae": ["vae", 0]}}

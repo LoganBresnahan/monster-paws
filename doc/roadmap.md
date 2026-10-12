@@ -386,8 +386,12 @@ slice or change build order.
       padding shows as bands). Batch 5a (2026-10-12) painted from detector
       boxes instead of hand-drawn ones: Plum indistinguishable; Ducky's boxes
       clipped her muzzle and one of four portraits came out as two dogs,
-      which the judge's agreement rule rejected. Still to do, in order: grow
-      the chosen box to its SAM outline and re-run (batch 5b); the
+      which the judge's agreement rule rejected. The crop that fixes it:
+      grow the chosen box by its own outline (pixels no other candidate's
+      outline claims) plus a margin only where it grew past the box —
+      no neighbour brought back on any of 68 photos, and batch 5b
+      (2026-10-12) painted Ducky from it as well as from hand-drawn boxes,
+      with no two-dog image. Still to do, in order: the
       **best-two-photos rule** —
       subject size, head found, margin, sharpness, checked against the
       batch-4c hand picks; the photo still sets the view even with the pose

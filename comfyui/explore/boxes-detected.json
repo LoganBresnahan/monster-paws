@@ -1,11 +1,17 @@
 {
-  "_": "Subject and head boxes per crew photo as the detector chose them (ADR-0026), fractions [x0, y0, x1, y1] of the upright photo like boxes.json: comfyui/detect.py run 4 (OWLv2 alone), 2026-10-12, var/explore/detect-v4/results.jsonl. `_margin` is the lead over the runner-up, null when the subject was the only candidate. explore.py prep cuts these as `detsubject` and `dethead` beside the hand-drawn `subject` and `head`, so a batch can compare the two.",
+  "_": "Subject and head boxes per crew photo as the detector chose them (ADR-0026), fractions [x0, y0, x1, y1] of the upright photo like boxes.json: comfyui/detect.py run 4 (OWLv2 alone), 2026-10-12, var/explore/detect-v4/results.jsonl. `_margin` is the lead over the runner-up, null when the subject was the only candidate. `grownsubject` is `detsubject` grown by its own outline plus a margin only where it grew (comfyui/crops.py `grown.json`, doc/plans/subject-detection.md). explore.py prep cuts these as `detsubject`, `grownsubject` and `dethead` beside the hand-drawn `subject` and `head`, so a batch can compare the two.",
   "Plum/PXL_20250410_144425752": {
     "detsubject": [
       0.0,
       0.1163,
       0.9778,
       0.942
+    ],
+    "grownsubject": [
+      0.0,
+      0.1163,
+      0.9776,
+      0.9463
     ],
     "dethead": [
       0.0,
@@ -22,6 +28,12 @@
       0.6131,
       0.6843
     ],
+    "grownsubject": [
+      0.1477,
+      0.1919,
+      0.6133,
+      0.7412
+    ],
     "dethead": [
       0.1535,
       0.2568,
@@ -37,6 +49,12 @@
       0.6194,
       0.7528
     ],
+    "grownsubject": [
+      0.1851,
+      0.2437,
+      0.6191,
+      0.8087
+    ],
     "dethead": [
       0.1841,
       0.3525,
@@ -50,6 +68,12 @@
       0.0101,
       0.1896,
       0.7652,
+      1.0
+    ],
+    "grownsubject": [
+      0.0033,
+      0.1,
+      0.7685,
       1.0
     ],
     "dethead": [
@@ -67,6 +91,12 @@
       0.9973,
       0.8406
     ],
+    "grownsubject": [
+      0.1585,
+      0.0244,
+      1.0,
+      0.84
+    ],
     "dethead": [
       0.168,
       0.1362,
@@ -81,6 +111,12 @@
       0.121,
       0.9081,
       0.9378
+    ],
+    "grownsubject": [
+      0.2014,
+      0.1177,
+      0.9076,
+      0.9407
     ],
     "dethead": [
       0.243,
@@ -97,6 +133,12 @@
       0.9645,
       0.8253
     ],
+    "grownsubject": [
+      0.0,
+      0.1956,
+      0.9676,
+      0.9087
+    ],
     "dethead": [
       0.4133,
       0.1908,
@@ -111,6 +153,12 @@
       0.2071,
       1.0,
       0.7951
+    ],
+    "grownsubject": [
+      0.3719,
+      0.2017,
+      1.0,
+      0.795
     ],
     "dethead": [
       0.4626,
@@ -127,6 +175,12 @@
       0.6722,
       0.6102
     ],
+    "grownsubject": [
+      0.3693,
+      0.2938,
+      0.7071,
+      0.6562
+    ],
     "dethead": [
       0.4058,
       0.3278,
@@ -140,6 +194,12 @@
       0.1245,
       0.3487,
       0.9907,
+      1.0
+    ],
+    "grownsubject": [
+      0.1245,
+      0.3481,
+      0.9975,
       1.0
     ],
     "dethead": [
@@ -156,6 +216,12 @@
       0.1711,
       0.7586,
       0.9982
+    ],
+    "grownsubject": [
+      0.0,
+      0.1685,
+      0.8562,
+      1.0
     ],
     "_margin": null
   }

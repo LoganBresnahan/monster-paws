@@ -1,0 +1,13 @@
+{
+  "_": "Batch 5b — the grown box (ADR-0026, 2026-10-12): batch 5a's recipe (klein, two references plus head, the primary-colour description, three-quarter poses, seeds 7 and 11) with three cuts of the same photos: by hand (`subject`), the detector's box (`detsubject`) and that box grown by its own outline plus a margin only where it grew (`grownsubject`, from boxes-detected.json); both detector cuts read the detector's head. Same photos, seeds and words, so any difference is the cut. Card memory sampled mid-run for klein's footprint.",
+  "animals": {
+    "Plum":  { "kind": "dog", "describe": "male grey cane corso puppy",
+               "two": ["PXL_20250423_185424061.PORTRAIT.jpg", "downloadfile.jpg"] },
+    "Ducky": { "kind": "dog", "describe": "female tan pit bull mix",
+               "two": ["PXL_20241229_195311064.RAW-01.COVER.jpg", "PXL_20250621_160612271.PORTRAIT.jpg"] }
+  },
+  "photos": ["two"], "crops": ["subject", "detsubject", "grownsubject"], "aspect": ["box"], "describe": ["listing"],
+  "families": ["klein"], "graphs": ["reference2"], "prompts": ["storybook_sit34", "storybook_stand34"],
+  "denoise": [], "weights": [], "weight_types": [], "end_at": [], "loras": [null],
+  "seeds": [7, 11]
+}

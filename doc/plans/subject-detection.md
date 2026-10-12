@@ -135,10 +135,120 @@ already touches. Sheets: `var/explore/detect-v4/crops-{1,2,3}.jpg`.
   seven photos (Plum in his cone, the county dog, the iguana, the longhair,
   the orange cat, Lulu, the cat pile): crops near the full frame.
 
-No method wins outright. The next shape to try: grow only by the outline
-pixels that belong to no other candidate's outline, and add the margin
-only on a side where that outline reaches the box's edge — the animal
-continues there — never where it stops inside the box.
+No method wins outright among those three.
+
+### Own outline, margin where it grew — run on all three sets (2026-10-12)
+
+Two more columns: the box grown only by outline pixels that no other
+candidate's outline claims (kept only where they connect to the box), and
+that plus the 10% margin on a side only where the own outline grew past
+the detector's box by more than 1% — the box cut the animal there. The
+margin stops at the first pixel of another candidate's outline. Sheets
+`crops-*.jpg` in `var/explore/detect-v4/`, `detect-holdout-v4/`,
+`detect-blind3/`; no new model calls, so it costs nothing at run time.
+
+- **Every clipped animal comes back.** Ducky's whole muzzle (cover shot)
+  and nose tip (standing); the brindle boxer's and the car beagle's noses;
+  the tuxedo tabby's face; the three-legged dog's feet (+28% down).
+- **No neighbouring animal comes back, on any of the 68 photos.** The
+  rabbits, the guinea pigs, the cat pile, the bichons and Plum beside
+  Ducky are cut as the box cut them; the outline-plus-margin column
+  brought each neighbour in.
+- **A tight box stays the box.** 36 of 68 grow by under 2% on every side.
+- **People are not fenced.** A handler's hand or arm already inside the
+  box reaches further in on the fence dog and the marine dog: people are
+  never candidates, so their outlines claim nothing. Whether hands get
+  painted is batch 5b's question.
+
+So this is the cut for batch 5b: the batch-5a spec with the regrown boxes
+— yours to overrule. A tight box that cuts the animal and whose outline
+also stops at the cut (SAM stops where the box stops) still gets no
+margin; Ducky's cover shot shows the outline usually leaks a little past.
+
+## Batch 5b — the grown box, first read (Claude, 2026-10-12; Logan's picks decide)
+
+`comfyui/explore/batch5b.json`: batch 5a's spec with a third cut,
+`grownsubject` (the own-outline rule above, written by `crops.py` to
+`grown.json` and copied into `boxes-detected.json`). 24 images at
+16.5–18 s; the 16 repeated from 5a came out identical (same likeness to
+the last digit), so any difference is the cut. Grids
+`var/explore/batch5b/grid-ducky.jpg` and `grid-plum.jpg`, columns
+detector · grown · hand.
+
+- **Ducky: the grown cut paints like the hand cut.** All four grown
+  portraits are one dog with her whole muzzle, composed seed for seed
+  like the hand-cut ones; the two-headed Ducky (detector cut, standing,
+  seed 7) does not recur. Likeness 0.636–0.654 against hand 0.619–0.649
+  and detector 0.607–0.666.
+- **Plum: grown ≈ detector**, as expected — his boxes grew by under 2%
+  except 11% upward on the portrait (an ear). Likeness 0.694–0.715
+  against detector 0.684–0.723 and hand 0.700–0.740. The hand versions
+  still differ in the same way as in 5a (chain and tag kept, smaller chest
+  patch).
+- One hand-cut Plum (standing, seed 11) has a painted signature in the
+  corner — the recipe's, not the cut's.
+
+So the grown cut closes the one gap 5a found: **detector boxes, grown,
+paint as well as hand-drawn ones** on the crew — yours to overrule. Next:
+the best-two-photos rule.
+
+## Trace first — one timing test (2026-10-12)
+
+The pipeline is box first: OWLv2 boxes, SAM outlines what was boxed, so an
+animal OWLv2 never boxes is never seen (the puppy pile, run 4). Trace first
+turns that round: SAM 2.1 outlines everything in the photo from a grid of
+single-point prompts, keeps outlines it scores at 0.88 or more, merges
+near-duplicates (mask IoU over 0.7), and only then would each outline be
+asked what it is. One probe on the puppy pile, CPU, 4 threads, 1200×1600
+(the probe is not committed; it comes in with the step if that is built):
+
+| Grid | Encode | Outline | Distinct shapes | The five puppies |
+| --- | --- | --- | --- | --- |
+| 32×32 | 1.5 s | 70 s | 37 | four whole; the cream one at the bottom mottled |
+| 16×16 | 2.4 s | 21 s | 26 | all five whole, the dark one included |
+
+- **It finds what the detector missed.** The listing's dark puppy is one
+  clean shape, separated from its littermates along the fur.
+- **Most shapes are not animals.** 21 of 26 are ground, sacking, cloth and
+  stones; a per-shape question (OWLv2 or the colour measure on the shape)
+  still has to be built and measured, and is not in the time above.
+- **Time: ~25 s a photo against ~6 s** for the whole box-first pipeline.
+  Most of it is upscaling three candidate masks per point to full size;
+  upscaling only the best would cut it, unmeasured.
+
+So trace first fits as the rescue step, not the main path: run it only
+when the margin is small and no candidate matches the listing's colour
+(the recall carry-in below). Not built.
+
+## SAM 3 — what it would bring (read 2026-10-12, not downloaded)
+
+SAM 3 (Meta, November 2025) is trace first from words: given "dog" it
+returns a mask, box and score for every dog, with no detector in front.
+`facebook/sam3` is 0.9B parameters (OWLv2 base is ~0.15B, SAM 2.1 small
+~0.05B); the container's transformers already has `Sam3Model`. SAM 3.1
+(`facebook/sam3.1`) adds faster multi-object video tracking and has no
+transformers support. CPU speed is not published.
+
+It could replace two stages (OWLv2 boxes and SAM outlines) with one, and
+it answers the pile and touching-animal cases directly. What stops it
+going into the manifest today:
+
+- **Licence: the "SAM License"**, not Apache-2.0 like every detect model
+  now. Royalty-free, distribution allowed with the licence attached; it
+  forbids military, nuclear, espionage and ITAR uses and reverse
+  engineering, requires indemnifying Meta, and **Meta may change the terms
+  with continued use counting as acceptance**. Needs reading in full and a
+  decision before any download (ADR-0026's revisit trigger names "a
+  licence we can ship").
+- **Gated download:** a Hugging Face account that shares contact details
+  with Meta. Logan's to accept or not.
+- **Unmeasured:** speed on this CPU and on the Arc, and accuracy on our
+  three sets against run 4.
+- **The card has no room beside klein.** Batch 5b measured klein's set at
+  13.2–14.4 GB of the A770's 15.9 (`doc/infra.md`, Home GPU), leaving
+  1.5–2.7 GB against SAM 3's estimated 3–4; on the card it would have to
+  take the text encoder's place in the same process. The CPU is the
+  place to measure it first.
 
 ## Open
 
@@ -155,8 +265,8 @@ Each is a roadmap item 4 carry-in.
 - **Recall in piles.** A small margin and no candidate matching the
   listing's colour means the subject is probably missing: re-detect on
   tiles or with a lower floor before choosing.
-- **Partial boxes.** Grow the chosen box to its outline's extent (the
-  chinchilla's outline reached further than its box).
+- **Partial boxes.** Grow by the own outline plus a margin where it grew
+  (above); batch 5b paints from it.
 - **The part rule and litters.** Puppies inside their mother's box are
   dropped as parts: right for her listing, wrong for a puppy's.
 - **The colour table** — see `listing-words.md`.
