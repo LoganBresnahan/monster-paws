@@ -361,6 +361,22 @@ slice or change build order.
       but ComfyUI touches the Arc from that account; dev and production WSL caps sized
       together; the guard refuses to start when the other account's
       ComfyUI holds the card; production's worker has the card by default.
+      Carry-in: **the art worker survives a GPU reset** (`doc/issues.md`,
+      Ops, 2026-10-12): the Arc's driver times out an engine and Windows
+      resets it (a 0x141 watchdog dump in
+      `Microsoft-Windows-WerKernel/Operational`), once inside the WSL VM's
+      own process, so a job can lose its image. A failed ComfyUI prompt
+      fails the attempt and the worker restarts ComfyUI before the retry
+      (a lost device stays lost to the process that held it); the retry
+      uses the same seed and words, so it paints the same image; QC
+      rejects a blank or uniform image outright rather than leaving it to
+      the likeness score; and an attempt with a watchdog dump inside its
+      window is recorded as a GPU reset, not a model failure. Logan wants
+      an alert when one happens: find out whether it fits Better Stack
+      (ADR-0010 — an Errors event from the worker, or a heartbeat's
+      `/fail`, both of which email) before reaching for plain email. The
+      event log lives on Windows, so the reader runs `powershell.exe` from
+      the distro, as `scripts/gpu-health.sh` does.
       Carry-in: **the home distro's WSL cap is 32 GB** — measured
       2026-10-09: ComfyUI parks models in CPU memory once the card is full
       (17 GB high-water with adapter, LoRA and ControlNet) and the VM needs

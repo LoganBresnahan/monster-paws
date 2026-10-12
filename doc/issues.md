@@ -111,6 +111,51 @@ is the record, and a file of ticked boxes stops being read.
   on purpose — sleep is allowed on the dev box until production deploys,
   and the production account's provisioning turns it off (roadmap item 4
   carry-in). No crash since 10-10 12:01.
+  **2026-10-12: the black flickers do leave a record** — not as a 4101
+  in System, but as a graphics-watchdog live kernel dump
+  (`Microsoft-Windows-WerKernel/Operational`, "Component WATCHDOG …
+  Live Kernel Dump", report `Kernel_141_*`: 0x141
+  VIDEO_ENGINE_TIMEOUT_DETECTED, an engine reset Windows recovers without
+  a full TDR). A pair at 14:25:11 and 14:25:24 was the flicker Logan saw,
+  each followed ~10 s later by a display re-enumeration in the Intel
+  Graphics Software log. The same dumps cluster on 10-09 15:27–15:52 (the
+  Firefox episodes) and ten times on 10-10 04:50–12:12, then none until
+  today. No ComfyUI was running (batch 5b ended 14:16); on the Arc were
+  Windows Terminal, DWM and Zed — **Zed ignores its `GpuPreference=1` pin
+  like Terminal** (both its path and Store identity are pinned; it drew at
+  ~33% of the Arc's 3D engine at 14:30), and so does VS Code (its GPU
+  process at 14:58 had engines on the Arc only, 0–2.6%, with `Code.exe`'s
+  path pinned exactly): none of the three dev apps can be moved by the
+  pin. Their own switches are the way off the card — Terminal's "Use
+  software rendering", VS Code's `"disable-hardware-acceleration": true`
+  in `argv.json`. Intel Graphics Software crashed in
+  the Arc's Level Zero library (`ze_intel_gpu64.dll`) on 10-09 15:49 and
+  10-10 09:53, inside the earlier clusters, and its performance overlay was
+  switched on at 14:07 today. **Every dump is the Arc**: Logan copied all
+  46 from `C:\Windows\LiveKernelReports` and the WER queue (admin) to
+  `C:\Users\tarsier\dumps`, and WinDbg's `!analyze -v` reads 0x141 in
+  `igdkmdnd64.sys` — Intel's discrete-GPU driver; the UHD 770 runs
+  `igdkmdn64.sys` — in the System process for all of them except one
+  in `vmwp.exe` (10-07 09:01) and one 0x193 in `dxgkrnl.sys`, across
+  the Aug 30 driver build (10-07/08) and the Sep 30 one (32.0.101.9034,
+  since). Two more flickers came with the apps moved off: 15:05:37
+  (Intel Graphics Software closed, Zed closed) and 15:10:19 (Terminal
+  on WARP, VS Code without hardware acceleration; only csrss and
+  ApplicationFrameHost drawing on the Arc, ~3%), then 15:36:30 with
+  only csrss (12%) and DWM (6.5%) on it. No WHEA or PCIe error
+  coincides with any dump. So the Arc's driver hangs an engine during
+  ordinary desktop use, whichever app is on it. Logan: the flickers
+  began when the Arc went headless (monitors moved to the UHD 770) and
+  never happened with a monitor on it; Windows kept a watchdog dump about
+  monthly since 2025-02, then 2, 9, ~25 and 4 a day from 10-07. Decided
+  2026-10-12: **a DisplayPort dummy plug on the Arc**, so it runs as a
+  display card again; the app switches above stay on, since a display
+  changes the card's state, not which apps draw on it. Check after a
+  normal day with the plug in: no new WATCHDOG dump means headless was the
+  trigger. The repeated
+  bursts of `LiveKernelEvent` 141/124/193 in Application every few hours
+  are Windows Error Reporting resending the same queued reports, not new
+  faults.
 - **The WSL VM froze three times on 2026-10-10 (Windows stayed up), each
   time while the explore container loaded the ViT-H encoder into CPU
   memory for the likeness scorer.** No Windows event, no kernel message,
