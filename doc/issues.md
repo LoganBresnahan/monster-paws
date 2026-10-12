@@ -150,9 +150,15 @@ is the record, and a file of ticked boxes stops being read.
   monthly since 2025-02, then 2, 9, ~25 and 4 a day from 10-07. Decided
   2026-10-12: **a DisplayPort dummy plug on the Arc**, so it runs as a
   display card again; the app switches above stay on, since a display
-  changes the card's state, not which apps draw on it. Check after a
-  normal day with the plug in: no new WATCHDOG dump means headless was the
-  trigger. The repeated
+  changes the card's state, not which apps draw on it. The flickers start
+  hours into a session (Logan's observation, checked against boots and
+  resumes): 6.0–6.5 h after the 10-09 09:24 boot, 8.8–16.5 h after the
+  10-09 20:01 one, 5.5–6.7 h after today's 08:53; none on 10-11 in ~6 h
+  after a resume; each cluster ends at a reboot. Not tied to batches
+  (10-10's began at 04:50 with none running), and not the driver's
+  retained pool (0.8 GB at 15:40, lower than the morning). Check with
+  the plug in through a session well past 6 h: no new WATCHDOG dump
+  means headless was the trigger. The repeated
   bursts of `LiveKernelEvent` 141/124/193 in Application every few hours
   are Windows Error Reporting resending the same queued reports, not new
   faults.
