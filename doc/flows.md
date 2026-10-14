@@ -593,21 +593,30 @@ round. Both workers are the same binary — the droplet's never registers
        │   (sex, colour, breed, age, species)   comfyui/explore/boxes.json.
        │   painter: FLUX.2 klein 4B reading     Fallback: SDXL × IP-Adapter ×
        │   the crops as references (leader,     outline × style LoRA
-       │   2026-10-11) · 3–4 candidates
+       │   2026-10-11) · 4 candidates
        ▼
-  auto-QC v0  (planned, item 9)                 agreement among candidates
-       │                                        rejects the outlier; cosine to
-       │                                        the crop ranks; taste is human
+  judge v0, silent  (planned, item 9)           scores + choice stored with
+       │   all four go on; nothing gated        the judge's version, never
+       │   or regenerated on its word           shown (ADR-0004 as amended
+       │                                        2026-10-14); donors' face
+       │                                        picks are its labelled set
        ▼
   R2 monsterpaws-media  (write-only pair)       keys only in the DB
        │
        ▼
-  keepsake_fact  field='art'  basis=grant:<slug>:digify   (append)
+  keepsake_fact  field='art' ×4  basis=grant:<slug>:digify   (append)
        │
        ▼
-  "<pet>'s portrait is ready"  (planned)        the card's second reveal —
-                                                the framed photo was the
-                                                first (ADR-0006 decision 5)
+  "<pet>'s portraits are ready"  (planned)      the card's second reveal —
+       │                                        the framed photo was the
+       │                                        first (ADR-0006 decision 5)
+       ▼
+  donor picks the card's face  (planned)        a new row per change, never
+       │                                        an UPDATE; until then, the
+       │                                        first in generation order
+       ▼
+  keepsake_fact  field='face'  (append)         one set per keepsake, never
+                                                a re-roll (bright line 3)
 
   box asleep / down      → the job waits; no Replicate fallback by default
                            (it would re-open the §2 disclosure)

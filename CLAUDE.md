@@ -34,7 +34,8 @@ only — do not build from it.
   Replicate as the escape hatch (ADR-0004 as amended 2026-10-05, ADR-0007 as
   amended). Development never happens on that account. Generate **only on
   donation**, never per listing; art arrives when it is ready, never
-  "instantly". CLIP-similarity auto-QC picks best of 3–4.
+  "instantly". The donor keeps all four candidates and picks the card's
+  face; the judge scores every set silently (ADR-0004 as amended 2026-10-14).
 - Client state: **Zustand** (Logan's preference, proven on Carton-Fit) for
   interactive client islands (dashboard queue, donation-flow UI) — server
   data lives in Server Components, not client stores. Next.js caveat: no

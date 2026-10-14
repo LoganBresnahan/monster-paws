@@ -373,3 +373,61 @@ by Task Scheduler — is the one fragile joint and the first thing to dogfood.
   `comfyui/Dockerfile` and re-checked monthly (infra.md, Recurring ops); a
   release that stops the leak retires the `nofile` ulimit, and one that
   breaks the smoke is not adopted.
+
+## Amendment (2026-10-14): the donor keeps all four; the judge runs silent
+
+### Context
+The decision above serves the best of 3–4 candidates by CLIP similarity.
+That metric failed (revisit trigger fired 2026-10-10), and its successor,
+auto-QC v0 (`doc/plans/the-look-exploration.md`), rejects outliers but
+leaves the choice among clean candidates to taste: batch 5b's picks ranked
+1, 3, 21 and 23 of 24 on the scorer. Klein gets colour and identity right
+often enough that four draws usually hold a good one, and which one is
+best is a matter of taste. The roadmap carried the donor's choice as an
+open idea since 2026-10-12.
+
+### Decision
+1. **Every keepsake set is four candidates, and the donor keeps all four**
+   (Logan, 2026-10-14), as a precaution while the judge is unproven. Each
+   is its own `art` fact on the keepsake (ADR-0022), on the art's basis.
+2. **The donor picks the one that fronts the card**, and can change it.
+   A pick is a new row, never an UPDATE (ADR-0022 §3). Until the donor
+   picks, the card fronts the first candidate in generation order, never
+   the judge's pick.
+3. **The judge runs on every set and is never shown.** Its scores and
+   choice are stored with the judge's version, as derived data. The
+   donors' picks become the labelled set it is re-checked against. The
+   judge is not a gate yet: nothing is withheld or regenerated on its
+   word.
+4. **One set per keepsake, never a re-roll.** A paid or waited-for redraw
+   is the gacha loop DIRECTION.md's third bright line forbids.
+
+### Consequences
+- "Serve the best, flag low scorers for regeneration" is suspended, not
+  deleted. It returns as the judge's gate through the trigger below.
+- A malformed candidate (a misplaced eye, a stray leg) can reach a donor
+  inside a set of four. Accepted for now: the donor chooses the face, and
+  the defect stays as visible as the good ones. Donor reports go to
+  `doc/issues.md` (ADR-0019).
+- R2 holds four images per keepsake instead of one. This costs pennies at
+  this volume.
+- Item 9's judge work continues unchanged. Its labelled set now grows from
+  real donors, not only from Logan's picks.
+- DIRECTION.md's auto-QC item, CLAUDE.md's stack line and the keepsake art
+  flow in `doc/flows.md` say so.
+
+### Alternatives
+- **The judge picks one (the decision above).** Deferred: the judge hasn't
+  yet matched Logan's taste among clean candidates.
+- **The donor chooses one, and the other three are discarded.** Rejected:
+  it throws away generated art the donor has seen, and any later regret
+  becomes a re-roll request.
+- **The judge's pick as the preselected face.** Rejected for now: it would
+  put the judge's taste in front of donors before it has earned that.
+
+### Revisit triggers
+- The judge's choice matches donors' face picks well enough on real sets
+  (rank agreement measured against the labelled set) — then it becomes the
+  gate, and the default face, by a further amendment.
+- Donors report defective paintings in their sets more than once — then
+  outlier rejection gates the set before the judge's taste does.

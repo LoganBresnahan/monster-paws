@@ -312,10 +312,14 @@ photo; Replicate stays behind the same interface as the escape hatch
    *"Permission to digify <pet> given by <shelter>."* The AI pipeline is
    built and run internally from day one, but **no generated art ships in
    production without consent on record**.
-2. **Auto-QC via embedding check:** generate 3–4 candidates, score against
-   real photos with CLIP-style similarity, serve the best, flag low scorers.
-   This is a small automated eval harness for a generative pipeline — the
-   eval story's second chapter alongside text faithfulness.
+2. **Four candidates, all the donor's; the judge runs silent** (ADR-0004
+   as amended 2026-10-14). Every keepsake gets four paintings; the donor
+   keeps all four and picks the one that fronts the card. A judge scores
+   every set but is never shown, and the donors' picks are the labelled
+   set it is checked against until it earns the right to gate. One set per
+   keepsake, never a re-roll. The judge is a small automated eval harness
+   for a generative pipeline — the eval story's second chapter alongside
+   text faithfulness.
 
 **3D (Meshy/Tripo image-to-3D) is parked, socket left open:** a rotating 3D
 "gotcha day" card is a spectacular evolution upgrade later, but 3D likeness

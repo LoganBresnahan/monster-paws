@@ -459,19 +459,14 @@ slice or change build order.
       a hosted model may only ever see generated candidates, never the
       reference — which rules it out as the likeness judge and leaves it a
       possible anatomy check at most (its own ADR if ever).
-      Carry-in: **the donor may choose their keepsake from the clean
-      candidates** (Logan, 2026-10-12; an idea, not yet decided). Auto-QC
-      v0 already generates four and leaves the choice among clean ones to
-      taste (`doc/plans/the-look-exploration.md`), and batch 5b's picks
-      ranked 1, 3, 21 and 23 of 24 on the scorer, so the machine cannot
-      make that choice. The judge would become the gate, showing only the
-      candidates it passes, and its pick the default when the donor does
-      not choose. One choice per keepsake, never a re-roll: paying or
-      waiting for another draw is the gacha loop DIRECTION.md's third
-      bright line forbids. Deciding it amends ADR-0004 and DIRECTION.md's
-      "serve the best", and settles what becomes of the unchosen three.
-      The donors' choices would become the labelled set the judge is
-      re-checked against.
+      Carry-in: **the donor keeps all four candidates and picks the
+      card's face** (Logan, 2026-10-14; ADR-0004 as amended 2026-10-14).
+      Four `art` facts per keepsake; a `face` row per pick, never an
+      UPDATE; until the donor picks, the first in generation order. The
+      judge runs on every set, stores its scores and choice with its
+      version, and is never shown or obeyed — the donors' picks are its
+      labelled set until it earns the gate. One set per keepsake, never a
+      re-roll (DIRECTION.md's third bright line).
       Carry-in: **the donate step checks the animal's live visibility**
       (ADR-0015 as amended 2026-10-01) and says "no longer listed" — never
       "adopted" — then proceeds; the page cache is an hour old by design.

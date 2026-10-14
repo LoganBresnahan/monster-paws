@@ -483,7 +483,7 @@ chooses on is wash, background and expression, and no embedding distance
 sees that; what an embedding distance does see is the picture that went
 wrong.
 
-**Auto-QC v0, the rule to build (ADR-0004 amendment pending):** generate
+**Auto-QC v0, the rule to build (runs silent: ADR-0004 as amended 2026-10-14 gives the donor all four, so the rule scores and records but does not gate):** generate
 four; compute each candidate's mean cosine to the other three; **reject**
 any more than ~0.03 below the best; among the survivors prefer the highest
 cosine to the subject crop, and treat the remaining choice as taste —
