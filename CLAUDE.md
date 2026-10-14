@@ -216,11 +216,13 @@ the monthly check in infra.md's Recurring ops.
   files in `var/photos/commons/`, each recorded with its licence in
   `comfyui/explore/commons-photos.tsv`, never RescueGroups photos.
   **Batches and experiments go through `comfyui/guard.sh`** (`batch
-  <name> [chunk]`, `up`, `down`, `mem`): it restarts ComfyUI between chunks
-  and kills it when the driver's shared pool grows, because the per-prompt
-  cache flush leaked Windows memory through that pool and froze the box
-  (2026-10-07/08); the WSL VM filling to its cap is bounded and is sized
-  in infra.md. Host-side facts:
+  <name> [chunk]`, `up`, `down`, `mem`, `drop`): it restarts ComfyUI between
+  chunks and kills it when the driver's shared pool grows, because the
+  per-prompt cache flush leaked Windows memory through that pool and froze
+  the box (2026-10-07/08). Every start first returns the VM's file cache to
+  Windows, and `models.py` hashes the store without caching it. With
+  autoMemoryReclaim off, the VM keeps every file it reads until it hits its
+  cap (2026-10-14, infra.md). Host-side facts:
   `doc/infra.md`, Home GPU (ADR-0004 as amended 2026-10-05)
 - `npm run db:dump` — gzipped `pg_dump` of the dev database to `var/dumps/`;
   run it after a full poll, because that corpus is currently the only copy

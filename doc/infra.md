@@ -621,7 +621,9 @@ What was load-bearing, in the order it was found:
   [flags]` refuses to start ComfyUI below `FLOOR_GB` (10) and passes flags
   through `COMFY_ARGS` and env through `GPU_ENV`; `guard.sh watch` kills it
   the moment the shared pool passes `SHARED_MAX_GB` (4 — the leak's
-  signature, idle is ~1) or host free crosses the floor; `guard.sh batch <batch> [chunk]` runs the
+  signature, idle is ~1) or host free crosses the floor; `guard.sh drop`
+  returns the VM's file cache to Windows, and every `up` runs it first
+  (2026-10-14, the memory bullet below); `guard.sh batch <batch> [chunk]` runs the
   explore harness in chunks with a fresh process each time;
   `comfyui/leak_probe.py` is the experiment runner behind it, and
   `restart: "no"` keeps ComfyUI from coming back on its own after a crash.
@@ -660,7 +662,31 @@ What was load-bearing, in the order it was found:
   shutdown is the adjustment (the process high-water is 17 GB). It repeated
   2026-10-12 (batch 5b): free fell from 21.5 to 8.3 GB between two
   samples 13 s apart, pool 1.3 GB, and the floor stopped one chunk after
-  12 images; the batch resumed and finished. Anything
+  12 images; the batch resumed and finished. Again 2026-10-14 (batch
+  7a): free fell to 9.5 GB after 11 images, pool 0.9 GB, with the VM's
+  page cache already full from a 4 GB model download and hash.
+  **Cause and fix (2026-10-14): the cap was never what was tight; the
+  file cache was.** The VM's 27 GB was 1 GB of processes and 26 GB of
+  cache, and klein's ComfyUI holds only ~3.4 GB of RAM mid-batch (the
+  17 GB high-water was the SDXL stack). The cache came from every
+  ComfyUI start: `entrypoint.sh` runs `models.py fetch`, which hashes the
+  whole store (66 GB, ~75 s), and that reading alone filled the VM to its
+  cap. A bare `guard.sh up` took Windows free from 48.3 to 21.3 GB with
+  no model loaded. `models.py` now tells the kernel to forget each file
+  as it hashes it (`posix_fadvise DONTNEED`, no root needed, so the
+  production worker gets it too): after the same verify, the cache
+  stayed at 1 GB, and a start left Windows at 43.6 GB free. A klein run
+  under the guard then bottomed at 28.2 GB free during the model load,
+  where batch 7a had hit 9.5 and 7.3. The guard also drops the VM's
+  cache as root before each start (`guard.sh drop`, through
+  `wsl.exe -u root`), for cache from anything else (a download, a
+  scorer run). Freed pages reach Windows over 10–40 s; the guard waits
+  only when free memory is within 10 GB of the floor. `memory=32GB`
+  stays. `autoMemoryReclaim=dropCache` (WSL drops the cache when the VM
+  is idle) is untried here; the 10-10 freezes were under `gradual`.
+  Still unmeasured: a model load also takes several GB outside the VM
+  for a few seconds, about the size of the weights going to the card.
+  Anything
   heavier than this graph (SD 3.5, a second ControlNet) needs the card,
   not the VM.
 - **The pool rule is also the card's size gauge (2026-10-11).** Loading a

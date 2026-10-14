@@ -8,6 +8,7 @@
 # .wslconfig cap is bounded and is not what this guards against.
 #
 #   comfyui/guard.sh mem                      host free, driver shared pool, dedicated, descriptors
+#   comfyui/guard.sh drop                     return the VM's file cache to Windows (root via wsl.exe)
 #   comfyui/guard.sh up [--gpu-only ...]      fresh ComfyUI (flags via COMFY_ARGS, env via GPU_ENV="K=V ..."), waits until it serves
 #   comfyui/guard.sh down
 #   comfyui/guard.sh watch                    foreground loop: kills ComfyUI if shared pool > SHARED_MAX_GB or host free < FLOOR_GB
@@ -33,12 +34,32 @@ fds() {
 }
 mem() { printf 'host_free=%sGB shared=%sGB dedicated=%sGB fds=%s\n' "$(host_free_gb)" "$(shared_gb)" "$(dedicated_gb)" "$(fds)"; }
 
+# Every ComfyUI start drops the VM's file cache first: with autoMemoryReclaim off the VM keeps
+# every model file it has read until it sits at its cap, and the floor then trips during the
+# next load's spike outside the VM (2026-10-14, doc/infra.md Home GPU). Never skip it before a load.
+drop() {
+  local cached before now
+  cached=$(awk '/^Cached:/{printf "%.1f", $2/1048576}' /proc/meminfo)
+  before=$(host_free_gb)
+  if ! wsl.exe -d "${WSL_DISTRO_NAME:-monsterpaws-dev}" -u root -e sh -c 'sync; echo 1 > /proc/sys/vm/drop_caches' 2>/dev/null; then
+    echo "guard: could not drop the VM's file cache (no interop?) — continuing with the floor alone" >&2; return 0
+  fi
+  # Windows gets the pages back over ~10–40 s, not at once: wait only while a load would start near the floor
+  for _ in $(seq 1 12); do
+    now=$(host_free_gb)
+    awk -v n="$now" -v f="$FLOOR_GB" 'BEGIN{exit !(n >= f + 10)}' && break
+    sleep 5
+  done
+  echo "guard: dropped ${cached} GB of file cache; Windows free ${before} → $(host_free_gb) GB"
+}
+
 below_floor() { awk -v f="$(host_free_gb)" -v m="$FLOOR_GB" 'BEGIN{exit !(f+0 < m+0)}'; }
 pool_over() { awk -v s="$(shared_gb)" -v m="$SHARED_MAX_GB" 'BEGIN{exit !(s+0 > m+0)}'; }
 
 down() { $COMPOSE stop comfyui >/dev/null 2>&1 || true; $COMPOSE rm -f comfyui >/dev/null 2>&1 || true; }
 
 up() {
+  drop
   if below_floor; then echo "guard: host free $(host_free_gb) GB < floor $FLOOR_GB GB — refusing to start" >&2; exit 3; fi
   down
   npm run -s comfy:dirs
@@ -86,9 +107,10 @@ batch() {
 
 case "${1:-}" in
   mem) mem ;;
+  drop) drop; mem ;;
   up) shift; up "$@" ;;
   down) down ;;
   watch) watch ;;
   batch) shift; batch "$@" ;;
-  *) sed -n 2,13p "$0"; exit 2 ;;
+  *) sed -n 2,14p "$0"; exit 2 ;;
 esac

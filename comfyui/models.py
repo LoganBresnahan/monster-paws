@@ -64,11 +64,23 @@ def parse(text: str) -> list[Entry]:
     return entries
 
 
+# Every start verifies the whole store (66 GB on 2026-10-14). Never let that reading stay in the
+# page cache: with autoMemoryReclaim off, the WSL VM keeps it until it sits at its cap, and the
+# guard's floor trips during the next model load (doc/infra.md, Home GPU).
+def forget(f) -> None:
+    os.posix_fadvise(f.fileno(), 0, 0, os.POSIX_FADV_DONTNEED)
+
+
 def digest(path: Path) -> str:
     h = hashlib.sha256()
     with path.open("rb") as f:
+        n = 0
         while chunk := f.read(CHUNK):
             h.update(chunk)
+            n += 1
+            if n % 32 == 0:
+                forget(f)
+        forget(f)
     return h.hexdigest()
 
 
@@ -89,6 +101,9 @@ def download(entry: Entry, dest: Path) -> None:
             done += len(chunk)
             if total:
                 print(f"\r  {entry.path}: {done / 2**30:.2f} / {total / 2**30:.2f} GiB", end="", flush=True)
+        out.flush()
+        os.fsync(out.fileno())
+        forget(out)
     print()
     if h.hexdigest() != entry.sha256:
         part.unlink()
