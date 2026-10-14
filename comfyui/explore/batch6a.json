@@ -1,0 +1,122 @@
+{
+  "_": "Batch 6a \u2014 beyond the crew (ADR-0026, 2026-10-12): the batch-5b recipe (klein, reference2 = the grown subject crop plus the detector's head, the listing's words, three-quarter sit and stand, seeds 7 and 11) on twelve Commons test animals, one photo each, cut entirely by the detector (comfyui/explore/boxes-detected.json `_src`). Words written from the photo with no sex (a Commons photo does not say); visible traits in words (three-legged). The rat has no detected head, so its subject crop stands in. Never RescueGroups photos (ADR-0006 as amended 2026-08-25 \u00a72).",
+  "animals": {
+    "iguana": {
+      "kind": "iguana",
+      "describe": "green iguana",
+      "one": [
+        "Iguana-iguana-pet-upper-body-8a.jpg"
+      ]
+    },
+    "pigs": {
+      "kind": "pig",
+      "describe": "black and ginger pig",
+      "one": [
+        "Two-pigs-at-Rikki-s-Refuge-Animal-Sanctuary-14608225386.jpg"
+      ]
+    },
+    "white-dog": {
+      "kind": "dog",
+      "describe": "three-legged white dog",
+      "one": [
+        "3-leg-dog.jpg"
+      ]
+    },
+    "great-dane": {
+      "kind": "dog",
+      "describe": "three-legged black and white harlequin Great Dane",
+      "one": [
+        "Great-Dane-three-legged-harlequin-standing.jpg"
+      ]
+    },
+    "orange-cat": {
+      "kind": "cat",
+      "describe": "three-legged orange tabby cat",
+      "one": [
+        "Three-legged-cat.jpg"
+      ]
+    },
+    "parakeet": {
+      "kind": "parakeet",
+      "describe": "green parakeet",
+      "one": [
+        "Aratinga-canicularis-pet-in-small-cage-4a.jpg"
+      ]
+    },
+    "budgies": {
+      "kind": "budgie",
+      "describe": "yellow and blue budgie",
+      "one": [
+        "Pair-of-colorful-budgerigars-in-a-cage.jpg"
+      ]
+    },
+    "goat": {
+      "kind": "goat",
+      "describe": "white goat",
+      "one": [
+        "Goat-Farm-Sanctuary-14361449806.jpg"
+      ]
+    },
+    "chinchilla": {
+      "kind": "chinchilla",
+      "describe": "grey and white chinchilla",
+      "one": [
+        "Napoleon-chinchilla-in-box.jpg"
+      ]
+    },
+    "turtle": {
+      "kind": "turtle",
+      "describe": "brown box turtle",
+      "one": [
+        "Three-toed-Box-Turtle.jpg"
+      ]
+    },
+    "rat": {
+      "kind": "rat",
+      "describe": "grey and white fancy rat",
+      "one": [
+        "Fancy-rat-husky.jpg"
+      ]
+    },
+    "rabbits": {
+      "kind": "rabbit",
+      "describe": "grey rabbit",
+      "one": [
+        "FEMA-38424-Caged-rabbits-ready-to-go-to-a-shelter-for-displa.jpg"
+      ]
+    }
+  },
+  "photos": [
+    "one"
+  ],
+  "crops": [
+    "grownsubject"
+  ],
+  "aspect": [
+    "box"
+  ],
+  "describe": [
+    "listing"
+  ],
+  "families": [
+    "klein"
+  ],
+  "graphs": [
+    "reference2"
+  ],
+  "prompts": [
+    "storybook_sit34",
+    "storybook_stand34"
+  ],
+  "denoise": [],
+  "weights": [],
+  "weight_types": [],
+  "end_at": [],
+  "loras": [
+    null
+  ],
+  "seeds": [
+    7,
+    11
+  ]
+}

@@ -1,5 +1,5 @@
 {
-  "_": "Subject and head boxes per crew photo as the detector chose them (ADR-0026), fractions [x0, y0, x1, y1] of the upright photo like boxes.json: comfyui/detect.py run 4 (OWLv2 alone), 2026-10-12, var/explore/detect-v4/results.jsonl. `_margin` is the lead over the runner-up, null when the subject was the only candidate. `grownsubject` is `detsubject` grown by its own outline plus a margin only where it grew (comfyui/crops.py `grown.json`, doc/plans/subject-detection.md). explore.py prep cuts these as `detsubject`, `grownsubject` and `dethead` beside the hand-drawn `subject` and `head`, so a batch can compare the two.",
+  "_": "Subject and head boxes per crew photo, and per Commons test photo (`_src`, its ref in comfyui/explore/commons-photos.tsv; run 4 of its set, 2026-10-12) as the detector chose them (ADR-0026), fractions [x0, y0, x1, y1] of the upright photo like boxes.json: comfyui/detect.py run 4 (OWLv2 alone), 2026-10-12, var/explore/detect-v4/results.jsonl. `_margin` is the lead over the runner-up, null when the subject was the only candidate. `grownsubject` is `detsubject` grown by its own outline plus a margin only where it grew (comfyui/crops.py `grown.json`, doc/plans/subject-detection.md). explore.py prep cuts these as `detsubject`, `grownsubject` and `dethead` beside the hand-drawn `subject` and `head`, so a batch can compare the two.",
   "Plum/PXL_20250410_144425752": {
     "detsubject": [
       0.0,
@@ -224,5 +224,258 @@
       1.0
     ],
     "_margin": null
+  },
+  "white-dog/3-leg-dog": {
+    "_src": "commons:3-leg-dog.jpg",
+    "detsubject": [
+      0.0748,
+      0.2499,
+      0.6829,
+      0.7592
+    ],
+    "grownsubject": [
+      0.0047,
+      0.2479,
+      0.6828,
+      0.7583
+    ],
+    "dethead": [
+      0.0988,
+      0.2434,
+      0.4959,
+      0.5705
+    ]
+  },
+  "parakeet/Aratinga-canicularis-pet-in-small-cage-4a": {
+    "_src": "commons:Aratinga-canicularis-pet-in-small-cage-4a.jpg",
+    "detsubject": [
+      0.1874,
+      0.2879,
+      0.8446,
+      0.9898
+    ],
+    "grownsubject": [
+      0.1869,
+      0.2879,
+      0.8444,
+      0.9897
+    ],
+    "dethead": [
+      0.384,
+      0.2994,
+      0.8437,
+      0.7987
+    ]
+  },
+  "rabbits/FEMA-38424-Caged-rabbits-ready-to-go-to-a-shelter-for-displa": {
+    "_src": "commons:FEMA-38424-Caged-rabbits-ready-to-go-to-a-shelter-for-displa.jpg",
+    "detsubject": [
+      0.326,
+      0.4564,
+      0.9616,
+      0.7076
+    ],
+    "grownsubject": [
+      0.3258,
+      0.4562,
+      0.9624,
+      0.7169
+    ],
+    "dethead": [
+      0.456,
+      0.5105,
+      0.6746,
+      0.6518
+    ]
+  },
+  "goat/Goat-Farm-Sanctuary-14361449806": {
+    "_src": "commons:Goat-Farm-Sanctuary-14361449806.jpg",
+    "detsubject": [
+      0.2528,
+      0.2047,
+      0.9423,
+      0.6808
+    ],
+    "grownsubject": [
+      0.2526,
+      0.2042,
+      0.9413,
+      0.68
+    ],
+    "dethead": [
+      0.2543,
+      0.2004,
+      0.5404,
+      0.6497
+    ]
+  },
+  "great-dane/Great-Dane-three-legged-harlequin-standing": {
+    "_src": "commons:Great-Dane-three-legged-harlequin-standing.jpg",
+    "detsubject": [
+      0.0202,
+      0.053,
+      0.9726,
+      0.9614
+    ],
+    "grownsubject": [
+      0.0187,
+      0.0509,
+      0.9719,
+      0.9602
+    ],
+    "dethead": [
+      0.7997,
+      0.0587,
+      0.9696,
+      0.2686
+    ]
+  },
+  "iguana/Iguana-iguana-pet-upper-body-8a": {
+    "_src": "commons:Iguana-iguana-pet-upper-body-8a.jpg",
+    "detsubject": [
+      0.0436,
+      0.1688,
+      0.9944,
+      0.9884
+    ],
+    "grownsubject": [
+      0.0431,
+      0.1683,
+      1.0,
+      1.0
+    ],
+    "dethead": [
+      0.0437,
+      0.1688,
+      0.6206,
+      0.9046
+    ]
+  },
+  "orange-cat/Three-legged-cat": {
+    "_src": "commons:Three-legged-cat.jpg",
+    "detsubject": [
+      0.1516,
+      0.026,
+      0.9623,
+      0.9175
+    ],
+    "grownsubject": [
+      0.1494,
+      0.0256,
+      0.9615,
+      1.0
+    ],
+    "dethead": [
+      0.1501,
+      0.047,
+      0.7715,
+      0.4545
+    ]
+  },
+  "pigs/Two-pigs-at-Rikki-s-Refuge-Animal-Sanctuary-14608225386": {
+    "_src": "commons:Two-pigs-at-Rikki-s-Refuge-Animal-Sanctuary-14608225386.jpg",
+    "detsubject": [
+      0.0018,
+      0.3758,
+      0.6619,
+      0.9953
+    ],
+    "grownsubject": [
+      0.0,
+      0.375,
+      0.6625,
+      0.9944
+    ],
+    "dethead": [
+      0.4138,
+      0.5485,
+      0.6632,
+      0.8782
+    ]
+  },
+  "rat/Fancy-rat-husky": {
+    "_src": "commons:holdout/Fancy-rat-husky.jpg",
+    "detsubject": [
+      0.1325,
+      0.1603,
+      0.8844,
+      0.819
+    ],
+    "grownsubject": [
+      0.1318,
+      0.16,
+      0.8841,
+      0.8187
+    ],
+    "dethead": [
+      0.1318,
+      0.16,
+      0.8841,
+      0.8187
+    ],
+    "_note": "no head found by the detector; the grown subject stands in as the head reference"
+  },
+  "chinchilla/Napoleon-chinchilla-in-box": {
+    "_src": "commons:holdout/Napoleon-chinchilla-in-box.jpg",
+    "detsubject": [
+      0.1893,
+      0.2724,
+      0.7171,
+      0.5826
+    ],
+    "grownsubject": [
+      0.1892,
+      0.2719,
+      0.7825,
+      0.5975
+    ],
+    "dethead": [
+      0.4522,
+      0.2792,
+      0.7092,
+      0.4901
+    ]
+  },
+  "budgies/Pair-of-colorful-budgerigars-in-a-cage": {
+    "_src": "commons:holdout/Pair-of-colorful-budgerigars-in-a-cage.jpg",
+    "detsubject": [
+      0.4649,
+      0.5747,
+      0.737,
+      0.7971
+    ],
+    "grownsubject": [
+      0.4311,
+      0.5744,
+      0.7667,
+      0.7975
+    ],
+    "dethead": [
+      0.64,
+      0.5861,
+      0.7431,
+      0.6596
+    ]
+  },
+  "turtle/Three-toed-Box-Turtle": {
+    "_src": "commons:holdout/Three-toed-Box-Turtle.jpg",
+    "detsubject": [
+      0.0566,
+      0.282,
+      0.9443,
+      0.9181
+    ],
+    "grownsubject": [
+      0.0512,
+      0.2817,
+      0.945,
+      0.9175
+    ],
+    "dethead": [
+      0.6552,
+      0.7549,
+      0.8747,
+      0.9083
+    ]
   }
 }

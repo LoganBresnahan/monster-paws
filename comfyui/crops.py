@@ -10,8 +10,9 @@ SAM outline; that plus a margin; the box grown only by outline pixels no
 other candidate's outline claims; and that plus a margin only on the sides
 where the animal runs into the box's edge. A looser SAM re-ask was tried
 and dropped: given room it traced the whole scene. Output: crops-<n>.jpg
-sheets in DETECT_OUT, and grown.json: the last method's box per photo as
-fractions, which explore.py prep cuts as `grownsubject` once copied into
+sheets in DETECT_OUT, and grown.json: per photo its source and the
+detector's subject, grown subject and head as fractions, which explore.py
+prep cuts as `detsubject`, `grownsubject` and `dethead` once copied into
 explore/boxes-detected.json.
 """
 import json
@@ -133,7 +134,9 @@ def main() -> None:
         edged = edge_margin(r["photo"], owned, chosen, mine, others, MARGIN, *im.size)
         boxes = [chosen, grown, margin, owned, edged]
         rows.append((r["photo"], im, boxes))
-        regrown[r["photo"]] = [round(v / d, 4) for v, d in zip(edged, im.size * 2)]
+        frac = lambda b: [round(v / d, 4) for v, d in zip(b, im.size * 2)]
+        regrown[r["photo"]] = {"ref": refs[r["photo"]], "detsubject": frac(chosen), "grownsubject": frac(edged),
+                               "dethead": frac(r["head"]["box"]) if r.get("head") else None}
         print(f"  {r['photo'][:60]}: " + " | ".join(f"{m} {[round(v) for v in b]}" for m, b in zip(METHODS, boxes)), flush=True)
 
     (detect.OUT / "grown.json").write_text(json.dumps(regrown, indent=1) + "\n")

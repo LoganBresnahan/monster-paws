@@ -192,6 +192,28 @@ So the grown cut closes the one gap 5a found: **detector boxes, grown,
 paint as well as hand-drawn ones** on the crew — yours to overrule. Next:
 the best-two-photos rule.
 
+### Batch 5b — Logan's picks (2026-10-12)
+
+`var/explore/batch5b/picks.txt`: two each — Plum `005` (sit, seed 11,
+detector cut; Logan swapped it in for the hand-cut `000`) and `003`
+(stand, seed 11, hand); Ducky `013` (sit, seed 11) and `014` (stand,
+seed 7), **both hand-cut**. Logan: the Plum images are "really good …
+legit hard to pick" — Plum splits one and one, Ducky goes to the hand
+cut. Comparing the boxes behind them finds two gaps the grown cut
+leaves:
+
+- **The head box is never grown.** Ducky's head reference (the cover
+  shot) starts at 0.46 by the detector against 0.30 by hand, with her
+  nose near 0.38 — the face the painter copies has no muzzle, though
+  the grown subject crop now has one. Next: grow the head box by the
+  subject's own outline in the head's rows.
+- **A box the outline stops at is not grown.** Plum's portrait: hand
+  0.00–0.97 across, grown 0.00–0.77 — the limit noted above.
+
+Likeness with the picks (`explore:score -- batch5b --picks`): the picks
+rank 1, 3, 21 and 23 of 24 — the scorer agrees on Plum and puts both
+Ducky picks near the bottom, the same coin flip as before.
+
 ## Trace first — one timing test (2026-10-12)
 
 The pipeline is box first: OWLv2 boxes, SAM outlines what was boxed, so an

@@ -408,8 +408,11 @@ slice or change build order.
       outline claims) plus a margin only where it grew past the box —
       no neighbour brought back on any of 68 photos, and batch 5b
       (2026-10-12) painted Ducky from it as well as from hand-drawn boxes,
-      with no two-dog image. Still to do, in order: the
-      **best-two-photos rule** —
+      with no two-dog image — but Logan's picks went to the hand cut for
+      Ducky (one and one for Plum): the detector's head box, the painter's
+      face reference, still clips Ducky's muzzle, and a box the outline stops at is never grown.
+      Still to do, in order: grow the head box by the subject's own
+      outline and re-run; the **best-two-photos rule** —
       subject size, head found, margin, sharpness, checked against the
       batch-4c hand picks; the photo still sets the view even with the pose
       fixed (a top-down shot gave a top-down keepsake, batch 1d); then the
@@ -440,8 +443,10 @@ slice or change build order.
       Carry-in: **visible traits go into the words** (Logan, 2026-10-12) —
       three legs, one eye, ear-tipped; about 1% of the corpus's listings name
       one. A fixed keyword list over the listing's text is the likely source,
-      and taking a fact from prose needs an ADR note before it is built; then
-      a painter test of "three-legged" with the fixed pose.
+      and taking a fact from prose needs an ADR note before it is built.
+      Batch 6a (2026-10-12) tested "three-legged" with the fixed pose: 12
+      of 12 paintings had four legs, so the trait needs stronger phrasing
+      or a reference that shows it before the words can carry it.
       Carry-in: **art reads the largest photo the consented source offers**
       (Logan, 2026-10-12), never the page's 500-px display copy.
       RescueGroups photos never reach art or its development (ADR-0006 as
@@ -454,6 +459,19 @@ slice or change build order.
       a hosted model may only ever see generated candidates, never the
       reference — which rules it out as the likeness judge and leaves it a
       possible anatomy check at most (its own ADR if ever).
+      Carry-in: **the donor may choose their keepsake from the clean
+      candidates** (Logan, 2026-10-12; an idea, not yet decided). Auto-QC
+      v0 already generates four and leaves the choice among clean ones to
+      taste (`doc/plans/the-look-exploration.md`), and batch 5b's picks
+      ranked 1, 3, 21 and 23 of 24 on the scorer, so the machine cannot
+      make that choice. The judge would become the gate, showing only the
+      candidates it passes, and its pick the default when the donor does
+      not choose. One choice per keepsake, never a re-roll: paying or
+      waiting for another draw is the gacha loop DIRECTION.md's third
+      bright line forbids. Deciding it amends ADR-0004 and DIRECTION.md's
+      "serve the best", and settles what becomes of the unchosen three.
+      The donors' choices would become the labelled set the judge is
+      re-checked against.
       Carry-in: **the donate step checks the animal's live visibility**
       (ADR-0015 as amended 2026-10-01) and says "no longer listed" — never
       "adopted" — then proceeds; the page cache is an hour old by design.
@@ -621,6 +639,32 @@ slice or change build order.
       [dev] at home needs BFL's paid licence — Replicate's does not travel.
 - [ ] **10. Entity resolution at scale.** Second/third listing source; dedup
       across feeds; trust-hierarchy merge.
+      Carry-in: **a consented shelter's own feed is matched to its
+      RescueGroups listings** (Logan, 2026-10-13), so the page has
+      RescueGroups' fuller facts and the art has the shelter's photo. The
+      registry knows the shelter's RescueGroups org, so matching stays
+      inside one org.
+      - RescueGroups' `rescueId` is the shelter's own animal ID: filled for
+        68.5% of animals, with 60,727 distinct of 64,429 within their orgs
+        (measured 2026-10-13). It should equal the ID in the shelter's own
+        system. Name, species, sex and birth date confirm the match.
+      - A match adds an identity row (ADR-0013 decision 1). The merge
+        already lets RescueGroups fill fields the shelter's feed leaves
+        empty (decision 3).
+      **RescueGroups' facts must not reach the art as things stand.**
+      - Our granted key application says the artwork program is "based on
+        the shelter's own authorization and their own photos, not on API
+        data" (`doc/rescuegroups-application.md`).
+      - The API terms treat use beyond the application as a violation.
+      - Everything derived from API data is purged at termination, and that
+        purge would reach a keepsake painted from it (ADR-0022).
+      Three ways out, to be decided with RescueGroups and a lawyer in an
+      ADR-0006 amendment before colour words reach production art:
+      - RescueGroups widens the key to cover listing facts (never photos) as
+        words for art a shelter has consented to;
+      - the digify grant covers the shelter's own listing facts, taken from
+        the shelter's own channel;
+      - the words come from our own measurement of the consented photo.
       Carry-in: **display precedence between two licensed rows** (ADR-0015
       revisit trigger) — `pickLicensedDisplay` ranks a shelter's own words
       over an aggregator's copy by a stated v1 rule, not a decided one; the

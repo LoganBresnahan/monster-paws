@@ -332,6 +332,42 @@ three-quarter, two references plus head, two seeds.
   primary colour, breed, age and species. Written into the roadmap item 4
   carry-in.
 
+## Batch 6a — beyond the crew, first read (Claude, 2026-10-12; Logan's picks decide)
+
+`comfyui/explore/batch6a.json`: the batch-5b recipe (klein, the grown
+subject crop plus the detector's head, the listing's words, sit and stand
+three-quarter, seeds 7 and 11) on twelve Commons test animals, one photo
+each, cut entirely by the detector (ADR-0026). Words written from the
+photo, no sex. 48 images at 10.5–12 s (one reference photo, not two), pool
+flat at 0.8 GB. Grid `var/explore/batch6a/grid-animal-x-prompt-seed.jpg`;
+the three-legged rows in `grid-great-dane.jpg`, `grid-orange-cat.jpg`,
+`grid-white-dog.jpg`.
+
+- **Every species comes out as itself**, all 48 single, whole animals:
+  iguana, pig, goat, turtle, rat, rabbit, chinchilla, budgie, parakeet,
+  two dogs and a cat. The recipe built on two dogs carries over.
+- **"Three-legged" is ignored: 12 of 12 have four legs** — the Great
+  Dane, whose photo stands on three, the orange cat and the white dog.
+  Words alone do not take a leg off with this prompt.
+- **Markings are where likeness is lost.** The white dog loses its dark
+  ear patch and becomes a plain cream lab (likeness 0.38–0.40, the
+  batch's lowest); the harlequin's patches become a black coat with a
+  white chest; the parakeet loses its orange face. The coat's colour
+  survives, its pattern does not.
+- **The fixed pose bends sensibly for animals that cannot sit**: the
+  iguana crouches, the turtle and birds stand or perch; sit and stand
+  barely differ for them.
+- Likeness: iguana 0.75–0.78 at the top; the rabbit 0.49–0.52, its crop
+  kept bars and a dark neighbour that the painting (rightly) drops.
+
+So the open questions move from species to traits: how to make a missing
+leg and a marking stick. Candidates, unmeasured: a trait phrased as an
+instruction ("with only three legs, missing its front left leg"), the
+photo that shows the trait as the head-side reference, and the
+words-one-at-a-time batch already planned (`listing-words.md`).
+Batch 6b re-ran five of these animals with the colour as RescueGroups
+would send it; the read is in `listing-words.md`.
+
 ## Avenues (Logan, 2026-10-11)
 
 "Just because we find something that works doesn't mean I don't want to

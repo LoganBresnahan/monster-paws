@@ -26,6 +26,7 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 CREW = Path("/home/comfy/crew")
+PHOTOS = Path("/home/comfy/photos")
 INPUT = Path("/home/comfy/ComfyUI/input")
 OUTPUT = Path("/home/comfy/ComfyUI/output")
 EXPLORE = Path("/home/comfy/explore")
@@ -58,16 +59,20 @@ def prep() -> None:
     """Copy every crew photo into input/crew/ as an upright PNG with no metadata at all, plus one PNG per subject box."""
     from PIL import Image, ImageOps
     boxes = json.loads((HERE / "explore" / "boxes.json").read_text())
+    sources = [(src.parent.name, src) for src in sorted(CREW.glob("*/*"))]
     for key, found in json.loads((HERE / "explore" / "boxes-detected.json").read_text()).items():
         if not key.startswith("_"):
             boxes.setdefault(key, {}).update(found)
-    for src in sorted(CREW.glob("*/*")):
-        if src.suffix.lower() not in (".jpg", ".jpeg", ".png", ".webp"):
+            # A Commons test photo comes in under its listing's name; never a RescueGroups photo (ADR-0006 as amended 2026-08-25 §2).
+            if found.get("_src", "").startswith("commons:"):
+                sources.append((key.split("/")[0], PHOTOS / "commons" / found["_src"].split(":", 1)[1]))
+    for animal, src in sources:
+        if src.suffix.lower() not in (".jpg", ".jpeg", ".png", ".webp", ".tif", ".tiff"):
             continue
-        key = f"{src.parent.name}/{src.stem}"
+        key = f"{animal}/{src.stem}"
         wanted = {"full": None, **{k: v for k, v in boxes.get(key, {}).items() if not k.startswith("_")}}
-        outs = {crop: INPUT / input_name(src.parent.name, src.name, crop) for crop in wanted}
-        raws = [INPUT / input_name(src.parent.name, src.name, crop, raw=True) for crop in wanted if crop != "full"]
+        outs = {crop: INPUT / input_name(animal, src.name, crop) for crop in wanted}
+        raws = [INPUT / input_name(animal, src.name, crop, raw=True) for crop in wanted if crop != "full"]
         if all(o.exists() for o in list(outs.values()) + raws):
             continue
         outs["full"].parent.mkdir(parents=True, exist_ok=True)
@@ -78,7 +83,7 @@ def prep() -> None:
         for crop, box in wanted.items():
             variants = {outs[crop]: None if box is None else squared(im, box)}
             if box is not None:
-                variants[INPUT / input_name(src.parent.name, src.name, crop, raw=True)] = im.crop(tuple(round(b * d) for b, d in zip(box, im.size * 2)))
+                variants[INPUT / input_name(animal, src.name, crop, raw=True)] = im.crop(tuple(round(b * d) for b, d in zip(box, im.size * 2)))
             for dst, part in variants.items():
                 if dst.exists():
                     continue

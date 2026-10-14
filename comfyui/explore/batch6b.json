@@ -1,0 +1,98 @@
+{
+  "_": "Batch 6b — the listing's colour as RescueGroups would send it (2026-10-13): batch 6a exactly, with each animal's colour words replaced by the value a shelter would pick from RescueGroups' list for that species (`_rg`: colour, pattern) turned into words by the draft table in doc/plans/listing-words.md. Only the five animals whose words change are run; the other seven would repeat 6a image for image (identical words, seeds and crops). \"Multi/Mixed\" maps to no colour words. Never RescueGroups photos (ADR-0006 as amended 2026-08-25 §2).",
+  "animals": {
+    "pigs": {
+      "kind": "pig",
+      "describe": "black pig",
+      "one": [
+        "Two-pigs-at-Rikki-s-Refuge-Animal-Sanctuary-14608225386.jpg"
+      ],
+      "_rg": {
+        "colour": "Black",
+        "pattern": null
+      },
+      "_6a": "black and ginger pig"
+    },
+    "great-dane": {
+      "kind": "dog",
+      "describe": "three-legged white Great Dane with black patches",
+      "one": [
+        "Great-Dane-three-legged-harlequin-standing.jpg"
+      ],
+      "_rg": {
+        "colour": "White with Black",
+        "pattern": "Patches"
+      },
+      "_6a": "three-legged black and white harlequin Great Dane"
+    },
+    "budgies": {
+      "kind": "budgie",
+      "describe": "blue budgie",
+      "one": [
+        "Pair-of-colorful-budgerigars-in-a-cage.jpg"
+      ],
+      "_rg": {
+        "colour": "Blue",
+        "pattern": null
+      },
+      "_6a": "yellow and blue budgie"
+    },
+    "chinchilla": {
+      "kind": "chinchilla",
+      "describe": "grey chinchilla",
+      "one": [
+        "Napoleon-chinchilla-in-box.jpg"
+      ],
+      "_rg": {
+        "colour": "Gray",
+        "pattern": null
+      },
+      "_6a": "grey and white chinchilla"
+    },
+    "rat": {
+      "kind": "rat",
+      "describe": "fancy rat",
+      "one": [
+        "Fancy-rat-husky.jpg"
+      ],
+      "_rg": {
+        "colour": "Multi/Mixed",
+        "pattern": null
+      },
+      "_6a": "grey and white fancy rat"
+    }
+  },
+  "photos": [
+    "one"
+  ],
+  "crops": [
+    "grownsubject"
+  ],
+  "aspect": [
+    "box"
+  ],
+  "describe": [
+    "listing"
+  ],
+  "families": [
+    "klein"
+  ],
+  "graphs": [
+    "reference2"
+  ],
+  "prompts": [
+    "storybook_sit34",
+    "storybook_stand34"
+  ],
+  "denoise": [],
+  "weights": [],
+  "weight_types": [],
+  "end_at": [],
+  "loras": [
+    null
+  ],
+  "seeds": [
+    7,
+    11
+  ]
+}
