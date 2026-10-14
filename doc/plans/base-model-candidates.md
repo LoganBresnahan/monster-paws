@@ -222,10 +222,14 @@ seeds per dog, unaided). What ran and what could not:
 - **bf16 weights do not fit**: beside the 5 GB fp8 encoder the 11.5 GB
   transformer pushed the driver pool to 4.5–4.8 GB on six attempts and
   the guard cut each. The fp8-versus-bf16 half of the speckle question is
-  unanswerable on this card.
+  unanswerable on this card. *Second look 2026-10-13: unanswerable only
+  with the encoder on the card — see "A second card, and the encoder on
+  the CPU" below.*
 - **The Fun ControlNet does not fit either**: the 2.9 GB patch on the fp8
   transformer spilled the pool to 4.4 GB. The one lever left is the fp4
   encoder (3.2 GB, in the same repackage); it goes on the avenues list.
+  *Second look 2026-10-13: not the one lever left — the encoder can run
+  on the CPU instead, at no loss (below).*
 - **Eight against sixteen steps: the same picture.** Distilled models
   stop improving at their training step count; the extra eight steps cost
   10 s and changed nothing visible. The grain Logan called speckle is
@@ -368,6 +372,48 @@ words-one-at-a-time batch already planned (`listing-words.md`).
 Batch 6b re-ran five of these animals with the colour as RescueGroups
 would send it; the read is in `listing-words.md`.
 
+## Batch 7a — klein precision, first read (Claude, 2026-10-14; Logan's picks decide)
+
+`comfyui/explore/batch7a.json`: batch 6a exactly (twelve Commons animals,
+two poses, seeds 7 and 11), run once with our on-the-fly fp8 cast of the
+bf16 file (`klein`) and once with BFL's own per-tensor-scaled fp8
+(`kleinbfl8`, `black-forest-labs/FLUX.2-klein-4b-fp8`, Apache-2.0, card and
+LICENSE.md read 2026-10-14). Our ComfyUI reads BFL's quantisation metadata
+and, with no fp8 compute on the Arc, multiplies each weight by its scale
+back to bf16 per layer, so the weight rounding is the only difference.
+bf16 itself was not run (Logan). 96 images, both arms 10.5–12 s (median
+12.0), pool flat at 0.9–1.0 GB. Grid
+`var/explore/batch7a/grid-animal-seed-x-prompt-family.jpg` (cast left,
+BFL right within each pose).
+
+- **The cast arm reproduces batch 6a bit for bit** (48 of 48, pixel
+  difference 0). The harness is deterministic on this card, so the BFL
+  column differs only by the weights.
+- **Same picture every time.** All 48 pairs keep the composition, pose,
+  colours and markings. The mean pixel difference is 4.3 of 255 (2.6 on
+  the goat, 9.3 on the turtle). What moves is detail: the turtle's head
+  turns slightly, and the Great Dane (sit, seed 7) loses the cast's
+  hanging tag and gets a slightly crisper face. Close up, BFL's rat fur
+  and whiskers are a little finer (rat sit, seed 11).
+- **One trait comes back a little**: the parakeet's orange face, which
+  batch 6a lost, is stronger in BFL's sit seed 7. That is one image, not
+  a rule.
+- **Likeness does not separate them**: BFL is +0.004 on average, higher
+  in 31 of 48 pairs. That is within the noise between siblings that the
+  scorer cannot rank (Step 2).
+- **Neither arm shows grain.** In this batch the rounding changes which
+  small details are drawn. It does not change their quality.
+
+Read (yours to overrule): BFL's file is at least as good as our cast, often
+a little crisper, and costs nothing — same speed, same card, one file
+instead of a conversion at load. So it is a candidate for the default
+klein weights. The size of the difference also suggests what bf16 would
+buy: probably more of the same kind of detail change, not a quality step.
+Two guard floor stops (Windows free 9.5 and 7.3 GB, pool flat) are
+recorded in `doc/infra.md`. The second came at the switch between the two
+weights files, when one process held both, so a production worker should
+load one klein file and never switch.
+
 ## Avenues (Logan, 2026-10-11)
 
 "Just because we find something that works doesn't mean I don't want to
@@ -379,14 +425,70 @@ worked.
 
 - klein, reference only (batch 3a/3b) — the front runner.
 - klein with two references, subject and head (batch 3b).
-- klein with a reference-control LoRA for pose (`xocialize/refcontrol-FLUX.2-klein-4B-pose-lora`; canny and depth exist for the 9B) — licence to read; the klein way of locking a pose.
+- klein with a reference-control LoRA for pose (`xocialize/refcontrol-FLUX.2-klein-4B-pose-lora`; canny and depth exist for the 9B) — licence to read; the klein way of locking a pose, and the lever aimed at Ducky's stubbiness (the reference copies a foreshortened pose). Memory is not the blocker (below).
 - klein with a style LoRA (community ones exist for the 4B; our own on Base 4B is the item-9 path).
-- klein in BFL's own calibrated fp8 (`black-forest-labs/FLUX.2-klein-4b-fp8`) against our on-the-fly cast.
+- klein precision, three ways on the same seeds: our on-the-fly fp8 cast, BFL's own calibrated fp8 (`black-forest-labs/FLUX.2-klein-4b-fp8`), and bf16 with the encoder on the CPU (below). The first two ran (batch 7a): same pictures, BFL's a little crisper, no likeness difference. bf16 is skipped for now (Logan, 2026-10-14).
 - Z-Image unaided, 8 vs 16 steps — ran (batch 3c): no difference; bf16 does not fit this card. Next lever: coat wording ("solid tan", "smooth grey").
-- Z-Image with its Fun ControlNet from the outline — did not fit at fp8 beside the 5 GB encoder (batch 3c); retry with the fp4 encoder (3.2 GB).
+- Z-Image with its Fun ControlNet from the outline — did not fit at fp8 beside the 5 GB encoder (batch 3c); retry with the encoder on the CPU rather than the fp4 encoder (below). Low priority: the outline locks shape, not colour or markings, and Z-Image has no reference path yet, so it fixes a problem klein does not have.
 - Z-Image Omni's reference images (`TextEncodeZImageOmni`), once its image encoder is located.
 - SDXL as the known-good fallback; SD 3.5 Large fp8 with its tooling when a token for the gated download is set up.
 - FLUX.1 dev as the yardstick (Experiment A), after the VM memory re-test.
+
+## A second card, and the encoder on the CPU (discussion, 2026-10-13)
+
+Logan asked what a second 16 GB A770 would buy if it went to more or
+better models rather than to development or queue capacity (the trigger
+for buying one is ADR-0004's revisit list). Working through it turned up
+a lever on the one card we have, which takes most of the list away.
+
+**Two cards are not one 32 GB card.** They do not pool memory, and core
+ComfyUI places a model on one device. Splitting one model's layers across
+cards is a community custom node, written for CUDA first; XPU support is
+unchecked.
+
+**The encoder can leave the card.** ComfyUI's `CLIPLoader` takes
+`device: cpu` (read in the `monster-paws-comfyui:dev` image's `nodes.py`,
+2026-10-13). The Qwen3-4B encoder is 5.4 GB of klein's resident 9.3 GB and
+runs once per prompt — once per keepsake, however many candidates — so on
+the CPU it costs a few seconds per keepsake (unmeasured) and frees 5.4 GB
+of card. Every "does not fit" in batch 3a and 3c had the encoder on the
+card. Unmeasured; the guard's pool rule and the VM's 10 GB floor judge it
+as usual.
+
+What that opens, all on one card, all unmeasured:
+
+| Blocked today | With the encoder on the CPU | Expectation |
+| --- | --- | --- |
+| bf16 klein (batch 3a: killed beside the bf16 encoder) | ~7.7 GB of weights (4 B × 2 bytes) + VAE + working memory; plausibly fits | **Small gain.** The Arc has no fp8 compute — fp8 is storage, upcast to bf16 per layer — so bf16 removes only weight rounding: fine texture and colour drift, not likeness, pose or anatomy. klein's tells so far (the chest bandana, the taupe grey, the stubby Ducky) are wording and reference, not precision, and BFL ships an fp8 klein as a production form. Our cast (`weight_dtype: fp8_e4m3fn` in `comfyui/explore.py`) is the naive one, so if precision costs anything it is there. The three-way avenue decides: all alike closes it; bf16 clearly better makes the CPU encoder the production recipe; between, BFL's fp8. |
+| Z-Image + Fun ControlNet (batch 3c: spilled) | ~5.8 + 2.9 GB + VAE, about klein's footprint today | Fits, but fixes shape only (avenue above). |
+| klein + pose LoRA + style LoRA + references | **Probably not blocked today.** No klein LoRA has ever been loaded (`explore.py`'s LoRA path is SDXL's), so "does not fit" was never measured. ComfyUI patches a LoRA into the weights at load, so it costs a file of a few hundred MB, not a resident model; references already fit (3b: subject + head; 4a: up to three photos + head; pool flat). The CPU encoder is the fallback if it does spill. | The real blockers are the unread LoRA licences (nothing runs without a `models.manifest` line), distilled models taking LoRAs less well (test, do not assume), and our own style LoRA needing training. |
+
+**What a second card still buys** once the encoder can leave the card:
+
+- **Training beside serving.** Our style LoRA on Base 4B (roadmap item 9)
+  fills a 16 GB card for hours; one card trains while the other serves
+  donations or exploration. The strongest case.
+- **A judge on the second card.** A ~7B vision-language model (int4/int8,
+  ~5–9 GB) asking "same dog? four legs? collar right?" in place of CLIP
+  similarity, which reads styled images low. Scoring candidate N while
+  card 1 paints N+1 makes best-of-8 cost about what best-of-3–4 does now.
+- **Detection in the art job.** SAM 3 (0.9 B), OWLv2 and SAM 2 resident
+  on the GPU instead of a CPU pass (`subject-detection.md`, SAM 3).
+- **One bigger-model experiment.** Qwen-Image-Edit (Apache-2.0, does what
+  Kontext does) at fp8 is ~20 GB plus its encoder, ~28 of 32 GB split by
+  layer across both cards — only with that custom node, and the setup
+  most likely to meet an Arc + WSL trap. One run against klein, not a
+  direction.
+- Not worth moving: listing assessment and donor updates stay on the
+  Claude API (ADR-0021 prices the corpus at ~$29); an animated
+  adoption-day card (Wan 2.2 TI2V-5B, Apache-2.0, ~16 GB) is new scope
+  for `doc/DIRECTION.md` before it is a model question.
+
+Costs: the Arc traps double — a driver pool per card while the guard
+watches one, the black-flicker engine resets, and `comfy:smoke` proving
+both cards — and the PSU must carry a second 225 W card. So the buy waits
+on ADR-0004's trigger (worker live, a clean week, jobs queueing), and the
+CPU-encoder batch runs first on the card we have.
 
 ## What decides
 

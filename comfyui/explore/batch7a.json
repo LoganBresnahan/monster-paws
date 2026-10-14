@@ -1,0 +1,123 @@
+{
+  "_": "Batch 7a — klein precision (doc/plans/base-model-candidates.md, Avenues; 2026-10-14): batch 6a exactly — the batch-5b recipe on the twelve Commons test animals, same words, crops, poses and seeds — with one axis, the klein weights: `klein` is our on-the-fly fp8 cast of the bf16 file (6a's), `kleinbfl8` is BFL's own per-tensor-scaled fp8 (black-forest-labs/FLUX.2-klein-4b-fp8). The Arc has no fp8 compute, so both are dequantised to bf16 per layer; only the weight rounding differs. bf16 itself is not run (Logan, 2026-10-14). Never RescueGroups photos (ADR-0006 as amended 2026-08-25 §2).",
+  "animals": {
+    "iguana": {
+      "kind": "iguana",
+      "describe": "green iguana",
+      "one": [
+        "Iguana-iguana-pet-upper-body-8a.jpg"
+      ]
+    },
+    "pigs": {
+      "kind": "pig",
+      "describe": "black and ginger pig",
+      "one": [
+        "Two-pigs-at-Rikki-s-Refuge-Animal-Sanctuary-14608225386.jpg"
+      ]
+    },
+    "white-dog": {
+      "kind": "dog",
+      "describe": "three-legged white dog",
+      "one": [
+        "3-leg-dog.jpg"
+      ]
+    },
+    "great-dane": {
+      "kind": "dog",
+      "describe": "three-legged black and white harlequin Great Dane",
+      "one": [
+        "Great-Dane-three-legged-harlequin-standing.jpg"
+      ]
+    },
+    "orange-cat": {
+      "kind": "cat",
+      "describe": "three-legged orange tabby cat",
+      "one": [
+        "Three-legged-cat.jpg"
+      ]
+    },
+    "parakeet": {
+      "kind": "parakeet",
+      "describe": "green parakeet",
+      "one": [
+        "Aratinga-canicularis-pet-in-small-cage-4a.jpg"
+      ]
+    },
+    "budgies": {
+      "kind": "budgie",
+      "describe": "yellow and blue budgie",
+      "one": [
+        "Pair-of-colorful-budgerigars-in-a-cage.jpg"
+      ]
+    },
+    "goat": {
+      "kind": "goat",
+      "describe": "white goat",
+      "one": [
+        "Goat-Farm-Sanctuary-14361449806.jpg"
+      ]
+    },
+    "chinchilla": {
+      "kind": "chinchilla",
+      "describe": "grey and white chinchilla",
+      "one": [
+        "Napoleon-chinchilla-in-box.jpg"
+      ]
+    },
+    "turtle": {
+      "kind": "turtle",
+      "describe": "brown box turtle",
+      "one": [
+        "Three-toed-Box-Turtle.jpg"
+      ]
+    },
+    "rat": {
+      "kind": "rat",
+      "describe": "grey and white fancy rat",
+      "one": [
+        "Fancy-rat-husky.jpg"
+      ]
+    },
+    "rabbits": {
+      "kind": "rabbit",
+      "describe": "grey rabbit",
+      "one": [
+        "FEMA-38424-Caged-rabbits-ready-to-go-to-a-shelter-for-displa.jpg"
+      ]
+    }
+  },
+  "photos": [
+    "one"
+  ],
+  "crops": [
+    "grownsubject"
+  ],
+  "aspect": [
+    "box"
+  ],
+  "describe": [
+    "listing"
+  ],
+  "families": [
+    "klein",
+    "kleinbfl8"
+  ],
+  "graphs": [
+    "reference2"
+  ],
+  "prompts": [
+    "storybook_sit34",
+    "storybook_stand34"
+  ],
+  "denoise": [],
+  "weights": [],
+  "weight_types": [],
+  "end_at": [],
+  "loras": [
+    null
+  ],
+  "seeds": [
+    7,
+    11
+  ]
+}

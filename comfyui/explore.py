@@ -137,6 +137,8 @@ FAMILIES = {
     "chroma": {"unet": "chroma1-hd-fp8mixed.safetensors", "clip": ("t5xxl_fp8_e4m3fn_scaled.safetensors", "chroma"), "vae": "ae.safetensors",
                "steps": 26, "cfg": 4.0, "sampler": "euler", "scheduler": "beta"},
 }
+# BFL's calibrated fp8 file: already fp8 with per-tensor scales, so it loads as stored — never cast it again.
+FAMILIES["kleinbfl8"] = {**FAMILIES["klein"], "unet": "flux-2-klein-4b-fp8.safetensors", "dtype": "default"}
 
 
 def build_family_graph(run: dict, prefix: str) -> dict:
@@ -175,7 +177,7 @@ def build_family_graph(run: dict, prefix: str) -> dict:
     else:  # distilled models take no negative; a zeroed conditioning is the documented stand-in
         g["neg"] = {"class_type": "ConditioningZeroOut", "inputs": {"conditioning": ["pos", 0]}}
     pos = ["pos", 0]
-    empty = "EmptyFlux2LatentImage" if run["family"] == "klein" else "EmptySD3LatentImage"
+    empty = "EmptyFlux2LatentImage" if run["family"].startswith("klein") else "EmptySD3LatentImage"
     if run["graph"] == "img2img":
         g["latent"] = {"class_type": "VAEEncode", "inputs": {"pixels": ["scale", 0], "vae": ["vae", 0]}}
         denoise = run["denoise"]
@@ -305,7 +307,7 @@ def expand(spec: dict) -> list[dict]:
                         "negative": NEGATIVE if prompt == "photo" else NEGATIVE_STYLED, "seed": seed}
                 controls = [(st, en) for st in spec.get("control_strength", [0]) for en in (spec.get("control_end", [1.0]) if st else [None])]
                 if family != "sdxl":
-                    if graph not in ("txt2img", "img2img", "reference", "reference2") or (graph.startswith("reference") and family != "klein"):
+                    if graph not in ("txt2img", "img2img", "reference", "reference2") or (graph.startswith("reference") and not family.startswith("klein")):
                         continue
                     fam_controls = controls if family == "zimage" else [(0, None)]
                     for denoise, dtype, steps, (cs, ce) in itertools.product(spec["denoise"] if graph == "img2img" else [None], spec.get("dtypes", [None]), spec.get("steps", [None]), fam_controls):
