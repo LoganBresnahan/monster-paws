@@ -9,6 +9,8 @@ set -euo pipefail
 USER_NAME="${1:-oof}"
 NODE_MAJOR=24
 NVM_VERSION=v0.40.3
+# Never let this drift from package.json's @playwright/test: e2e looks for the browser build its own version names.
+PLAYWRIGHT_VERSION=1.62.0
 export DEBIAN_FRONTEND=noninteractive
 
 [ "$(id -u)" = 0 ] || { echo "run as root (wsl -u root)"; exit 1; }
@@ -77,8 +79,12 @@ fi
 nvm install ${NODE_MAJOR} >/dev/null
 nvm alias default ${NODE_MAJOR} >/dev/null
 npm install -g @anthropic-ai/claude-code >/dev/null 2>&1
+# Browsers live in each distro's own ~/.cache: one installed in another distro is invisible here (2026-10-15).
+npx -y playwright@${PLAYWRIGHT_VERSION} install chromium-headless-shell >/dev/null
 echo "node \$(node --version) · npm \$(npm --version) · claude \$(claude --version 2>/dev/null | head -1)"
 USERPART
+NODE_BIN="$(su - "$USER_NAME" -c '. ~/.nvm/nvm.sh >/dev/null && dirname "$(command -v node)"')"
+PATH="$NODE_BIN:$PATH" npx -y "playwright@${PLAYWRIGHT_VERSION}" install-deps chromium >/dev/null
 
 echo "docker $(docker --version | cut -d, -f1) · $(docker compose version | head -1) · $(gh --version | head -1) · pass $(pass --version 2>&1 | grep -oE 'v[0-9.]+' | head -1) · doctl $(doctl version | head -1)"
 echo "bootstrap complete — restart the distro (wsl --terminate <distro>) so the docker group and wsl.conf apply"

@@ -155,9 +155,11 @@ Extensions: milestone badges (first sponsorship, five adoptions witnessed,
 profile, seasonal card frames. The share moment — "look who I just sponsored"
 with a beautiful card — is the viral loop.
 
-This promotes the **fine-tuned LoRA "Monster Paws look"** from afterthought to
-core brand asset: a collector aesthetic requires every card to be
-unmistakably from the same set.
+This promotes the **"Monster Paws look"** from afterthought to core brand
+asset: a collector aesthetic requires every card to be unmistakably from the
+same set. Today the look is one fixed recipe — the painter, its storybook
+words and a fixed pose (ADR-0004 as amended 2026-10-14); owning it outright,
+with a LoRA or a set of our own reference art, is roadmap item 9.
 
 **Three bright lines** (gamifying real animals is walking a ridge):
 
@@ -283,16 +285,19 @@ second reason the outreach in Sequencing matters beyond the verified badge.
 
 The hard problem is **likeness, not style** — a beautiful card that doesn't
 look like *that specific dog* is a broken product moment. Architecture: two
-conditioning signals composed —
+signals composed —
 
-- **Style LoRA**, fine-tuned once on the card aesthetic (the "Monster Paws look"
-  brand asset), and
-- **Per-image identity conditioning** from the animal's actual shelter
-  photos (IP-Adapter / image-conditioned models like Flux Kontext). Never
-  per-animal fine-tuning (DreamBooth-per-dog is economically absurd).
+- **Identity from the photo itself**: FLUX.2 [klein] 4B reads the animal's
+  own photo, cut to the animal and its head, as references (ADR-0004 as
+  amended 2026-10-14). Never per-animal fine-tuning (DreamBooth-per-dog is
+  economically absurd).
+- **Style in the prompt**: the storybook words and a fixed three-quarter
+  pose, the same for every card — the "Monster Paws look" brand asset. A
+  style LoRA is optional (roadmap item 9), and SDXL × IP-Adapter with a
+  style LoRA stays the fallback.
 
 Developed in **ComfyUI** and run on a **GPU in Logan's home** behind the
-provider interface — the photo never leaves hardware we control; style-LoRA
+provider interface — the photo never leaves hardware we control; any style
 training is rented by the hour on our own reference art, never a shelter
 photo; Replicate stays behind the same interface as the escape hatch
 (ADR-0004 as amended 2026-10-05). Locked-in design consequences:

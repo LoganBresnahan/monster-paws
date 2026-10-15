@@ -493,7 +493,10 @@ container carries the GPU runtime:
 3. The distro itself: `wsl --install Ubuntu-24.04 --name monsterpaws-dev
    --location M:\monsterpaws\dev`, then as root once
    `bash scripts/bootstrap-distro.sh oof` (docker engine under systemd, node
-   via nvm, gh, pass, rclone, doctl, Claude Code, and the distro's own
+   via nvm, gh, pass, rclone, doctl, Claude Code, the Playwright browser and
+   its system libraries for `npm run e2e` — browsers live in each distro's own
+   `~/.cache`, so one installed in the general Ubuntu is invisible here
+   (2026-10-15) — and the distro's own
    hostname plus a colour-coded prompt from `scripts/distro-prompt.sh` — dev
    magenta, prod red — because every distro otherwise says `oof@alchemist`)
    and `wsl --terminate` it so the docker group, hostname and wsl.conf apply.
@@ -504,7 +507,8 @@ container carries the GPU runtime:
 4. `npm run comfy:build` then `npm run comfy:smoke` — the smoke prints the
    device and an FP16 matmul rate, or says which of the facts below broke.
 5. `npm run comfy:models` fills `var/comfyui/models/` from
-   `comfyui/models.manifest` (~10 GB for the SDXL + IP-Adapter set; the
+   `comfyui/models.manifest` (~10 GB for the SDXL + IP-Adapter set at first,
+   66 GB by 2026-10-14 with klein, its encoders and the detectors; the
    fetcher streams each file's sha256 and only names it on a match), and
    `npm run comfy` re-verifies every file before ComfyUI serves. A mismatch
    is a refusal, never a re-download — read the manifest's rule. Both scripts

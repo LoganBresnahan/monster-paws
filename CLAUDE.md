@@ -26,13 +26,15 @@ only — do not build from it.
 - Infra: DigitalOcean droplet (Docker Compose: Caddy / app / worker) + DO
   Managed Postgres (PITR) + Cloudflare free CDN. ~$22/mo. Serverless hosts
   are disqualified — the poller/queue need an always-on process.
-- Image pipeline: style LoRA × per-image identity conditioning (IP-Adapter
-  class), developed in ComfyUI and run on a GPU in Logan's home — the same
-  pg-boss worker, registered for `art.generate` only, beside a headless
-  ComfyUI, both CI-built containers in a WSL distro under a dedicated
-  Windows account with scoped credentials, behind a provider interface with
-  Replicate as the escape hatch (ADR-0004 as amended 2026-10-05, ADR-0007 as
-  amended). Development never happens on that account. Generate **only on
+- Image pipeline: FLUX.2 [klein] 4B reads the photo's grown subject and head
+  crops as references, and the style lives in the prompt, not a LoRA
+  (workflow `comfyui/workflows/klein-v1.api.json`; SDXL × IP-Adapter is the
+  fallback; ADR-0004 as amended 2026-10-14), developed in ComfyUI and run on
+  a GPU in Logan's home — the same pg-boss worker, registered for
+  `art.generate` only, beside a headless ComfyUI, both CI-built containers
+  in a WSL distro under a dedicated Windows account with scoped
+  credentials, behind a provider interface with Replicate as the escape
+  hatch (ADR-0004 as amended 2026-10-05, ADR-0007 as amended). Development never happens on that account. Generate **only on
   donation**, never per listing; art arrives when it is ready, never
   "instantly". The donor keeps all four candidates and picks the card's
   face; the judge scores every set silently (ADR-0004 as amended 2026-10-14).
@@ -212,8 +214,11 @@ the monthly check in infra.md's Recurring ops.
   `npm run explore -- grid <batch> --rows … --cols …` lays a batch out as
   one JPEG; `npm run explore:score -- <batch>` scores likeness (CPU);
   `npm run explore:detect` finds the listing's animal in each photo
-  (ADR-0026; CPU only, so no guard) — test photos are Wikimedia Commons
-  files in `var/photos/commons/`, each recorded with its licence in
+  (ADR-0026; CPU only, so no guard); `npm run explore:legs -- <batch>` names
+  a painting's legs and picks the one a three-legged listing lacks, and
+  `npm run explore:legmask -- <batch> --legs` removes it (LaMa, CPU) — test
+  photos are Wikimedia Commons files in `var/photos/commons/`, each
+  recorded with its licence in
   `comfyui/explore/commons-photos.tsv`, never RescueGroups photos.
   **Batches and experiments go through `comfyui/guard.sh`** (`batch
   <name> [chunk]`, `up`, `down`, `mem`, `drop`): it restarts ComfyUI between
