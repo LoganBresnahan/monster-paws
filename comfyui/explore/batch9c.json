@@ -1,0 +1,74 @@
+{
+  "_": "Batch 9c \u2014 standing on a landscape canvas, fresh (2026-10-15): batch 9a's production recipe standing only, the references at their own aspect on a 1216\u00d7832 canvas, the production words, six new seeds; Plum and Ducky, and two four-legged Commons mammals from batch 6a (one photo each). Labelled by eye before comfyui/signature.py ran, its rule frozen after batches 9a and 9b. Never RescueGroups photos (ADR-0006 as amended 2026-08-25 \u00a72).",
+  "animals": {
+    "Plum": {
+      "kind": "dog",
+      "describe": "male grey cane corso puppy",
+      "two": [
+        "PXL_20250423_185424061.PORTRAIT.jpg",
+        "downloadfile.jpg"
+      ]
+    },
+    "Ducky": {
+      "kind": "dog",
+      "describe": "female tan pit bull mix",
+      "two": [
+        "PXL_20241229_195311064.RAW-01.COVER.jpg",
+        "PXL_20250621_160612271.PORTRAIT.jpg"
+      ]
+    },
+    "goat": {
+      "kind": "goat",
+      "describe": "white goat",
+      "two": [
+        "Goat-Farm-Sanctuary-14361449806.jpg"
+      ]
+    },
+    "pigs": {
+      "kind": "pig",
+      "describe": "black and ginger pig",
+      "two": [
+        "Two-pigs-at-Rikki-s-Refuge-Animal-Sanctuary-14608225386.jpg"
+      ]
+    }
+  },
+  "photos": [
+    "two"
+  ],
+  "crops": [
+    "grownsubject"
+  ],
+  "aspect": [
+    "landscape"
+  ],
+  "describe": [
+    "listing"
+  ],
+  "families": [
+    "kleinbfl8"
+  ],
+  "graphs": [
+    "reference2"
+  ],
+  "prompts": [
+    "storybook_stand34"
+  ],
+  "denoise": [],
+  "weights": [],
+  "weight_types": [],
+  "end_at": [],
+  "loras": [
+    null
+  ],
+  "seeds": [
+    3,
+    5,
+    13,
+    21,
+    77,
+    314
+  ],
+  "heads": [
+    "grownhead"
+  ]
+}

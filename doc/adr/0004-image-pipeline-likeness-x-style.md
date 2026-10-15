@@ -515,3 +515,81 @@ the art style is found "for the moment".
   object removal inside SAM's outline of the leg works on all six test
   paintings. Adopting that step is a further amendment. The pose LoRA is
   ruled out: it reads human skeletons only.
+
+## Amendment (2026-10-15): klein only, no fallback painter; a tripod stands
+
+### Context
+The 2026-10-14 amendment kept SDXL + IP-Adapter + outline as the fallback
+(decision 4) and left the pose open between sitting and standing
+(decision 3). Batches 9a–9d (`doc/plans/base-model-candidates.md`) ran the
+look as production would on Plum and Ducky: klein draws male genitals on
+nearly every dog, females included (86 of 96 in batch 9b), and no wording
+keeps them out. Removing them after painting blurred the area (LaMa) or
+grew them back (klein), and Logan rejected it. Tripods were already known
+to need the same kind of after-step (batches 8a–8h). Logan, 2026-10-15:
+"lets forgo the sdxl fallback … basically just keep trying on klein till
+it works"; "we really cant be drawing male parts on a female"; and on the
+pose, standing only where the listing says three-legged ("a rule that if
+we get the 'tripod' and related keywords to do standing only").
+
+### Decision
+1. **klein is the only painter.** Decision 4 of 2026-10-14 is withdrawn:
+   no SDXL fallback. What klein draws wrong is fixed in klein — words,
+   references, steps after it, or a LoRA trained on it — never by
+   switching painters.
+2. **A three-legged animal is painted standing**, three-quarter; every
+   other keepsake keeps decision 3's three-quarter sitting or standing.
+   Standing is where a tripod's legs can be counted and the missing one
+   taken out (batches 8f–8g: four legs found on 15 of 30 standing, 1 of
+   30 sitting). Whether a listing is three-legged comes from the
+   visible-traits keyword list over its text ("tripod", "three-legged",
+   "amputee" and the like; `doc/plans/listing-words.md`, proposed);
+   reading that fact from prose is decided with the list, before it is
+   built.
+3. **The canvas is landscape (1216×832) whatever the photo's box**; the
+   references keep their own aspect. A portrait canvas sat Plum front-on
+   (batch 9a); landscape gave every pose three-quarter (batch 9b).
+4. **Male anatomy is never painted on a female, and none is wanted on any
+   keepsake.** This is a correctness requirement on the painter, not a
+   style choice. It fires the LoRA trigger below, for anatomy rather
+   than style.
+
+### Consequences
+- The SDXL path leaves the code: its manifest lines (SDXL base, the
+  IP-Adapter and its LoRAs, the canny ControlNet), the IP-Adapter custom
+  node in `comfyui/Dockerfile`, the harness's SDXL graphs and
+  `comfyui/workflows/sdxl-ipadapter-v0.api.json`. The CLIP ViT-H encoder
+  stays: `comfyui/likeness.py` scores with it. Roadmap item 4 carries the
+  strip.
+- Until the LoRA, a set can carry a painting with genitals; nothing
+  donor-facing is generated before item 4 ships, and the first donor's
+  set waits on this.
+- A painted signature is taken out after painting by
+  `comfyui/signature.py` (LaMa on the paper outside the dog's outline);
+  adopting it into the worker is part of item 4.
+- Roadmap item 9 (the klein LoRA on Base 4B, rented) moves to the front
+  of the art work. Its training plan comes as a further amendment before
+  anything is rented: the set (clean undersides; tripods by the leg, from
+  legs.py's repairs Logan approves; never a shelter photo), and the check
+  that a Base-trained LoRA carries to the distilled 4-step klein with
+  likeness intact.
+
+### Alternatives
+- **SDXL + IP-Adapter as the fallback (2026-10-14).** Withdrawn: a second
+  painter to keep current with no batch that preferred it, and its
+  parameters were never tuned against klein's.
+- **Remove the genitals after painting** (batch 9c: OWLv2 placed, LaMa
+  filled; batch 9d: klein repainting the fill). Rejected by Logan: the
+  fill blurs the area, and klein grows them back.
+- **Words or a pose that hide the groin** (batch 9b: "hidden from view",
+  the tail round the paws, front three-quarter). Rejected: no change.
+- **Every keepsake standing** (this amendment's first form, the same
+  day). Withdrawn by Logan: the pose rule is needed only where it
+  carries a fact, the tripod.
+
+### Revisit triggers
+- The LoRA cannot be made to keep klein's likeness, or does not carry to
+  the distilled model: then a different base, decided by its own
+  amendment, not a revived fallback.
+- A species whose natural keepsake pose is not standing (a bird, a
+  snake): the pose rule is per species, by amendment.

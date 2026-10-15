@@ -485,6 +485,24 @@ slice or change build order.
       version, and is never shown or obeyed — the donors' picks are its
       labelled set until it earns the gate. One set per keepsake, never a
       re-roll (DIRECTION.md's third bright line).
+      Carry-in: **nothing a keepsake must not show reaches the set**
+      (batch 9a, 2026-10-15, `doc/plans/base-model-candidates.md`): run as
+      production on Plum and Ducky, all eight showed male genitals (Ducky
+      is female) and two carried a painted signature. Batch 9b: no wording
+      keeps either out (86 of 96); a landscape canvas fixes Plum's
+      front-on sit. Keepsakes are painted on a landscape canvas, and a
+      three-legged listing standing only (Logan, 2026-10-15). Removing the genitals after painting only
+      blurred the area and was dropped (Logan: "its not good"); male
+      anatomy must never be painted on a female, and the fix is the
+      painter — item 9's LoRA. A painted signature is found and taken out
+      by `comfyui/signature.py` (LaMa). Closed before the first donor's set.
+      Carry-in: **strip the SDXL path** (ADR-0004 as amended 2026-10-15:
+      klein only, no fallback) — its manifest lines (SDXL base,
+      IP-Adapter, its LoRAs, the canny ControlNet; keep CLIP ViT-H, which
+      `likeness.py` scores with), the IP-Adapter node in
+      `comfyui/Dockerfile`, the harness's SDXL graphs,
+      `comfyui/workflows/sdxl-ipadapter-v0.api.json`, and
+      `run_workflow.py`'s SDXL examples; rebuild and `npm run comfy:smoke`.
       Carry-in: **the donate step checks the animal's live visibility**
       (ADR-0015 as amended 2026-10-01) and says "no longer listed" — never
       "adopted" — then proceeds; the page cache is an hour old by design.
@@ -653,6 +671,17 @@ slice or change build order.
       photo; SDXL trains on the A770, a FLUX-class train rents an H100 hour;
       every model's licence is recorded before it touches a card, and FLUX
       [dev] at home needs BFL's paid licence — Replicate's does not travel.
+      Carry-in: **pulled toward the front by anatomy, not style** (Logan,
+      2026-10-15): the painter draws male genitals on nearly every dog,
+      females included (batches 9a–9c), and four legs on a tripod (batches
+      6a–8h); repair after painting blurs (LaMa) or regrows (klein), and
+      the genital repair was dropped. The next art step is a rented GPU to
+      train the LoRA on Base 4B — clean undersides, tripods by the leg —
+      from paintings Logan approves: tripods repaired by legs.py, and
+      paintings whose underside is clean as painted.
+      Open: whether a Base-trained LoRA carries to the distilled 4-step
+      klein; likeness must hold (the harness before ship). The ADR-0004
+      amendment lands with the training plan, before the rent.
 - [ ] **10. Entity resolution at scale.** Second/third listing source; dedup
       across feeds; trust-hierarchy merge.
       Carry-in: **a consented shelter's own feed is matched to its

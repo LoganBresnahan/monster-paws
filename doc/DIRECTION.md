@@ -292,9 +292,11 @@ signals composed —
   amended 2026-10-14). Never per-animal fine-tuning (DreamBooth-per-dog is
   economically absurd).
 - **Style in the prompt**: the storybook words and a fixed three-quarter
-  pose, the same for every card — the "Monster Paws look" brand asset. A
-  style LoRA is optional (roadmap item 9), and SDXL × IP-Adapter with a
-  style LoRA stays the fallback.
+  pose (a three-legged animal always standing), the same for every card —
+  the "Monster Paws look" brand asset. klein is the only painter (ADR-0004 as amended 2026-10-15); what
+  it draws wrong — male anatomy on a female, four legs on a tripod — is
+  fixed by training a klein LoRA (roadmap item 9), never by another
+  painter.
 
 Developed in **ComfyUI** and run on a **GPU in Logan's home** behind the
 provider interface — the photo never leaves hardware we control; any style

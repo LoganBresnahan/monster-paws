@@ -131,7 +131,11 @@ klein:** a batch that removes the words one at a time (species only; + sex;
     colour plus the pattern word.
 - **The pose stays fixed**: three-quarter sitting or standing, never the
   photo's pose (Logan, 2026-10-12). The donor expects the face and body,
-  not the photo's pose.
+  not the photo's pose. A three-legged listing is painted standing only
+  (Logan, 2026-10-15; ADR-0004 as amended 2026-10-15), keyed on the
+  visible-traits keywords below: "tripod", "three-legged" / "three
+  legged" / "3-legged" / "3 legs", "amputee", "missing a leg" (proposed;
+  the list is settled with its prose-reading ADR note).
 - **Visible traits go into the words** where the fixed pose would
   contradict them (Logan, 2026-10-12): three legs, one eye, ear-tipped. A
   keyword search of the corpus's free text found them in about 1% of

@@ -684,6 +684,157 @@ So the chain is: name the leg (legs.py), trace it, LaMa removes it, klein
 at 0.65 redraws the healed end inside the stump region, legs.py counts
 again. Yours to overrule on the look.
 
+## Batch 9a — a production set, first read (Claude, 2026-10-15; Logan's picks decide)
+
+Logan asked for Plum and Ducky "as it would run in production", four each.
+`comfyui/explore/batch9a.json`: a fresh detector pass over the two photos
+each (`var/explore/batch9a/detect`; every box identical to
+`boxes-detected.json`), the grown subject of both photos and the grown
+head, BFL's fp8 klein (klein-v1), the listing's words, fresh seeds 2026
+and 1015. The pose per set is not yet a rule, so each set is two sitting
+and two standing. 16.5 s an image, the pool flat. The sets are
+`var/explore/batch9a/set/{Plum,Ducky}-{1..4}.png` (1–2 sit, 3–4 stand).
+
+- **Identity holds in all eight.** Plum's wrinkled grey face, his chest
+  blaze and his chain with its tag; Ducky's tan coat with the white chest
+  and her ears.
+- **Both standing Duckys are painted male**, although the words say
+  "female" (batch 4a found the painter guessing sex on a front-on
+  underside). A three-quarter stand shows the groin side-on; the sitting
+  pair hides it. *Corrected after batch 9b:* read up close, all eight
+  show genitals, the sitting Duckys too; this first read was taken from
+  the grid.
+- **Plum's canvas is portrait** (`aspect: box` follows his first photo),
+  and on it both sits come out front-on, not three-quarter. Plum-2 shows
+  the underside and genitals, which batch 4b's landscape three-quarter
+  sit kept out of frame.
+- **A painted signature** sits in the corner of Plum-2 and Plum-4. This is
+  the second time (batch 5b had one), and every Plum tag carries made-up
+  lettering. With cfg 1 the negative prompt does nothing, so only the
+  positive words can steer either one away.
+
+So today's production recipe painted genitals in all eight (four of
+them on a female; three of eight in this read before batch 9b's
+close-ups) and a fake signature in two. That is within the
+2026-10-14 amendment's "a malformed candidate can reach a donor", but
+it is a different class from a stray leg. Candidate fixes, in order of
+cost: words that keep the underside out ("tail down", "seen from the
+side"); a landscape canvas whatever the photo's box; one pose per set;
+the judge's outlier rule catching anatomy before the set ships. Yours
+to overrule.
+
+## Batch 9b — what words and canvas can keep out, first read (Claude, 2026-10-15)
+
+Logan: "lets try some fixes and see what works … try our best to make it
+accurate like we did with the tripods." `comfyui/explore/batch9b.json`:
+batch 9a's recipe on a landscape canvas whatever the photo's box (a new
+`aspect: landscape` in the harness; the references keep their own
+aspect), six seeds, sitting and standing, four wordings: as now;
++ "unsigned: no signature, lettering or text anywhere"; + that and "a
+family-friendly keepsake: the belly and groin stay hidden from view";
++ that and a pose that hides them (the tail wrapped round the front paws
+sitting; front three-quarter, the near hind leg over the belly,
+standing). 96 images, 16.5 s each. Labelled by eye on close crops of the
+groin and the bottom corners (`var/explore/batch9b/marks/labels.json`,
+`groin-*.jpg`, `corners-*.jpg`). The two seeds shared with 9a repaint
+9a's Duckys pixel for pixel.
+
+- **The landscape canvas fixes Plum's pose**: every sit is three-quarter,
+  none front-on.
+- **No wording keeps the genitals out.** 86 of 96 show them, Ducky in 46
+  of 48 (the two without are the two-dog paintings, where the groin is
+  out of view), Plum in 39 of 48. "Hidden from view", the wrapped tail
+  and the front view change nothing; the painter's prior draws a male dog.
+- **"Unsigned" does not stop the signature**: four, all Plum, all seed 42,
+  three of them with the "unsigned" words.
+- **The front three-quarter stand and the two-dog paintings**: seed 1015
+  standing painted two Duckys side by side under two of the four
+  wordings; the front stand is head-on, not three-quarter.
+
+So the words cannot do it, and like the leg the mark has to be found and
+taken out after painting. `comfyui/marks.py` (`npm run explore:marks --
+<batch> [--fix]`) does that on the CPU:
+
+- **Genitals: OWLv2's box placed by the head, then LaMa.** OWLv2 asked for
+  the testicles or penis scores marked and clean paintings alike
+  (0.017–0.28 against 0.018–0.12), so it is used only to place: the best
+  small box below the head and clear of the chest and tag, above the
+  paws (OWLv2 also takes dewclaws and the tail's tip for testicles), and
+  any box beside it (Plum's drawn navel outscored his testicles below
+  it). With 86 of 96 marked, the repair runs on every painting.
+- **Signatures: ink on the paper, not OWLv2.** The signature is pale
+  (0.65–0.75 grey on a 0.93 wash) and OWLv2 scores it near zero even
+  enlarged; strokes darker than their neighbourhood, grey-brown, outside
+  SAM's outline, joined into one word in the bottom-right corner find all
+  six (9a and 9b) and nothing else in 104 — on the paintings the rule
+  was tuned on.
+- **Where it works**: standing, the box sits on the genitals and LaMa
+  leaves plain belly and an unbroken leg line on nearly every Ducky and
+  most Plums (`var/explore/batch9b/marks/lama-*.jpg`, before and after).
+  Sitting, the three-quarter pose shows a wide pink underside with a
+  navel, a sheath and testicles, and the box often covers one of them:
+  about two in three come out clean. The front stand misses most.
+
+So the chain is: paint standing, landscape canvas; marks.py places the
+box; LaMa takes it out; the signature goes the same way. Batch 9c checks
+the frozen rules on paintings they were not tuned on.
+
+## Batches 9c and 9d — the fresh check, and klein after LaMa (Claude, 2026-10-15)
+
+`comfyui/explore/batch9c.json`: the production recipe standing only,
+landscape canvas, six new seeds, on Plum, Ducky and two of batch 6a's
+Commons mammals (the goat, the pigs); labelled by eye
+(`var/explore/batch9c/marks/labels.json`) before marks.py ran, its rules
+frozen.
+
+- **Genitals on all twelve dogs** (Ducky again painted male) and four of
+  six pigs; none on the goats. **One signature** (Plum, seed 77).
+- **marks.py places the box on all twelve dogs** and finds the signature
+  (525 px of ink); one false signature, grass in a goat's corner (139 px).
+- **The first fix left five of six Plums marked**: the box sits on the
+  tip, and grown by a third LaMa rebuilt his longer sheath from the rest.
+  Grown by its own size (`GROW_ANATOMY`), **all twelve dogs come out
+  clean**, the pig OWLv2 found too. Where the mask crosses the inner
+  thigh the leg's line fades a little (Plum 000 and 004).
+- **The limits**: OWLv2 misses most pig sheaths (one of four), and on the
+  goats it boxes the knee callus, which LaMa then erases — the rules are
+  tuned on dogs.
+
+`comfyui/explore/batch9d.json`: klein repaints the belly mask over
+LaMa's result (`smooth_belly`, mask `belly`, from `unmarked`) at 0.35
+and 0.5, as batch 8h drew a healed end back. **It grows the genitals
+back** (Ducky 006–008 and 010, Plum 001 and 002, the pig, at one
+strength or both: `var/explore/batch9d/healed.jpg`). The painter's prior
+is the problem being removed, so no repaint of that region: LaMa's
+result is the painting.
+
+So the production chain for a dog is: paint standing on a landscape
+canvas; marks.py places the genitals and any signature; LaMa takes them
+out, with no repaint. A set of four, made that way:
+`var/explore/batch9c/set/{Plum,Ducky}-{1..4}.png`, before and after in
+`{Plum,Ducky}-before-after.jpg`. Ducky-4 (seed 21) has pricked ears, not
+hers. Yours to overrule.
+
+### Batch 9c — Logan's read (2026-10-15)
+
+Standing only: "standing makes the most sense" — then narrowed the same
+day to tripods only: "a rule that if we get the 'tripod' and related
+keywords to do standing only" (ADR-0004 as amended 2026-10-15). The removal is not good
+enough: "the genital removals looked pretty bad, basically just blurs
+the area." And the requirement: "we really cant be drawing male parts on
+a female." So LaMa's fill is not the answer, and painting male anatomy on
+a female is a correctness failure, not a style one.
+
+Then (Logan, 2026-10-15): "any special genital work we did should not
+stay because its not good." The genital search and fill (marks.py), the
+belly repaint hook, and the wordings batch 9b tried are removed, and
+with them the specs of batches 9b and 9d; the findings above stay as
+the record. What stays: the landscape canvas (`aspect: landscape`), and
+the signature finder, now `comfyui/signature.py` (`npm run
+explore:signature -- <batch> [--fix]`), which is unrelated and worked.
+The fix for the anatomy is the painter itself: a klein LoRA trained on
+a rented GPU (roadmap item 9).
+
 ## Avenues (Logan, 2026-10-11)
 
 "Just because we find something that works doesn't mean I don't want to

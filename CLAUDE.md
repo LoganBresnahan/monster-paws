@@ -28,9 +28,10 @@ only — do not build from it.
   are disqualified — the poller/queue need an always-on process.
 - Image pipeline: FLUX.2 [klein] 4B reads the photo's grown subject and head
   crops as references, and the style lives in the prompt, not a LoRA
-  (workflow `comfyui/workflows/klein-v1.api.json`; SDXL × IP-Adapter is the
-  fallback; ADR-0004 as amended 2026-10-14), developed in ComfyUI and run on
-  a GPU in Logan's home — the same pg-boss worker, registered for
+  (workflow `comfyui/workflows/klein-v1.api.json`; klein only, on a
+  landscape canvas, a tripod painted standing, no fallback painter;
+  ADR-0004 as amended 2026-10-15), developed in ComfyUI and run on a GPU
+  in Logan's home — the same pg-boss worker, registered for
   `art.generate` only, beside a headless ComfyUI, both CI-built containers
   in a WSL distro under a dedicated Windows account with scoped
   credentials, behind a provider interface with Replicate as the escape
@@ -216,7 +217,9 @@ the monthly check in infra.md's Recurring ops.
   `npm run explore:detect` finds the listing's animal in each photo
   (ADR-0026; CPU only, so no guard); `npm run explore:legs -- <batch>` names
   a painting's legs and picks the one a three-legged listing lacks, and
-  `npm run explore:legmask -- <batch> --legs` removes it (LaMa, CPU) — test
+  `npm run explore:legmask -- <batch> --legs` removes it (LaMa, CPU);
+  `npm run explore:signature -- <batch> [--fix]` finds a painted
+  signature and LaMa takes it out — test
   photos are Wikimedia Commons files in `var/photos/commons/`, each
   recorded with its licence in
   `comfyui/explore/commons-photos.tsv`, never RescueGroups photos.

@@ -1,0 +1,35 @@
+{
+  "_": "Batch 9a — a production set (ADR-0004 as amended 2026-10-14, ADR-0026; 2026-10-15): Plum and Ducky as a donation would paint them — a fresh detector pass (var/explore/batch9a/detect, identical to boxes-detected.json), the grown subject of two photos plus the grown head, BFL's fp8 klein (klein-v1), the listing's words, four candidates each on fresh seeds. The pose per set is not yet a rule, so the four are two sitting and two standing, as Logan's batch-5b picks split.",
+  "animals": {
+    "Plum": {
+      "kind": "dog",
+      "describe": "male grey cane corso puppy",
+      "two": [
+        "PXL_20250423_185424061.PORTRAIT.jpg",
+        "downloadfile.jpg"
+      ]
+    },
+    "Ducky": {
+      "kind": "dog",
+      "describe": "female tan pit bull mix",
+      "two": [
+        "PXL_20241229_195311064.RAW-01.COVER.jpg",
+        "PXL_20250621_160612271.PORTRAIT.jpg"
+      ]
+    }
+  },
+  "photos": ["two"],
+  "crops": ["grownsubject"],
+  "aspect": ["box"],
+  "describe": ["listing"],
+  "families": ["kleinbfl8"],
+  "graphs": ["reference2"],
+  "prompts": ["storybook_sit34", "storybook_stand34"],
+  "denoise": [],
+  "weights": [],
+  "weight_types": [],
+  "end_at": [],
+  "loras": [null],
+  "seeds": [2026, 1015],
+  "heads": ["grownhead"]
+}

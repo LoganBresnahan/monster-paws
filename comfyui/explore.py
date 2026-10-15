@@ -160,6 +160,8 @@ def build_family_graph(run: dict, prefix: str) -> dict:
     if raw:
         from PIL import Image
         width, height = bucket(Image.open(INPUT / photo).size)
+    # the references keep their own aspect; a portrait canvas sat Plum front-on with the underside in view (batch 9a)
+    canvas = (1216, 832) if run.get("aspect") == "landscape" else (width, height)
     g = {
         "unet": {"class_type": "UNETLoader", "inputs": {"unet_name": f["unet"], "weight_dtype": dtype}},
         "clip": {"class_type": "CLIPLoader", "inputs": {"clip_name": f["clip"][0], "type": f["clip"][1]}},
@@ -191,7 +193,7 @@ def build_family_graph(run: dict, prefix: str) -> dict:
         g["latent"] = {"class_type": "VAEEncode", "inputs": {"pixels": ["scale", 0], "vae": ["vae", 0]}}
         denoise = run["denoise"]
     else:
-        g["latent"] = {"class_type": empty, "inputs": {"width": width, "height": height, "batch_size": 1}}
+        g["latent"] = {"class_type": empty, "inputs": {"width": canvas[0], "height": canvas[1], "batch_size": 1}}
         denoise = 1.0
         if run["graph"] in ("reference", "reference2"):
             g["ref"] = {"class_type": "VAEEncode", "inputs": {"pixels": ["scale", 0], "vae": ["vae", 0]}}
