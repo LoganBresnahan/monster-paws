@@ -272,6 +272,65 @@ going into the manifest today:
   take the text encoder's place in the same process. The CPU is the
   place to measure it first.
 
+## The grown head (2026-10-14)
+
+Batch 5b's Ducky picks went to the hand cut because the detector's head
+box, the painter's second reference, clipped her muzzle. `crops.py` now
+writes a fourth box, `grownhead`: the detector's head grown to the
+subject's own outline (the same outline as `grownsubject`) on a side
+where that outline ends close by. Sideways it may grow up to half the
+head's width (a muzzle), upward up to 0.15 of its height (an ear tip),
+and never down; then a 5% pad, never past the grown subject, and never
+smaller than the detector's head. A second fault was in the harness: it
+read every head through a square centre crop, which trims the sides of a
+wide head box. `grownhead` is read at its own aspect instead.
+`heads-grown.jpg` in each detector run's folder shows both cuts.
+
+The limits come from set 1's 26 heads, as a share of the head's size.
+Muzzles grew sideways 0.19–0.47. The one bad sideways growth (the black
+cat taking in the tabby) was 0.58. Every downward growth (0.24–0.64) was
+the neck, chest or a standing puppy's whole body, which risks the "two
+animals" reading of batch 5a. Upward growth past 0.15 was the back of a
+face-on Plum, the pig's back, or the cat pile. Checked blind on the
+holdout's 16 heads: no growth made a head worse. It recovered half of the
+snow dog's face, the chinchilla's ears and the budgie's crown. The
+holdout heads that are wrong (turtle on its leg, the puppy's body, the
+sepia rabbit's ear, the kennel pup) were placed wrong by the detector,
+and growth cannot move them.
+
+### Batch 5c — the grown head, first read (Claude, 2026-10-14; Logan's picks decide)
+
+`comfyui/explore/batch5c.json`: batch 5b's recipe on Plum and Ducky with
+BFL's fp8 klein (batch 7a), three cuts: by hand; the grown subject with
+the detector's head; the grown subject with the grown head. A new
+`heads` axis in the harness pairs a detector head only with a
+detector-cut subject. 24 images. Grid
+`var/explore/batch5c/grid-animal-prompt-seed-x-crop-head.jpg`.
+
+- **Ducky's muzzle is whole in all three cuts.** Close up
+  (`ducky-faces`, sit seeds 7 and 11, stand seed 7), the three faces
+  differ only in small details: the blaze's width, a whisker line. With
+  BFL's weights and the grown subject crop, the grown head adds little
+  over the detector's head for her.
+- **Plum: the grown head paints like the detector's head**, and the hand
+  cut differs as it did in 5b (lighter grey, smaller chest patch).
+
+So the grown head is kept: it is never worse, and on the holdout it fixes
+the head box that cut a face in half. But the gap Logan saw in 5b's Ducky
+is closed mostly by the grown subject crop. Yours to overrule.
+
+## The tripods set (2026-10-15)
+
+Nine Commons photos of three-legged animals (`detect-tripods.json`,
+`var/explore/detect-tripods`), run with the rules unchanged for batch 8f
+(`base-model-candidates.md`). The right animal was chosen in all nine,
+including the white dog among people and the brindle beside a car. **No
+head was found for Lucca or Lulu**, both clearly in view: Lucca in
+profile carrying a toy, Lulu lying on a carpet. Their batch ran on the
+subject alone. A head the detector misses is a gap in the grown-head
+recipe, and an animal photographed only in profile may be the usual
+case for it.
+
 ## Open
 
 Each is a roadmap item 4 carry-in.
@@ -288,7 +347,9 @@ Each is a roadmap item 4 carry-in.
   listing's colour means the subject is probably missing: re-detect on
   tiles or with a lower floor before choosing.
 - **Partial boxes.** Grow by the own outline plus a margin where it grew
-  (above); batch 5b paints from it.
+  (above); batch 5b paints from it, and the head grows by the same
+  outline (batch 5c). A box the outline stops at is still not grown
+  (Plum's portrait).
 - **The part rule and litters.** Puppies inside their mother's box are
   dropped as parts: right for her listing, wrong for a puppy's.
 - **The colour table** — see `listing-words.md`.

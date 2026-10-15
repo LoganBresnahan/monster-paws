@@ -1,0 +1,57 @@
+{
+  "_": "Batch 8g — batch 8f's two tripods without a detected head (2026-10-15): Lucca and Lulu, subject reference only (the detector found no head in either photo), otherwise as 8f. Never RescueGroups photos (ADR-0006 as amended 2026-08-25 §2).",
+  "animals": {
+    "lucca": {
+      "kind": "dog",
+      "describe": "three-legged Belgian Malinois",
+      "one": [
+        "Homeward-bound-Lucca-retires-120702-M-KW153-089.jpg"
+      ],
+      "missing": "left front",
+      "missing_from": "the description: amputation of her left front leg"
+    },
+    "lulu": {
+      "kind": "dog",
+      "describe": "three-legged tan dog",
+      "one": [
+        "Tripedal-dog-Lulu-years-after-amputation.jpg"
+      ],
+      "missing": "left hind",
+      "missing_from": "the description: missing her back-left leg"
+    }
+  },
+  "photos": [
+    "one"
+  ],
+  "crops": [
+    "grownsubject"
+  ],
+  "aspect": [
+    "box"
+  ],
+  "families": [
+    "kleinbfl8"
+  ],
+  "denoise": [],
+  "weights": [],
+  "weight_types": [],
+  "end_at": [],
+  "loras": [
+    null
+  ],
+  "describe": [
+    "listing"
+  ],
+  "prompts": [
+    "storybook_sit34",
+    "storybook_stand34"
+  ],
+  "seeds": [
+    7,
+    11,
+    23
+  ],
+  "graphs": [
+    "reference"
+  ]
+}

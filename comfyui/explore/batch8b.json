@@ -1,0 +1,116 @@
+{
+  "_": "Batch 8b — remove the leg from a finished painting (2026-10-14): batch 8a showed a fresh klein painting keeps four legs whatever the words or pose. Two second passes on six of 8a's standing three-quarter paintings (seeds 7 and 11), each naming the leg to remove in the picture's terms: `edit` reads the painting as a reference and repaints it whole (`fresh`) or from its own latent at denoise 0.8 (`i2i`), with or without the photo's subject crop (which shows three legs); `inpaint` repaints only a feathered box drawn over the leg on a tenths grid, with the instruction or with plain background words. The Dane and the spaniel lose a front leg, the white dog a hind leg, as in their photos. BFL's fp8 klein, seed 7. Never RescueGroups photos (ADR-0006 as amended 2026-08-25 §2).",
+  "animals": {
+    "great-dane": {
+      "kind": "dog",
+      "one": [
+        "Great-Dane-three-legged-harlequin-standing.jpg"
+      ],
+      "paintings": [
+        {
+          "file": "explore/batch8a/002-great-dane-one-kleinbfl8-reference2-storybook_stand34-s7-grownsubject-listing-box_00001_.png",
+          "leg": "white front leg on the right of the picture",
+          "box": [
+            0.59,
+            0.55,
+            0.7,
+            0.97
+          ]
+        },
+        {
+          "file": "explore/batch8a/003-great-dane-one-kleinbfl8-reference2-storybook_stand34-s11-grownsubject-listing-box_00001_.png",
+          "leg": "white front leg on the right of the picture",
+          "box": [
+            0.58,
+            0.55,
+            0.68,
+            0.97
+          ]
+        }
+      ]
+    },
+    "tripod-dog": {
+      "kind": "dog",
+      "one": [
+        "Three-legged-dog-arp.jpg"
+      ],
+      "paintings": [
+        {
+          "file": "explore/batch8a/026-tripod-dog-one-kleinbfl8-reference2-storybook_stand34-s7-grownsubject-listing-box_00001_.png",
+          "leg": "front leg on the left of the picture",
+          "box": [
+            0.2,
+            0.55,
+            0.34,
+            0.95
+          ]
+        },
+        {
+          "file": "explore/batch8a/027-tripod-dog-one-kleinbfl8-reference2-storybook_stand34-s11-grownsubject-listing-box_00001_.png",
+          "leg": "front leg on the left of the picture",
+          "box": [
+            0.19,
+            0.55,
+            0.32,
+            0.95
+          ]
+        }
+      ]
+    },
+    "white-dog": {
+      "kind": "dog",
+      "one": [
+        "3-leg-dog.jpg"
+      ],
+      "paintings": [
+        {
+          "file": "explore/batch8a/050-white-dog-one-kleinbfl8-reference2-storybook_stand34-s7-grownsubject-listing-box_00001_.png",
+          "leg": "back leg on the right of the picture",
+          "box": [
+            0.6,
+            0.55,
+            0.7,
+            0.93
+          ]
+        },
+        {
+          "file": "explore/batch8a/051-white-dog-one-kleinbfl8-reference2-storybook_stand34-s11-grownsubject-listing-box_00001_.png",
+          "leg": "back leg on the left of the picture",
+          "box": [
+            0.28,
+            0.55,
+            0.38,
+            0.93
+          ]
+        }
+      ]
+    }
+  },
+  "families": [
+    "kleinbfl8"
+  ],
+  "graphs": [
+    "edit",
+    "inpaint"
+  ],
+  "edits": [
+    "remove_leg",
+    "tripod_leg"
+  ],
+  "modes": [
+    "fresh",
+    "i2i"
+  ],
+  "refs": [
+    "none",
+    "photo"
+  ],
+  "i2i_denoise": 0.8,
+  "inpaints": [
+    "remove_leg",
+    "background"
+  ],
+  "seeds": [
+    7
+  ]
+}

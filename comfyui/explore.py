@@ -45,6 +45,15 @@ PROMPTS = {
     "storybook_sit": "a gentle storybook illustration of a {kind} sitting upright and facing the viewer, soft watercolor, warm pastel palette, plain background",
     "storybook_sit34": "a gentle storybook illustration of a {kind} sitting in three-quarter view, looking toward the viewer, soft watercolor, warm pastel palette, plain background",
     "storybook_stand34": "a gentle storybook illustration of a {kind} standing in three-quarter view, looking toward the viewer, soft watercolor, warm pastel palette, plain background",
+    # the body from the reference, not a new pose: a fixed pose redraws the body from the model's prior, which has four legs (batch 6a)
+    "storybook_photopose": "a gentle storybook illustration of this {kind} in the same pose as in the photo, soft watercolor, warm pastel palette, plain background",
+    "storybook_edit": "Turn this photo into a gentle storybook illustration of the {kind}, soft watercolor, warm pastel palette, plain background. Keep its body exactly as it is in the photo.",
+    # A second pass on a finished painting (batch 8b): klein leaves out what it is told to remove more readily than a fresh painting omits it.
+    "remove_leg": "Remove the dog's {leg}. The dog has only three legs: where that leg was there is only smooth fur and background. Keep everything else exactly the same: the same dog, pose, colours and soft watercolor style.",
+    "tripod_leg": "Make this dog a three-legged tripod: its {leg} is missing, an amputee, healed over. Change nothing else in the illustration.",
+    "background": "plain watercolor paper, a soft warm pastel wash, nothing else",
+    # the band around the outline drawn back after LaMa (batch 8h): the edge of the body, never a leg
+    "healed_edge": "a gentle storybook illustration of a three-legged {kind}: smooth fur with a clean soft ink outline where the leg once was, healed over, soft watercolor, plain paper background",
     "cartoon": "a cel-shaded cartoon of a {kind}, bold clean outlines, flat colors, friendly expression",
     "anime": "an anime illustration of a {kind}, soft shading, expressive eyes, clean lineart",
     "clay": "a claymation {kind}, stop-motion figure, fingerprints in the clay, studio lighting",
@@ -199,9 +208,15 @@ def build_family_graph(run: dict, prefix: str) -> dict:
                 pos = [f"refcond{i}", 0]
         if run["graph"] == "reference2":  # the head crop as a second reference the model reads after the subject
             # A detector-cut subject reads the detector's head too, so a batch never mixes hand and detector boxes (ADR-0026).
-            head = "dethead" if run.get("crop") in ("detsubject", "grownsubject") else "head"
-            g["head"] = {"class_type": "LoadImage", "inputs": {"image": input_name(run["animal"], run["photos"][0], head, raw=True)}}
-            g["head_scale"] = {"class_type": "ImageScale", "inputs": {"image": ["head", 0], "upscale_method": "lanczos", "width": 768, "height": 768, "crop": "center"}}
+            head = run.get("head") or ("dethead" if run.get("crop") in ("detsubject", "grownsubject") else "head")
+            name = input_name(run["animal"], run["photos"][0], head, raw=True)
+            hw, hh = 768, 768
+            if head == "grownhead":  # read at its own aspect: a square centre crop cuts the muzzle the growth brought back
+                from PIL import Image
+                bw, bh = bucket(Image.open(INPUT / name).size)
+                hw, hh = round(bw * 0.75 / 16) * 16, round(bh * 0.75 / 16) * 16
+            g["head"] = {"class_type": "LoadImage", "inputs": {"image": name}}
+            g["head_scale"] = {"class_type": "ImageScale", "inputs": {"image": ["head", 0], "upscale_method": "lanczos", "width": hw, "height": hh, "crop": "center"}}
             g["head_ref"] = {"class_type": "VAEEncode", "inputs": {"pixels": ["head_scale", 0], "vae": ["vae", 0]}}
             g["head_cond"] = {"class_type": "ReferenceLatent", "inputs": {"conditioning": pos, "latent": ["head_ref", 0]}}
             pos = ["head_cond", 0]
@@ -211,7 +226,66 @@ def build_family_graph(run: dict, prefix: str) -> dict:
     return g
 
 
+def build_pass_graph(run: dict, prefix: str) -> dict:
+    """A second pass on a painting from an earlier batch (batch 8b): `edit` reads it as a reference and repaints it whole
+    (`fresh`) or from its own latent (`i2i`), optionally with the photo's subject crop; `inpaint` repaints only the leg's box."""
+    from PIL import Image
+    f = FAMILIES[run["family"]]
+    p = run["painting"]
+    width, height = Image.open(OUTPUT / p["file"]).size
+    g = {
+        "unet": {"class_type": "UNETLoader", "inputs": {"unet_name": f["unet"], "weight_dtype": run.get("dtype") or f.get("dtype", "default")}},
+        "clip": {"class_type": "CLIPLoader", "inputs": {"clip_name": f["clip"][0], "type": f["clip"][1]}},
+        "vae": {"class_type": "VAELoader", "inputs": {"vae_name": f["vae"]}},
+        "pos": {"class_type": "CLIPTextEncode", "inputs": {"clip": ["clip", 0], "text": run["prompt_text"]}},
+        "neg": {"class_type": "ConditioningZeroOut", "inputs": {"conditioning": ["pos", 0]}},
+        # ComfyUI reads an earlier output in place through the annotated name, so nothing is copied into input/
+        "paint": {"class_type": "LoadImage", "inputs": {"image": f"{p['file']} [output]"}},
+        "paint_latent": {"class_type": "VAEEncode", "inputs": {"pixels": ["paint", 0], "vae": ["vae", 0]}},
+        "decode": {"class_type": "VAEDecode", "inputs": {"samples": ["sampler", 0], "vae": ["vae", 0]}},
+        "save": {"class_type": "SaveImage", "inputs": {"images": ["decode", 0], "filename_prefix": prefix}},
+    }
+    pos, denoise = ["pos", 0], 1.0
+    if run["graph"] == "edit":
+        g["refcond"] = {"class_type": "ReferenceLatent", "inputs": {"conditioning": pos, "latent": ["paint_latent", 0]}}
+        pos = ["refcond", 0]
+        if run["edit_ref"] == "photo":
+            name = input_name(run["animal"], run["photos"][0], "grownsubject", raw=True)
+            w, h = bucket(Image.open(INPUT / name).size)
+            g["img0"] = {"class_type": "LoadImage", "inputs": {"image": name}}
+            g["scale"] = {"class_type": "ImageScale", "inputs": {"image": ["img0", 0], "upscale_method": "lanczos", "width": w, "height": h, "crop": "center"}}
+            g["ref"] = {"class_type": "VAEEncode", "inputs": {"pixels": ["scale", 0], "vae": ["vae", 0]}}
+            g["photocond"] = {"class_type": "ReferenceLatent", "inputs": {"conditioning": pos, "latent": ["ref", 0]}}
+            pos = ["photocond", 0]
+        if run["edit_mode"] == "i2i":
+            latent, denoise = ["paint_latent", 0], run["denoise"]
+        else:
+            g["latent"] = {"class_type": "EmptyFlux2LatentImage", "inputs": {"width": width, "height": height, "batch_size": 1}}
+            latent = ["latent", 0]
+    elif run.get("mask_kind") in ("seg", "band", "stump"):  # inpaint inside the widened leg mask, the band around the drawn outline, or the stump (comfyui/legmask.py)
+        s = Path(p["file"]).stem
+        if run["source"] in ("erased", "lama", "outlined"):
+            g["paint"] = {"class_type": "LoadImage", "inputs": {"image": f"legmask/{s}.{run['source']}.png"}}
+        g["mask"] = {"class_type": "LoadImageMask", "inputs": {"image": f"legmask/{s}.{run['mask_kind']}.png", "channel": "red"}}
+        g["masked"] = {"class_type": "SetLatentNoiseMask", "inputs": {"samples": ["paint_latent", 0], "mask": ["mask", 0]}}
+        latent, denoise = ["masked", 0], run["denoise"]
+    else:  # inpaint: a feathered box over the leg, everything outside it kept
+        x0, y0, x1, y1 = (round(v * d) for v, d in zip(p["box"], (width, height) * 2))
+        g["mask_bg"] = {"class_type": "SolidMask", "inputs": {"value": 0.0, "width": width, "height": height}}
+        g["mask_box"] = {"class_type": "SolidMask", "inputs": {"value": 1.0, "width": x1 - x0, "height": y1 - y0}}
+        g["mask"] = {"class_type": "MaskComposite", "inputs": {"destination": ["mask_bg", 0], "source": ["mask_box", 0], "x": x0, "y": y0, "operation": "add"}}
+        feather = max(8, (x1 - x0) // 6)
+        g["feather"] = {"class_type": "FeatherMask", "inputs": {"mask": ["mask", 0], "left": feather, "top": feather, "right": feather, "bottom": feather}}
+        g["masked"] = {"class_type": "SetLatentNoiseMask", "inputs": {"samples": ["paint_latent", 0], "mask": ["feather", 0]}}
+        latent = ["masked", 0]
+    g["sampler"] = {"class_type": "KSampler", "inputs": {"model": ["unet", 0], "positive": pos, "negative": ["neg", 0], "latent_image": latent,
+                                                         "seed": run["seed"], "steps": f["steps"], "cfg": f["cfg"], "sampler_name": f["sampler"], "scheduler": f["scheduler"], "denoise": denoise}}
+    return g
+
+
 def build_graph(run: dict, prefix: str) -> dict:
+    if run["graph"] in ("edit", "inpaint"):
+        return build_pass_graph(run, prefix)
     """One API-format ComfyUI graph from a run record. The record is the contract."""
     if run.get("family", "sdxl") != "sdxl":
         return build_family_graph(run, prefix)
@@ -297,6 +371,8 @@ def build_graph(run: dict, prefix: str) -> dict:
 def expand(spec: dict) -> list[dict]:
     """The cartesian product of a batch spec's axes, minus knobs a graph does not have."""
     runs = []
+    if spec["graphs"][0] in ("edit", "inpaint"):
+        return expand_pass(spec)
     for animal, info in spec["animals"].items():
         for photo_key, crop, describe, aspect, family in itertools.product(spec["photos"], spec.get("crops", ["full"]), spec.get("describe", ["generic"]), spec.get("aspect", ["square"]), spec.get("families", ["sdxl"])):
             photos = info[photo_key] if isinstance(info[photo_key], list) else [info[photo_key]]
@@ -310,8 +386,10 @@ def expand(spec: dict) -> list[dict]:
                     if graph not in ("txt2img", "img2img", "reference", "reference2") or (graph.startswith("reference") and not family.startswith("klein")):
                         continue
                     fam_controls = controls if family == "zimage" else [(0, None)]
-                    for denoise, dtype, steps, (cs, ce) in itertools.product(spec["denoise"] if graph == "img2img" else [None], spec.get("dtypes", [None]), spec.get("steps", [None]), fam_controls):
-                        runs.append({**base, "lora": None, "dtype": dtype, "steps": steps, "control_strength": cs, "control_end": ce, "denoise": denoise, "weight": None, "weight_type": None, "end_at": None})
+                    # a detector head only beside a detector-cut subject, so a batch never mixes hand and detector boxes (ADR-0026)
+                    heads = [h for h in spec.get("heads", [None]) if h is None or crop in ("detsubject", "grownsubject")] if graph == "reference2" else [None]
+                    for denoise, dtype, steps, (cs, ce), head in itertools.product(spec["denoise"] if graph == "img2img" else [None], spec.get("dtypes", [None]), spec.get("steps", [None]), fam_controls, heads):
+                        runs.append({**base, "lora": None, "dtype": dtype, "steps": steps, "control_strength": cs, "control_end": ce, "denoise": denoise, "weight": None, "weight_type": None, "end_at": None, "head": head})
                     continue
                 if graph in ("txt2img", "reference", "reference2"):
                     continue
@@ -331,7 +409,7 @@ def expand(spec: dict) -> list[dict]:
         if r.get("family", "sdxl") != "sdxl":
             bits.insert(2, r["family"])
             bits += [b for b in ({"fp8_e4m3fn": "fp8", "default": "bf16"}.get(r.get("dtype") or "", ""), f"st{r['steps']}" if r.get("steps") else "") if b]
-        bits += [b for b in (r["crop"], r["describe"], r["lora"], r.get("aspect")) if b and b not in ("full", "generic", "square")]
+        bits += [b for b in (r["crop"], r.get("head"), r["describe"], r["lora"], r.get("aspect")) if b and b not in ("full", "generic", "square")]
         if r.get("control_strength"):
             bits.append(f"cn{r['control_strength']}e{r['control_end']}")
         if r["weight"] is not None:
@@ -341,6 +419,31 @@ def expand(spec: dict) -> list[dict]:
         if len(r["photos"]) > 1:
             bits += [r["multi"], r["combine"]] if r.get("multi") else [f"{len(r['photos'])}photos"]
         r["id"] = f"{i:03d}-" + "-".join(bits)
+    return runs
+
+
+def expand_pass(spec: dict) -> list[dict]:
+    """Second-pass runs (batch 8b): each painting × each graph × its prompts, modes and references."""
+    runs = []
+    for animal, info in spec["animals"].items():
+        for n, p in enumerate(info["paintings"]):
+            for graph in spec["graphs"]:
+                if graph == "edit":
+                    combos = [(pr, mode, ref, None) for pr in spec["edits"] for mode in spec["modes"] for ref in spec["refs"]]
+                elif spec.get("fills"):  # batch 8c: [mask, source, denoise] per fill
+                    combos = [(pr, "mask", "none", fl) for pr in spec["inpaints"] for fl in spec["fills"]]
+                else:
+                    combos = [(pr, "mask", "none", None) for pr in spec["inpaints"]]
+                for (prompt, mode, ref, fl), seed in itertools.product(combos, spec["seeds"]):
+                    runs.append({"animal": animal, "kind": info["kind"], "photo": f"p{n}", "photos": info["one"], "painting": p, "family": spec["families"][0],
+                                 "graph": graph, "prompt": prompt, "prompt_text": PROMPTS[prompt].format(kind=info["kind"], leg=p["leg"]), "seed": seed,
+                                 "edit_mode": mode, "edit_ref": ref, "denoise": fl[2] if fl else spec.get("i2i_denoise") if mode == "i2i" else None,
+                                 "mask_kind": fl[0] if fl else None, "source": fl[1] if fl else None,
+                                 "crop": "full", "describe": "generic", "aspect": "square", "lora": None, "dtype": None, "steps": None,
+                                 "control_strength": None, "weight": None, "negative": ""})
+    for i, r in enumerate(runs):
+        fill_bits = [r["mask_kind"], r["source"], f"d{r['denoise']}"] if r.get("mask_kind") else [r["edit_mode"], r["edit_ref"]]
+        r["id"] = f"{i:03d}-" + "-".join([r["animal"], r["photo"], r["graph"], r["prompt"], *fill_bits, f"s{r['seed']}"])
     return runs
 
 

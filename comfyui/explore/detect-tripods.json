@@ -1,0 +1,14 @@
+{
+  "_": "Three-legged animals for batch 8f (2026-10-15): nine Commons photos, run with the ADR-0026 rules unchanged. Attributes written by Claude from the photos before the run; `subject` says which animal the listing means.",
+  "listings": {
+    "lucca":           { "species": "dog", "colour": "tan", "subject": "the Belgian Malinois", "photos": ["commons:tripods/Homeward-bound-Lucca-retires-120702-M-KW153-089.jpg"] },
+    "lulu":            { "species": "dog", "colour": "tan", "subject": "the tan dog lying on the carpet", "photos": ["commons:tripods/Tripedal-dog-Lulu-years-after-amputation.jpg"] },
+    "beth":            { "species": "dog", "colour": "white", "subject": "the white French Bulldog", "photos": ["commons:tripods/Pardon-Thy-French---Beth.jpg"] },
+    "sheila":          { "species": "dog", "colour": "tan and white", "subject": "the sitting dog", "photos": ["commons:tripods/Three-legged-dog-sheila2.jpg"] },
+    "miss-cleo":       { "species": "cat", "colour": "black and orange", "subject": "the tortoiseshell cat", "photos": ["commons:tripods/ThreeLgCatA.jpg"] },
+    "picnic-tan":      { "species": "dog", "colour": "tan", "subject": "the tan dog on the lead, not the people", "photos": ["commons:tripods/San-Francisco-Three-Legged-Dog-Picnic-2026-24.jpg"] },
+    "picnic-blacktan": { "species": "dog", "colour": "tan", "subject": "the black-and-tan dog with the ball", "photos": ["commons:tripods/San-Francisco-Three-Legged-Dog-Picnic-2026-42.jpg"] },
+    "picnic-white":    { "species": "dog", "colour": "white", "subject": "the white dog in the red harness, not the people", "photos": ["commons:tripods/San-Francisco-Three-Legged-Dog-Picnic-2026-05.jpg"] },
+    "picnic-brindle":  { "species": "dog", "colour": "brown", "subject": "the brindle dog in the purple coat", "photos": ["commons:tripods/San-Francisco-Three-Legged-Dog-Picnic-2026-16.jpg"] }
+  }
+}

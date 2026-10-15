@@ -29,6 +29,8 @@
     "explore:score": "docker compose -f comfyui/compose.yml run --rm --entrypoint python explore /home/comfy/harness/likeness.py score",
     "explore:detect": "mkdir -p var/crew var/photos var/explore && docker compose -f comfyui/compose.yml run --rm --no-deps --entrypoint python explore /home/comfy/harness/detect.py",
     "explore:crops": "docker compose -f comfyui/compose.yml run --rm --no-deps --entrypoint python explore /home/comfy/harness/crops.py",
+    "explore:legmask": "docker compose -f comfyui/compose.yml run --rm --no-deps --entrypoint python explore /home/comfy/harness/legmask.py",
+    "explore:legs": "docker compose -f comfyui/compose.yml run --rm --no-deps --entrypoint python explore /home/comfy/harness/legs.py",
     "explore:consensus": "docker compose -f comfyui/compose.yml run --rm --entrypoint python explore /home/comfy/harness/likeness.py consensus"
   },
   "dependencies": {

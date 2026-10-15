@@ -414,6 +414,276 @@ recorded in `doc/infra.md`. The second came at the switch between the two
 weights files, when one process held both, so a production worker should
 load one klein file and never switch.
 
+## Batch 8a — a three-legged animal, first read (Claude, 2026-10-14; Logan's picks decide)
+
+`comfyui/explore/batch8a.json`: batch 6a's recipe with BFL's weights on
+three Commons tripods: the harlequin Great Dane and the holdout spaniel,
+standing, and the white dog, lying down. (Which leg each lacks was misread
+here and carried through 8d; see "The wrong leg" below.) Words on one axis: "three-legged …" as in 6a; "… with only
+three legs"; and "… missing one front leg" (or back leg). Pose on the
+other: the fixed three-quarter sit and stand; "in the same pose as in the
+photo"; and an edit instruction, "Turn this photo into … Keep its body
+exactly as it is in the photo". 72 images, 10.5–12 s, no guard stops.
+Grids `var/explore/batch8a/grid-{great-dane,tripod-dog,white-dog}.jpg`
+(rows words × seed, columns pose).
+
+- **The words do nothing.** Within each pose column the three wordings
+  paint near-identical dogs. The reference sets the picture; "only three
+  legs" and "missing one front leg" never take a leg away.
+- **The fixed poses paint four legs, 24 of 24**, as in 6a. A pose the
+  model draws fresh comes from its prior, and the prior has four legs.
+- **The photo's pose copies the silhouette, not the count.** The spaniel
+  (edit and photo pose, every wording) stands as photographed and still
+  has four legs. The Dane in profile shows three legs, but the third is a
+  second front leg the photo does not have. It reads as any dog in
+  profile, not as a tripod.
+- **The photo's pose is not a keepsake pose anyway.** The white dog
+  follows its photo into the grass, face down, and reads headless in
+  four of eight.
+
+So with klein 4B, neither the words nor the photo carries a missing leg.
+Untried candidates, in order of promise:
+1. **A second, editing pass:** paint as now, then give the painting back
+   to klein as a reference with an instruction ("remove the dog's front
+   left leg; it stands on three legs; change nothing else"). An editing
+   model removes things it is told to more readily than a fresh painting
+   leaves them out.
+2. **The reference-control pose LoRA** (avenue above) with a pose drawn
+   from the photo, once its licence is read.
+3. **Inpainting** the leg away with a mask from the detector's outline on
+   the painting.
+
+Which leg is missing has to come from somewhere for 1 and 3: the listing's
+text when it says so, else the photo.
+
+## Batches 8b and 8c — taking the leg out of a finished painting, first read (Claude, 2026-10-14; Logan's picks decide)
+
+The three candidates above, tried on six of 8a's standing paintings (the
+Dane and the spaniel lose a front leg, the white dog a hind leg, as misread
+in 8a; seed 7 in 8b, seeds 7 and 11 in 8c). The harness gained second-pass graphs:
+`edit` and `inpaint` read an earlier batch's output in place
+(`<file> [output]`). `comfyui/legmask.py` (`npm run explore:legmask --
+<batch>`, CPU) asks SAM 2.1 for the leg inside a hand-drawn box, widens
+it, and writes the mask and an erased copy of the painting.
+
+- **The pose LoRA is out.** It is Apache-2.0, but it was trained on human
+  COCO-18 skeletons only (dance, gymnastics) and needs one as its input.
+  No such skeleton exists for a dog.
+- **The editing pass fails (8b, 48 images).** "Remove the dog's front leg
+  on the right of the picture" or "make this dog a tripod", whether
+  repainted whole or from the painting at denoise 0.8, and with or without
+  the photo as a second reference. The leg stays. At most it turns thin
+  or gains a scar, or a stump appears halfway down a leg that still ends
+  in a paw.
+- **Inpainting a hand box with plain-background words nearly works
+  (8b).** It is clean where the box held the whole leg (Dane, seed 11
+  painting). Where a soft edge left a sliver of leg, the painter
+  continued it as a translucent ghost leg. Inpainting with the removal
+  instruction as its words paints the leg back.
+- **Inpainting inside SAM's widened outline of the leg (8c, 36 images):**
+  - The Dane loses the leg cleanly in three of four, and the fourth keeps
+    a short dark stump.
+  - The white dog loses it in about half, and the rest keep a faint ghost.
+  - The spaniel never loses it: the leg comes out of feathered chest fur,
+    and the painter carries the fur down into a new, paler leg.
+  - Starting from the erased copy (denoise 0.7 or 0.5) is worse: the leg
+    comes back, or a smudge is left.
+
+So a diffusion painter removes a leg only where nothing around the mask
+suggests one. Next, untried:
+- **A dedicated object-removal model to take the leg out**, then klein at
+  low denoise to restore the watercolour. LaMa (Apache-2.0, ~200 MB, CPU)
+  fills from the surrounding texture and does not invent anatomy.
+- **A mask that also takes in the leg's root**, the chest or haunch fur
+  above it, so the painter redraws the body's outline whole rather than
+  continuing a leg.
+
+Even when it works, this is a chain of steps per tripod: which leg (the
+listing's words or the photo), where it is in the painting, and the
+removal. About 1% of listings name three legs (`listing-words.md`).
+
+## Batch 8d — LaMa takes the leg out, first read (Claude, 2026-10-14; Logan's picks decide)
+
+LaMa big-lama (Apache-2.0, a TorchScript port whose card names its
+source; `inpaint/big-lama-torchscript.pt` in the manifest) runs on the
+CPU in `comfyui/legmask.py`. It fills the same widened SAM mask from the
+painting around it and writes `<stem>.lama.png`. `batch8d.json` then has
+klein repaint only inside the mask, starting from LaMa's result at
+denoise 0.3 and 0.5 with plain-background words. Six paintings, seeds 7
+and 11, 24 images. LaMa takes a few seconds a painting on the CPU.
+
+- **LaMa removes the leg on all six paintings**, the spaniel included.
+  The Dane's seed-7 painting is a clean three-legged dog. On seed 11 a
+  short dark stump is left below the shoulder, which reads as a healed
+  amputation. The spaniel's chest feathering now hangs where the leg was,
+  as a tripod's does. Both white dogs stand on three legs, with a faint
+  smear where the hind leg was.
+- **Klein at 0.3 keeps every removal** and evens the fill's texture a
+  little; it adds little over LaMa alone.
+- **Klein at 0.5 starts growing the leg back**: a paw on the spaniel's
+  seed-11 painting, a grey leg on a white dog, a dark tassel on the Dane.
+
+So the removal works: paint as now, mask the leg with SAM, remove it with
+LaMa, then optionally klein at 0.3. Yours to overrule on the look of the
+patched paintings. What is not built yet, in order:
+1. **Finding the leg in the painting without a hand box:** OWLv2 asked
+   for the dog's legs on the painting, then the front or hind one on the
+   chosen side.
+2. **Knowing which leg:** front or hind from the listing's words or the
+   photo. Left or right is rarely written. Whether the painting may take
+   the leg nearer the viewer when the listing does not say is Logan's
+   call.
+3. **The sitting pose**, untested: a sitting dog's hind legs fold under
+   it, so a hind amputee may need nothing removed at all.
+
+### The wrong leg (Logan, 2026-10-14)
+
+Logan saw that some paintings lost the wrong leg. The masks did what the
+spec asked; the spec was wrong. In 8a I read the amputations off
+thumbnails and wrote them down unchecked, and 8b–8d took their leg boxes
+from that line. Looked at full size:
+
+- **The Dane lacks a hind leg, not a front one.** In profile its two front
+  legs are staggered and only one hind leg stands under the haunch. Every
+  Dane painting in 8b–8d removed a front leg.
+- **The white dog probably lacks a front leg, not a hind one.** Lying on
+  its side, two legs leave the haunch together and one leaves the
+  shoulder. A front leg could be folded under the chest, so this one
+  needs a second look. Every white-dog painting removed a hind leg.
+- **The spaniel lacks a front leg**, as written; its paintings are right.
+
+So two of three were wrong, which is the case for step 2 above: the
+listing's words, or a check against the photo that a person confirms,
+never a guess from a small picture. The removal finding stands either way,
+since LaMa took out whichever leg it was given; a rerun with the right
+boxes would show the Dane and the white dog as their real selves.
+
+## Batch 8e — which leg is which, found automatically, first read (Claude, 2026-10-14; Logan's check decides)
+
+Logan's idea: if the head and tail say which way the dog faces and the
+legs can be counted, every leg can be named (left front, right hind), and
+on a photo the empty place names the missing leg. `comfyui/legs.py`
+(`npm run explore:legs -- batch8a`, CPU, no guard) tried it on the three
+tripod photos and 8a's 18 standing paintings. Sheet:
+`var/explore/batch8a/legs/legs.jpg`.
+
+The rules: the head's side of the picture is the flank in view (head on
+the right, the dog's right side faces us, whatever the three-quarter
+angle); the two feet nearest the head end are the front pair; of a pair,
+the foot lower in the picture is the near leg.
+
+- **OWLv2 finds heads and tails, never single legs.** Asked for "a leg of
+  a dog" or "a paw of a dog" it boxes the whole dog. The head was found
+  on 17 of 18 paintings and the tail, when found, always agreed on the
+  direction.
+- **Counting columns undercounts.** In the three-quarter stand the far
+  hind leg stands back, so its foot ends higher, and it is often drawn
+  against a near leg: no row of the outline ever shows four separate legs
+  (three of six spaniels).
+- **Counting soles is better, with two traps.** A sole is a
+  downward-facing edge of SAM's outline low on the dog. The belly and
+  chest fringe make extra soles (kept out by asking for a leg, not the
+  body, just above the sole), and a hock bent back makes a second sole
+  above its own paw. No height rule tells a hock from a far foot (white
+  dog 050's far foot sits 16% higher than the foot beside it; spaniel
+  027's hock 9% above its paw). SAM's part at each sole does: a hock and
+  its paw come back as the same leg.
+- **Result: four legs found on 15 of 18 paintings.** The Danes 6 of 6,
+  the white dogs 6 of 6 (one without a head, so unnamed), the spaniels
+  3 of 6: feathered legs make SAM's parts unreliable, and each version
+  of the rules failed a different spaniel. On the counted paintings the
+  names follow the rules consistently; whether they are right is for
+  Logan's eye.
+- **On photos it fails, as feared: 0 of 3.** The Dane in profile shows
+  its two front legs as one, the spaniel is small in a wide scene, and
+  the white dog is lying down. A photo is not a source for which leg is
+  missing; my own misreading of two of these three was the same failure.
+
+So for paintings the naming works where the count holds; the count needs
+to hold before any leg is removed, and a painting where it does not
+would go to a person rather than to LaMa (proposed, Logan's call). Which leg the dog lacks comes from the
+listing's words or a person, never the photo. The 18 paintings are also
+the paintings the rules were tuned on: the next test is a fresh set
+(new seeds, more breeds, the sitting pose) with the rules frozen.
+
+## Batches 8f and 8g — more tripods, the leg rules frozen, first read (Claude, 2026-10-15; Logan's check decides)
+
+Ten Commons tripods (`commons-photos.tsv`, set `tripods`; detector boxes
+from `detect-tripods.json`): Lucca the Malinois and Lulu, whose
+descriptions name the leg (left front; back-left); Miss Cleo, a
+tortoiseshell cat with "only one hind leg"; Beth the French Bulldog,
+Sheila, and four dogs from the 2026 San Francisco Three-Legged Dog
+Picnic; and the orange cat from set 1. Where the words do not say which
+leg, front or hind is Claude's read of the full-size photo, recorded in
+the spec as `missing_from` (Logan's to check); two picnic dogs stayed
+unclear and were counted only. klein-v1's recipe, sitting and standing,
+seeds 7, 11 and 23: 48 paintings in 8f, 12 in 8g (Lucca and Lulu on the
+subject alone, because the detector found neither head). No guard
+stops. Every painting has four legs.
+
+`legs.py` then ran end to end with its rules unchanged: count and name,
+pick the leg the spec says is missing (the near one when only front or
+hind is known), trace it, remove it with LaMa (`legmask.py --legs`),
+count again (`legs.py --after`). Two changes came first, from batch 8a's
+paintings with the corrected legs: OWLv2 is asked for the animal's own
+kind (the cats had no "dog"), and the leg is traced in the dog's outline
+rather than re-asked of SAM, which on a black leg with a white sock took
+only the sock (Danes 011, 018, 019). With those, 8a passes the recount
+on 11 of 14.
+
+- **On fresh paintings the count holds half as often.** Four legs found
+  on 15 of 30 standing paintings (8a, which the rules were tuned on: 15
+  of 18), and on 1 of 30 sitting ones, where three is usually what shows.
+  The orange cat sits even when asked to stand; Beth and the white picnic
+  dog stand face-on, where the head says little about which way the dog
+  faces.
+- **Removal works when the leg is named.** Of the 12 paintings with four
+  named legs and a known missing leg, 10 look right by eye. Lucca's left
+  front is the far leg in both her paintings and comes away leaving a
+  rounded stump at the elbow, as a real one does. Sheila 011 keeps a
+  ragged stump at the hock; the black-and-tan dog a dark patch on the
+  chest.
+- **The recount passes 8 and wrongly rejects 2** (Sheila 009, Lulu 009:
+  good removals, miscounted after). The other two it rejects are doubtful
+  by eye (Beth 005, face-on; Miss Cleo 016). Nothing it passed looks
+  wrong.
+- **Per animal:** six of the eight with a known leg got at least one
+  passing standing painting from three seeds; Lulu (a false rejection)
+  and the orange cat (always sitting) got none.
+
+So, end to end and automatic, about a quarter of standing paintings come
+out three-legged and checked; the rest would go to a person. The count is
+the weak step. Which leg comes from the words or a person, as 8e found.
+
+## Batch 8h — the healed end drawn back, first read (Claude, 2026-10-15; Logan's picks decide)
+
+Logan: after LaMa the leg "kind of just looks like it faded away"; the
+painting could put back the animal's outline. LaMa fills the hole from
+what surrounds it, so near the body fur fades into paper with no edge.
+
+- **Drawing the line by hand does not work.** `legmask.py` first stroked
+  the new silhouette in the dog's own ink: slivers of the leg's edge left
+  outside the traced mask became black spikes, and once those were opened
+  away the cut was a straight dash floating in LaMa's fur. A drawn line
+  cannot give the edge the curve a stump needs.
+- **klein redraws it in a small region.** `legmask.py` now writes
+  `<stem>.stump.png`: the top of the hole within 6% of the painting's
+  width below the cut, and a sliver of body. klein repaints only that,
+  with words for a healed edge (`healed_edge`), on nine of the paintings
+  legs.py had already treated on its own (8a, 8f, 8g), seed 7, at 0.45
+  and 0.65, from LaMa's result or with the drawn line as a hint.
+  `var/explore/batch8h/healed.jpg`.
+- **0.65 gives a healed end with the painter's own outline on all nine,
+  and no leg grows back in any of the 36.** Lucca's elbow, Lulu's and
+  Sheila's thighs, Beth's hip and the Danes' haunches end rounded and
+  outlined; at 0.45 some still fade. (In 8d klein regrew the leg at 0.5
+  with the whole hole open: the region is what keeps it from growing.)
+- **The drawn line adds nothing** as a hint; it can go.
+
+So the chain is: name the leg (legs.py), trace it, LaMa removes it, klein
+at 0.65 redraws the healed end inside the stump region, legs.py counts
+again. Yours to overrule on the look.
+
 ## Avenues (Logan, 2026-10-11)
 
 "Just because we find something that works doesn't mean I don't want to

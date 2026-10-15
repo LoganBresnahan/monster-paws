@@ -1,0 +1,119 @@
+{
+  "_": "Batch 8c — inpaint the leg inside its own outline (2026-10-14): batch 8b's one near-hit was inpainting the leg's box with plain-background words, clean when the box held the whole leg and a ghost leg where a soft edge left a sliver of it. Here the mask is SAM 2.1's outline of the leg inside the hand box, widened (comfyui/legmask.py), on the same six paintings: repainted whole inside the mask from the painting (denoise 1.0), or from the painting with the leg already filled from the colours around it (denoise 0.7 and 0.5). Plain-background words only; seeds 7 and 11. Never RescueGroups photos (ADR-0006 as amended 2026-08-25 §2).",
+  "animals": {
+    "great-dane": {
+      "kind": "dog",
+      "one": [
+        "Great-Dane-three-legged-harlequin-standing.jpg"
+      ],
+      "paintings": [
+        {
+          "file": "explore/batch8a/002-great-dane-one-kleinbfl8-reference2-storybook_stand34-s7-grownsubject-listing-box_00001_.png",
+          "leg": "white front leg on the right of the picture",
+          "box": [
+            0.59,
+            0.55,
+            0.7,
+            0.97
+          ]
+        },
+        {
+          "file": "explore/batch8a/003-great-dane-one-kleinbfl8-reference2-storybook_stand34-s11-grownsubject-listing-box_00001_.png",
+          "leg": "white front leg on the right of the picture",
+          "box": [
+            0.58,
+            0.55,
+            0.68,
+            0.97
+          ]
+        }
+      ]
+    },
+    "tripod-dog": {
+      "kind": "dog",
+      "one": [
+        "Three-legged-dog-arp.jpg"
+      ],
+      "paintings": [
+        {
+          "file": "explore/batch8a/026-tripod-dog-one-kleinbfl8-reference2-storybook_stand34-s7-grownsubject-listing-box_00001_.png",
+          "leg": "front leg on the left of the picture",
+          "box": [
+            0.2,
+            0.55,
+            0.34,
+            0.95
+          ]
+        },
+        {
+          "file": "explore/batch8a/027-tripod-dog-one-kleinbfl8-reference2-storybook_stand34-s11-grownsubject-listing-box_00001_.png",
+          "leg": "front leg on the left of the picture",
+          "box": [
+            0.19,
+            0.55,
+            0.32,
+            0.95
+          ]
+        }
+      ]
+    },
+    "white-dog": {
+      "kind": "dog",
+      "one": [
+        "3-leg-dog.jpg"
+      ],
+      "paintings": [
+        {
+          "file": "explore/batch8a/050-white-dog-one-kleinbfl8-reference2-storybook_stand34-s7-grownsubject-listing-box_00001_.png",
+          "leg": "back leg on the right of the picture",
+          "box": [
+            0.58,
+            0.52,
+            0.72,
+            0.95
+          ]
+        },
+        {
+          "file": "explore/batch8a/051-white-dog-one-kleinbfl8-reference2-storybook_stand34-s11-grownsubject-listing-box_00001_.png",
+          "leg": "back leg on the left of the picture",
+          "box": [
+            0.26,
+            0.52,
+            0.4,
+            0.95
+          ]
+        }
+      ]
+    }
+  },
+  "families": [
+    "kleinbfl8"
+  ],
+  "graphs": [
+    "inpaint"
+  ],
+  "inpaints": [
+    "background"
+  ],
+  "seeds": [
+    7,
+    11
+  ],
+  "fills": [
+    [
+      "seg",
+      "original",
+      1.0
+    ],
+    [
+      "seg",
+      "erased",
+      0.7
+    ],
+    [
+      "seg",
+      "erased",
+      0.5
+    ]
+  ]
+}

@@ -1,5 +1,5 @@
 {
-  "_": "Subject and head boxes per crew photo, and per Commons test photo (`_src`, its ref in comfyui/explore/commons-photos.tsv; run 4 of its set, 2026-10-12) as the detector chose them (ADR-0026), fractions [x0, y0, x1, y1] of the upright photo like boxes.json: comfyui/detect.py run 4 (OWLv2 alone), 2026-10-12, var/explore/detect-v4/results.jsonl. `_margin` is the lead over the runner-up, null when the subject was the only candidate. `grownsubject` is `detsubject` grown by its own outline plus a margin only where it grew (comfyui/crops.py `grown.json`, doc/plans/subject-detection.md). explore.py prep cuts these as `detsubject`, `grownsubject` and `dethead` beside the hand-drawn `subject` and `head`, so a batch can compare the two.",
+  "_": "Subject and head boxes per crew photo, and per Commons test photo (`_src`, its ref in comfyui/explore/commons-photos.tsv; run 4 of its set, 2026-10-12 — set 1 from var/explore/detect-v4, the holdout's tripod dog from var/explore/detect-holdout-v4, the tripods set from var/explore/detect-tripods on 2026-10-15 with the rules unchanged; a head the detector did not find is left out) as the detector chose them (ADR-0026), fractions [x0, y0, x1, y1] of the upright photo like boxes.json: comfyui/detect.py run 4 (OWLv2 alone), 2026-10-12, var/explore/detect-v4/results.jsonl. `_margin` is the lead over the runner-up, null when the subject was the only candidate. `grownsubject` is `detsubject` grown by its own outline plus a margin only where it grew, and `grownhead` is `dethead` grown by the same outline sideways and a little upward, never down (comfyui/crops.py `grown.json`, 2026-10-14; doc/plans/subject-detection.md). explore.py prep cuts these as `detsubject`, `grownsubject`, `dethead` and `grownhead` beside the hand-drawn `subject` and `head`, so a batch can compare the two.",
   "Plum/PXL_20250410_144425752": {
     "detsubject": [
       0.0,
@@ -19,7 +19,13 @@
       0.6654,
       0.5295
     ],
-    "_margin": null
+    "_margin": null,
+    "grownhead": [
+      0.0,
+      0.0972,
+      0.7303,
+      0.5295
+    ]
   },
   "Plum/PXL_20250422_224206531": {
     "detsubject": [
@@ -40,7 +46,13 @@
       0.578,
       0.53
     ],
-    "_margin": null
+    "_margin": null,
+    "grownhead": [
+      0.1477,
+      0.2568,
+      0.6133,
+      0.53
+    ]
   },
   "Plum/PXL_20250422_224209397": {
     "detsubject": [
@@ -61,7 +73,13 @@
       0.5739,
       0.6798
     ],
-    "_margin": 0.58
+    "_margin": 0.58,
+    "grownhead": [
+      0.1841,
+      0.3525,
+      0.6191,
+      0.6798
+    ]
   },
   "Plum/PXL_20250423_185424061.PORTRAIT": {
     "detsubject": [
@@ -82,7 +100,13 @@
       0.7322,
       0.6128
     ],
-    "_margin": null
+    "_margin": null,
+    "grownhead": [
+      0.0033,
+      0.1795,
+      0.7322,
+      0.6128
+    ]
   },
   "Plum/PXL_20250423_185435181.PORTRAIT": {
     "detsubject": [
@@ -103,7 +127,13 @@
       0.8605,
       0.6229
     ],
-    "_margin": null
+    "_margin": null,
+    "grownhead": [
+      0.1585,
+      0.1362,
+      1.0,
+      0.6229
+    ]
   },
   "Plum/downloadfile": {
     "detsubject": [
@@ -124,7 +154,13 @@
       0.6434,
       0.4855
     ],
-    "_margin": null
+    "_margin": null,
+    "grownhead": [
+      0.2212,
+      0.1158,
+      0.736,
+      0.4855
+    ]
   },
   "Ducky/PXL_20241027_160550748": {
     "detsubject": [
@@ -145,7 +181,13 @@
       0.6683,
       0.4421
     ],
-    "_margin": null
+    "_margin": null,
+    "grownhead": [
+      0.4133,
+      0.1908,
+      0.7605,
+      0.4421
+    ]
   },
   "Ducky/PXL_20241229_195311064.RAW-01.COVER": {
     "detsubject": [
@@ -166,7 +208,13 @@
       0.733,
       0.6291
     ],
-    "_margin": null
+    "_margin": null,
+    "grownhead": [
+      0.4121,
+      0.2017,
+      0.733,
+      0.6291
+    ]
   },
   "Ducky/PXL_20250411_123028993": {
     "detsubject": [
@@ -187,7 +235,13 @@
       0.6273,
       0.4467
     ],
-    "_margin": 0.57
+    "_margin": 0.57,
+    "grownhead": [
+      0.3931,
+      0.3153,
+      0.6891,
+      0.4467
+    ]
   },
   "Ducky/PXL_20250415_182318586.PORTRAIT": {
     "detsubject": [
@@ -208,7 +262,13 @@
       1.0,
       0.7817
     ],
-    "_margin": 0.52
+    "_margin": 0.52,
+    "grownhead": [
+      0.3289,
+      0.274,
+      1.0,
+      0.7817
+    ]
   },
   "Ducky/PXL_20250621_160612271.PORTRAIT": {
     "detsubject": [
@@ -244,6 +304,12 @@
       0.2434,
       0.4959,
       0.5705
+    ],
+    "grownhead": [
+      0.0988,
+      0.2434,
+      0.6808,
+      0.5705
     ]
   },
   "parakeet/Aratinga-canicularis-pet-in-small-cage-4a": {
@@ -264,6 +330,12 @@
       0.384,
       0.2994,
       0.8437,
+      0.7987
+    ],
+    "grownhead": [
+      0.3145,
+      0.2879,
+      0.8444,
       0.7987
     ]
   },
@@ -286,6 +358,12 @@
       0.5105,
       0.6746,
       0.6518
+    ],
+    "grownhead": [
+      0.456,
+      0.5004,
+      0.7001,
+      0.6518
     ]
   },
   "goat/Goat-Farm-Sanctuary-14361449806": {
@@ -303,6 +381,12 @@
       0.68
     ],
     "dethead": [
+      0.2543,
+      0.2004,
+      0.5404,
+      0.6497
+    ],
+    "grownhead": [
       0.2543,
       0.2004,
       0.5404,
@@ -328,6 +412,12 @@
       0.0587,
       0.9696,
       0.2686
+    ],
+    "grownhead": [
+      0.7997,
+      0.0587,
+      0.9719,
+      0.2686
     ]
   },
   "iguana/Iguana-iguana-pet-upper-body-8a": {
@@ -345,6 +435,12 @@
       1.0
     ],
     "dethead": [
+      0.0437,
+      0.1688,
+      0.6206,
+      0.9046
+    ],
+    "grownhead": [
       0.0437,
       0.1688,
       0.6206,
@@ -370,6 +466,12 @@
       0.047,
       0.7715,
       0.4545
+    ],
+    "grownhead": [
+      0.1501,
+      0.047,
+      0.9023,
+      0.4545
     ]
   },
   "pigs/Two-pigs-at-Rikki-s-Refuge-Animal-Sanctuary-14608225386": {
@@ -387,6 +489,12 @@
       0.9944
     ],
     "dethead": [
+      0.4138,
+      0.5485,
+      0.6632,
+      0.8782
+    ],
+    "grownhead": [
       0.4138,
       0.5485,
       0.6632,
@@ -476,6 +584,252 @@
       0.7549,
       0.8747,
       0.9083
+    ]
+  },
+  "tripod-dog/Three-legged-dog-arp": {
+    "_src": "commons:holdout/Three-legged-dog-arp.jpg",
+    "detsubject": [
+      0.5203,
+      0.4637,
+      0.8599,
+      0.7592
+    ],
+    "grownsubject": [
+      0.52,
+      0.4632,
+      0.8612,
+      0.8432
+    ],
+    "dethead": [
+      0.5298,
+      0.468,
+      0.6176,
+      0.6032
+    ],
+    "grownhead": [
+      0.5218,
+      0.468,
+      0.6176,
+      0.6032
+    ]
+  },
+  "lucca/Homeward-bound-Lucca-retires-120702-M-KW153-089": {
+    "_src": "commons:tripods/Homeward-bound-Lucca-retires-120702-M-KW153-089.jpg",
+    "detsubject": [
+      0.0144,
+      0.0148,
+      0.5307,
+      0.9941
+    ],
+    "grownsubject": [
+      0.0138,
+      0.0,
+      0.5906,
+      0.9972
+    ]
+  },
+  "lulu/Tripedal-dog-Lulu-years-after-amputation": {
+    "_src": "commons:tripods/Tripedal-dog-Lulu-years-after-amputation.jpg",
+    "detsubject": [
+      0.0721,
+      0.1123,
+      0.9312,
+      0.9255
+    ],
+    "grownsubject": [
+      0.0692,
+      0.1113,
+      0.9308,
+      0.9281
+    ]
+  },
+  "beth/Pardon-Thy-French---Beth": {
+    "_src": "commons:tripods/Pardon-Thy-French---Beth.jpg",
+    "detsubject": [
+      0.2088,
+      0.0524,
+      0.7591,
+      0.7953
+    ],
+    "grownsubject": [
+      0.1483,
+      0.0519,
+      0.7586,
+      0.7951
+    ],
+    "dethead": [
+      0.1468,
+      0.0704,
+      0.5009,
+      0.529
+    ],
+    "grownhead": [
+      0.1468,
+      0.0704,
+      0.5009,
+      0.529
+    ]
+  },
+  "sheila/Three-legged-dog-sheila2": {
+    "_src": "commons:tripods/Three-legged-dog-sheila2.jpg",
+    "detsubject": [
+      0.1139,
+      0.0824,
+      0.9138,
+      0.9469
+    ],
+    "grownsubject": [
+      0.1138,
+      0.0813,
+      0.9137,
+      0.9466
+    ],
+    "dethead": [
+      0.4022,
+      0.0884,
+      0.9084,
+      0.4858
+    ],
+    "grownhead": [
+      0.2797,
+      0.0813,
+      0.9137,
+      0.4858
+    ]
+  },
+  "miss-cleo/ThreeLgCatA": {
+    "_src": "commons:tripods/ThreeLgCatA.jpg",
+    "detsubject": [
+      0.0465,
+      0.2816,
+      0.8169,
+      0.6898
+    ],
+    "grownsubject": [
+      0.0462,
+      0.28,
+      0.8175,
+      0.6892
+    ],
+    "dethead": [
+      0.6441,
+      0.4213,
+      0.8167,
+      0.6344
+    ],
+    "grownhead": [
+      0.6441,
+      0.4213,
+      0.8175,
+      0.6344
+    ]
+  },
+  "picnic-tan/San-Francisco-Three-Legged-Dog-Picnic-2026-24": {
+    "_src": "commons:tripods/San-Francisco-Three-Legged-Dog-Picnic-2026-24.jpg",
+    "detsubject": [
+      0.2567,
+      0.0957,
+      0.7483,
+      0.9804
+    ],
+    "grownsubject": [
+      0.1894,
+      0.0952,
+      0.7488,
+      0.9797
+    ],
+    "dethead": [
+      0.2251,
+      0.1095,
+      0.4712,
+      0.4391
+    ],
+    "grownhead": [
+      0.2251,
+      0.0952,
+      0.4712,
+      0.4391
+    ]
+  },
+  "picnic-blacktan/San-Francisco-Three-Legged-Dog-Picnic-2026-42": {
+    "_src": "commons:tripods/San-Francisco-Three-Legged-Dog-Picnic-2026-42.jpg",
+    "detsubject": [
+      0.3261,
+      0.0528,
+      0.8679,
+      0.8571
+    ],
+    "grownsubject": [
+      0.3237,
+      0.0527,
+      0.8725,
+      0.9465
+    ],
+    "dethead": [
+      0.3229,
+      0.2492,
+      0.4866,
+      0.4748
+    ],
+    "grownhead": [
+      0.3229,
+      0.2367,
+      0.4866,
+      0.4748
+    ]
+  },
+  "picnic-white/San-Francisco-Three-Legged-Dog-Picnic-2026-05": {
+    "_src": "commons:tripods/San-Francisco-Three-Legged-Dog-Picnic-2026-05.jpg",
+    "detsubject": [
+      0.357,
+      0.1594,
+      0.693,
+      0.8761
+    ],
+    "grownsubject": [
+      0.3137,
+      0.1593,
+      0.6925,
+      0.8754
+    ],
+    "dethead": [
+      0.369,
+      0.1696,
+      0.5996,
+      0.538
+    ],
+    "grownhead": [
+      0.3353,
+      0.1696,
+      0.5996,
+      0.538
+    ]
+  },
+  "picnic-brindle/San-Francisco-Three-Legged-Dog-Picnic-2026-16": {
+    "_src": "commons:tripods/San-Francisco-Three-Legged-Dog-Picnic-2026-16.jpg",
+    "detsubject": [
+      0.1923,
+      0.0874,
+      0.8528,
+      0.9683
+    ],
+    "grownsubject": [
+      0.12,
+      0.0871,
+      0.8862,
+      1.0
+    ],
+    "dethead": [
+      0.5685,
+      0.1007,
+      0.8954,
+      0.453
+    ],
+    "grownhead": [
+      0.5212,
+      0.1007,
+      0.8954,
+      0.453
     ]
   }
 }

@@ -1,0 +1,75 @@
+{
+  "_": "Batch 8a — a three-legged animal that stays three-legged (2026-10-14): batch 6a's recipe (BFL's fp8 klein, grown subject crop plus the detector's head, seeds 7 and 11) on three Commons tripods — the harlequin Great Dane and the holdout spaniel (front leg, standing) and the white dog (hind leg, lying). Two axes: the words (`listing`: \"three-legged …\" as in 6a; `count`: \"with only three legs\"; `which`: the missing leg named, as a listing that says so would) and the pose (the fixed three-quarter sit and stand of 6a, where 12 of 12 had four legs; the photo's own pose; an edit instruction that keeps the body as photographed). The orange cat is left out: sitting hides its missing hind leg. Never RescueGroups photos (ADR-0006 as amended 2026-08-25 §2).",
+  "animals": {
+    "great-dane": {
+      "kind": "dog",
+      "describe": "three-legged black and white harlequin Great Dane",
+      "count": "black and white harlequin Great Dane with only three legs",
+      "which": "black and white harlequin Great Dane with only three legs, missing one front leg",
+      "one": [
+        "Great-Dane-three-legged-harlequin-standing.jpg"
+      ],
+      "missing": "hind",
+      "missing_from": "the photo at full size: two front legs, one hind (plan, 'The wrong leg', 2026-10-14)"
+    },
+    "tripod-dog": {
+      "kind": "dog",
+      "describe": "three-legged black and white spaniel",
+      "count": "black and white spaniel with only three legs",
+      "which": "black and white spaniel with only three legs, missing one front leg",
+      "one": [
+        "Three-legged-dog-arp.jpg"
+      ],
+      "missing": "front",
+      "missing_from": "the photo at full size: one front leg (plan, 'The wrong leg', 2026-10-14)"
+    },
+    "white-dog": {
+      "kind": "dog",
+      "describe": "three-legged white dog",
+      "count": "white dog with only three legs",
+      "which": "white dog with only three legs, missing one back leg",
+      "one": [
+        "3-leg-dog.jpg"
+      ],
+      "missing": "front",
+      "missing_from": "the photo at full size, probably: lying, one leg from the shoulder (plan, 'The wrong leg', 2026-10-14)"
+    }
+  },
+  "photos": [
+    "one"
+  ],
+  "crops": [
+    "grownsubject"
+  ],
+  "aspect": [
+    "box"
+  ],
+  "describe": [
+    "listing",
+    "count",
+    "which"
+  ],
+  "families": [
+    "kleinbfl8"
+  ],
+  "graphs": [
+    "reference2"
+  ],
+  "prompts": [
+    "storybook_sit34",
+    "storybook_stand34",
+    "storybook_photopose",
+    "storybook_edit"
+  ],
+  "denoise": [],
+  "weights": [],
+  "weight_types": [],
+  "end_at": [],
+  "loras": [
+    null
+  ],
+  "seeds": [
+    7,
+    11
+  ]
+}

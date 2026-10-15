@@ -1,0 +1,114 @@
+{
+  "_": "Batch 8f — more three-legged animals for the leg rules frozen in 8e (2026-10-15): eight Commons tripods (detect-tripods.json; the orange cat from set 1) painted with klein-v1's recipe (BFL's fp8 klein, grown subject plus grown head, the fixed three-quarter sit and stand), seeds 7, 11 and 23. comfyui/legs.py then counts and names the legs on every painting with its rules unchanged. Lucca and Lulu, whose heads the detector missed, are batch 8g. Never RescueGroups photos (ADR-0006 as amended 2026-08-25 §2).",
+  "animals": {
+    "beth": {
+      "kind": "dog",
+      "describe": "three-legged white French Bulldog",
+      "one": [
+        "Pardon-Thy-French---Beth.jpg"
+      ],
+      "missing": "hind",
+      "missing_from": "Claude's read of the photo: both front legs and one hind leg (description: lost her leg to cancer)"
+    },
+    "sheila": {
+      "kind": "dog",
+      "describe": "three-legged tan and white dog",
+      "one": [
+        "Three-legged-dog-sheila2.jpg"
+      ],
+      "missing": "hind",
+      "missing_from": "Claude's read of the photo: sitting, both front paws down"
+    },
+    "miss-cleo": {
+      "kind": "cat",
+      "describe": "three-legged tortoiseshell cat",
+      "one": [
+        "ThreeLgCatA.jpg"
+      ],
+      "missing": "hind",
+      "missing_from": "the description: only one hind leg"
+    },
+    "orange-cat": {
+      "kind": "cat",
+      "describe": "three-legged orange tabby cat",
+      "one": [
+        "Three-legged-cat.jpg"
+      ],
+      "missing": "hind",
+      "missing_from": "Claude's read of the photo: sitting, both front paws down"
+    },
+    "picnic-tan": {
+      "kind": "dog",
+      "describe": "three-legged tan dog with a black muzzle",
+      "one": [
+        "San-Francisco-Three-Legged-Dog-Picnic-2026-24.jpg"
+      ],
+      "missing": "hind",
+      "missing_from": "Claude's read of the photo: a stump at the haunch"
+    },
+    "picnic-blacktan": {
+      "kind": "dog",
+      "describe": "three-legged black and tan dog",
+      "one": [
+        "San-Francisco-Three-Legged-Dog-Picnic-2026-42.jpg"
+      ],
+      "missing": "front",
+      "missing_from": "Claude's read of the photo: one front leg, under the chest"
+    },
+    "picnic-white": {
+      "kind": "dog",
+      "describe": "three-legged white dog",
+      "one": [
+        "San-Francisco-Three-Legged-Dog-Picnic-2026-05.jpg"
+      ],
+      "missing": null,
+      "missing_from": "unclear in the photo (a person's leg behind); counted only"
+    },
+    "picnic-brindle": {
+      "kind": "dog",
+      "describe": "three-legged brindle dog",
+      "one": [
+        "San-Francisco-Three-Legged-Dog-Picnic-2026-16.jpg"
+      ],
+      "missing": null,
+      "missing_from": "unclear in the photo (the tail hangs among the legs); counted only"
+    }
+  },
+  "photos": [
+    "one"
+  ],
+  "crops": [
+    "grownsubject"
+  ],
+  "aspect": [
+    "box"
+  ],
+  "families": [
+    "kleinbfl8"
+  ],
+  "denoise": [],
+  "weights": [],
+  "weight_types": [],
+  "end_at": [],
+  "loras": [
+    null
+  ],
+  "describe": [
+    "listing"
+  ],
+  "prompts": [
+    "storybook_sit34",
+    "storybook_stand34"
+  ],
+  "seeds": [
+    7,
+    11,
+    23
+  ],
+  "graphs": [
+    "reference2"
+  ],
+  "heads": [
+    "grownhead"
+  ]
+}
