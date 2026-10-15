@@ -589,11 +589,12 @@ round. Both workers are the same binary — the droplet's never registers
        │   (the companion animal stays          comfyui/models.manifest (hash
        │   outside, never padded)               + licence), models.py fetch at
        │   description from the listing's       start — mismatch = no serve.
-       │   fields through a reviewed table      Crops by hand so far:
-       │   (sex, colour, breed, age, species)   comfyui/explore/boxes.json.
-       │   painter: FLUX.2 klein 4B reading     Fallback: SDXL × IP-Adapter ×
-       │   the crops as references (leader,     outline × style LoRA
-       │   2026-10-11) · 4 candidates
+       │   fields through a reviewed table      Crops by the detector (ADR-0026):
+       │   (sex, colour, breed, age, species)   comfyui/explore/boxes-detected.json.
+       │   painter: FLUX.2 klein 4B (BFL fp8)   comfyui/workflows/klein-v1.api.json
+       │   reading the grown subject and head   (ADR-0004 as amended 2026-10-14).
+       │   crops as references · 4 candidates   Fallback: SDXL × IP-Adapter ×
+       │                                        outline × style LoRA
        ▼
   judge v0, silent  (planned, item 9)           scores + choice stored with
        │   all four go on; nothing gated        the judge's version, never

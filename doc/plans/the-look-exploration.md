@@ -1,6 +1,6 @@
 # The look — exploration plan (roadmap item 3c, ADR-0004 as amended 2026-10-05)
 
-Status: correctness step 1 done 2026-10-09; step 2 measured 2026-10-10 — consensus rejects the broken candidate, cosine mildly prefers the likeness, taste stays human (auto-QC v0 below). Next: freeze the picked corner as the v1 workflow, then batch 2 (style LoRAs against the outline). Owner: Logan picks; Claude runs.
+Status: decided 2026-10-14 — ADR-0004 as amended 2026-10-14 names the look (FLUX.2 klein 4B in BFL's fp8, the photo read as references, the storybook prompt, no LoRA) and `comfyui/workflows/klein-v1.api.json` is committed. The SDXL batches below are the record of how the fallback was built; the klein batches (3a onward) are in `base-model-candidates.md`. Open: traits the words do not carry (batch 8a), the best-two-photos rule (`subject-detection.md`). Owner: Logan picks; Claude runs.
 
 ## Why a matrix, not taste
 

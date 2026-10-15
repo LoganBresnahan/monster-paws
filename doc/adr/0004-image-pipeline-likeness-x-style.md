@@ -431,3 +431,87 @@ open idea since 2026-10-12.
   gate, and the default face, by a further amendment.
 - Donors report defective paintings in their sets more than once — then
   outlier rejection gates the set before the judge's taste does.
+
+## Amendment (2026-10-14): the look — FLUX.2 klein 4B reads the photo, the prompt holds the style
+
+### Context
+The 2026-10-05 amendment made the workflow product code and put SDXL +
+IP-Adapter first. The look exploration (roadmap item 3c,
+`doc/plans/the-look-exploration.md`) and the base-model bake-off
+(`doc/plans/base-model-candidates.md`) ran from 2026-10-08 to 2026-10-14.
+FLUX.2 [klein] 4B, reading the listing's photo as a reference, beat SDXL
+in Logan's picks from its first batch (3a/3b). Batches 4–7 refined it,
+and batch 6a showed it holds across twelve species. Logan, 2026-10-14:
+the art style is found "for the moment".
+
+### Decision
+1. **The painter is FLUX.2 [klein] 4B in Black Forest Labs' own fp8**
+   (`flux-2-klein-4b-fp8.safetensors`, Apache-2.0, read 2026-10-14), with
+   the Qwen3-4B text encoder in fp8 and the FLUX.2 VAE: 4 steps, euler,
+   simple, cfg 1. BFL's file over our on-the-fly cast of the bf16 file:
+   batch 7a gave the same pictures, a little crisper, at the same speed
+   and memory (Logan, 2026-10-14). The bf16 weights are not run on the
+   A770.
+2. **Identity comes from the photo, read as a reference, with no
+   adapter.** The subject crop (the detector's box grown by its own
+   outline, ADR-0026) is read at its own aspect as the first
+   `ReferenceLatent`, and the head crop (the detector's head grown the
+   same way, also at its own aspect) as the second.
+3. **The style lives in the prompt, not in a LoRA.** The storybook
+   watercolour prompt, a fixed three-quarter pose (sitting or standing,
+   never the photo's), and the listing's words through a reviewed table
+   (`doc/plans/listing-words.md`). That replaces the original decision's
+   "style LoRA × identity conditioning". A LoRA becomes optional
+   (Revisit triggers).
+4. **SDXL + IP-Adapter + outline is the fallback, not the first path**
+   (it replaces decision 6 of 2026-10-05). It stays in
+   `comfyui/models.manifest` with its licences, because it is the only
+   path with a trained style LoRA ecosystem.
+5. **The workflow is committed as `comfyui/workflows/klein-v1.api.json`**
+   (decision 1 of 2026-10-05), beside the manifest lines it names. A
+   donor's set is four candidates of it (the amendment above), differing
+   by seed.
+
+### Consequences
+- Roadmap item 9 ("Style LoRA") is no longer on the path to a first
+  keepsake. It becomes "own the look": a klein LoRA on the non-distilled
+  Base 4B, trained when a trigger below fires. Decision 5 of 2026-10-05
+  (training rented, no shelter photo in the set) still governs it.
+- About 11 s an image on the A770, so ~45 s for a set of four plus the
+  model load. Item 4's throughput sweep re-measures it.
+- Known limits carried as roadmap carry-ins, none blocking: markings and
+  patterns that the words do not carry (harlequin patches, an ear patch);
+  missing legs (batches 8a–8d: the painter always draws four, and a
+  removal step after it is in testing); a detector head on the wrong part
+  of the animal (ADR-0026).
+- Words come only from a source the art may use. RescueGroups' facts do
+  not reach production art until ADR-0006 says they may (roadmap item 10
+  carry-in).
+
+### Alternatives
+- **SDXL + IP-Adapter + LoRA (the 2026-10-05 first path).** Kept as the
+  fallback: identity carried, but the anatomy was weaker, and Logan
+  preferred every klein batch (2026-10-11).
+- **Z-Image-Turbo.** Clean drawings, but it has no reference path we can
+  run, so identity is zero.
+- **Chroma.** Slow (102–147 s) and spills the card.
+- **FLUX.1 [dev], Kontext, klein 9B, FLUX.2 [dev].** Non-commercial
+  licences: yardsticks only, never a donor's card.
+- **Qwen-Image-Edit.** Apache-2.0 and an editing model, but ~20 GB in fp8:
+  over the card (`base-model-candidates.md`, a second card).
+- **bf16 klein.** Fits only with the text encoder on the CPU, which has not
+  been run. Batch 7a suggests it would change small details, not quality.
+
+### Revisit triggers
+- The prompt cannot hold the look across a new species or a shelter's
+  photos (a style drift Logan sees in a batch): train the klein LoRA
+  (item 9).
+- A look of our own that a copied prompt cannot reproduce becomes worth
+  its training hour.
+- BFL ships a klein update, or a shippable model with a reference path
+  beats klein in Logan's picks.
+- A trait the painter cannot carry from words or photo — a missing leg
+  (batches 8a–8d) — gets a step after it, not a different painter: LaMa
+  object removal inside SAM's outline of the leg works on all six test
+  paintings. Adopting that step is a further amendment. The pose LoRA is
+  ruled out: it reads human skeletons only.

@@ -11,9 +11,10 @@ other candidate's outline claims; and that plus a margin only on the sides
 where the animal runs into the box's edge. A looser SAM re-ask was tried
 and dropped: given room it traced the whole scene. Output: crops-<n>.jpg
 sheets in DETECT_OUT, and grown.json: per photo its source and the
-detector's subject, grown subject and head as fractions, which explore.py
-prep cuts as `detsubject`, `grownsubject` and `dethead` once copied into
-explore/boxes-detected.json.
+detector's subject, grown subject, head and grown head as fractions, which
+explore.py prep cuts as `detsubject`, `grownsubject`, `dethead` and
+`grownhead` once copied into explore/boxes-detected.json; heads-grown.jpg
+shows the two head cuts.
 """
 import json
 import os
@@ -27,6 +28,12 @@ import detect  # noqa: E402
 
 MARGIN = 0.10   # share of the box's width and height added on each side
 GREW = 0.01     # own outline past the detector's box by this share of its size: the box cut the animal on that side
+# A head box grows to its own outline on a side only when the outline ends within this share of the head's size:
+# a muzzle sideways, an ear tip upward (further up is the back of a face-on animal), never down — below the chin is the
+# neck and body. Tuned on set 1, checked blind on the holdout (2026-10-14, doc/plans/subject-detection.md).
+REACH_SIDE = 0.5
+REACH_UP = 0.15
+HEAD_PAD = 0.05
 
 METHODS = ["box", "outline", "outline + margin", "own outline", "own + margin where it grew"]
 
@@ -110,6 +117,45 @@ def edge_margin(k, grown, chosen, own_mask, others, share, w, h):
     return [float(v) for v in g]
 
 
+def grow_head(head, own_mask, within):
+    """Grow the head box to the subject's own outline on a side where that outline ends close by (a muzzle, an ear) — never where it runs on (the body), never down."""
+    import numpy as np
+    x0, y0, x1, y1 = (int(v) for v in head)
+    hw, hh = x1 - x0, y1 - y0
+    g = [float(v) for v in head]
+
+    def run_through(line, a, b):
+        """The extent of the run of outline pixels along `line` that overlaps [a, b)."""
+        idx = np.nonzero(line)[0]
+        if len(idx) == 0 or not line[a:b].any():
+            return None
+        lo, hi = a, b - 1
+        while lo > 0 and line[lo - 1]:
+            lo -= 1
+        while hi < len(line) - 1 and line[hi + 1]:
+            hi += 1
+        first = a + int(np.nonzero(line[a:b])[0][0])
+        last = a + int(np.nonzero(line[a:b])[0][-1])
+        if not line[a]:
+            lo = first
+        if not line[b - 1]:
+            hi = last
+        return lo, hi + 1
+
+    cols = run_through(own_mask[y0:y1].any(axis=0), x0, x1)
+    if cols:
+        if 0 < x0 - cols[0] <= REACH_SIDE * hw:
+            g[0] = cols[0] - HEAD_PAD * hw
+        if 0 < cols[1] - x1 <= REACH_SIDE * hw:
+            g[2] = cols[1] + HEAD_PAD * hw
+    rows = run_through(own_mask[:, x0:x1].any(axis=1), y0, y1)
+    if rows and 0 < y0 - rows[0] <= REACH_UP * hh:
+        g[1] = rows[0] - HEAD_PAD * hh
+    # growth stops at the grown subject, which is already fenced from every other animal; the detector's head is never cut back
+    return [min(head[0], max(g[0], within[0])), min(head[1], max(g[1], within[1])),
+            max(head[2], min(g[2], within[2])), max(head[3], min(g[3], within[3]))]
+
+
 def main() -> None:
     import torch
     from PIL import Image, ImageDraw
@@ -117,7 +163,7 @@ def main() -> None:
     spec = json.loads((HERE / "explore" / os.environ.get("DETECT_SPEC", "detect.json")).read_text())
     refs = {detect.key(name, ref): ref for name, listing in spec["listings"].items() for ref in listing["photos"]}
     pipeline = detect.PIPELINES[0]
-    rows, regrown = [], {}
+    rows, regrown, heads = [], {}, []
     for line in (detect.OUT / "results.jsonl").read_text().splitlines():
         r = json.loads(line)
         if r["pipeline"] != pipeline or r["chosen"] is None:
@@ -135,11 +181,30 @@ def main() -> None:
         boxes = [chosen, grown, margin, owned, edged]
         rows.append((r["photo"], im, boxes))
         frac = lambda b: [round(v / d, 4) for v, d in zip(b, im.size * 2)]
+        head = r["head"]["box"] if r.get("head") else None
+        grown_head = grow_head(head, mine, edged) if head else None
         regrown[r["photo"]] = {"ref": refs[r["photo"]], "detsubject": frac(chosen), "grownsubject": frac(edged),
-                               "dethead": frac(r["head"]["box"]) if r.get("head") else None}
+                               "dethead": frac(head) if head else None, "grownhead": frac(grown_head) if head else None}
+        if head:
+            heads.append((r["photo"], im, head, grown_head))
         print(f"  {r['photo'][:60]}: " + " | ".join(f"{m} {[round(v) for v in b]}" for m, b in zip(METHODS, boxes)), flush=True)
 
     (detect.OUT / "grown.json").write_text(json.dumps(regrown, indent=1) + "\n")
+    # the detector's head (yellow) and the grown head (green), each cut as the painter reads it
+    hc = 260
+    hs = Image.new("RGB", (hc * 3, (hc + 18) * len(heads)), "white")
+    hd = ImageDraw.Draw(hs)
+    for i, (k, im, hb, gb) in enumerate(heads):
+        y = i * (hc + 18)
+        whole = im.copy()
+        dw = ImageDraw.Draw(whole)
+        dw.rectangle(hb, outline=(255, 210, 0), width=max(3, im.width // 250))
+        dw.rectangle(gb, outline=(40, 180, 80), width=max(3, im.width // 250))
+        for j, part in enumerate([whole, im.crop(tuple(int(v) for v in hb)), im.crop(tuple(int(v) for v in gb))]):
+            part.thumbnail((hc - 8, hc - 8))
+            hs.paste(part, (j * hc + 4, y + 4))
+        hd.text((6, y + hc), k[:60], fill="black", font_size=11)
+    hs.save(detect.OUT / "heads-grown.jpg", quality=85)
     print(f"grown boxes: {detect.OUT / 'grown.json'}")
     cell, label, per_sheet = 300, 22, 10
     for n in range(0, len(rows), per_sheet):

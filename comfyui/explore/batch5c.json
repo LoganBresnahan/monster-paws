@@ -1,0 +1,59 @@
+{
+  "_": "Batch 5c — the grown head (ADR-0026, 2026-10-14): batch 5b's recipe on Plum and Ducky with BFL's fp8 klein (batch 7a), cut by hand (`subject` with its hand `head`) and by the grown detector box (`grownsubject`) reading either the detector's head (`dethead`, square centre crop as before) or the head grown by the subject's own outline sideways and a little upward (`grownhead`, read at its own aspect; comfyui/crops.py). Batch 5b's Ducky picks went to the hand cut because the detector's head clipped her muzzle.",
+  "animals": {
+    "Plum": {
+      "kind": "dog",
+      "describe": "male grey cane corso puppy",
+      "two": [
+        "PXL_20250423_185424061.PORTRAIT.jpg",
+        "downloadfile.jpg"
+      ]
+    },
+    "Ducky": {
+      "kind": "dog",
+      "describe": "female tan pit bull mix",
+      "two": [
+        "PXL_20241229_195311064.RAW-01.COVER.jpg",
+        "PXL_20250621_160612271.PORTRAIT.jpg"
+      ]
+    }
+  },
+  "photos": [
+    "two"
+  ],
+  "crops": [
+    "subject",
+    "grownsubject"
+  ],
+  "aspect": [
+    "box"
+  ],
+  "describe": [
+    "listing"
+  ],
+  "families": [
+    "kleinbfl8"
+  ],
+  "graphs": [
+    "reference2"
+  ],
+  "prompts": [
+    "storybook_sit34",
+    "storybook_stand34"
+  ],
+  "denoise": [],
+  "weights": [],
+  "weight_types": [],
+  "end_at": [],
+  "loras": [
+    null
+  ],
+  "seeds": [
+    7,
+    11
+  ],
+  "heads": [
+    null,
+    "grownhead"
+  ]
+}

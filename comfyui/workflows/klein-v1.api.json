@@ -1,0 +1,23 @@
+{
+  "unet":       {"class_type": "UNETLoader", "inputs": {"unet_name": "flux-2-klein-4b-fp8.safetensors", "weight_dtype": "default"}},
+  "clip":       {"class_type": "CLIPLoader", "inputs": {"clip_name": "qwen_3_4b_fp8_mixed.safetensors", "type": "flux2"}},
+  "vae":        {"class_type": "VAELoader", "inputs": {"vae_name": "flux2-vae.safetensors"}},
+  "pos":        {"class_type": "CLIPTextEncode", "inputs": {"clip": ["clip", 0], "text": ""}},
+  "neg":        {"class_type": "ConditioningZeroOut", "inputs": {"conditioning": ["pos", 0]}},
+  "img0":       {"class_type": "LoadImage", "inputs": {"image": ""}},
+  "scale":      {"class_type": "ImageScale", "inputs": {"image": ["img0", 0], "upscale_method": "lanczos", "width": 1216, "height": 832, "crop": "center"}},
+  "ref":        {"class_type": "VAEEncode", "inputs": {"pixels": ["scale", 0], "vae": ["vae", 0]}},
+  "refcond":    {"class_type": "ReferenceLatent", "inputs": {"conditioning": ["pos", 0], "latent": ["ref", 0]}},
+  "img1":       {"class_type": "LoadImage", "inputs": {"image": ""}},
+  "scale1":     {"class_type": "ImageScale", "inputs": {"image": ["img1", 0], "upscale_method": "lanczos", "width": 1152, "height": 896, "crop": "center"}},
+  "ref1":       {"class_type": "VAEEncode", "inputs": {"pixels": ["scale1", 0], "vae": ["vae", 0]}},
+  "refcond1":   {"class_type": "ReferenceLatent", "inputs": {"conditioning": ["refcond", 0], "latent": ["ref1", 0]}},
+  "head":       {"class_type": "LoadImage", "inputs": {"image": ""}},
+  "head_scale": {"class_type": "ImageScale", "inputs": {"image": ["head", 0], "upscale_method": "lanczos", "width": 768, "height": 768, "crop": "center"}},
+  "head_ref":   {"class_type": "VAEEncode", "inputs": {"pixels": ["head_scale", 0], "vae": ["vae", 0]}},
+  "head_cond":  {"class_type": "ReferenceLatent", "inputs": {"conditioning": ["refcond1", 0], "latent": ["head_ref", 0]}},
+  "latent":     {"class_type": "EmptyFlux2LatentImage", "inputs": {"width": 1216, "height": 832, "batch_size": 1}},
+  "sampler":    {"class_type": "KSampler", "inputs": {"model": ["unet", 0], "positive": ["head_cond", 0], "negative": ["neg", 0], "latent_image": ["latent", 0], "seed": 0, "steps": 4, "cfg": 1.0, "sampler_name": "euler", "scheduler": "simple", "denoise": 1.0}},
+  "decode":     {"class_type": "VAEDecode", "inputs": {"samples": ["sampler", 0], "vae": ["vae", 0]}},
+  "save":       {"class_type": "SaveImage", "inputs": {"images": ["decode", 0], "filename_prefix": "monsterpaws/klein-v1"}}
+}
