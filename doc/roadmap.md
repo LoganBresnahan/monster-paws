@@ -329,10 +329,14 @@ slice or change build order.
       (ADR-0020); the two kinds projectable today, `status.changed` and
       `listing.reappeared`, are enough for a first card and may pull the
       projector forward from item 6.
-      Carry-in: **the accounts ADR comes first** — no ADR yet decides how a
-      donor signs in, what we hold about them, how an Every.org donation is tied
-      back to an account, or deletion. DIRECTION and ADR-0022 assume accounts
-      exist; write the decision before the build, not during it.
+      Carry-in: **donor accounts per ADR-0027** (accepted 2026-10-16):
+      passkeys with an emailed link as fallback, the email the only identity,
+      a donation tied back by our own `partner_donation_id`, the unsigned
+      Every.org webhook trusted no further than its intent, the account made
+      after the gift, and delete-everything after an offered export, with
+      the counts kept as anonymous stats rows. Its build plan comes from the
+      adr-plan workflow before any code; the first step is asking
+      partners@every.org for a staging webhook token, since it has lead time.
       Carry-in: **"Recently viewed" (ADR-0025)**, buildable any time and
       independent of accounts: ids in the visitor's `localStorage`, a `/recent`
       page of current cards ("no longer listed" for an animal that left),
