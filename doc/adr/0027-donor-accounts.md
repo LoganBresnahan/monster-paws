@@ -17,9 +17,10 @@ Every.org (ADR-0002) is the only money rail. Its donate link takes a
 `partnerDonationId`, `partnerMetadata`, `amount`, `netAmount`, `currency`,
 `frequency`, `donationDate`, `toNonprofit {slug, ein, name}`, and the
 donor's name and `email` **only if the donor chose to share them**. The
-docs describe **no request signature** and no retry policy. The token is
-issued by emailing partners@every.org; a staging dashboard exists for
-tests.
+docs describe **no request signature** and no retry policy. The webhook
+is self-serve: an Every.org account creates it in the developer dashboard,
+and staging has its own (staging.every.org/developer, after an explicit
+email verification; re-read 2026-10-16).
 
 The site's defaults (ADR-0010, ADR-0025): no tracking, logs carry
 identifiers never identities, nothing about a visitor leaves their device
@@ -109,9 +110,11 @@ delete.
   free tier's daily cap is checked against volume before launch.
 - New dependency: a WebAuthn server library (SimpleWebAuthn, MIT, the
   candidate), its own line in the build plan.
-- The partner webhook token is requested from Every.org
-  (partners@every.org, with the endpoint URL), staging first; it goes in
-  `pass` and `doc/infra.md`'s table like every credential.
+- The partner webhook is created in Every.org's developer dashboard,
+  staging first, from an account Logan owns; its token goes in `pass` and
+  `doc/infra.md`'s table like every credential. Signing, retries and a
+  lookup by `chargeId` are asked of partners@every.org, since the docs
+  are silent and each answer may retire a revisit trigger.
 - Tables: accounts, passkey credentials, sessions, sign-in links,
   donation intents, the raw webhook payloads, donations, the anonymous
   donation stats (append-only, never deleted), email suppressions; and the export (decision 6) as a job that builds the

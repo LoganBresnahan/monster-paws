@@ -334,9 +334,12 @@ slice or change build order.
       a donation tied back by our own `partner_donation_id`, the unsigned
       Every.org webhook trusted no further than its intent, the account made
       after the gift, and delete-everything after an offered export, with
-      the counts kept as anonymous stats rows. Its build plan comes from the
-      adr-plan workflow before any code; the first step is asking
-      partners@every.org for a staging webhook token, since it has lead time.
+      the counts kept as anonymous stats rows. Build per
+      `doc/plans/adr-0027-accounts-build-plan.md` (13 slices, 6 phases;
+      settle the keepsakes table and the shelter-to-nonprofit mapping
+      early). The staging webhook is self-serve
+      (staging.every.org/developer, Logan's account); signing, retries and a
+      `chargeId` lookup are asked of partners@every.org, which has lead time.
       Carry-in: **"Recently viewed" (ADR-0025)**, buildable any time and
       independent of accounts: ids in the visitor's `localStorage`, a `/recent`
       page of current cards ("no longer listed" for an animal that left),

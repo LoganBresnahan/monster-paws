@@ -111,6 +111,18 @@ is the record, and a file of ticked boxes stops being read.
   on purpose — sleep is allowed on the dev box until production deploys,
   and the production account's provisioning turns it off (roadmap item 4
   carry-in). No crash since 10-10 12:01.
+  **2026-10-20: the clean week ended — three hard crashes, none near a
+  resume**: 10-17 14:07 (~16 h after the 10-16 21:55 restart), 10-19 16:38
+  (7.5 h after the 09:09 resume), 10-20 08:36 (15.3 h after the 10-19
+  17:16 boot). Each left the same WHEA 1 at the next boot, its sections
+  all the firmware-error-record reference (`81212a96-…`), as before the
+  flash, plus a WHEA live kernel dump. Nothing ran on the card (no batch
+  since 10-15); BIOS 1836, RAM 2666, driver 32.0.101.9034 and
+  `.wslconfig` unchanged; Windows updated and restarted 10-14 01:29. The
+  times fall in the Arc's flicker window (below), and the flicker dumps
+  stopped at 10-16 20:08, the evening before the first crash: the
+  working theory is that the headless Arc's engine hangs grew from
+  recovered resets into whole-box hangs. The dummy plug tests both.
   **2026-10-12: the black flickers do leave a record** — not as a 4101
   in System, but as a graphics-watchdog live kernel dump
   (`Microsoft-Windows-WerKernel/Operational`, "Component WATCHDOG …
@@ -158,7 +170,13 @@ is the record, and a file of ticked boxes stops being read.
   (10-10's began at 04:50 with none running), and not the driver's
   retained pool (0.8 GB at 15:40, lower than the morning). Check with
   the plug in through a session well past 6 h: no new WATCHDOG dump
-  means headless was the trigger. The repeated
+  means headless was the trigger. The dumps kept coming until the plug:
+  10-13 (4 between 10:33 and 10:53), 10-15 22:31–22:33 (eleven, one a
+  full kernel dump), 10-16 (14, 02:33–20:08). **The plug went in
+  2026-10-20** (UGREEN DP, Windows names it `UGRC775`), booted 15:45; the
+  Arc drives it at 1920×1080 at 60 Hz and DWM composes on the card. Check
+  after 2026-10-21 00:00 for WATCHDOG dumps, 6008/41 and WHEA 1; a week
+  of none closes both this entry and the crash half of the freeze entry. The repeated
   bursts of `LiveKernelEvent` 141/124/193 in Application every few hours
   are Windows Error Reporting resending the same queued reports, not new
   faults.
