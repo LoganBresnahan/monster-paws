@@ -12,7 +12,8 @@ Check items off as they ship.
 ## Phases
 
 1. **foundations: the Every.org webhook, and the schema**
-   - [ ] `everyorg-webhook-setup` — low, mechanical. The staging webhook is
+   - [x] `everyorg-webhook-setup` — low, mechanical. **Staging done
+     2026-10-22** (`doc/infra.md`, Every.org). The staging webhook is
      self-serve: Logan's own account at staging.every.org/developer, after
      its email verification. Its token goes in `pass`, the infra.md table, a
      commented `.env.example` line and the `env-dev.sh` fill, by name only.
@@ -20,7 +21,10 @@ Check items off as they ship.
      `chargeId`, monthly gifts, staging test cards) was drafted 2026-10-16;
      its answers may retire ADR-0027's first revisit trigger. The production
      webhook is a separate setup before launch.
-   - [ ] `donor-account-schema` — medium, moderate. Additive tables only, so
+   - [x] `donor-account-schema` — medium, moderate. **Done 2026-10-22**
+     (`drizzle/0011`, `tests/donor-schema.test.ts`, ADR-0027 as amended
+     2026-10-22): `keepsake` and `keepsake_fact` as ADR-0022 names them, the
+     face pick a fact; `shelter_nonprofits` pulled in from phase 3. Additive tables only, so
      the corpus is untouched: accounts, passkey credentials, sessions,
      sign-in links (stored hashed, with expiry and `used_at`), donation
      intents (128-bit id, nonprofit slug and EIN), `everyorg_webhook_payloads`
@@ -47,7 +51,10 @@ Check items off as they ship.
      else; a suppression check before every send; the signed bounce and
      complaint webhook (verified over the raw body, with a timestamp
      tolerance) writes suppressions. Unit test it with a good fixture and a
-     tampered one. The webhook signing secret goes in `pass` and infra.md
+     tampered one. Carry-in (ADR-0027 as amended 2026-10-22): a
+     suppression is an HMAC of the lowercased address under a key in `pass`,
+     never the address; the check runs before every send, beside Resend's
+     own list. The webhook signing secret goes in `pass` and infra.md
      here, and the SDK, if used, gets its own ADR line.
 
 3. **the sign-in link, the intent, the export** (parallel; disjoint files)
@@ -55,7 +62,9 @@ Check items off as they ship.
      token in one `UPDATE … WHERE used_at IS NULL AND expires_at > now()
      RETURNING`; never consume on GET, because mail scanners prefetch links
      (the GET page posts a confirm); creating an account on first
-     verification must not race an existing account for the same email.
+     verification must not race an existing account for the same email. Carry-in:
+     weigh refusing the link for an account whose address has hard-bounced
+     — a reissued Outlook or Yahoo address (ADR-0027 as amended 2026-10-22).
    - [ ] `donation-intent-donate-link` — medium, moderate. A CSPRNG id, the
      cookie flags, the redirect host fixed to Every.org,
      `partner_donation_id` set to the id. Needs the shelter-to-nonprofit
@@ -79,7 +88,9 @@ Check items off as they ship.
      alone, against an open intent, with an exact slug and EIN check; a
      unique `chargeId` makes it idempotent; closing the intent, inserting the
      donation and enqueuing the art happen in one transaction; the path
-     carries our secret; logs carry no identities. Anything unmatched is kept
+     carries our secret; logs carry no identities. Carry-in: the row keeps the
+     headers, with any carrying our auth token redacted before insert, and
+     sets `partner_donation_id` from the body only when it parses. Anything unmatched is kept
      and logged, never acted on.
 
 5. **stats, and the thank-you page and claim**
@@ -98,7 +109,9 @@ Check items off as they ship.
      hint. The Playwright donor-flow e2e lands here.
 
 6. **deletion, and closing the docs**
-   - [ ] `account-deletion` — high, moderate ⚠ verify. Export offered first,
+   - [ ] `account-deletion` — high, moderate ⚠ verify. Carry-in: suppressions
+     stay (they hold no address), and the address is removed from Resend's
+     list by API (ADR-0027 as amended 2026-10-22). Export offered first,
      then every donor-owned row and its R2 art, in an order that never leaves
      a DB row pointing at deleted art. Tests assert it deletes neither too
      little (webhook payloads naming the donor, R2 objects) nor too much: the
@@ -117,11 +130,13 @@ Check items off as they ship.
 
 ## Sequencing risks
 
-1. **Keepsakes have no table in the ADR's list.** Thank-you, export and
+1. ~~**Keepsakes have no table in the ADR's list.**~~ Settled 2026-10-22
+   by the schema slice. Thank-you, export and
    deletion all need one (the art and card R2 keys per donation). Settle it
    in the schema slice, even as a minimal row, so no later slice needs a
    mid-stream migration.
-2. **Nothing maps a shelter to an Every.org nonprofit slug and EIN.** Decide
+2. **Nothing maps a shelter to an Every.org nonprofit slug and EIN.** The
+   table exists (`shelter_nonprofits`, 2026-10-22); filling it is phase 3's. Decide
    where that mapping lives at the start of phase 3. A shelter with no
    mapping gets no donate button, never a dead one (ADR-0015).
 3. **The webhook setup is Logan's errand.** If it slips, the intent slice

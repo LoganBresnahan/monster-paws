@@ -1,9 +1,13 @@
+import { sql } from "drizzle-orm";
 import {
+  bigint,
   bigserial,
   boolean,
+  date,
   index,
   integer,
   jsonb,
+  numeric,
   pgTable,
   text,
   timestamp,
@@ -270,4 +274,262 @@ export const embeddings = pgTable("embeddings", {
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),
+});
+
+/*
+ * Donor accounts and donations (ADR-0027). These tables hold donor state, not
+ * corpus: the ones marked append-only are still deleted, row by row, when
+ * their account is deleted (ADR-0027 §6) — that exception never reaches
+ * `raw_payloads`, `event_log` or attestations. No foreign key below cascades
+ * into a donation or a keepsake: account deletion removes them in its own
+ * order, after their R2 art, so an accidental DELETE errors instead of
+ * spreading.
+ */
+
+export const accounts = pgTable(
+  "accounts",
+  {
+    id: bigserial("id", { mode: "number" }).primaryKey(),
+    /** the account's only identity (ADR-0027 §2) — never an address, phone or payment detail beside it */
+    email: text("email").notNull(),
+    emailVerifiedAt: timestamp("email_verified_at", { withTimezone: true }),
+    displayName: text("display_name"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [uniqueIndex("accounts_email_lower_uq").on(sql`lower(${t.email})`)],
+);
+
+export const passkeyCredentials = pgTable(
+  "passkey_credentials",
+  {
+    id: bigserial("id", { mode: "number" }).primaryKey(),
+    accountId: integer("account_id")
+      .notNull()
+      .references(() => accounts.id, { onDelete: "cascade" }),
+    /** base64url, as the authenticator reported it */
+    credentialId: text("credential_id").notNull(),
+    publicKey: text("public_key").notNull(),
+    /** synced passkeys report 0 forever — never treat a non-increasing 0 as a cloned key (ADR-0027) */
+    signCount: bigint("sign_count", { mode: "number" }).notNull().default(0),
+    transports: text("transports").array(),
+    backedUp: boolean("backed_up").notNull(),
+    /** the donor's own label, e.g. "iCloud Keychain" (ADR-0027 §1) */
+    name: text("name").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    lastUsedAt: timestamp("last_used_at", { withTimezone: true }),
+  },
+  (t) => [
+    uniqueIndex("passkey_credentials_credential_uq").on(t.credentialId),
+    index("passkey_credentials_account_idx").on(t.accountId),
+  ],
+);
+
+export const sessions = pgTable(
+  "sessions",
+  {
+    id: bigserial("id", { mode: "number" }).primaryKey(),
+    accountId: integer("account_id")
+      .notNull()
+      .references(() => accounts.id, { onDelete: "cascade" }),
+    /** a digest of the cookie's token — never the token, which would make a DB read a sign-in (ADR-0027 §2) */
+    tokenHash: text("token_hash").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    revokedAt: timestamp("revoked_at", { withTimezone: true }),
+  },
+  (t) => [
+    uniqueIndex("sessions_token_hash_uq").on(t.tokenHash),
+    index("sessions_account_idx").on(t.accountId),
+  ],
+);
+
+/**
+ * What a donor does BEFORE they have an account (ADR-0027 §3, §5). The id is
+ * the `partner_donation_id` on the donate link and the only key a webhook is
+ * matched on; until a claim sets `account_id`, the intent owns the donation
+ * and its keepsake (Logan, 2026-10-22).
+ */
+export const donationIntents = pgTable(
+  "donation_intents",
+  {
+    /** 128 CSPRNG bits, base64url — never sequential, since knowing it is what lets a forged webhook land (ADR-0027 §4) */
+    id: text("id").primaryKey(),
+    /**
+     * The animal by source identity, never `animals.id`: `animals` is rebuilt
+     * by replay and its ids are not stable across a rebuild (ADR-0013).
+     */
+    animalSource: text("animal_source").$type<Source>().notNull(),
+    animalExternalId: text("animal_external_id").notNull(),
+    nonprofitSlug: text("nonprofit_slug").notNull(),
+    nonprofitEin: text("nonprofit_ein").notNull(),
+    accountId: integer("account_id").references(() => accounts.id),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    closedAt: timestamp("closed_at", { withTimezone: true }),
+  },
+  (t) => [index("donation_intents_account_idx").on(t.accountId)],
+);
+
+export const signInLinks = pgTable(
+  "sign_in_links",
+  {
+    id: bigserial("id", { mode: "number" }).primaryKey(),
+    /** the address the link went to — the account may not exist until the link is used */
+    email: text("email").notNull(),
+    accountId: integer("account_id").references(() => accounts.id, { onDelete: "cascade" }),
+    /** set on a claim link: using it binds this intent's keepsake (ADR-0027 §5) */
+    intentId: text("intent_id").references(() => donationIntents.id),
+    tokenHash: text("token_hash").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    /** consumed by one `UPDATE … WHERE used_at IS NULL` on POST, never on GET — mail scanners prefetch links */
+    usedAt: timestamp("used_at", { withTimezone: true }),
+  },
+  (t) => [
+    uniqueIndex("sign_in_links_token_hash_uq").on(t.tokenHash),
+    index("sign_in_links_account_idx").on(t.accountId),
+  ],
+);
+
+/**
+ * Every Every.org webhook call, stored before anything is believed (ADR-0027
+ * §4). Append-only like `raw_payloads`, but donor-owned: account deletion
+ * removes the rows that name the donor, which `raw_payloads` never allows.
+ */
+export const everyorgWebhookPayloads = pgTable(
+  "everyorg_webhook_payloads",
+  {
+    id: bigserial("id", { mode: "number" }).primaryKey(),
+    /** the request body as text, never jsonb: an unparsable or forged body is kept too (ADR-0027 §4) */
+    body: text("body").notNull(),
+    /** request headers, with any carrying our auth token redacted before insert — a secret never lands in a row */
+    headers: jsonb("headers").$type<Record<string, string>>().notNull(),
+    /** read from the body at insert, null when it doesn't parse — how deletion finds a donor's rows */
+    partnerDonationId: text("partner_donation_id"),
+    receivedAt: timestamp("received_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("everyorg_webhook_payloads_partner_idx").on(t.partnerDonationId)],
+);
+
+/** Derived from a matched webhook (ADR-0027 §4). Append-only, donor-owned. */
+export const donations = pgTable(
+  "donations",
+  {
+    id: bigserial("id", { mode: "number" }).primaryKey(),
+    /** not unique: a monthly gift may bring a new `chargeId` under the same intent — unconfirmed by Every.org */
+    intentId: text("intent_id")
+      .notNull()
+      .references(() => donationIntents.id),
+    webhookPayloadId: integer("webhook_payload_id")
+      .notNull()
+      .references(() => everyorgWebhookPayloads.id),
+    /** the idempotency key: a replayed webhook inserts nothing (ADR-0027 §4) */
+    chargeId: text("charge_id").notNull(),
+    amount: numeric("amount", { precision: 12, scale: 2 }).notNull(),
+    netAmount: numeric("net_amount", { precision: 12, scale: 2 }),
+    currency: text("currency").notNull(),
+    frequency: text("frequency").notNull(),
+    nonprofitSlug: text("nonprofit_slug").notNull(),
+    nonprofitEin: text("nonprofit_ein").notNull(),
+    nonprofitName: text("nonprofit_name").notNull(),
+    donatedAt: timestamp("donated_at", { withTimezone: true }).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    uniqueIndex("donations_charge_uq").on(t.chargeId),
+    index("donations_intent_idx").on(t.intentId),
+  ],
+);
+
+/**
+ * The counts that survive every deletion (ADR-0027 §6). Never add a foreign
+ * key, an account, an intent, a `chargeId`, a name or an email here: a row
+ * with nothing that names a donor is why deletion never has to touch it.
+ * Append-only and never deleted. A row is a gift, not a donor, so a count of
+ * rows is "gifts", never "sponsors".
+ */
+export const donationStats = pgTable(
+  "donation_stats",
+  {
+    id: bigserial("id", { mode: "number" }).primaryKey(),
+    animalSource: text("animal_source").$type<Source>().notNull(),
+    animalExternalId: text("animal_external_id").notNull(),
+    nonprofitSlug: text("nonprofit_slug").notNull(),
+    amount: numeric("amount", { precision: 12, scale: 2 }).notNull(),
+    currency: text("currency").notNull(),
+    frequency: text("frequency").notNull(),
+    /** the day, never the instant — a timestamp beside an amount can point back at one donor */
+    donatedOn: date("donated_on").notNull(),
+  },
+  (t) => [
+    index("donation_stats_animal_idx").on(t.animalSource, t.animalExternalId),
+    index("donation_stats_nonprofit_idx").on(t.nonprofitSlug),
+  ],
+);
+
+/**
+ * A donor's keepsake, written once at donation (ADR-0022 §1). Never UPDATEd;
+ * the card renders from this row, its donation and its facts alone — never
+ * through `animals` or `animal_display`. Donor-owned: deleted with its
+ * account after its R2 art (ADR-0027 §6).
+ */
+export const keepsake = pgTable("keepsake", {
+  id: bigserial("id", { mode: "number" }).primaryKey(),
+  donationId: integer("donation_id")
+    .notNull()
+    .unique("keepsake_donation_uq")
+    .references(() => donations.id),
+  snapshottedAt: timestamp("snapshotted_at", { withTimezone: true }).notNull(),
+});
+
+/**
+ * One row per keepsake field, each on exactly one named basis (ADR-0022 §2–3):
+ * `grant:<slug>:<permission>` or `aggregator:<source>`. Never UPDATE — a purge
+ * is a set delete by basis, and a change is a new row: the four `art`
+ * candidates and every `face` pick are rows (ADR-0004 as amended 2026-10-14).
+ */
+export const keepsakeFact = pgTable(
+  "keepsake_fact",
+  {
+    id: bigserial("id", { mode: "number" }).primaryKey(),
+    keepsakeId: integer("keepsake_id")
+      .notNull()
+      .references(() => keepsake.id),
+    field: text("field").notNull(),
+    /** an art fact holds its R2 key — never the image (ADR-0003) */
+    value: jsonb("value").notNull(),
+    /** the basis by name, never a rank (ADR-0006 as amended) */
+    basis: text("basis").notNull(),
+    snapshottedAt: timestamp("snapshotted_at", { withTimezone: true }).notNull(),
+  },
+  (t) => [
+    index("keepsake_fact_keepsake_idx").on(t.keepsakeId, t.field),
+    index("keepsake_fact_basis_idx").on(t.basis),
+  ],
+);
+
+/**
+ * Addresses we never mail again after a hard bounce or a spam complaint
+ * (ADR-0027 as amended 2026-10-22). Only a keyed HMAC of the lowercased
+ * address, never the address or a bare hash, which anyone can test by
+ * guessing — so it outlives account deletion with nothing in it to delete.
+ * Lifted only by hand, when the address's owner asks.
+ */
+export const emailSuppressions = pgTable("email_suppressions", {
+  emailHmac: text("email_hmac").primaryKey(),
+  reason: text("reason").$type<"bounce" | "complaint">().notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+/**
+ * Which Every.org nonprofit receives a shelter's donations. A shelter with no
+ * row gets no donate button, never a dead one (ADR-0015). Keyed by the same
+ * string as `animals.shelter_external_id`, e.g. `rescuegroups:org:3077`.
+ */
+export const shelterNonprofits = pgTable("shelter_nonprofits", {
+  shelterExternalId: text("shelter_external_id").primaryKey(),
+  everyorgSlug: text("everyorg_slug").notNull(),
+  ein: text("ein").notNull(),
+  /** who matched it and how, e.g. "every.org search by name, checked by Logan" */
+  source: text("source").notNull(),
+  fetchedAt: timestamp("fetched_at", { withTimezone: true }).notNull(),
 });

@@ -3,6 +3,11 @@
 Status: accepted (2026-10-16). Decisions agreed with Logan 2026-10-15
 and 2026-10-16.
 
+> Self-amended 2026-10-22: the schema landed — an intent owns its donation
+> and keepsake until a claim; a suppression is a keyed digest that outlives
+> account deletion; an intent names its animal by source identity; the
+> shelter-to-nonprofit mapping is a table (below).
+
 ## Context
 DIRECTION and ADR-0022 assume a donor's keepsakes "live in their account",
 and roadmap item 4 carries "the accounts ADR comes first": nothing decides
@@ -143,3 +148,60 @@ delete.
 - Donors report losing access with no passkey and no email to hand.
 - Passkey support regresses in a browser donors use, or cross-device
   sign-in fails in dogfooding.
+
+## Amendment (2026-10-22): the schema — ownership, suppressions, animal identity
+
+### Context
+Phase 1 of `doc/plans/adr-0027-accounts-build-plan.md` drew the tables
+(migration `drizzle/0011`). Drawing them raised four questions §§3–6 left
+open, settled with Logan the same day. Two facts found while checking:
+Resend already keeps its own suppression list, team-wide and holding the
+plain address, blocking sends after a hard bounce or complaint until removed
+(resend.com docs, read 2026-10-22); and Outlook and Yahoo reissue addresses
+after about a year of inactivity, while Gmail never does.
+
+### Decision
+1. **An intent owns its donation and keepsake until an account claims it**
+   (Logan, 2026-10-22). `donation_intents.account_id` is null until the
+   claim sets it; account deletion follows one path: account → intents →
+   donations → keepsake → its facts and R2 art. No foreign key on that path
+   cascades: deletion is an ordered procedure, and an accidental DELETE
+   errors instead of spreading.
+2. **A suppression is a keyed HMAC of the lowercased address, and it
+   outlives account deletion** (Logan, 2026-10-22: "I don't want to fully
+   rely on Resend's suppression list"). Our check runs before every send,
+   independent of Resend. The row holds no address and no bare hash (a
+   bare hash is tested by guessing), so §6's "delete everything" holds
+   with nothing in it to delete. Account deletion also removes the plain
+   address from Resend's list by API, so the processor keeps no copy.
+   A suppression is lifted only by hand, when the address's owner writes
+   to hello@ — the recycled-address case.
+3. **An intent and a stats row name the animal by source identity**
+   `(source, external_id)`, never `animals.id`, which a replay rebuild does
+   not keep stable (ADR-0013).
+4. **The shelter-to-nonprofit mapping is `shelter_nonprofits`**, keyed by
+   `animals.shelter_external_id` with source and fetched-at like any fact;
+   no row, no donate button (ADR-0015). Built in phase 1, so phase 3 needs
+   no migration.
+
+The webhook's raw row keeps the body as text, not jsonb, so an unparsable or
+forged body is kept too, and its headers with any carrying our auth token
+redacted: the staging webhook issued an auth token the docs never mention,
+and the headers are how we learn whether Every.org sends it.
+
+### Consequences
+- The HMAC key is a new secret in `pass`, filed with the Resend slice.
+- A face pick is a `keepsake_fact` with `field='face'`, as `doc/flows.md`
+  drew it; there is no picks table.
+- A recycled address can sign in to the account it used to belong to through
+  the emailed link. That is a weakness of email recovery itself, and passkeys
+  don't close it, since the link is the recovery path. The
+  `email-link-sign-in` verify pass weighs refusing the link for an account
+  whose address has hard-bounced.
+
+### Revisit triggers (added)
+- A donor reports an account reached through a reissued address, or a
+  hard bounce lands on an account's own address.
+- Someone writes in to lift a suppression: count them, and if they are more
+  than rare, offer the lift on the sign-in page itself.
+

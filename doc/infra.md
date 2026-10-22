@@ -143,6 +143,24 @@ curl -s https://api.resend.com/emails -H "Authorization: Bearer $(pass show rese
   -d '{"from":"hello@monsterpaws.org","to":"<you>","subject":"test","text":"test"}'
 ```
 
+### Every.org (ADR-0027)
+
+The **staging** partner webhook, created 2026-10-22 from Logan's account at
+staging.every.org/developer: partner name `Monster Paws`, domain
+`monsterpaws.org`, URL
+`https://staging-hooks.monsterpaws.org/api/webhooks/everyorg/$(pass show everyorg/staging-webhook-secret)`.
+That hostname has **no DNS record** until phase 4 of
+`doc/plans/adr-0027-accounts-build-plan.md` routes it to `monsterpaws-dev`
+through a tunnel, so staging donations never reach the droplet. The
+production webhook is a separate setup with its own three entries
+(`everyorg/webhook-token`, `auth-token`, `webhook-secret`), made before launch.
+
+| Entry | What it is | What it's for | Lands in |
+| --- | --- | --- | --- |
+| `everyorg/staging-webhook-token` | The staging webhook's token, shown at creation | The donate link's `webhook_token` parameter, which makes Every.org POST that donation to our webhook. Rides in a URL every donor sees — an identifier, not a secret | local `.env` `EVERYORG_WEBHOOK_TOKEN` via `npm run env:dev` |
+| `everyorg/staging-auth-token` | The staging webhook's auth token, shown at creation | Undocumented (docs.every.org, Partner Webhook, read 2026-10-22): asked of partners@every.org whether it rides on each webhook POST | local `.env` `EVERYORG_AUTH_TOKEN` via `npm run env:dev` |
+| `everyorg/staging-webhook-secret` | 32 random characters (`pass generate -n`) | The last path segment of the webhook URL above — our own secret beside Every.org's token (ADR-0027 §4) | local `.env` `EVERYORG_WEBHOOK_SECRET` via `npm run env:dev` |
+
 ### Better Stack (ADR-0010) — errors, uptime, heartbeats
 
 Team **Monster Paws** (id `606375`). Every resource below was created by API

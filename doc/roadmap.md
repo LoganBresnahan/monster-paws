@@ -16,7 +16,7 @@ slice or change build order.
 
 | Track | Item | Next step | Waits on |
 | --- | --- | --- | --- |
-| **Accounts and donating** | 4 (ADR-0027) | Phase 1 of `doc/plans/adr-0027-accounts-build-plan.md`: `donor-account-schema`, keepsakes table included | Logan: the Every.org staging webhook (staging.every.org/developer) and the questions email to partners@every.org (Gmail draft) — neither blocks the schema |
+| **Accounts and donating** | 4 (ADR-0027) | Phase 2 of `doc/plans/adr-0027-accounts-build-plan.md`: `session-dal` and `resend-transactional-email`, in parallel (phase 1 done 2026-10-22, `drizzle/0011`) | Nothing. The staging webhook is made (2026-10-22); the partners@every.org email is shelved (Logan, 2026-10-22) — signing, retries and lookup are learned against staging in phase 4, where the dashboard also offers an API key and secret |
 | **The anatomy LoRA** | 9, pulled forward (ADR-0004 as amended 2026-10-22) | The rental job (`doc/infra.md`, GPU rental), then the Qwen-Image-Edit cleanup test on batch 9b's 22 paintings, Logan judging | DigitalOcean's GPU limit (one requested 2026-10-22); collecting ~60–100 Commons dogs can start now |
 | **Shelter consent** | 5 | Draft the permission email — three grants (scrape, display, digify), the AI disclosure, the retention clause — for a lawyer's read | Nothing; the longest wait of all (lawyer, then shelters), so start early |
 | **Meet the crew** | 3c, the home section | Each pet beside its keepsake, the consent entry | The anatomy LoRA: the crew's paintings carry genitals until it lands |

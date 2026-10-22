@@ -42,6 +42,14 @@ export async function truncateCorpus(db: Db): Promise<void> {
   );
 }
 
+/** Empties the donor tables (ADR-0027) — test databases only, like `truncateCorpus`. */
+export async function truncateDonor(db: Db): Promise<void> {
+  await assertTestDatabase(db);
+  await db.execute(
+    sql`truncate table accounts, passkey_credentials, sessions, sign_in_links, donation_intents, everyorg_webhook_payloads, donations, donation_stats, keepsake, keepsake_fact, email_suppressions, shelter_nonprofits restart identity`,
+  );
+}
+
 /**
  * Drops the DERIVED tables and leaves `raw_payloads` standing — what a replay
  * test needs, since the corpus is the thing it rebuilds from. Never widen this

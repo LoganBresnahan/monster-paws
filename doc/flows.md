@@ -519,6 +519,51 @@ Why the line is where it is: on 2026-09-04 a replay backfilling two new merged
 fields wrote 62,729 true, permanent `animal.updated` rows about nothing that
 happened to an animal. The ledger was right; it was only ever wrong as a feed.
 
+## Donate → webhook → keepsake — tied back by our own id (ADR-0027)
+
+Planned: roadmap item 4, `doc/plans/adr-0027-accounts-build-plan.md`. The
+tables are built (`drizzle/0011`); every stage is not. No wall stands before
+the gift: the account comes after it, if at all.
+
+```
+  animal page, donate click         (planned, phase 3)
+       │  mints donation_intents row: 128-bit id, (source, external_id),
+       │  nonprofit slug + EIN from shelter_nonprofits — no row, no button
+       │  intent id → httpOnly cookie on this browser
+       ▼
+  every.org donate link             partner_donation_id = intent id,
+       │                            webhook_token (EVERYORG_WEBHOOK_TOKEN)
+       │  ── Every.org boundary: the money and the receipt are theirs ──
+       ▼
+  POST /api/webhooks/everyorg/<secret>   (planned, phase 4) unsigned
+       │  staging: staging-hooks.monsterpaws.org → tunnel → monsterpaws-dev
+       ▼
+  everyorg_webhook_payloads         body as text + headers, stored before
+       │                            anything is believed (append-only)
+       │  match partnerDonationId → open intent, slug + EIN exact;
+       │  anything else kept and logged, never acted on
+       ▼
+  one transaction                   (planned, phases 4–5)
+       │  donations row (charge_id unique: a replay inserts nothing)
+       │  donation_stats row, only when the insert happened — no donor in it
+       │  donation_intents.closed_at
+       │  snapshotKeepsake() → keepsake + keepsake_fact   (§ Keepsake snapshot)
+       │  boss.send('art.generate')   when the shelter granted digify
+       ▼
+  thank-you page                    (planned, phase 5) the cookie holds the
+       │                            keepsake for this browser; keep it in an
+       │                            account: email → sign_in_links → passkey
+       ▼
+  claim                             donation_intents.account_id set; from
+                                    here the account owns it all
+
+  account deleted  → export offered first; then keepsake art in R2, facts,
+                     keepsake, donations, payloads naming the donor, intents,
+                     links, sessions, passkeys, the account; the address off
+                     Resend's list. donation_stats and email_suppressions
+                     (an HMAC, no address) stay (ADR-0027 as amended 2026-10-22)
+```
+
 ## Keepsake snapshot — held on its own basis, never a view of the listing (ADR-0022)
 
 Planned: roadmap item 4. The card reads the keepsake alone; the listing side
@@ -533,11 +578,11 @@ may be purged, rebuilt or merged without touching it.
        │  reads, once, at donation time:     not written
        │    animals + licensed animal_display row + the shelter registry
        ▼
-  keepsake            (planned)              basis = donation: amount, date,
-       │                                     recipient nonprofit — PERMANENT
+  keepsake            (built, writer planned) basis = donation, through its
+       │                                     donation: amount, date, nonprofit
        │                                     append-only, never UPDATEd
        ▼
-  keepsake_fact       (planned)              (keepsake_id, field, value,
+  keepsake_fact       (built, writer planned) (keepsake_id, field, value,
        │                                      basis, snapshotted_at)
        │   basis = grant:<slug>:<permission> → kept per the grant's onEnd
        │   basis = aggregator:<source>       → purged with the source
