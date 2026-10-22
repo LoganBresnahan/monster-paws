@@ -52,8 +52,11 @@ bearing with it. Skip cleanly if `gh` is not authenticated, and say so.
 ## 2. Where we meant to be — the roadmap
 
 Read `doc/roadmap.md` (**Now** and **Next**). Map shipped commits onto
-checked items. The **frontier** = first unchecked item under Now, else Next.
-Note carry-ins pinned to upcoming items — those are the traps on the next task.
+checked items. Several tracks run in parallel, so there is no single
+frontier: the **Active tracks** table at the top of Now names each track,
+its next step and what it waits on. Check each row against git — a next
+step already shipped, or a wait since cleared, is drift — and note the
+carry-ins pinned to each track's item: those are the traps on its next task.
 
 ## 3. Reconcile ground truth against memory
 
@@ -84,9 +87,10 @@ ORIENT — Monster Paws @ <branch> <sha>
   shipped     <recent arc in one line>  · last good: <commit>
   wip         <uncommitted files, or "clean">
   ci          <green @ sha, or "RED since <date>: <failing step>">
-  roadmap     frontier → item <N> "<title>"  (done: <range>)
   drift       <remembered-vs-actual mismatch, or "none">
-  next move   <the obvious task> — read <the one doc> first
+  tracks      one line each, from Active tracks:
+              <track> (item <N>) → <next step>  [ready | waits on <what>]
+  next move   <a recommendation among the ready tracks, and why> — read <the one doc> first
 ```
 
 Keep it to that shape — a fast "you are here" that lets work resume in one

@@ -1,14 +1,28 @@
 # Monster Paws roadmap
 
-Frontier = first unchecked item under **Now**. Numbers are identifiers, not
-order — order is build order (re-sequenced 2026-10-05: the MVP loop — list,
-donate, art — ships before the production database, so 3c, 4 and 5 precede
-3b). Check items off as they ship; pin deferred sub-tasks to items as
-carry-ins. Dogfood findings live in
+Several items move in parallel, so there is no single frontier: **Active
+tracks**, at the top of Now, names each track, its next step and what it
+waits on, and is updated in the commit that moves a track (Logan,
+2026-10-22). Numbers are identifiers, not order — order is build order
+(re-sequenced 2026-10-05: the MVP loop — list, donate, art — ships before
+the production database, so 3c, 4 and 5 precede 3b). Check items off as
+they ship; pin deferred sub-tasks to items as carry-ins. Dogfood findings live in
 `doc/issues.md` (ADR-0019) and are pinned here as well only when they block a
 slice or change build order.
 
 ## Now
+
+### Active tracks (2026-10-22)
+
+| Track | Item | Next step | Waits on |
+| --- | --- | --- | --- |
+| **Accounts and donating** | 4 (ADR-0027) | Phase 1 of `doc/plans/adr-0027-accounts-build-plan.md`: `donor-account-schema`, keepsakes table included | Logan: the Every.org staging webhook (staging.every.org/developer) and the questions email to partners@every.org (Gmail draft) — neither blocks the schema |
+| **The anatomy LoRA** | 9, pulled forward (ADR-0004 as amended 2026-10-22) | The rental job (`doc/infra.md`, GPU rental), then the Qwen-Image-Edit cleanup test on batch 9b's 22 paintings, Logan judging | DigitalOcean's GPU limit (one requested 2026-10-22); collecting ~60–100 Commons dogs can start now |
+| **Shelter consent** | 5 | Draft the permission email — three grants (scrape, display, digify), the AI disclosure, the retention clause — for a lawyer's read | Nothing; the longest wait of all (lawyer, then shelters), so start early |
+| **Meet the crew** | 3c, the home section | Each pet beside its keepsake, the consent entry | The anatomy LoRA: the crew's paintings carry genitals until it lands |
+| **Launch** | 3b | The UI audit's next round | The Playwright MCP set up in monsterpaws-dev (CLAUDE.md, Visual review); then items 3c, 4 and 5 |
+| **Small, any time** | 4, 2 | The SDXL strip (item 4 carry-in, then `comfy:build` and `comfy:smoke`); "Recently viewed" (ADR-0025); ingest phase 9 health gates (item 2's other phases wait on item 5's fixtures) | Nothing |
+| **Home GPU watch** | — | `/gpu-health` after 2026-10-27: a week clean since the dummy plug closes the flicker and crash entries in `doc/issues.md` | Time |
 
 - [x] **0. ToS research (blocking).** Done 2026-07-29 → **ADR-0006**:
       Petfinder API dead, Adopt-a-Pet closed; RescueGroups is the sole
@@ -304,7 +318,8 @@ slice or change build order.
             4B in BFL's fp8 reads the grown subject and head crops as
             references, and the storybook prompt holds the style without a
             LoRA. `comfyui/workflows/klein-v1.api.json` is the committed
-            look; SDXL + IP-Adapter is the fallback. Batches 1–8a in
+            look; SDXL + IP-Adapter was the fallback until ADR-0004 as
+            amended 2026-10-15 withdrew it. Batches 1–8a in
             `doc/plans/the-look-exploration.md` and
             `doc/plans/base-model-candidates.md`; subject boxes by detector
             (ADR-0026).

@@ -62,8 +62,9 @@ A new or changed public behavior with no test naming it = **gap**.
 new dependency, changed contract or algorithm, pattern adopted or rejected —
 needs an ADR or a superseding update. Implementation detail is not a decision.
 
-**Roadmap** (`doc/roadmap.md`): shipped work checked off; frontier matches
-reality; deferred sub-tasks pinned as carry-ins, not dropped.
+**Roadmap** (`doc/roadmap.md`): shipped work checked off; the **Active
+tracks** table matches reality (each next step still next, each wait still
+open); deferred sub-tasks pinned as carry-ins, not dropped.
 
 **DIRECTION.md**: still describes what the product actually is — loop, tiers,
 money rails, bright lines. Scope changes land here, not just in code.
@@ -208,7 +209,7 @@ instead of at the line where it would be violated.
 ```
 SHIPSHAPE REPORT
   tests        ✓|✗   <n>/<n> twice · typecheck clean · gaps: <behavior lacking a test, or none>
-  docs         ✓|✗   ADRs current · roadmap frontier true · drift: <doc: stale claim, or none>
+  docs         ✓|✗   ADRs current · roadmap tracks true · drift: <doc: stale claim, or none>
   conventions  ✓|✗   violations: <file:line, or none>
 ```
 

@@ -86,7 +86,8 @@ the monthly check in infra.md's Recurring ops.
 ## Conventions
 
 - Documentation lives in `doc/`. `doc/roadmap.md` tracks build order
-  (frontier = first unchecked item); check items off as they ship. Dogfood
+  (several tracks in parallel: **Active tracks** at the top of Now names
+  each one's next step); check items off as they ship. Dogfood
   findings go in `doc/issues.md` (ADR-0019) — never left in chat — and are ALSO
   pinned to the roadmap or a plan as a carry-in when they block a slice or
   change what we build next; entries are deleted when fixed, never ticked.
