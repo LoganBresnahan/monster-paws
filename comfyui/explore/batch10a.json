@@ -1,0 +1,36 @@
+{
+  "_": "Batch 10a — can klein Base paint the LoRA's training set? (roadmap item 9; Logan, 2026-10-22: no genitals on any dog, genitals only). Batch 9b's production half held still — Plum and Ducky, the grown subject of two photos plus the grown head, the listing's words, the landscape canvas, both storybook poses, 9b's six seeds (9b: anatomy in 86 of 96, its 24 production-prompt runs the baseline) — with the painter swapped for BFL's fp8 klein Base at 28 steps, CFG 4, and the anatomy negative. One question: how many come out clean, and is it still our look.",
+  "animals": {
+    "Plum": {
+      "kind": "dog",
+      "describe": "male grey cane corso puppy",
+      "two": [
+        "PXL_20250423_185424061.PORTRAIT.jpg",
+        "downloadfile.jpg"
+      ]
+    },
+    "Ducky": {
+      "kind": "dog",
+      "describe": "female tan pit bull mix",
+      "two": [
+        "PXL_20241229_195311064.RAW-01.COVER.jpg",
+        "PXL_20250621_160612271.PORTRAIT.jpg"
+      ]
+    }
+  },
+  "photos": ["two"],
+  "crops": ["grownsubject"],
+  "aspect": ["landscape"],
+  "describe": ["listing"],
+  "families": ["kleinbase"],
+  "graphs": ["reference2"],
+  "prompts": ["storybook_sit34", "storybook_stand34"],
+  "negatives": ["anatomy"],
+  "denoise": [],
+  "weights": [],
+  "weight_types": [],
+  "end_at": [],
+  "loras": [null],
+  "seeds": [7, 11, 42, 99, 1015, 2026],
+  "heads": ["grownhead"]
+}

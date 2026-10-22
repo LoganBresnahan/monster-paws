@@ -34,6 +34,8 @@ HOST = "http://comfyui:8188"
 NEGATIVE = "blurry, text, watermark, extra limbs, deformed, two animals"
 # stylised families also push away from the photograph the adapter is copying (batch 1b)
 NEGATIVE_STYLED = NEGATIVE + ", photograph, photorealistic"
+# a spec's `negatives` axis picks by name; only a cfg > 1 family (klein Base) reads a negative at all, the distilled ones zero it
+NEGATIVES = {"standard": None, "anatomy": NEGATIVE_STYLED + ", genitals, testicles, scrotum, penis, sheath"}
 # style LoRAs beside the adapter — stand-ins for our own (roadmap item 9), licensed in models.manifest
 LORAS = {"watercolor": "watercolor_v1_sdxl.safetensors", "tinies": "Little_Tinies.safetensors"}
 CONTROLNET = "xinsir-canny-sdxl-1.0-v2.safetensors"
@@ -148,6 +150,8 @@ FAMILIES = {
 }
 # BFL's calibrated fp8 file: already fp8 with per-tensor scales, so it loads as stored — never cast it again.
 FAMILIES["kleinbfl8"] = {**FAMILIES["klein"], "unet": "flux-2-klein-4b-fp8.safetensors", "dtype": "default"}
+# klein Base, undistilled: paints a LoRA's training set at home, never a donation (roadmap item 9); real CFG, so the negative counts.
+FAMILIES["kleinbase"] = {**FAMILIES["kleinbfl8"], "unet": "flux-2-klein-base-4b-fp8.safetensors", "steps": 28, "cfg": 4.0}
 
 
 def build_family_graph(run: dict, prefix: str) -> dict:
@@ -379,10 +383,10 @@ def expand(spec: dict) -> list[dict]:
         for photo_key, crop, describe, aspect, family in itertools.product(spec["photos"], spec.get("crops", ["full"]), spec.get("describe", ["generic"]), spec.get("aspect", ["square"]), spec.get("families", ["sdxl"])):
             photos = info[photo_key] if isinstance(info[photo_key], list) else [info[photo_key]]
             subject = info["kind"] if describe == "generic" else info["describe" if describe == "listing" else describe]
-            for graph, prompt, seed in itertools.product(spec["graphs"], spec["prompts"], spec["seeds"]):
+            for graph, prompt, seed, neg in itertools.product(spec["graphs"], spec["prompts"], spec["seeds"], spec.get("negatives", ["standard"])):
                 base = {"animal": animal, "kind": info["kind"], "photo": photo_key, "photos": photos, "crop": crop, "describe": describe, "aspect": aspect, "family": family,
                         "graph": graph, "prompt": prompt, "prompt_text": PROMPTS[prompt].format(kind=subject),
-                        "negative": NEGATIVE if prompt == "photo" else NEGATIVE_STYLED, "seed": seed}
+                        "negative": NEGATIVES[neg] or (NEGATIVE if prompt == "photo" else NEGATIVE_STYLED), "neg": neg, "seed": seed}
                 controls = [(st, en) for st in spec.get("control_strength", [0]) for en in (spec.get("control_end", [1.0]) if st else [None])]
                 if family != "sdxl":
                     if graph not in ("txt2img", "img2img", "reference", "reference2") or (graph.startswith("reference") and not family.startswith("klein")):
@@ -411,7 +415,7 @@ def expand(spec: dict) -> list[dict]:
         if r.get("family", "sdxl") != "sdxl":
             bits.insert(2, r["family"])
             bits += [b for b in ({"fp8_e4m3fn": "fp8", "default": "bf16"}.get(r.get("dtype") or "", ""), f"st{r['steps']}" if r.get("steps") else "") if b]
-        bits += [b for b in (r["crop"], r.get("head"), r["describe"], r["lora"], r.get("aspect")) if b and b not in ("full", "generic", "square")]
+        bits += [b for b in (r["crop"], r.get("head"), r["describe"], r["lora"], r.get("aspect"), r.get("neg")) if b and b not in ("full", "generic", "square", "standard")]
         if r.get("control_strength"):
             bits.append(f"cn{r['control_strength']}e{r['control_end']}")
         if r["weight"] is not None:
@@ -512,7 +516,7 @@ def run_batch(batch: str, limit: int | None, dry: bool, only: str | None = None)
 
 # ---------------------------------------------------------------- sheet
 
-AXES = ["animal", "photo", "family", "dtype", "steps", "graph", "prompt", "crop", "describe", "aspect", "lora", "control_strength", "control_end", "weight", "weight_type", "end_at", "denoise", "seed", "multi", "combine"]
+AXES = ["animal", "photo", "family", "dtype", "steps", "graph", "prompt", "neg", "crop", "describe", "aspect", "lora", "control_strength", "control_end", "weight", "weight_type", "end_at", "denoise", "seed", "multi", "combine"]
 
 
 def sheet(batch: str) -> None:

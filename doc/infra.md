@@ -44,7 +44,7 @@ pushes to GHCR with the workflow's built-in `GITHUB_TOKEN`.
 
 | Entry | What it is | What it's for | Lands in |
 | --- | --- | --- | --- |
-| `digitalocean/api-token` | DO account API token (created 2026-07-29) | Everything `doctl` does: the droplet, firewall, monitoring alert policies (step 6c), snapshots, and Managed Postgres when step 6 lands | dev only |
+| `digitalocean/api-token` | DO account API token (created 2026-07-29) | Everything `doctl` does: the droplet, firewall, monitoring alert policies (step 6c), snapshots, Managed Postgres when step 6 lands, and the per-job GPU Droplets of GPU rental (below) | dev only |
 
 ```sh
 DIGITALOCEAN_ACCESS_TOKEN=$(pass show digitalocean/api-token) doctl compute droplet list
@@ -788,6 +788,30 @@ compilation). The first SDXL generation followed: 1024², 25 steps at
 "Could not autodetect AIMDO implementation, assuming Nvidia" warning is
 cosmetic. The native-Windows ComfyUI fallback named in ADR-0004 decision 2
 was not needed.
+
+## GPU rental — per job, dev only (ADR-0004 as amended 2026-10-22)
+
+The anatomy LoRA's cleanups and training run on a DigitalOcean GPU Droplet
+created for one job and destroyed when it ends. Never production, never
+inference for a donation (that is the home worker's), never a shelter photo
+on the box: Commons dogs and the crew only.
+
+- **Limit:** Droplet GPUs, 0 on the account's Tier 2; one requested
+  2026-10-22 (Logan, through the control panel's "Increase your limit").
+  *Pending.*
+- **Sizes** (DO's price list, read 2026-10-22; billed per second, 60 s
+  minimum): L40S 48 GB $1.57/h (the default: holds Qwen-Image-Edit and
+  trains at about 4090 speed); RTX 4000 Ada 20 GB $0.76/h (trains klein
+  Base 4B, ~2.5–3× slower); H100 $3.39/h (not needed).
+- **Trap: a powered-off GPU Droplet still bills.** Only `doctl compute
+  droplet delete` stops the meter, so every job ends in a delete, on
+  failure too, and a leftover is looked for with `doctl compute droplet
+  list` after each run.
+- **The job** *(planned, not built)*: create the droplet with the same
+  token (`digitalocean/api-token`), run our ComfyUI image built with
+  `TORCH=cu128` for cleanups or ai-toolkit (MIT, pinned by commit) for
+  training, bring the results home to `var/`, delete the droplet. The
+  models it pulls are the `models.manifest` lines, hash-checked as at home.
 
 ## Deployment architecture
 

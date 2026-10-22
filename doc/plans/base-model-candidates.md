@@ -835,6 +835,86 @@ explore:signature -- <batch> [--fix]`), which is unrelated and worked.
 The fix for the anatomy is the painter itself: a klein LoRA trained on
 a rented GPU (roadmap item 9).
 
+## The anatomy LoRA — its training set (discussion, 2026-10-22)
+
+Scope (Logan, 2026-10-22): **no genitals on any dog**, not females only —
+a storybook keepsake, one rule to train and test; and **genitals only** in
+this LoRA, a tripod one being its own if ever needed.
+
+What the guides say (BFL's training docs and their Hugging Face guide,
+read 2026-10-22): train on klein **Base** 4B (Apache-2.0) and run the
+LoRA on the distilled 4-step klein, where it "usually gives even better
+results"; a 4B run fits 24 GB and takes under an hour on a rented RTX
+4090 (about $0.50); Ostris's ai-toolkit trains klein, including **edit
+LoRAs** from reference→target pairs (`control_path` beside
+`folder_path`, paired by file stem), which is how our painter works;
+50–200 pairs, a made-up trigger word in every caption, lr ~1e-4,
+checkpoints every 250 steps, chosen by samples, not loss (edit LoRAs
+peak around 1000–1750). The A770 could hold a 12 GB run, but the
+trainer expects CUDA and the card's traps are not worth 50 cents.
+
+The GPU is the cheap part; the hard part is **~100 paintings in our look
+with clean undersides**, many dogs, both sexes, sitting and standing —
+which the painter makes about one time in ten (batch 9b), mostly where
+the pose hides the groin. Three sources, tried in this order:
+
+1. **klein Base paints them.** The distilled model zeroes the negative;
+   Base runs real CFG, so "genitals, testicles, scrotum, penis, sheath"
+   in the negative can work. Too slow for a donation (28+ steps × 2),
+   fine for a dataset, and the LoRA carries the result into the 4-step
+   painter. The catch: Base's look may differ from ours, and a LoRA
+   trained on Base's paintings would pull ours toward it, so Logan's eye
+   reads both the undersides and the look. Batch 10a.
+2. **Filter the distilled painter's output**: ~1,000 overnight under the
+   guard (16.5 s each), Logan labels groin crops on a contact sheet,
+   keep the ~100 clean; certain to work, biased toward hiding poses, and
+   two-dog paintings are thrown out.
+3. **Clean them by hand** in Krita (Logan or an illustrator), 40–80
+   paintings: not the automatic repair Logan rejected, but real time or
+   money. Last resort.
+
+Either way the pairs are photo crops in, approved painting out, captioned
+with the production prompt plus the trigger; Wikimedia Commons dogs and
+the crew only, never a shelter photo (22 Commons photos on hand; ~60–100
+more dogs to collect, each in `commons-photos.tsv` with its licence).
+Plum and Ducky stay out of training, so batch 9b's seeds are a clean
+before/after; unseen Commons dogs are the second test. The ship bar:
+zero male anatomy on a female, nearly none on any dog, likeness no worse
+on the scorer, and Logan's eye says the look held; checkpoints 1000,
+1500 and 2000 at strengths 0.6, 0.8 and 1.0. The training plan is an
+ADR-0004 amendment before any rent.
+
+### Batch 10a — klein Base with the anatomy negative (2026-10-22)
+
+`comfyui/explore/batch10a.json`: batch 9b's production half held still —
+Plum and Ducky, the grown subject of two photos plus the grown head, the
+listing's words, the landscape canvas, both storybook poses, 9b's six
+seeds — with the painter swapped for BFL's fp8 klein Base
+(`kleinbase` in `explore.py`: 28 steps, CFG 4, euler/simple; settings
+from community guides, 20–50 steps and CFG 3.5–5, nothing from BFL for
+ComfyUI) and the `anatomy` negative. 24 paintings. The baseline is 9b's
+same 24 on the distilled painter: **anatomy in 22 of 24**.
+
+### Batch 10a — first read (Claude, 2026-10-22; Logan's eye decides the look)
+
+135 s a painting warm (28 steps × 2 for CFG, against 16.5 s), the
+driver pool flat at 1.1–1.5 GB, no guard kill. Labels by eye on close
+groin crops (`var/explore/batch10a/groin/`, `labels.json` beside them),
+9b's rule:
+
+- **Anatomy in 19 of 24**, against 22 of 24 on the distilled painter. The
+  five clean: Plum sitting s11, Plum standing s7 and s99, Ducky standing
+  s99 and s1015. Every sitting Ducky has a pink scrotum, and Plum sitting
+  s99 has two testicles drawn outright. The negative moves it a little,
+  not enough: about one clean painting in five at 135 s is ~5 an hour,
+  where the distilled painter's one in ten at 16.5 s is ~20 an hour.
+- **The look drifts**: tighter linework, a more muscular, more anatomical
+  body (Ducky standing s2026 reads as a study, not a storybook). Likeness
+  median 0.697 (0.636–0.769), in line with klein's earlier reads.
+
+So source 1 is out as the generator: slower per clean painting than
+filtering the distilled one, and off our look.
+
 ## Avenues (Logan, 2026-10-11)
 
 "Just because we find something that works doesn't mean I don't want to

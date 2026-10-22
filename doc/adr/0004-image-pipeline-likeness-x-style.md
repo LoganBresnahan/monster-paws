@@ -593,3 +593,121 @@ we get the 'tripod' and related keywords to do standing only").
   amendment, not a revived fallback.
 - A species whose natural keepsake pose is not standing (a bird, a
   snake): the pose rule is per species, by amendment.
+
+## Amendment (2026-10-22): the anatomy LoRA — a cleaned set, trained on a rented DigitalOcean GPU
+
+### Context
+The 2026-10-15 amendment made "no male anatomy on a female, none on any
+keepsake" a correctness requirement (decision 4) and asked for the LoRA's
+training plan before anything is rented. Logan set its scope 2026-10-22:
+**no genitals on any dog**, not females only, and **genitals only**; a
+tripod LoRA, if ever needed, is its own.
+
+BFL's training guide and docs (read 2026-10-22) say to train on klein
+**Base** 4B (Apache-2.0) and run the LoRA on the distilled 4-step klein,
+where it "usually gives even better results". A 4B run fits 24 GB and
+takes about an hour on an RTX 4090. ai-toolkit (MIT) trains klein,
+including **edit LoRAs** from reference→target pairs, which is how our
+painter works. The cost is in the set: ~100 paintings in our look with
+clean undersides, many dogs, both sexes, sitting and standing. The
+distilled painter makes about one in ten, almost all in poses that hide
+the groin; Ducky came out clean in 9b only in two-dog paintings.
+
+Batch 10a asked whether Base could paint the set itself, since it runs
+real CFG and reads a negative prompt (`doc/plans/base-model-candidates.md`):
+anatomy in **19 of 24** with "genitals, testicles, scrotum, penis, sheath"
+in the negative, against 22 of 24 on the distilled painter, at 135 s a
+painting against 16.5 s; and the look drifts toward an anatomical study.
+
+### Decision
+1. **The set is our own paintings, cleaned by an editor, approved by
+   Logan.** The distilled klein paints as production does (klein-v1:
+   references, landscape canvas, both poses); Qwen-Image-Edit 2511
+   (Apache-2.0) takes the genitals out of each with one fixed
+   instruction, and only a cleanup Logan approves enters the set. It
+   never runs in the donation path: decision 4 of 2026-10-15 still
+   forbids repair after painting there. The cleanup's quality is
+   unproven, so it is tested first on batch 9b's 22 production-prompt
+   paintings that show anatomy, Logan judging; if it smears or regrows
+   like LaMa and klein did, it is out (Alternatives).
+2. **An edit LoRA on klein Base 4B, run on the distilled 4-step klein.**
+   Pairs are production's references (the two grown subject crops and
+   the grown head) in, the approved cleaned painting out, captioned with
+   the production prompt and a made-up trigger word. ai-toolkit, lr
+   about 1e-4, checkpoints every 250 steps chosen by their samples, not
+   the loss. The trained `.safetensors` comes home and gets an `r2:`
+   line in `models.manifest`, its licence "ours".
+3. **Training rents a DigitalOcean GPU Droplet per job, destroyed when
+   the job ends.** One GPU (L40S, 48 GB, $1.57/h, or RTX 4000 Ada,
+   20 GB, $0.76/h; per-second billing), driven by `doctl` with the token
+   we already hold, running our own ComfyUI image built for CUDA
+   (`TORCH=cu128`) for the cleanups and ai-toolkit for training. This
+   refines decision 5 of 2026-10-05 ("rent an H100 hour, Replicate's
+   trainer or similar"): one vendor already in `doc/infra.md`, no new
+   account holding our pictures. The 2026-10-05 alternative "rented GPU
+   spun up per job" was rejected for inference and stays rejected
+   there; this is training and dataset work only, dev only, never
+   production.
+4. **What goes up: Wikimedia Commons dogs and the crew, never a shelter
+   photo**, each Commons photo in `comfyui/explore/commons-photos.tsv`
+   with its licence (decision 5 of 2026-10-05). Plum and Ducky stay out
+   of training, so batch 9b's seeds are a clean before and after;
+   ~60–100 more Commons dogs are collected for the set and a held-out
+   few for the test.
+5. **It ships only if all four hold**, on Plum and Ducky at 9b's seeds
+   and on unseen Commons dogs, across checkpoints 1000, 1500 and 2000
+   at strengths 0.6, 0.8 and 1.0: zero male anatomy on a female; nearly
+   none on any dog, by Logan's labels; likeness no worse than klein-v1
+   on the scorer; and Logan's eye says the look held. Then it joins
+   klein-v1 by a further amendment naming the checkpoint and strength.
+
+### Consequences
+- New models, each with its `models.manifest` line before it runs:
+  BFL's fp8 klein Base 4B (added 2026-10-22, batch 10a; it stays for
+  the training comparison), and Qwen-Image-Edit 2511 in Comfy-Org's
+  repackage. New tool: ai-toolkit (MIT), pinned by commit on the
+  rented box.
+- `doc/infra.md` gains a GPU-rental section: the limit (one GPU,
+  requested 2026-10-22), the script that creates the droplet, runs one
+  job, brings the results home and destroys it, and the trap that a
+  powered-off droplet still bills.
+- Cost: about $1.60 for the cleanup test, about the same per hundred
+  cleanups and per training run; ten runs is about $20.
+- Logan labels and approves by eye: the cleanups, then each test batch.
+  A contact sheet of groin crops per batch is the tool (batch 10a's
+  `groin/` sheets).
+- `explore.py` keeps the `kleinbase` family and the `negatives` axis
+  (batch 10a); Base runs at home only to compare against the LoRA.
+
+### Alternatives
+- **klein Base paints the set** (batch 10a). Rejected: 19 of 24 still
+  drawn, about five clean an hour against twenty from filtering, and
+  off our look.
+- **Filter the distilled painter's output**, ~1,000 overnight, keeping
+  the clean tenth. Fallback if the cleanup fails: certain to work, but
+  the clean ones are poses that hide the groin, and the standing side
+  views the LoRA most needs are missing.
+- **Clean by hand in Krita** (Logan or an illustrator, 40–80 paintings).
+  Last resort: the best pairs, at real time or money.
+- **A hosted editor or trainer (fal, Replicate).** fal's Qwen edit is
+  about $0.03 an image, but its klein edit trainer bills about $35 a
+  run with our three references; Replicate has no klein trainer, and
+  neither rents a bare GPU. A second vendor for no saving.
+- **RunPod or Vast.ai.** A community RTX 4090 at about $0.34/h is the
+  cheapest run, by a dollar or two; a new vendor holding our pictures
+  for that is not worth it.
+- **Commercial editors (Gemini, GPT-image)** for the cleanup. Rejected:
+  their terms restrict training on their output.
+- **Train on the A770.** Base fits 12 GB, but the trainers expect CUDA
+  and the card's driver traps (`doc/infra.md`, Home GPU) are not worth
+  fifty cents an hour.
+
+### Revisit triggers
+- The cleanup test fails Logan's eye: the set comes from filtering, or
+  by hand, by amendment.
+- The LoRA does not carry to the distilled klein, or costs likeness: the
+  2026-10-15 trigger (a different base, by its own amendment).
+- The look drifts toward the cleaned set's: the cleanups are re-read
+  against klein-v1 before more are made.
+- DigitalOcean's GPU price, limit or availability blocks a run: RunPod
+  becomes the venue by amendment.

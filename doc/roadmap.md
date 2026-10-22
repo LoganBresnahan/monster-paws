@@ -687,8 +687,19 @@ slice or change build order.
       from paintings Logan approves: tripods repaired by legs.py, and
       paintings whose underside is clean as painted.
       Open: whether a Base-trained LoRA carries to the distilled 4-step
-      klein; likeness must hold (the harness before ship). The ADR-0004
-      amendment lands with the training plan, before the rent.
+      klein (BFL's own guide says it loads and "usually gives even better
+      results"; ours to test); likeness must hold (the harness before
+      ship). The ADR-0004 amendment lands with the training plan, before
+      the rent. Scope (Logan, 2026-10-22): **no genitals on any dog**, and
+      **genitals only** in this LoRA — a tripod LoRA, if needed, is its own.
+      **The plan is ADR-0004 as amended 2026-10-22**: batch 10a ruled out
+      klein Base as the set's painter (19 of 24 still drawn); the set is
+      distilled-klein paintings cleaned by Qwen-Image-Edit 2511 and
+      approved by Logan; an edit LoRA trained on Base 4B with ai-toolkit on
+      a per-job DigitalOcean GPU Droplet. Next, in order: the GPU limit
+      (requested 2026-10-22); the rental job (`doc/infra.md`, GPU rental);
+      the cleanup test on batch 9b's 22 anatomy paintings, Logan judging;
+      ~60–100 Commons dogs collected; the set; the training runs.
 - [ ] **10. Entity resolution at scale.** Second/third listing source; dedup
       across feeds; trust-hierarchy merge.
       Carry-in: **a consented shelter's own feed is matched to its
