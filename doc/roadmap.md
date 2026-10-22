@@ -689,10 +689,10 @@ slice or change build order.
       LoRA on the non-distilled Base 4B when that amendment's revisit
       triggers fire (style drift, a look of our own); the judge proper
       (silent until it earns the gate). Carry-in (ADR-0004 as amended 2026-10-05): a
-      style brief and reference set come first, and never contain a shelter
-      photo; SDXL trains on the A770, a FLUX-class train rents an H100 hour;
-      every model's licence is recorded before it touches a card, and FLUX
-      [dev] at home needs BFL's paid licence — Replicate's does not travel.
+      training set never contains a shelter photo, and every model's licence
+      is recorded before it touches a card. Where and how it trains is
+      ADR-0004 as amended 2026-10-22: klein Base 4B on a per-job
+      DigitalOcean GPU (SDXL and the H100 hour are withdrawn).
       Carry-in: **pulled toward the front by anatomy, not style** (Logan,
       2026-10-15): the painter draws male genitals on nearly every dog,
       females included (batches 9a–9c), and four legs on a tripod (batches

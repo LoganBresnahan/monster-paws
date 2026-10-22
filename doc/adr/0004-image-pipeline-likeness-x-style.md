@@ -7,6 +7,13 @@
 > runs on a GPU in Logan's home, ComfyUI is the workbench, art arrives when
 > it is ready; same-day addendum: the home worker is isolated under its own
 > Windows account and packaged as CI-built containers (below).
+> Self-amended 2026-10-14: the donor keeps all four candidates, the judge
+> runs silent; and the look is FLUX.2 klein 4B reading the photo, the
+> prompt holding the style (workflow klein-v1). Self-amended 2026-10-15:
+> klein is the only painter, a tripod stands, the canvas is landscape, no
+> male anatomy on a female. Self-amended 2026-10-22: the anatomy LoRA —
+> a cleaned set, an edit LoRA on klein Base 4B, trained on a per-job
+> DigitalOcean GPU.
 
 ## Context
 The collector loop needs card art that is (a) unmistakably one set — the

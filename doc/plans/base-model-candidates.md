@@ -1,8 +1,11 @@
 # Base-model candidates for the keepsake look (ADR-0004 as amended 2026-10-05)
 
 Status: written 2026-10-10 from the look exploration's correctness step 3
-(`the-look-exploration.md`). SDXL base is what runs; everything below is a
-candidate for an experiment, not a decision. Licences were read from each
+(`the-look-exploration.md`), when SDXL base was what ran. The look is now
+klein-v1 (ADR-0004 as amended 2026-10-14) and klein is the only painter
+(as amended 2026-10-15); the anatomy LoRA's plan is ADR-0004 as amended
+2026-10-22. The candidate table below is the record of how klein was
+chosen, not a list of live options. Licences were read from each
 model card on 2026-10-10 and must be re-read before any of them ships.
 Owner: Logan decides which experiments run; Claude runs them.
 
