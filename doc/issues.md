@@ -176,7 +176,20 @@ is the record, and a file of ticked boxes stops being read.
   2026-10-20** (UGREEN DP, Windows names it `UGRC775`), booted 15:45; the
   Arc drives it at 1920×1080 at 60 Hz and DWM composes on the card. Check
   after 2026-10-21 00:00 for WATCHDOG dumps, 6008/41 and WHEA 1; a week
-  of none closes both this entry and the crash half of the freeze entry. The repeated
+  of none closes both this entry and the crash half of the freeze entry.
+  Read 2026-10-22: one more unexpected shutdown, 10-20 20:26 with the plug
+  in, unlike the three before it — **no WHEA record**, and a
+  `ResourceTimeout` live dump at 20:45 before Logan's 20:47 restart, which
+  itself ended in a power-off (41 at 20:51): a stall, not a firmware
+  fatal. Logan then freed ~700 GB on C: (955 of 1,907 GB free now; M:
+  362 of 477) and set the BIOS so the cards and SSDs never power down;
+  Windows' AC standby timer and PCIe link-state power management both
+  read 0 (never/off). Since the 10-20 20:51 boot: no 6008/41, no WHEA,
+  no WATCHDOG dump, across three S3 sleeps (10-21 09:51, 23:47, 10-22
+  09:44) — S3 still powers the cards off whatever the BIOS device
+  settings say. Several changes landed together (plug, space, BIOS
+  power), so a clean week closes the entry without naming which fixed
+  it. The repeated
   bursts of `LiveKernelEvent` 141/124/193 in Application every few hours
   are Windows Error Reporting resending the same queued reports, not new
   faults.
