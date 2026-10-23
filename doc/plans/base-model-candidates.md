@@ -1041,6 +1041,40 @@ Attention Guidance) on klein-v1, so the distilled painter reads a negative
 at all; then **klein Base repainting the groin box** with the negative,
 after LaMa has taken the shape out, so the fill is klein's own brushwork.
 
+## Batches 12a and 12b — NAG on klein-v1, first read (Claude, 2026-10-23)
+
+Logan: "lets try NAG". ComfyUI's built-in `NAGuidance` (in the pinned
+ComfyUI, GPL-3.0, no new dependency) patches the attention output of
+FLUX.2's double and single blocks; `explore.py` gained a `nags` axis, and
+its negative ("genitals, testicles, scrotum, penis, sheath") carries the
+same three references as the positive, or the two never batch and NAG
+does nothing. Batch 12a: Plum and Ducky on batch 11a's recipe and seeds
+(11a is the control), NAG `default` (5 / 0.5 / 1.5) and `strong`
+(10 / 0.5 / 2.5); batch 12b: two seeds at `hard` (20 / 0.8 / 5) and `max`
+(40 / 1.0 / 10). 31.6 s a painting, about twice klein-v1, pool flat.
+Grids: `var/explore/batch12a/grid-nag-vs-11a.jpg` (and `-undersides`),
+`var/explore/batch12b/grid-nag-push.jpg`.
+
+- **No setting removes anything**: the anatomy is on all 48, Ducky's
+  included, and even `max` repaints each seed nearly as the control did
+  (a collar, a fold). NAG is acting — the paintings do move — but it has
+  almost nothing to push against.
+- **The likely reason**: NAG steers by the difference between the image's
+  attention under the prompt and under the negative, and with three
+  reference images in both, that attention is almost all references; the
+  words carry little either way. It is the same finding as batch 9b's
+  wordings (86 of 96 regardless of words), from the other side: in this
+  painter the anatomy comes from the references and the prior, not the
+  text.
+- **So NAG is out for klein-v1 as it paints.** Not tried: NAG with a
+  negative that carries no references (it cannot batch, so the built-in
+  node skips it).
+
+This points idea 3 at a repaint **without references**: klein Base
+repainting only a LaMa'd groin box reads the surrounding painting and the
+words, and nothing else, so its negative has the leverage the references
+take away here.
+
 ## Avenues (Logan, 2026-10-11)
 
 "Just because we find something that works doesn't mean I don't want to

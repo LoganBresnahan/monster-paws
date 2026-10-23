@@ -1,0 +1,66 @@
+{
+  "_": "Batch 12a — Normalized Attention Guidance on klein-v1 (2026-10-23): can the distilled painter read a negative at all? ComfyUI's built-in NAGuidance on batch 11a's exact recipe and seeds, so 11a's Plum and Ducky are the control (no NAG); one axis, the NAG strength (`default`, the node's 5 / 0.5 / 1.5, and `strong`, 10 / 0.5 / 2.5), the negative only the anatomy words, carrying the same three references as the positive so the two batch together. Plum (male) and Ducky (female): the question is whether either comes out without genitals. Logan: \"lets try NAG\" after the Qwen cleanup was rejected (ADR-0004 as amended 2026-10-23).",
+  "animals": {
+    "Plum": {
+      "kind": "dog",
+      "describe": "male grey cane corso puppy",
+      "two": [
+        "PXL_20250423_185424061.PORTRAIT.jpg",
+        "downloadfile.jpg"
+      ]
+    },
+    "Ducky": {
+      "kind": "dog",
+      "describe": "female tan pit bull mix",
+      "two": [
+        "PXL_20241229_195311064.RAW-01.COVER.jpg",
+        "PXL_20250621_160612271.PORTRAIT.jpg"
+      ]
+    }
+  },
+  "photos": [
+    "two"
+  ],
+  "crops": [
+    "grownsubject"
+  ],
+  "aspect": [
+    "landscape"
+  ],
+  "describe": [
+    "listing"
+  ],
+  "families": [
+    "kleinbfl8"
+  ],
+  "graphs": [
+    "reference2"
+  ],
+  "prompts": [
+    "storybook_sit34",
+    "storybook_stand34"
+  ],
+  "denoise": [],
+  "weights": [],
+  "weight_types": [],
+  "end_at": [],
+  "loras": [
+    null
+  ],
+  "seeds": [
+    11,
+    222,
+    4096,
+    8128
+  ],
+  "heads": [
+    "grownhead"
+  ],
+  "negatives": [
+    "genitals"
+  ],
+  "nags": [
+    "default",
+    "strong"
+  ]
+}

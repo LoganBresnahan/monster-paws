@@ -1,0 +1,64 @@
+{
+  "_": "Batch 12b — NAG pushed (2026-10-23): batch 12a's NAG at the node's defaults and at scale 10 barely changed klein's paintings and left the anatomy on all 32. Same recipe, Plum and Ducky, two of 12a's seeds, NAG at `hard` (20 / 0.8 / 5) and `max` (40 / 1.0 / 10, full replacement): does any strength take the anatomy out before the painting breaks?",
+  "animals": {
+    "Plum": {
+      "kind": "dog",
+      "describe": "male grey cane corso puppy",
+      "two": [
+        "PXL_20250423_185424061.PORTRAIT.jpg",
+        "downloadfile.jpg"
+      ]
+    },
+    "Ducky": {
+      "kind": "dog",
+      "describe": "female tan pit bull mix",
+      "two": [
+        "PXL_20241229_195311064.RAW-01.COVER.jpg",
+        "PXL_20250621_160612271.PORTRAIT.jpg"
+      ]
+    }
+  },
+  "photos": [
+    "two"
+  ],
+  "crops": [
+    "grownsubject"
+  ],
+  "aspect": [
+    "landscape"
+  ],
+  "describe": [
+    "listing"
+  ],
+  "families": [
+    "kleinbfl8"
+  ],
+  "graphs": [
+    "reference2"
+  ],
+  "prompts": [
+    "storybook_sit34",
+    "storybook_stand34"
+  ],
+  "denoise": [],
+  "weights": [],
+  "weight_types": [],
+  "end_at": [],
+  "loras": [
+    null
+  ],
+  "seeds": [
+    11,
+    222
+  ],
+  "heads": [
+    "grownhead"
+  ],
+  "negatives": [
+    "genitals"
+  ],
+  "nags": [
+    "hard",
+    "max"
+  ]
+}

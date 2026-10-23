@@ -35,7 +35,11 @@ NEGATIVE = "blurry, text, watermark, extra limbs, deformed, two animals"
 # stylised families also push away from the photograph the adapter is copying (batch 1b)
 NEGATIVE_STYLED = NEGATIVE + ", photograph, photorealistic"
 # a spec's `negatives` axis picks by name; only a cfg > 1 family (klein Base) reads a negative at all, the distilled ones zero it
-NEGATIVES = {"standard": None, "anatomy": NEGATIVE_STYLED + ", genitals, testicles, scrotum, penis, sheath"}
+NEGATIVES = {"standard": None, "anatomy": NEGATIVE_STYLED + ", genitals, testicles, scrotum, penis, sheath",
+             "genitals": "genitals, testicles, scrotum, penis, sheath"}
+# Normalized Attention Guidance (ComfyUI's built-in NAGuidance): (nag_scale, nag_alpha, nag_tau). It lets a distilled
+# family read its negative, which a zeroed conditioning never carries; "default" is the node's own defaults.
+NAGS = {"default": (5.0, 0.5, 1.5), "strong": (10.0, 0.5, 2.5), "hard": (20.0, 0.8, 5.0), "max": (40.0, 1.0, 10.0)}
 # style LoRAs beside the adapter — stand-ins for our own (roadmap item 9), licensed in models.manifest
 LORAS = {"watercolor": "watercolor_v1_sdxl.safetensors", "tinies": "Little_Tinies.safetensors"}
 CONTROLNET = "xinsir-canny-sdxl-1.0-v2.safetensors"
@@ -187,11 +191,16 @@ def build_family_graph(run: dict, prefix: str) -> dict:
         g["ctl"] = {"class_type": "ZImageFunControlnet", "inputs": {"model": model, "model_patch": ["patch", 0], "vae": ["vae", 0], "strength": run["control_strength"],
                                                                      "image": ["canny", 0], "start_percent": 0.0, "end_percent": run["control_end"]}}
         model = ["ctl", 0]
-    if f["cfg"] > 1.0:
+    if run.get("nag"):
+        scale, alpha, tau = NAGS[run["nag"]]
+        g["nag"] = {"class_type": "NAGuidance", "inputs": {"model": model, "nag_scale": scale, "nag_alpha": alpha, "nag_tau": tau}}
+        model = ["nag", 0]
+    if f["cfg"] > 1.0 or run.get("nag"):
         g["neg"] = {"class_type": "CLIPTextEncode", "inputs": {"clip": ["clip", 0], "text": run["negative"]}}
     else:  # distilled models take no negative; a zeroed conditioning is the documented stand-in
         g["neg"] = {"class_type": "ConditioningZeroOut", "inputs": {"conditioning": ["pos", 0]}}
     pos = ["pos", 0]
+    refs = []  # every reference latent the positive reads, in order
     empty = "EmptyFlux2LatentImage" if run["family"].startswith("klein") else "EmptySD3LatentImage"
     if run["graph"] == "img2img":
         g["latent"] = {"class_type": "VAEEncode", "inputs": {"pixels": ["scale", 0], "vae": ["vae", 0]}}
@@ -203,6 +212,7 @@ def build_family_graph(run: dict, prefix: str) -> dict:
             g["ref"] = {"class_type": "VAEEncode", "inputs": {"pixels": ["scale", 0], "vae": ["vae", 0]}}
             g["refcond"] = {"class_type": "ReferenceLatent", "inputs": {"conditioning": pos, "latent": ["ref", 0]}}
             pos = ["refcond", 0]
+            refs.append("ref")
             for i, extra in enumerate(run["photos"][1:], 1):  # a listing's other photos, each a further reference
                 from PIL import Image
                 name = input_name(run["animal"], extra, run.get("crop", "full"), raw=raw)
@@ -212,6 +222,7 @@ def build_family_graph(run: dict, prefix: str) -> dict:
                 g[f"ref{i}"] = {"class_type": "VAEEncode", "inputs": {"pixels": [f"scale{i}", 0], "vae": ["vae", 0]}}
                 g[f"refcond{i}"] = {"class_type": "ReferenceLatent", "inputs": {"conditioning": pos, "latent": [f"ref{i}", 0]}}
                 pos = [f"refcond{i}", 0]
+                refs.append(f"ref{i}")
         if run["graph"] == "reference2":  # the head crop as a second reference the model reads after the subject
             # A detector-cut subject reads the detector's head too, so a batch never mixes hand and detector boxes (ADR-0026).
             head = run.get("head") or ("dethead" if run.get("crop") in ("detsubject", "grownsubject") else "head")
@@ -226,8 +237,15 @@ def build_family_graph(run: dict, prefix: str) -> dict:
             g["head_ref"] = {"class_type": "VAEEncode", "inputs": {"pixels": ["head_scale", 0], "vae": ["vae", 0]}}
             g["head_cond"] = {"class_type": "ReferenceLatent", "inputs": {"conditioning": pos, "latent": ["head_ref", 0]}}
             pos = ["head_cond", 0]
+            refs.append("head_ref")
+    neg = ["neg", 0]
+    if run.get("nag"):
+        # The negative reads the same references, or it cannot batch with the positive and NAG silently does nothing.
+        for r in refs:
+            g[f"neg_{r}"] = {"class_type": "ReferenceLatent", "inputs": {"conditioning": neg, "latent": [r, 0]}}
+            neg = [f"neg_{r}", 0]
     g["sampler"] = {"class_type": "KSampler", "inputs": {
-        "model": model, "positive": pos, "negative": ["neg", 0], "latent_image": ["latent", 0],
+        "model": model, "positive": pos, "negative": neg, "latent_image": ["latent", 0],
         "seed": run["seed"], "steps": steps, "cfg": f["cfg"], "sampler_name": f["sampler"], "scheduler": f["scheduler"], "denoise": denoise}}
     return g
 
@@ -394,8 +412,8 @@ def expand(spec: dict) -> list[dict]:
                     fam_controls = controls if family == "zimage" else [(0, None)]
                     # a detector head only beside a detector-cut subject, so a batch never mixes hand and detector boxes (ADR-0026)
                     heads = [h for h in spec.get("heads", [None]) if h is None or crop in ("detsubject", "grownsubject")] if graph == "reference2" else [None]
-                    for denoise, dtype, steps, (cs, ce), head in itertools.product(spec["denoise"] if graph == "img2img" else [None], spec.get("dtypes", [None]), spec.get("steps", [None]), fam_controls, heads):
-                        runs.append({**base, "lora": None, "dtype": dtype, "steps": steps, "control_strength": cs, "control_end": ce, "denoise": denoise, "weight": None, "weight_type": None, "end_at": None, "head": head})
+                    for denoise, dtype, steps, (cs, ce), head, nag in itertools.product(spec["denoise"] if graph == "img2img" else [None], spec.get("dtypes", [None]), spec.get("steps", [None]), fam_controls, heads, spec.get("nags", [None])):
+                        runs.append({**base, "lora": None, "dtype": dtype, "steps": steps, "control_strength": cs, "control_end": ce, "denoise": denoise, "weight": None, "weight_type": None, "end_at": None, "head": head, "nag": nag})
                     continue
                 if graph in ("txt2img", "reference", "reference2"):
                     continue
@@ -415,7 +433,7 @@ def expand(spec: dict) -> list[dict]:
         if r.get("family", "sdxl") != "sdxl":
             bits.insert(2, r["family"])
             bits += [b for b in ({"fp8_e4m3fn": "fp8", "default": "bf16"}.get(r.get("dtype") or "", ""), f"st{r['steps']}" if r.get("steps") else "") if b]
-        bits += [b for b in (r["crop"], r.get("head"), r["describe"], r["lora"], r.get("aspect"), r.get("neg")) if b and b not in ("full", "generic", "square", "standard")]
+        bits += [b for b in (r["crop"], r.get("head"), r["describe"], r["lora"], r.get("aspect"), r.get("neg"), r.get("nag") and f"nag{r['nag']}") if b and b not in ("full", "generic", "square", "standard")]
         if r.get("control_strength"):
             bits.append(f"cn{r['control_strength']}e{r['control_end']}")
         if r["weight"] is not None:
@@ -516,7 +534,7 @@ def run_batch(batch: str, limit: int | None, dry: bool, only: str | None = None)
 
 # ---------------------------------------------------------------- sheet
 
-AXES = ["animal", "photo", "family", "dtype", "steps", "graph", "prompt", "neg", "crop", "describe", "aspect", "lora", "control_strength", "control_end", "weight", "weight_type", "end_at", "denoise", "seed", "multi", "combine"]
+AXES = ["animal", "photo", "family", "dtype", "steps", "graph", "prompt", "neg", "nag", "crop", "describe", "aspect", "lora", "control_strength", "control_end", "weight", "weight_type", "end_at", "denoise", "seed", "multi", "combine"]
 
 
 def sheet(batch: str) -> None:
