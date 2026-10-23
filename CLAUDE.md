@@ -233,6 +233,11 @@ the monthly check in infra.md's Recurring ops.
   autoMemoryReclaim off, the VM keeps every file it reads until it hits its
   cap (2026-10-14, infra.md). Host-side facts:
   `doc/infra.md`, Home GPU (ADR-0004 as amended 2026-10-05)
+- `scripts/gpu-rental.sh up | serve | clean <in> <out> | down | status` — a
+  DigitalOcean GPU Droplet for one dev job (Qwen-Image-Edit cleanups;
+  training later), billed per second until `down`, which needs `pass`
+  unlocked; models from `comfyui/models-rental.manifest`, never the home
+  store's. Traps and costs: `doc/infra.md`, GPU rental
 - `npm run db:dump` — gzipped `pg_dump` of the dev database to `var/dumps/`;
   run it after a full poll, because that corpus is currently the only copy
   (ADR-0017)

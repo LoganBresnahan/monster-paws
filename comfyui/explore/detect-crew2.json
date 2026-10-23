@@ -1,0 +1,32 @@
+{
+  "_": "The rest of the crew for batch 11a (2026-10-23): Beetle, Stacey and Marty, two photos each chosen by Claude from Logan's (one clear full body, one clear face), run with the ADR-0026 rules unchanged. Attributes as their listings would read, written by Claude from the photos; `subject` says which animal the listing means. Marty's colour is \"white\" for the detector, whose colour sets have no \"cream\" and count cream pixels under white; the painter's words say cream flame point.",
+  "listings": {
+    "Beetle": {
+      "species": "dog",
+      "colour": "black and tan",
+      "subject": "Beetle, the black and tan bloodhound",
+      "photos": [
+        "crew:Beetle/IMG_2931.jpg",
+        "crew:Beetle/IMG_3545.jpg"
+      ]
+    },
+    "Stacey": {
+      "species": "cat",
+      "colour": "brown tabby",
+      "subject": "Stacey, the brown tabby cat",
+      "photos": [
+        "crew:Stacey/IMG_3110.jpg",
+        "crew:Stacey/IMG_20200516_211507.jpg"
+      ]
+    },
+    "Marty": {
+      "species": "cat",
+      "colour": "white",
+      "subject": "Marty, the cream flame point cat",
+      "photos": [
+        "crew:Marty/PXL_20210107_162942931.jpg",
+        "crew:Marty/IMG_4288.JPG"
+      ]
+    }
+  }
+}

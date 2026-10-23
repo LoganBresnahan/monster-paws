@@ -815,8 +815,10 @@ inference for a donation (that is the home worker's), never a shelter photo
 on the box: Commons dogs and the crew only.
 
 - **Limit:** Droplet GPUs, 0 on the account's Tier 2; one requested
-  2026-10-22 (Logan, through the control panel's "Increase your limit").
-  *Pending.*
+  2026-10-22, **approved 2026-10-23**. On that day only the H200
+  (`gpu-h200x1-141gb`, $4.47/h, `atl1` only) could be created from the
+  control panel; the script defaults to it (`RENTAL_SIZE`, `RENTAL_REGION`
+  override).
 - **Sizes** (DO's price list, read 2026-10-22; billed per second, 60 s
   minimum): L40S 48 GB $1.57/h (the default: holds Qwen-Image-Edit and
   trains at about 4090 speed); RTX 4000 Ada 20 GB $0.76/h (trains klein
@@ -825,11 +827,32 @@ on the box: Commons dogs and the crew only.
   droplet delete` stops the meter, so every job ends in a delete, on
   failure too, and a leftover is looked for with `doctl compute droplet
   list` after each run.
-- **The job** *(planned, not built)*: create the droplet with the same
-  token (`digitalocean/api-token`), run our ComfyUI image built with
-  `TORCH=cu128` for cleanups or ai-toolkit (MIT, pinned by commit) for
-  training, bring the results home to `var/`, delete the droplet. The
-  models it pulls are the `models.manifest` lines, hash-checked as at home.
+- **The job:** `scripts/gpu-rental.sh up | clean <in> <out> | down |
+  status`. `up` creates the droplet from DigitalOcean's "NVIDIA AI/ML Ready"
+  image (`gpu-h100x1-base`) with the `monsterpaws-wsl` key, tagged
+  `monsterpaws-rental`, ships `comfyui/` (tracked and untracked files),
+  builds our ComfyUI image there with `TORCH=cu130` — PyTorch publishes
+  torch 2.14.1, the Arc's pin, for CUDA 13.0 and not 12.8 (index read
+  2026-10-23) — runs the smoke, and serves ComfyUI on the droplet's
+  localhost only. A failed `up` deletes the droplet. `clean` runs
+  `comfyui/workflows/qwen-edit-v1.api.json` with the one fixed instruction
+  over a folder of PNGs and brings the results and the instruction home.
+  `down` deletes every tagged droplet and fails loudly if one is left.
+  Training (ai-toolkit, MIT, pinned by commit) is not scripted yet.
+- **Traps found on the first run (2026-10-23, an hour, about $4.50):**
+  the droplet's Docker builds with the legacy builder, which cannot
+  resolve the Dockerfile's `comfy:comfy` chown — `serve` installs
+  `docker-buildx` and builds with BuildKit, as home does; Triton compiles
+  its CUDA launcher at first use and needs `gcc` and the Python headers,
+  which the Arc build never did — a rental-only layer adds them, leaving
+  the home image's pins alone; and a long ssh session that drops leaves
+  the caller waiting on a dead job, so `serve` and `clean` run detached on
+  the box (`comfyui/rental/`) and are polled. `pass` locks itself after a
+  few minutes: unlock it before `down`, which needs the token.
+- **Models:** `comfyui/models-rental.manifest`, selected by
+  `MODELS_MANIFEST`, never `models.manifest`: the home store fetches every
+  line of that one at each start, and Qwen-Image-Edit's ~58 GB only ever
+  runs on a rented card. Same format, same hash check, same licence record.
 
 ## Deployment architecture
 

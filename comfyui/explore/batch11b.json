@@ -1,0 +1,64 @@
+{
+  "_": "Batch 11b — Beetle's and Marty's likeness by their words alone (2026-10-23): batch 11a painted Beetle as a black-and-tan coonhound and Marty without his flame points. Everything as batch 11a, same four seeds, so 11a's paintings are the 'listing' column; one axis, the description: the colour reworded to what the photos show (`recolour`, as a reviewed words table would render the listing's colour value), and the colour left out (`nocolour`). Logan: \"either change the color wording or leave it out.\"",
+  "animals": {
+    "Beetle": {
+      "kind": "dog",
+      "describe": "female black and tan bloodhound",
+      "two": [
+        "IMG_2931.jpg",
+        "IMG_3545.jpg"
+      ],
+      "recolour": "female tan bloodhound with a black saddle",
+      "nocolour": "female bloodhound"
+    },
+    "Marty": {
+      "kind": "cat",
+      "describe": "male cream flame point cat",
+      "two": [
+        "PXL_20210107_162942931.jpg",
+        "IMG_4288.JPG"
+      ],
+      "recolour": "male flame point Siamese cat, cream with orange ears, face and tail, and blue eyes",
+      "nocolour": "male cat"
+    }
+  },
+  "photos": [
+    "two"
+  ],
+  "crops": [
+    "grownsubject"
+  ],
+  "aspect": [
+    "landscape"
+  ],
+  "describe": [
+    "recolour",
+    "nocolour"
+  ],
+  "families": [
+    "kleinbfl8"
+  ],
+  "graphs": [
+    "reference2"
+  ],
+  "prompts": [
+    "storybook_sit34",
+    "storybook_stand34"
+  ],
+  "denoise": [],
+  "weights": [],
+  "weight_types": [],
+  "end_at": [],
+  "loras": [
+    null
+  ],
+  "seeds": [
+    11,
+    222,
+    4096,
+    8128
+  ],
+  "heads": [
+    "grownhead"
+  ]
+}

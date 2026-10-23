@@ -57,9 +57,11 @@ def main() -> int:
     a = ap.parse_args()
 
     wf = json.loads(a.workflow.read_text())
-    wf["pos"]["inputs"]["text"] = a.prompt
-    if "text" in wf["neg"]["inputs"]:  # a distilled model's negative is a zeroed conditioning, not text
-        wf["neg"]["inputs"]["text"] = a.negative
+    # CLIPTextEncode calls it `text`, Qwen-Image-Edit's encoder `prompt`
+    words = "text" if "text" in wf["pos"]["inputs"] else "prompt"
+    wf["pos"]["inputs"][words] = a.prompt
+    if words in wf["neg"]["inputs"]:  # a distilled model's negative is a zeroed conditioning, not text
+        wf["neg"]["inputs"][words] = a.negative
     wf["sampler"]["inputs"]["seed"] = a.seed
     if "img" in wf:
         if not a.image:

@@ -3,6 +3,9 @@
 Status: accepted (2026-10-23). Decisions agreed with Logan 2026-10-22 and
 2026-10-23.
 
+> Self-amended 2026-10-23: production gets its database and the browse and
+> animal pages before the donate loop, so shelters see real animals (below).
+
 ## Context
 Logan was accepted on 2026-10-22 to the Meta Global AI Developer Hackathon
 (Meta with Cerebral Valley; virtual; building 2026-10-26 to 2026-11-04,
@@ -43,8 +46,9 @@ edits at $0.01 an image. Third-party readings of the API terms say outputs
 are ours and may not train a model "that competes with Meta's"; the current
 terms were not fetched directly.
 
-Where the product stands: browse and animal pages are live on
-monsterpaws.org; the donor schema is phase 1 of ADR-0027; nothing can be
+Where the product stands: browse and animal pages are built and run on
+the dev database, and monsterpaws.org is still the v0.1.0 landing page
+(corrected by the amendment below); the donor schema is phase 1 of ADR-0027; nothing can be
 donated to yet; the detector (ADR-0026, OWLv2 + SAM 2.1, local CPU) scores
 19 of 20 blind; the painter is klein on the A770 (ADR-0004 as amended
 2026-10-15); no shelter has granted anything (item 5's email is undrafted);
@@ -185,3 +189,37 @@ Discord or office hours.
   output: Muse Image leaves the LoRA step.
 - Another hackathon: this ADR is the template only when the sponsor's model
   already does real work in the pipeline.
+
+## Amendment (2026-10-23): production browse before the donate loop
+
+### Context
+The Context above said browse and animal pages were live on monsterpaws.org.
+They are not: production is the v0.1.0 landing page, `/animals` returns 404,
+and there is no production database — roadmap item 3b's re-sequencing of
+2026-10-05 held it back "until the basic loop works end to end". The
+Chicago consent ask goes out 2026-10-23 or 10-24, and a shelter that clicks
+through should find a real site with real animals on it.
+
+### Decision
+**Production gets Managed Postgres, the worker's daily RescueGroups poll and
+the browse and animal pages now, ahead of the donate loop** (Logan,
+2026-10-23: "get the production database up and running before the whole
+donation loop is finished so we can try to impress shelters"). This reverses
+3b's 2026-10-05 re-sequencing and joins §7's list of what topdog ships in
+the window. The launch runs as `doc/oplog/0001-production-launch.md` revised
+to browse-first: the database, the pages, the poll, error reporting and the
+heartbeat; the donate loop, the home worker and keepsake art follow in
+their own entries. Nothing on the pages offers a donation until §5's loop
+ships.
+
+### Consequences
+- Managed Postgres (about $15 a month) starts billing now rather than at
+  the MVP launch, and the dev corpus stops being the only copy (ADR-0017).
+- 3b's prerequisites still hold for this run as 0001 lists them (CI green
+  with sourcemaps, e2e on the commit, the droplet back on topdog); the UI
+  audit's open launch-blocking findings in `doc/issues.md` are fixed or
+  explicitly deferred by Logan in the entry.
+- RescueGroups listings render under `aggregator-display` (ADR-0006 as
+  amended 2026-08-25): hotlinked photos, the Tracker on every detail page,
+  purgeable — the same terms the dev pages already follow.
+

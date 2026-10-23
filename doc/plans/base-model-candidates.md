@@ -918,6 +918,129 @@ groin crops (`var/explore/batch10a/groin/`, `labels.json` beside them),
 So source 1 is out as the generator: slower per clean painting than
 filtering the distilled one, and off our look.
 
+## Batch 11a — the whole crew as production paints it, first read (Claude, 2026-10-23; Logan's picks decide)
+
+Logan: "a fresh production-like run for the entire crew. No experimental
+variables this time." `comfyui/explore/batch11a.json`: klein-v1 exactly
+(the detector's grown crops of two photos and the grown head, the listing's
+words, the landscape canvas), sitting and standing three-quarter, four
+fresh seeds — two sets of four per animal; 40 paintings at 16.5 s, the pool
+flat at 1.6 GB, no guard kill. Beetle, Stacey and Marty are new: two photos
+each chosen by Claude, boxes from a detector pass with the rules unchanged
+(`comfyui/explore/detect-crew2.json`, `var/explore/batch11a/detect/`).
+Grid: `var/explore/batch11a/grid-animal-x-prompt-seed.jpg`.
+
+- **Plum, Ducky, Stacey hold**: the grey puppy, the tan pit with the white
+  chest, the brown tabby's stripes, in every seed.
+- **Beetle is painted as a black-and-tan coonhound**: a black saddle over
+  most of the body and short ears, where Beetle is mostly red-tan with
+  long, low ears and a loose face. The words "black and tan bloodhound"
+  likely pull the coat darker than the photos; her photos show the colour
+  that matters. A finding for the words table (`doc/plans/listing-words.md`),
+  not something to fix in this run.
+- **Marty loses his points**: a cream cat, green eyes, faint orange
+  striping, where Marty has a flame point's orange face and ears and blue
+  eyes. "Flame point" did not carry through. Same finding.
+- **Stacey's desk photo was cut at her shoulders** by the detector (a
+  partial box, the known limit in `doc/plans/subject-detection.md`); her
+  paintings came out right anyway from the close-up.
+- **Signatures**: none past `signature.py`'s threshold; the most ink is
+  Marty 034 (74 px), below it.
+- **Anatomy**: not yet labelled. The dogs' undersides are what the rented
+  Qwen-Image-Edit cleanup takes next (ADR-0004 as amended 2026-10-23).
+
+Yours to overrule; your picks go to `var/explore/batch11a/picks.txt` and
+the approved ones to the cleanup.
+
+## Batches 11b and 11c — Beetle's and Marty's words; more of the rest, first read (Claude, 2026-10-23; Logan's picks decide)
+
+Logan: "for beetle and marty lets try to increase the likeness … either
+change the color wording or leave it out." `comfyui/explore/batch11b.json`:
+batch 11a's spec and seeds, Beetle and Marty only, one axis — the colour
+reworded to what the photos show (`recolour`) or left out (`nocolour`);
+11a's paintings are the `listing` row. `batch11c.json`: Plum, Ducky and
+Stacey on 11a's spec, four new seeds. 56 paintings, pool flat, no kill.
+Grids: `var/explore/batch11b/grid-words-vs-11a.jpg` (listing / recolour /
+nocolour per animal, same seed per column) and
+`var/explore/batch11c/grid-animal-x-prompt-seed.jpg`.
+
+- **Beetle: leaving the colour out is closest.** "female bloodhound" gives
+  a red-tan dog with the black over her back and long ears, as in her
+  photos; "black and tan" (11a) made her mostly black.
+- **"Black saddle" is painted as tack**: all eight `recolour` Beetles wear
+  a harness or a riding saddle. A coat word that is also an object is a
+  trap for the words table.
+- **Marty: the reworded colour is closest.** "cream with orange ears,
+  face and tail, and blue eyes" gives the blue eyes and the warm ears and
+  tail tip; with the colour left out he goes back to a cream tabby with
+  green eyes, as in 11a. His photos alone do not carry the points.
+- **So no single rule**: a colour word the photos show better is better
+  left out (Beetle), and a pattern the photos underplay needs spelling out
+  (Marty). Finding for `doc/plans/listing-words.md`: a listing's colour
+  value is rendered per value by the reviewed table — "Black and Tan" on a
+  hound may be better left to the photos, "Flame Point" expanded into body,
+  points and eyes, and no coat word that names an object.
+- **11c holds** as 11a did: the grey puppy, the tan pit, the tabby.
+- **Signatures past the threshold**: 11b Marty 026 (`recolour`, sitting,
+  seed 4096) and 11c Plum 005 (standing, seed 404).
+
+Yours to overrule.
+
+### Batches 11a–11c — Logan's picks (2026-10-23)
+
+Two per animal, saved as `picks.txt` in each batch: Plum 11a-005 (standing,
+seed 222) and 11c-001 (sitting, 404); Ducky 11a-011 (sitting, 8128) and
+11a-012 (standing, 11); Beetle 11b-009 (sitting, 222) and 11b-012
+(standing, 11), both `nocolour`; Stacey 11a-029 (standing, 222) and 11c-019
+(sitting, 6174); Marty 11b-019 (sitting, 8128) and 11b-020 (standing, 11),
+both `recolour`. Logan: "the beetle and marty images did much better …
+some of the beetle photos literally put a black saddle on her like a
+horse." All six dogs show anatomy and go to the rented Qwen-Image-Edit
+cleanup (ADR-0004 as amended 2026-10-23); the cats show none and go to
+the home section as painted.
+
+## The Qwen-Image-Edit cleanup, first run (Claude, 2026-10-23; Logan judges)
+
+The first rented run (`scripts/gpu-rental.sh`, an H200, about an hour,
+about $4.50; `doc/infra.md`, GPU rental): `qwen-edit-v1` in bf16, 40 steps,
+seed 0, about 34 s an image, over the six picked crew dogs (batches
+11a–11c) and batch 9b's 24 production-prompt paintings. Results in
+`var/rental/` with before/after sheets beside them.
+
+- **The anatomy comes out** on almost all of them: the sheath, testicles
+  and pink underside become belly fur. First wording: 5 of 6 crew clean
+  (Beetle standing kept a bump); stricter wording: 6 of 6.
+- **But Qwen repaints the whole painting**: the loose watercolour
+  brushwork flattens into smooth airbrushed shading, coats go darker and
+  more even, the paper wash pales — on every one of the 30. The stricter
+  wording ("change nothing else … the loose watercolor brushwork, the paper
+  texture …") keeps the background wash; the coat is still restyled.
+- **So a cleaned painting is never used whole.** Pasting the change back
+  automatically (the largest region of difference) picked the wrong region
+  on 4 of 6, because the restyling is larger than the removal. Pasting
+  back only inside a groin box placed by eye
+  (`var/rental/crew-dogs-boxes.json`), colour-matched to the fur around it
+  and feathered, keeps the original painting everywhere else:
+  `var/rental/crew-dogs-pasteback/`, zoomed in `crew-dogs-pasteback-zoom.jpg`.
+  The patch is smoother than the brushwork around it; Ducky standing shows
+  a faint seam where Qwen moved the leg's outline.
+- **For the LoRA's set this changes the plan**: training pairs must be the
+  pasted-back paintings, not Qwen's output, or the LoRA learns the
+  airbrush; and the box has to come from somewhere other than an eye per
+  painting at 100 — the groin box `marks.py` placed in batch 9b (removed
+  2026-10-15, its findings above) is the candidate.
+
+### The cleanup — Logan's read (2026-10-23)
+
+None approved: "this isn't going to work. the blur looks way too unatural
+mixed with the art style." And on the set: a LoRA trained on paintings
+that are clean only because the pose hides the groin learns the pose, not
+a clean standing dog — so filtering and lying-down poses can serve the
+crew, never the training set. Next, Logan's choice: **NAG** (Normalized
+Attention Guidance) on klein-v1, so the distilled painter reads a negative
+at all; then **klein Base repainting the groin box** with the negative,
+after LaMa has taken the shape out, so the fill is klein's own brushwork.
+
 ## Avenues (Logan, 2026-10-11)
 
 "Just because we find something that works doesn't mean I don't want to

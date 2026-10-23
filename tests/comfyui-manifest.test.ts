@@ -19,10 +19,15 @@ function checkWith(manifest: string): { status: number | null; out: string } {
 }
 
 describe("comfyui/models.manifest (ADR-0004 decision 11)", () => {
-  it("the committed manifest parses and every entry carries a licence and a date", () => {
-    const out = execFileSync("python3", ["-I", fetcher, "check"], { encoding: "utf8" });
+  // The rental's manifest is a licence record too, kept apart only so the home store never fetches it (infra.md, GPU rental).
+  it.each(["models.manifest", "models-rental.manifest"])("%s parses and every entry carries a licence and a date", (name) => {
+    const manifest = path.join(repo, "comfyui", name);
+    const out = execFileSync("python3", ["-I", fetcher, "check"], {
+      encoding: "utf8",
+      env: { ...process.env, MODELS_MANIFEST: manifest },
+    });
     expect(out).toMatch(/^ok: \d+ entries/);
-    const lines = readFileSync(path.join(repo, "comfyui", "models.manifest"), "utf8")
+    const lines = readFileSync(manifest, "utf8")
       .split("\n")
       .filter((l) => l.trim() && !l.trim().startsWith("#"));
     for (const line of lines) {

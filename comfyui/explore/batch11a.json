@@ -1,0 +1,24 @@
+{
+  "_": "Batch 11a — the whole crew as production paints it (2026-10-23): Logan asked for a fresh production-like run, no experimental variables. klein-v1 exactly (BFL's fp8 klein, reference2, the grown subject of two photos and the grown head from the detector, ADR-0026), the listing's words (sex, colour, breed; an age word only for a baby, as every batch since 4a), landscape canvas, three-quarter sitting and standing (ADR-0004 as amended 2026-10-15; none of the five is three-legged), four fresh seeds — two sets of four per animal. Beetle, Stacey and Marty are new: their photos chosen by Claude, their boxes from comfyui/explore/detect-crew2.json; Plum's and Ducky's as batch 9c. comfyui/signature.py runs after, as production does. Sex and age from Logan: Beetle female 7, Stacey female 14, Marty male 14. Never RescueGroups photos (ADR-0006 as amended 2026-08-25 §2).",
+  "animals": {
+    "Plum": {"kind": "dog", "describe": "male grey cane corso puppy", "two": ["PXL_20250423_185424061.PORTRAIT.jpg", "downloadfile.jpg"]},
+    "Ducky": {"kind": "dog", "describe": "female tan pit bull mix", "two": ["PXL_20241229_195311064.RAW-01.COVER.jpg", "PXL_20250621_160612271.PORTRAIT.jpg"]},
+    "Beetle": {"kind": "dog", "describe": "female black and tan bloodhound", "two": ["IMG_2931.jpg", "IMG_3545.jpg"]},
+    "Stacey": {"kind": "cat", "describe": "female brown tabby cat", "two": ["IMG_3110.jpg", "IMG_20200516_211507.jpg"]},
+    "Marty": {"kind": "cat", "describe": "male cream flame point cat", "two": ["PXL_20210107_162942931.jpg", "IMG_4288.JPG"]}
+  },
+  "photos": ["two"],
+  "crops": ["grownsubject"],
+  "aspect": ["landscape"],
+  "describe": ["listing"],
+  "families": ["kleinbfl8"],
+  "graphs": ["reference2"],
+  "prompts": ["storybook_sit34", "storybook_stand34"],
+  "denoise": [],
+  "weights": [],
+  "weight_types": [],
+  "end_at": [],
+  "loras": [null],
+  "seeds": [11, 222, 4096, 8128],
+  "heads": ["grownhead"]
+}

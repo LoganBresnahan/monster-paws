@@ -14,6 +14,8 @@
 > male anatomy on a female. Self-amended 2026-10-22: the anatomy LoRA —
 > a cleaned set, an edit LoRA on klein Base 4B, trained on a per-job
 > DigitalOcean GPU.
+> Self-amended 2026-10-23: the crew's cleaned paintings may appear on the
+> home section (below).
 
 ## Context
 The collector loop needs card art that is (a) unmistakably one set — the
@@ -718,3 +720,30 @@ painting against 16.5 s; and the look drifts toward an anatomical study.
   against klein-v1 before more are made.
 - DigitalOcean's GPU price, limit or availability blocks a run: RunPod
   becomes the venue by amendment.
+
+## Amendment (2026-10-23): the crew's cleaned paintings on the home section
+
+The 2026-10-22 amendment confines Qwen-Image-Edit's cleanups to the LoRA's
+training set. Logan, 2026-10-23: the crew's art goes on the site now, for
+the Chicago shelters reading the consent email, so it cannot wait for the
+LoRA. **A crew painting cleaned by Qwen-Image-Edit and approved by Logan,
+one by one, may appear on the home section**, captioned as our own pets'
+portraits. It is never a donor's card, and nothing in the donation path
+repairs a painting after it is painted (decision 4 of 2026-10-15 holds).
+When the LoRA lands, the crew is repainted by the production chain and
+these are replaced. If the cleanup smears or regrows anatomy as LaMa and
+klein did, the home section shows the photos alone.
+
+**Outcome, the same day: none approved.** The first rented run
+(`doc/plans/base-model-candidates.md`, "The Qwen-Image-Edit cleanup, first
+run") removed the anatomy but repainted every painting's brushwork into
+smooth airbrush; pasted back into a groin box only, the patch still read as
+blur against the watercolour (Logan: "the blur looks way too unnatural
+mixed with the art style"). Qwen-Image-Edit stays out of the home section,
+and its output is not a training pair as it stands. Next, in order:
+Normalized Attention Guidance on klein-v1, so the painter itself reads a
+negative; then klein Base repainting a LaMa'd groin box with the negative
+(the plan records both). The rental builds with `TORCH=cu130`, not
+decision 3's `cu128`: PyTorch publishes torch 2.14.1 for CUDA 13.0 only
+(`doc/infra.md`, GPU rental).
+

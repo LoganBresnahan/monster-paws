@@ -1,5 +1,5 @@
 {
-  "_": "Subject and head boxes per crew photo, and per Commons test photo (`_src`, its ref in comfyui/explore/commons-photos.tsv; run 4 of its set, 2026-10-12 — set 1 from var/explore/detect-v4, the holdout's tripod dog from var/explore/detect-holdout-v4, the tripods set from var/explore/detect-tripods on 2026-10-15 with the rules unchanged; a head the detector did not find is left out) as the detector chose them (ADR-0026), fractions [x0, y0, x1, y1] of the upright photo like boxes.json: comfyui/detect.py run 4 (OWLv2 alone), 2026-10-12, var/explore/detect-v4/results.jsonl. `_margin` is the lead over the runner-up, null when the subject was the only candidate. `grownsubject` is `detsubject` grown by its own outline plus a margin only where it grew, and `grownhead` is `dethead` grown by the same outline sideways and a little upward, never down (comfyui/crops.py `grown.json`, 2026-10-14; doc/plans/subject-detection.md). explore.py prep cuts these as `detsubject`, `grownsubject`, `dethead` and `grownhead` beside the hand-drawn `subject` and `head`, so a batch can compare the two.",
+  "_": "Subject and head boxes per crew photo, and per Commons test photo (`_src`, its ref in comfyui/explore/commons-photos.tsv; run 4 of its set, 2026-10-12 — set 1 from var/explore/detect-v4, the holdout's tripod dog from var/explore/detect-holdout-v4, the tripods set from var/explore/detect-tripods on 2026-10-15 with the rules unchanged; a head the detector did not find is left out) as the detector chose them (ADR-0026), fractions [x0, y0, x1, y1] of the upright photo like boxes.json: comfyui/detect.py run 4 (OWLv2 alone), 2026-10-12, var/explore/detect-v4/results.jsonl. `_margin` is the lead over the runner-up, null when the subject was the only candidate. `grownsubject` is `detsubject` grown by its own outline plus a margin only where it grew, and `grownhead` is `dethead` grown by the same outline sideways and a little upward, never down (comfyui/crops.py `grown.json`, 2026-10-14; doc/plans/subject-detection.md). explore.py prep cuts these as `detsubject`, `grownsubject`, `dethead` and `grownhead` beside the hand-drawn `subject` and `head`, so a batch can compare the two. Beetle, Stacey and Marty from var/explore/batch11a/detect on 2026-10-23 (comfyui/explore/detect-crew2.json), the rules unchanged.",
   "Plum/PXL_20250410_144425752": {
     "detsubject": [
       0.0,
@@ -830,6 +830,162 @@
       0.1007,
       0.8954,
       0.453
+    ]
+  },
+  "Beetle/IMG_2931": {
+    "detsubject": [
+      0.377,
+      0.2888,
+      0.9305,
+      1.0
+    ],
+    "grownsubject": [
+      0.3767,
+      0.2863,
+      0.93,
+      1.0
+    ],
+    "dethead": [
+      0.3764,
+      0.2875,
+      0.6007,
+      0.4975
+    ],
+    "grownhead": [
+      0.3764,
+      0.2863,
+      0.6007,
+      0.4975
+    ]
+  },
+  "Beetle/IMG_3545": {
+    "detsubject": [
+      0.0,
+      0.2675,
+      0.9945,
+      0.8929
+    ],
+    "grownsubject": [
+      0.0,
+      0.2669,
+      1.0,
+      0.8925
+    ],
+    "dethead": [
+      0.0115,
+      0.4347,
+      0.9844,
+      0.7844
+    ],
+    "grownhead": [
+      0.0115,
+      0.3713,
+      1.0,
+      0.7844
+    ]
+  },
+  "Stacey/IMG_3110": {
+    "detsubject": [
+      0.5174,
+      0.3761,
+      0.7619,
+      0.6853
+    ],
+    "grownsubject": [
+      0.5169,
+      0.3758,
+      0.7625,
+      0.6858
+    ],
+    "dethead": [
+      0.64,
+      0.3905,
+      0.7613,
+      0.5563
+    ],
+    "grownhead": [
+      0.64,
+      0.3784,
+      0.7625,
+      0.5563
+    ]
+  },
+  "Stacey/IMG_20200516_211507": {
+    "detsubject": [
+      0.0983,
+      0.0164,
+      0.9013,
+      0.6154
+    ],
+    "grownsubject": [
+      0.0975,
+      0.0163,
+      0.9008,
+      0.615
+    ],
+    "dethead": [
+      0.1538,
+      0.0351,
+      0.7196,
+      0.4693
+    ],
+    "grownhead": [
+      0.1084,
+      0.0163,
+      0.775,
+      0.4693
+    ]
+  },
+  "Marty/PXL_20210107_162942931": {
+    "detsubject": [
+      0.1998,
+      0.3154,
+      0.7268,
+      0.5081
+    ],
+    "grownsubject": [
+      0.1983,
+      0.315,
+      0.7908,
+      0.5331
+    ],
+    "dethead": [
+      0.2007,
+      0.3154,
+      0.3247,
+      0.4027
+    ],
+    "grownhead": [
+      0.1983,
+      0.3154,
+      0.3247,
+      0.4027
+    ]
+  },
+  "Marty/IMG_4288": {
+    "detsubject": [
+      0.3515,
+      0.0225,
+      0.9954,
+      0.9654
+    ],
+    "grownsubject": [
+      0.3475,
+      0.0225,
+      1.0,
+      0.965
+    ],
+    "dethead": [
+      0.3841,
+      0.024,
+      0.8218,
+      0.537
+    ],
+    "grownhead": [
+      0.3475,
+      0.024,
+      1.0,
+      0.537
     ]
   }
 }

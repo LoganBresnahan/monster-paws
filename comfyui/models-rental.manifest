@@ -1,0 +1,11 @@
+# The models the GPU rental loads, and nothing else (doc/infra.md, GPU rental;
+# ADR-0004 as amended 2026-10-22). Same format and rules as models.manifest —
+# this line IS the licence record, a model with no line never runs — but kept
+# apart because the home store fetches every line of models.manifest at each
+# start, and these weights (~58 GB) only ever run on a rented CUDA card.
+#
+# Qwen-Image-Edit 2511 (Apache-2.0, Qwen's model card), Comfy-Org's ComfyUI repackage in bf16: the cleanup editor for the anatomy LoRA's set and the crew's home-section paintings.
+diffusion_models/qwen_image_edit_2511_bf16.safetensors  hf:Comfy-Org/Qwen-Image-Edit/split_files/diffusion_models/qwen_image_edit_2511_bf16.safetensors  ae42d927b5fac4f278b9a894554c727e619727a63622976f2d95625be4bce08c  Apache-2.0  2026-10-23
+# Qwen2.5-VL 7B text encoder (Apache-2.0) in bf16, and the Qwen-Image VAE (Apache-2.0), from Comfy-Org's Qwen-Image repackage.
+text_encoders/qwen_2.5_vl_7b.safetensors  hf:Comfy-Org/Qwen-Image_ComfyUI/split_files/text_encoders/qwen_2.5_vl_7b.safetensors  cfafd739459bc86257397259f612a9aee88e5b98e85b5c0d0d1717e898b3463a  Apache-2.0  2026-10-23
+vae/qwen_image_vae.safetensors  hf:Comfy-Org/Qwen-Image_ComfyUI/split_files/vae/qwen_image_vae.safetensors  a70580f0213e67967ee9c95f05bb400e8fb08307e017a924bf3441223e023d1f  Apache-2.0  2026-10-23

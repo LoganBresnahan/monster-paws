@@ -16,7 +16,8 @@ import urllib.request
 from dataclasses import dataclass
 from pathlib import Path
 
-MANIFEST = Path(__file__).with_name("models.manifest")
+# The GPU rental points this at models-rental.manifest, so the home store never downloads its weights (infra.md, GPU rental).
+MANIFEST = Path(os.environ.get("MODELS_MANIFEST") or Path(__file__).with_name("models.manifest"))
 DEFAULT_STORE = Path("/home/comfy/ComfyUI/models")
 CHUNK = 8 * 2**20
 

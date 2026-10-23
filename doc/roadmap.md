@@ -18,10 +18,10 @@ slice or change build order.
 | --- | --- | --- | --- |
 | **Meta hackathon** | ADR-0028 | Cut the `meta` branch once ADR-0028 commits; its ten-day plan at `doc/plans/meta-hackathon.md` on the branch. Window 2026-10-26 → 2026-11-04 21:00 ET, judging to 11-08, finals 11-09. Base: SAM 3.1 as a `sam3` pipeline beside owlv2, klein paints, the crew, on a demo stack under our domain. Stretch (decision point **2026-10-30**): a Chicago shelter's grant → ADR-0027's account-less donate loop on topdog takes real donations. Read the Official Rules for a pre-existing-code clause the day they publish | The Official Rules (before 10-26); the API key and credits; a shelter's yes |
 | **Accounts and donating** | 4 (ADR-0027) | Pulled forward by ADR-0028: the account-less donate loop first — `donation-intent-donate-link`, `everyorg-webhook-endpoint`, `thank-you-and-claim` (phases 3–5) on topdog, with the production Every.org webhook and the hooks hostname's DNS; `resend-transactional-email` for the root site's email capture ("tell me when sponsorship opens", a line for shelters); `session-dal` and passkeys after 11-04 (phase 1 done 2026-10-22, `drizzle/0011`) | Nothing. The staging webhook is made (2026-10-22); the partners@every.org email is shelved (Logan, 2026-10-22) — signing, retries and lookup are learned against staging in phase 4, where the dashboard also offers an API key and secret |
-| **The anatomy LoRA** | 9, pulled forward (ADR-0004 as amended 2026-10-22) | The rental job (`doc/infra.md`, GPU rental), then the Qwen-Image-Edit cleanup test on batch 9b's 22 paintings, Logan judging | Nothing: DigitalOcean approved GPU droplets 2026-10-23; collecting ~60–100 Commons dogs can start now |
+| **The anatomy LoRA** | 9, pulled forward (ADR-0004 as amended 2026-10-22) | The Qwen-Image-Edit cleanup ran 2026-10-23 (`scripts/gpu-rental.sh`) and is rejected: it restyles the brushwork. Next: NAG on klein-v1 (negatives on the distilled painter), then klein Base repainting a LaMa'd groin box (`doc/plans/base-model-candidates.md`) | Nothing: both run on the A770 |
 | **Shelter consent** | 5 | ADR-0028's happy path: draft the ask today and send it to every Chicago-area shelter — photos the shelter sends us directly, with permission to display and paint them (display + digify, first-party tier, ADR-0006 decision 6), each yes recorded in the registry; the lawyer's read of the formal three-grant letter follows the first yes | Shelters' replies; decision point 2026-10-30 |
-| **Meet the crew** | 3c, the home section | The crew's real photos on the site today (ADR-0028 decision 7: a shelter reading the consent email sees a real product), GPS stripped, under `public/brand/crew/`, labelled the founders' pets; each pet's keepsake beside it later | The paintings wait on the anatomy LoRA: the crew's carry genitals until it lands |
-| **Launch** | 3b | The UI audit's next round | The Playwright MCP set up in monsterpaws-dev (CLAUDE.md, Visual review); then items 3c, 4 and 5 |
+| **Meet the crew** | 3c, the home section | The crew's real photos on the site today (ADR-0028 decision 7: a shelter reading the consent email sees a real product), GPS stripped, under `public/brand/crew/`, labelled the founders' pets; each pet's keepsake beside it later | The paintings: Logan's picks from batches 11a–11c (the whole crew; Beetle with no colour words, Marty with his points spelled out); the cats go up as painted, the dogs wait on the anatomy track — the Qwen cleanup was rejected 2026-10-23 (ADR-0004 as amended 2026-10-23) |
+| **Launch** | 3b | Browse-first production launch (ADR-0028 as amended 2026-10-23): revise `doc/oplog/0001-production-launch.md` to the database, pages, poll, error reporting and heartbeat, then run it; the donate loop, home worker and art follow in their own entries | Its prerequisites: CI green with sourcemaps, e2e on the commit, the droplet back on topdog, launch-blocking audit findings fixed or deferred |
 | **Small, any time** | 4, 2 | The SDXL strip (item 4 carry-in, then `comfy:build` and `comfy:smoke`); "Recently viewed" (ADR-0025); ingest phase 9 health gates (item 2's other phases wait on item 5's fixtures) | Nothing |
 | **Home GPU watch** | — | `/gpu-health` after 2026-10-27: a week clean since the dummy plug closes the flicker and crash entries in `doc/issues.md` | Time |
 
@@ -567,7 +567,10 @@ slice or change build order.
       shelter warms up first.
 - [ ] **3b. MVP launch.** Item 3's pages, the donate flow (item 4) and
       keepsake art go live together, with the worker's daily poll and error
-      reporting, on Managed Postgres. **Re-sequenced 2026-10-05 (Logan): no
+      reporting, on Managed Postgres. **Browse goes first, 2026-10-23 (ADR-0028
+      as amended): the database and pages launch ahead of the donate loop,
+      so Chicago shelters see real animals; the paragraph below is the
+      superseded order.** **Re-sequenced 2026-10-05 (Logan): no
       production database until the basic loop works end to end — animal
       list, donations, AI art.** Until then monsterpaws.org stays the v0.1.0
       landing page and the dev corpus plus `db:dump` is the copy of record
