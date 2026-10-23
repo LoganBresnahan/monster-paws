@@ -1075,6 +1075,97 @@ repainting only a LaMa'd groin box reads the surrounding painting and the
 words, and nothing else, so its negative has the leverage the references
 take away here.
 
+## Batch 12c — klein Base repaints the groin with no references, first read (Claude, 2026-10-23; Logan's eye decides)
+
+Idea 3, as batch 12b's read pointed it: `comfyui/groinmask.py` fills each
+crew dog's groin ellipse (`var/rental/crew-dogs-boxes.json`) with LaMa,
+then klein Base (CFG 4, 28 steps) repaints only the ellipse from the
+LaMa'd painting — the painting's own production words, the anatomy words
+as a real negative, no reference photos — and the repaint is composited
+onto the original through a feathered mask (`explore.py`'s `groin` pass).
+Two strengths, one seed; about 50 s a repaint. Zoomed:
+`var/explore/batch12c/zoom.jpg` (original, LaMa, d0.6, d0.85).
+
+- **The brushwork matches.** Unlike Qwen's airbrush, the fill is
+  watercolour in klein's own hand, and the feathered edge does not show.
+- **Clean and natural**: Plum standing at 0.85, Plum sitting at 0.6 and
+  0.85, Beetle standing at 0.85, Beetle sitting at 0.6 (a little muddy).
+- **Regrown**: both Duckys at both strengths (a pink mound and a sheath
+  where LaMa had left smooth fur), Beetle sitting at 0.85 (testicles, and
+  a stray paw), Beetle standing at 0.6, Plum standing at 0.6. The negative
+  helps without references, but klein's prior still finds the groin from
+  the surrounding body — female words or not.
+- **So it is a lottery with good odds, not a fix**: about half the repaints
+  are clean, and a clean one looks painted, not repaired. Several seeds per
+  painting and a pick by eye would give every crew dog one; for the LoRA's
+  set the same lottery needs a check that does not need an eye per image.
+
+Logan's read (2026-10-23): one acceptable, Beetle standing at 0.85
+(12c-011, `picks.txt`); every other repaint either regrew or reads wrong.
+
+## Batch 12d — the repaint reads the LaMa'd painting as a reference, first read (Claude, 2026-10-23; Logan's eye decides)
+
+Batch 12c plus one change: the LaMa'd painting is chained onto the words as
+a reference latent (`explore.py`'s `groin` pass, source `lamaref`), so
+klein Base reads the smooth fill un-noised at every step instead of only
+starting from it. 12c's 0.85 and seed 1, full strength 1.0, a second seed:
+24 repaints, about 84 s each. Zoomed beside 12c:
+`var/explore/batch12d/zoom.jpg`.
+
+- **No regrowth: 0 of 24**, against 11 of 12 in 12c. The reference that
+  carried the anatomy past every negative in 12a–12b now carries its
+  absence. Ducky comes out clean for the first time, both poses, all four.
+- **Plum standing and sitting and Ducky standing read as painted**:
+  watercolour belly in klein's own hand, no seam.
+- **Ducky sitting**: clean, with a small fold drawn near the hind foot and
+  the white chest reshaped inside the ellipse.
+- **Beetle copies LaMa's smudge**: a dark grey-green blur sitting, a pale
+  patch standing — where LaMa's fill is poor (black, tan and shadow
+  together), the reference passes it on, at 1.0 as at 0.85.
+- **So the repaint is now as good as the fill under it.** The next lever
+  is the fill — a better LaMa input (a tighter mask from keypoints, idea B,
+  leaves less to fill), or a fill from the dog's own coat beside the hole —
+  not the painter.
+
+Logan's read (2026-10-23): none of the 24 passes. Next, his choice: idea B,
+a mask from animal keypoints, so less is filled and repainted.
+
+## Batch 12e — animal keypoints for the groin mask, first read (Claude, 2026-10-23)
+
+Idea B. Animal keypoint models, by licence: DeepLabCut's
+SuperAnimal-Quadruped (39 points, a "belly bottom" among them) is academic
+and non-commercial only, so out; **RTMPose-m Animal** (OpenMMLab, Apache-2.0,
+trained on AP-10K, CC-BY-4.0) gives 17 points — eyes, nose, neck, tail root,
+each leg's shoulder or hip, elbow or knee, paw — and runs on the CPU from
+its LiteRT export (`models.manifest`, `detect/rtmpose-animal-ap10k/`; run
+outside the image with `ai-edge-litert` until it earns a place).
+Hugging Face's ViTPose+ port kept only the human head, so it cannot name a
+dog's joints. Overlays: `var/explore/batch12e/keypoints.jpg`.
+
+- **Standing, it reads the watercolour dogs well**: every joint where it
+  belongs on Plum, Ducky and Beetle, the hips and knees around the sheath.
+- **Sitting front-on, it is confused**: the hips spread, and the tail root
+  lands between the hind legs — on the groin, for the wrong reason.
+- **The hull of hips and knees is the hind thigh, not the groin**
+  (`kpmask-vs-ellipse.jpg`): standing three-quarter, the sheath sits on the
+  belly line just in front of the hind leg, so the hull masked the leg and
+  missed most of it; sitting, the hull is two to three times the ellipse.
+  The geometry the keypoints support is the point where the belly
+  underline (SAM's outline) meets the front of the hind thigh, and between
+  the knees below the hips for a front view — not built.
+
+Logan (2026-10-23), on why none of 12d passes: "all of the groins are
+blurry; the real problem is that the lines which define the animal are not
+put back." LaMa erases the painter's ink with the anatomy, and neither
+repaint draws it back — colour with no line reads as blur. Next: find the
+ink around the hole, continue each line that runs into it across to where
+it leaves (lines that begin and end inside are the anatomy and stay
+erased), redraw the belly's silhouette edge from SAM's outline, draw them
+onto the LaMa fill in the painter's own ink, then repaint with the
+reference — the tripod chain of batches 8e–8h (`legmask.py`'s outline and
+band) aimed at the groin. Keypoint masks wait: for these six the hand
+ellipses are as tight, and the mask is not what failed.
+
 ## Avenues (Logan, 2026-10-11)
 
 "Just because we find something that works doesn't mean I don't want to

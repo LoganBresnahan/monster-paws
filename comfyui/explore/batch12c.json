@@ -1,0 +1,111 @@
+{
+  "_": "Batch 12c — klein Base repaints the groin, with no references (2026-10-23): idea 3 after the Qwen cleanup (ADR-0004 as amended 2026-10-23) and NAG (batches 12a–12b) failed. Logan's six picked crew dogs; per painting the groin ellipse placed by eye (var/rental/crew-dogs-boxes.json), LaMa fills it first (comfyui/groinmask.py), then klein Base (real CFG 4, 28 steps) repaints only the ellipse from the LaMa'd painting at two strengths, reading the painting's own production words and the anatomy words as its negative — no reference photos, which carried the anatomy past every negative in 12a–12b. The repaint is composited onto the original through a feathered mask, so nothing outside the ellipse changes.",
+  "animals": {
+    "Plum": {
+      "kind": "dog",
+      "paintings": [
+        {
+          "file": "explore/batch11a/005-Plum-two-kleinbfl8-reference2-storybook_stand34-s222-grownsubject-grownhead-listing-landscape-2photos_00001_.png",
+          "groin": [
+            0.35,
+            0.55,
+            0.48,
+            0.72
+          ],
+          "prompt_text": "a gentle storybook illustration of a male grey cane corso puppy standing in three-quarter view, looking toward the viewer, soft watercolor, warm pastel palette, plain background",
+          "from": "batch11a 005"
+        },
+        {
+          "file": "explore/batch11c/001-Plum-two-kleinbfl8-reference2-storybook_sit34-s404-grownsubject-grownhead-listing-landscape-2photos_00001_.png",
+          "groin": [
+            0.4,
+            0.62,
+            0.58,
+            0.86
+          ],
+          "prompt_text": "a gentle storybook illustration of a male grey cane corso puppy sitting in three-quarter view, looking toward the viewer, soft watercolor, warm pastel palette, plain background",
+          "from": "batch11c 001"
+        }
+      ]
+    },
+    "Ducky": {
+      "kind": "dog",
+      "paintings": [
+        {
+          "file": "explore/batch11a/011-Ducky-two-kleinbfl8-reference2-storybook_sit34-s8128-grownsubject-grownhead-listing-landscape-2photos_00001_.png",
+          "groin": [
+            0.54,
+            0.68,
+            0.68,
+            0.88
+          ],
+          "prompt_text": "a gentle storybook illustration of a female tan pit bull mix sitting in three-quarter view, looking toward the viewer, soft watercolor, warm pastel palette, plain background",
+          "from": "batch11a 011"
+        },
+        {
+          "file": "explore/batch11a/012-Ducky-two-kleinbfl8-reference2-storybook_stand34-s11-grownsubject-grownhead-listing-landscape-2photos_00001_.png",
+          "groin": [
+            0.3,
+            0.44,
+            0.42,
+            0.62
+          ],
+          "prompt_text": "a gentle storybook illustration of a female tan pit bull mix standing in three-quarter view, looking toward the viewer, soft watercolor, warm pastel palette, plain background",
+          "from": "batch11a 012"
+        }
+      ]
+    },
+    "Beetle": {
+      "kind": "dog",
+      "paintings": [
+        {
+          "file": "explore/batch11b/009-Beetle-two-kleinbfl8-reference2-storybook_sit34-s222-grownsubject-grownhead-nocolour-landscape-2photos_00001_.png",
+          "groin": [
+            0.37,
+            0.66,
+            0.52,
+            0.9
+          ],
+          "prompt_text": "a gentle storybook illustration of a female bloodhound sitting in three-quarter view, looking toward the viewer, soft watercolor, warm pastel palette, plain background",
+          "from": "batch11b 009"
+        },
+        {
+          "file": "explore/batch11b/012-Beetle-two-kleinbfl8-reference2-storybook_stand34-s11-grownsubject-grownhead-nocolour-landscape-2photos_00001_.png",
+          "groin": [
+            0.49,
+            0.44,
+            0.6,
+            0.62
+          ],
+          "prompt_text": "a gentle storybook illustration of a female bloodhound standing in three-quarter view, looking toward the viewer, soft watercolor, warm pastel palette, plain background",
+          "from": "batch11b 012"
+        }
+      ]
+    }
+  },
+  "graphs": [
+    "inpaint"
+  ],
+  "families": [
+    "kleinbase"
+  ],
+  "inpaints": [
+    "own"
+  ],
+  "negative": "genitals",
+  "fills": [
+    [
+      "groin",
+      "lama",
+      0.6
+    ],
+    [
+      "groin",
+      "lama",
+      0.85
+    ]
+  ],
+  "seeds": [
+    1
+  ]
+}

@@ -262,7 +262,9 @@ def build_pass_graph(run: dict, prefix: str) -> dict:
         "clip": {"class_type": "CLIPLoader", "inputs": {"clip_name": f["clip"][0], "type": f["clip"][1]}},
         "vae": {"class_type": "VAELoader", "inputs": {"vae_name": f["vae"]}},
         "pos": {"class_type": "CLIPTextEncode", "inputs": {"clip": ["clip", 0], "text": run["prompt_text"]}},
-        "neg": {"class_type": "ConditioningZeroOut", "inputs": {"conditioning": ["pos", 0]}},
+        # klein Base runs real CFG, so its negative is words; the distilled families zero it (batch 12c)
+        "neg": {"class_type": "CLIPTextEncode", "inputs": {"clip": ["clip", 0], "text": run["negative"]}} if f["cfg"] > 1.0
+               else {"class_type": "ConditioningZeroOut", "inputs": {"conditioning": ["pos", 0]}},
         # ComfyUI reads an earlier output in place through the annotated name, so nothing is copied into input/
         "paint": {"class_type": "LoadImage", "inputs": {"image": f"{p['file']} [output]"}},
         "paint_latent": {"class_type": "VAEEncode", "inputs": {"pixels": ["paint", 0], "vae": ["vae", 0]}},
@@ -286,6 +288,20 @@ def build_pass_graph(run: dict, prefix: str) -> dict:
         else:
             g["latent"] = {"class_type": "EmptyFlux2LatentImage", "inputs": {"width": width, "height": height, "batch_size": 1}}
             latent = ["latent", 0]
+    elif run.get("mask_kind") == "groin":  # klein Base repaints a LaMa'd groin ellipse with no references (comfyui/groinmask.py, batch 12c)
+        s = Path(p["file"]).stem
+        g["work"] = {"class_type": "LoadImage", "inputs": {"image": f"groin/{s}.lama.png"}}
+        g["paint_latent"] = {"class_type": "VAEEncode", "inputs": {"pixels": ["work", 0], "vae": ["vae", 0]}}
+        g["mask"] = {"class_type": "LoadImageMask", "inputs": {"image": f"groin/{s}.mask.png", "channel": "red"}}
+        g["masked"] = {"class_type": "SetLatentNoiseMask", "inputs": {"samples": ["paint_latent", 0], "mask": ["mask", 0]}}
+        if run["source"] == "lamaref":  # the LaMa'd painting is also a reference, read un-noised at every step: the belly there is smooth (batch 12d)
+            g["refcond"] = {"class_type": "ReferenceLatent", "inputs": {"conditioning": pos, "latent": ["paint_latent", 0]}}
+            pos = ["refcond", 0]
+        # the repaint goes back onto the ORIGINAL through a feathered mask: no pixel outside the ellipse changes, not even by the VAE
+        g["soft"] = {"class_type": "LoadImageMask", "inputs": {"image": f"groin/{s}.soft.png", "channel": "red"}}
+        g["composite"] = {"class_type": "ImageCompositeMasked", "inputs": {"destination": ["paint", 0], "source": ["decode", 0], "x": 0, "y": 0, "resize_source": False, "mask": ["soft", 0]}}
+        g["save"]["inputs"]["images"] = ["composite", 0]
+        latent, denoise = ["masked", 0], run["denoise"]
     elif run.get("mask_kind") in ("seg", "band", "stump"):  # inpaint inside the widened leg mask, the band around the drawn outline, or the stump (comfyui/legmask.py)
         s = Path(p["file"]).stem
         if run["source"] in ("erased", "lama", "outlined"):
@@ -459,12 +475,14 @@ def expand_pass(spec: dict) -> list[dict]:
                 else:
                     combos = [(pr, "mask", "none", None) for pr in spec["inpaints"]]
                 for (prompt, mode, ref, fl), seed in itertools.product(combos, spec["seeds"]):
-                    runs.append({"animal": animal, "kind": info["kind"], "photo": f"p{n}", "photos": info["one"], "painting": p, "family": spec["families"][0],
-                                 "graph": graph, "prompt": prompt, "prompt_text": PROMPTS[prompt].format(kind=info["kind"], leg=p["leg"]), "seed": seed,
+                    # "own": the painting's own production words, which a repaint without references reads alone (batch 12c)
+                    text = p["prompt_text"] if prompt == "own" else PROMPTS[prompt].format(kind=info["kind"], leg=p["leg"])
+                    runs.append({"animal": animal, "kind": info["kind"], "photo": f"p{n}", "photos": info.get("one", []), "painting": p, "family": spec["families"][0],
+                                 "graph": graph, "prompt": prompt, "prompt_text": text, "seed": seed,
                                  "edit_mode": mode, "edit_ref": ref, "denoise": fl[2] if fl else spec.get("i2i_denoise") if mode == "i2i" else None,
                                  "mask_kind": fl[0] if fl else None, "source": fl[1] if fl else None,
                                  "crop": "full", "describe": "generic", "aspect": "square", "lora": None, "dtype": None, "steps": None,
-                                 "control_strength": None, "weight": None, "negative": ""})
+                                 "control_strength": None, "weight": None, "negative": NEGATIVES.get(spec.get("negative"), None) or ""})
     for i, r in enumerate(runs):
         fill_bits = [r["mask_kind"], r["source"], f"d{r['denoise']}"] if r.get("mask_kind") else [r["edit_mode"], r["edit_ref"]]
         r["id"] = f"{i:03d}-" + "-".join([r["animal"], r["photo"], r["graph"], r["prompt"], *fill_bits, f"s{r['seed']}"])
