@@ -31,13 +31,35 @@ Rules that keep the lanes disjoint:
   ADRs carry.
 - **orient never writes memory.**
 
+## 0. Standing notices — read before the commits
+
+Notices live here only while they change how a session should begin; each
+names the date it expires and the doc that owns the detail.
+
+- **Meta hackathon (ADR-0028), until 2026-11-10.** Logan is in the Meta
+  Global AI Developer Hackathon for *exposure*, once: building 2026-10-26 →
+  2026-11-04 21:00 ET, judging to 11-08, finals 11-09. Every Meta API call
+  (SAM 3.1, Muse) lives on the **`meta` branch**; topdog never calls Meta,
+  and the long-term product stays local on the A770. klein paints the demo,
+  SAM 3.1 finds the animal, the demo runs on its own stack under our domain.
+  The stretch — real donations on production — turns on a Chicago shelter's
+  grant by **2026-10-30**. Lead the bearing with: which branch this is, how
+  many days to 11-04, and whether the 10-30 decision has been made
+  (`git log --grep ADR-0028`, the track row). The ten-day plan is
+  `doc/plans/meta-hackathon.md` **on the branch** — read it when on `meta`,
+  and say when it is missing.
+
 ## 1. What shipped — read the commits
 
 ```bash
-git log --oneline -12
+git branch --show-current && git log --oneline -12
 git status --short
 gh run list --limit 5
 ```
+
+On `meta`, also `git log --oneline topdog..meta` (the branch's own work) and
+`git log --oneline meta..topdog` (topdog commits the branch has not rebased
+onto yet — a non-empty list is the first thing to fix, ADR-0028 §1).
 
 Read back only until the arc is coherent. Answer three things: last
 known-good state, what landed most recently, uncommitted WIP on the floor.
@@ -84,6 +106,7 @@ attestation pipeline → ADR-0003's rules and revisit triggers; scope change →
 
 ```
 ORIENT — Monster Paws @ <branch> <sha>
+  notice      <each standing notice in one line, with its clock: "hackathon: N days to 11-04, decision 10-30 open|made", or "none">
   shipped     <recent arc in one line>  · last good: <commit>
   wip         <uncommitted files, or "clean">
   ci          <green @ sha, or "RED since <date>: <failing step>">

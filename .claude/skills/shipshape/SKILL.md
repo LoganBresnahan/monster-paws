@@ -64,7 +64,11 @@ needs an ADR or a superseding update. Implementation detail is not a decision.
 
 **Roadmap** (`doc/roadmap.md`): shipped work checked off; the **Active
 tracks** table matches reality (each next step still next, each wait still
-open); deferred sub-tasks pinned as carry-ins, not dropped.
+open); deferred sub-tasks pinned as carry-ins, not dropped. While the **Meta
+hackathon** row exists (ADR-0028, to 2026-11-10): its dates still hold, the
+2026-10-30 decision is recorded once made, and a hackathon-driven change on
+topdog is one ADR-0028 §7 names (crew photos, the email capture, the
+account-less donate loop) — anything else on topdog in the window is drift.
 
 **DIRECTION.md**: still describes what the product actually is — loop, tiers,
 money rails, bright lines. Scope changes land here, not just in code.
@@ -143,6 +147,19 @@ grep -rn "base64\|bytea" src/db --include='*.ts'
 **Attestation mirror** — every attestation publish path also writes the R2
 flat file (grep the publish service for the R2 write; its absence is a
 violation of ADR-0003's survivability property).
+
+**Meta API stays on the `meta` branch** (ADR-0028) — topdog never calls
+Meta's Model API; the branch may, but only as a selectable pipeline or
+provider, never as the only path:
+
+```bash
+git branch --show-current
+grep -rniE "api\.meta\.ai|meta-sam|@meta-sam|sam-3\.1|muse-(image|spark|wonder)|MODEL_API_KEY" src comfyui --include='*.ts' --include='*.py' --include='*.json' --include='*.yml'
+# on topdog: expect no hits — a hit is Meta tooling that leaked off the branch.
+# on meta: each hit must sit behind a pipeline/provider switch (DETECT_PIPELINES,
+# the painter provider) with the local path still the default on topdog's side,
+# and doc/plans/meta-hackathon.md must exist on the branch and name it.
+```
 
 **Bright lines** — no rarity fields on animals, no trade/transfer surface, no
 countdown/streak/scarcity UI copy:
