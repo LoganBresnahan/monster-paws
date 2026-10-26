@@ -220,7 +220,12 @@ the monthly check in infra.md's Recurring ops.
   a painting's legs and picks the one a three-legged listing lacks, and
   `npm run explore:legmask -- <batch> --legs` removes it (LaMa, CPU);
   `npm run explore:signature -- <batch> [--fix]` finds a painted
-  signature and LaMa takes it out — test
+  signature and LaMa takes it out; `npm run explore:groinmask -- <batch>`
+  fills a hand-placed groin ellipse with LaMa,
+  `npm run explore:groinlines -- <batch>` erases a polygon traced round the
+  anatomy (or SAM's answer to points on it) and draws back the lines it
+  cut, and `npm run explore:groinink -- <batch>` inks a line a repaint
+  still lacks onto the finished painting (batches 12c–12h) — test
   photos are Wikimedia Commons files in `var/photos/commons/`, each
   recorded with its licence in
   `comfyui/explore/commons-photos.tsv`, never RescueGroups photos.

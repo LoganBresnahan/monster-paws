@@ -35,6 +35,13 @@ is the record, and a file of ticked boxes stops being read.
 
 ## UI
 
+- **The production server logs "The destination stream closed early"** when a
+  page is closed mid-response: three times in one e2e run (2026-10-26, 20/20
+  green) and once in dev on `/animals`. It is the browser hanging up on a
+  streamed render, not a failure, but it reads like one in the logs and would
+  reach Better Stack in production. Decide whether to filter it there or quiet
+  it at the source before the launch's error reporting goes live. Found
+  2026-10-26.
 - **The browse disclaimer says more than the rule does.** "We show animals
   their shelter has kept up to date" reads as "updated recently". The rule
   (`visibleAnimals`, ADR-0015 as amended) is: in the source's live listings as

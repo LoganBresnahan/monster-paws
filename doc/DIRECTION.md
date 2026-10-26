@@ -68,7 +68,10 @@ private, verifiable even if the app dies.
 1. **Don't become a payments company — and never take a cut.**
    **100% of every donation goes to the shelter, always**, via
    **Every.org as the fiscal rails** — free, API-first, handles receipting
-   and disbursement to any US 501(c)(3) shelter. No operations cut, ever:
+   and disbursement to any US 501(c)(3) shelter **that has claimed its
+   Every.org profile** (an unclaimed one takes no direct donation, so its
+   animals are browse-only until it claims; the shelter ask includes it —
+   ADR-0002 as amended 2026-10-26). No operations cut, ever:
    it's the cleanest trust story on a site about proving where money goes,
    and it defuses the aggregator consent problem (hard to be mad at someone
    sending you free money and keeping none). Operations are funded by an

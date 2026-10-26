@@ -301,3 +301,15 @@ ET in Discord; the open-models session 10-30 12:00 ET; closing ceremony
   the whole mitigation.
 - An X account and a gallery entry become part of the submission work; the
   plan budgets a day for the video and the posts.
+
+## Amendment (2026-10-26): the home section includes `/demo`
+
+Decision 7's "crew's real photos on the home section" covers the home page's
+rework around them and `/demo`, built 2026-10-26 for the same reader: a
+shelter opening the consent email sees the hero say what a sponsor gets,
+"See adoptable animals" beside "See a demo", the crew under it, "How it
+works, with Ducky" below, and a placeholder of the loop to click through with
+the crew (pick, sponsor with no money moving, the keepsake, example updates,
+adoption day; every step labelled an illustration, DIRECTION.md's bright
+lines). It is topdog's, built before the window opens; nothing in it calls
+Meta's API, and the hackathon entry's own demo lives on the `meta` branch.
