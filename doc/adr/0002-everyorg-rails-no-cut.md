@@ -91,6 +91,19 @@ found otherwise on the live site, 2026-10-26:
   whether it exposes donations is unknown until a shelter grants access.
 - **Pointing donors at their own Every.org donor-advised fund** for an
   unclaimed shelter: possible, but too many steps for a first sponsorship.
+- **PayPal Giving Fund as a second rail.** A 501(c)(3) that grants to the
+  charity the donor picks, enrolled or not: an enrolled one is paid into its
+  PayPal account in 15–45 days, an unenrolled one by mailed check in about
+  90, and PayPal covers processing fees on its own site (PayPal help center,
+  read 2026-10-26). It would reach the unclaimed shelters Every.org cannot,
+  but a plain link confirms nothing to us; platforms integrate through its
+  partner program (a Charity Search API), with no public webhook found, so
+  the open question is whether a small platform can join and gets a
+  per-donation confirmation. If it does, one Sponsor button routed to the
+  rail each shelter can use, never two side by side, an unenrolled shelter's
+  slower check named to the donor (New York AG settlement with PayPal
+  Giving Fund, 2020); Sponsor then needs both the shelter's grant (ADR-0006)
+  and a rail that confirms, each recorded per shelter.
 
 ### Revisit triggers
 - Every.org lets unclaimed nonprofits take card or bank donations again.
