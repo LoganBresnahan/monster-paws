@@ -723,3 +723,56 @@ A change still starts at the first animal (no `after`), still clears the
 other menu's pick when it would empty the page, and a filtered view is still
 the per-request query it was (ADR-0024), now one per change instead of one
 per "Show me".
+
+## Amendment (2026-10-26): age, sex, a zip radius and the shelter view; no breed
+
+Logan asked which filters are worth building. Measured on the 63,198 visible
+animals that day:
+
+| Field | Filled | Shape |
+| --- | --- | --- |
+| sex | 98% | Female 31,094, Male 30,811 |
+| age group | 95% | Baby 13,874, Young 16,158, Adult 25,827, Senior 4,059 |
+| breed | 99% | 222 dog breeds alone, overlapping and free-form |
+| zip | 99% five-digit | the **shelter's**: 1,292 zips over 1,429 shelters |
+
+Decided (Logan):
+
+1. **Age and Sex are menus like Kind and State.** The facet grid grows to
+   (species, state, age group, sex) — 1,553 cells — and each menu counts
+   under the other three's picks (`facetOptions`). A pick that leaves another
+   menu's choice empty clears it, repeated until nothing changes. Senior is
+   one pick away, which serves bright line 1's inversion: long-stay and
+   senior animals are the most celebrated, never the hardest to find.
+2. **A zip and a radius** (10, 25, 50 or 100 miles; 25 by default) keep the
+   animals whose **shelter** zip is within reach. Places come from the Census
+   Bureau's 2025 ZCTA gazetteer (public domain, 33,791 zips, sha256
+   `51516a42…7c84dbe` of the zip read 2026-10-26), generated into
+   `src/core/zip-centroids.ts` by `scripts/zip-centroids.ts` — derived data,
+   rerun on a newer file, never edited. A zip the Census does not map (a PO
+   Box: 9.2% of visible animals, 162 zips) takes the place of the numerically
+   nearest mapped zip sharing its first three digits — the same sectional
+   center — and never a guess outside them. A zip we cannot place at all is
+   said so on the page and limits nothing; a radius that reaches no shelter
+   says so and suggests a wider one. The label says "near zip", and the
+   distance is to the shelter, never the animal: a foster may live elsewhere.
+   The zip lives in the URL only; nothing stores it. No "nearest first" yet:
+   the keyset cursor orders by listing date, and a distance order is its own
+   decision.
+3. **The shelter view** is a URL parameter (`?shelter=`), not a menu — 1,429
+   shelters would not fit one. An animal's page offers "See all N animals
+   from {shelter}" when the shelter has more than that one, and the list
+   shows a chip naming it with a ✕ that leaves it. It is the page a shelter
+   can be sent: "here are your animals on Monster Paws".
+4. **No breed filter.** The labels are shelters' guesses, written
+   inconsistently, and a breed menu is mostly used to exclude — the
+   pit-bull-type dogs that are the most common breed here and among the
+   longest-waiting. A text search within Kind is the form to revisit if
+   visitors ask for one.
+
+The scope (shelter, radius) narrows the page, the facet grid and "Surprise
+me" alike (`BrowseScope`), so no count is ever a count outside it; a pick is
+kept when the whole visible set offers it, so narrowing to a zip with no dogs
+shows "none near you", never every animal nearby. One URL builder,
+`browseSearch`, writes every browse link. The new parameters join the
+filtered views robots.ts keeps crawlers off (ADR-0024).

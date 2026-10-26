@@ -175,6 +175,38 @@ test.describe("ADR-0015 browse filters — counts as you pick", () => {
     expect(new URL(page.url()).searchParams.get("state")).toBe(await state.inputValue());
   });
 
+  // The zip radius (ADR-0015 as amended 2026-10-26): it applies once all five
+  // digits are typed, and keeps only the shelters within the radius — the
+  // seed's two shelters are in New Jersey (07067) and West Virginia (26175).
+  test("a whole zip narrows the list to the shelters near it", async ({ page }) => {
+    await page.goto("/animals");
+    const zip = page.locator("input[name=zip]");
+    await zip.pressSequentially("2617");
+    await page.waitForTimeout(800);
+    expect(new URL(page.url()).searchParams.get("zip")).toBeNull();
+    await zip.pressSequentially("5");
+    await page.waitForURL(/zip=26175/);
+    const names = (await page.locator("main a[href^='/animals/'] h3").allTextContents()).map((n) => n.trim());
+    expect(names.length).toBe(2);
+    expect([["Bettis", "Pepper"], ["Juniper", "Stowaway"], ["Pepper", "Bettis"], ["Stowaway", "Juniper"]]).toContainEqual(
+      names.map((n) => n.charAt(0) + n.slice(1).toLowerCase()),
+    );
+  });
+
+  // The shelter view: an animal's page leads to every animal its shelter lists,
+  // the chip names it, and its ✕ leaves it.
+  test("an animal's page opens its shelter's view, and the chip's ✕ leaves it", async ({ page, seed }) => {
+    await page.goto(`/animals/${seed.stowaway}`);
+    await page.getByRole("link", { name: /^See all 2 animals from/ }).click();
+    await page.waitForURL(/shelter=/);
+    const names = await page.locator("main a[href^='/animals/'] h3").allTextContents();
+    expect(names.map((n) => n.trim().toLowerCase()).sort()).toEqual(["juniper", "stowaway"]);
+    await expect(page.getByText(/^Animals from/)).toBeVisible();
+    await page.getByRole("link", { name: /Show animals from every shelter/ }).click();
+    await page.waitForURL((url) => !url.search.includes("shelter="));
+    expect(await page.locator("main a[href^='/animals/'] h3").count()).toBeGreaterThan(2);
+  });
+
   test("Surprise me opens a random animal's page, inside the picked filters", async ({ page }) => {
     await page.goto("/animals");
     const state = (await page.locator("select[name=state] option").allTextContents()).at(1)!;

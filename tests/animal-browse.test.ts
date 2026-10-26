@@ -9,6 +9,8 @@ import {
   loadBrowsePage,
   loadCardDisplay,
   loadFacetGrid,
+  loadShelter,
+  loadShelterZips,
   parseCursor,
   parseSort,
   pickRandomAnimalId,
@@ -103,6 +105,11 @@ describe.skipIf(SKIP_DB_TESTS)("ADR-0015 browse page", () => {
     status?: string | null;
     lastSeenAt?: Date;
     sourceUpdatedAt?: Date | null;
+    age?: string;
+    sex?: string;
+    shelter?: string;
+    org?: string;
+    zip?: string;
   }
 
   async function seed(rows: Seed[]): Promise<Map<string, number>> {
@@ -116,6 +123,11 @@ describe.skipIf(SKIP_DB_TESTS)("ADR-0015 browse page", () => {
           status: row.status === undefined ? "available" : row.status,
           state: row.state === undefined ? "TX" : row.state,
           listedAt: row.listedAt,
+          ageGroup: row.age ?? null,
+          sex: row.sex ?? null,
+          shelterExternalId: row.shelter ?? null,
+          orgName: row.org ?? null,
+          postalCode: row.zip ?? null,
         })
         .returning({ id: animals.id });
       await db.insert(animalIdentities).values({
@@ -251,9 +263,9 @@ describe.skipIf(SKIP_DB_TESTS)("ADR-0015 browse page", () => {
       { name: "Dog", listedAt: daysBefore(13), species: "dog", state: "WV" },
     ]);
     for (let roll = 0; roll < 20; roll++) {
-      expect(await pickRandomAnimalId(db, { species: "pig", state: null }, NOW, [])).toBe(ids.get("Visible pig"));
+      expect(await pickRandomAnimalId(db, { ...NO_FILTERS, species: "pig" }, NOW, [])).toBe(ids.get("Visible pig"));
     }
-    expect(await pickRandomAnimalId(db, { species: "pig", state: "TX" }, NOW, [])).toBeNull();
+    expect(await pickRandomAnimalId(db, { ...NO_FILTERS, species: "pig", state: "TX" }, NOW, [])).toBeNull();
   });
 
   // Previous (ADR-0015 as amended 2026-10-05): a shared deep link has no Back.
@@ -300,7 +312,7 @@ describe.skipIf(SKIP_DB_TESTS)("ADR-0015 browse page", () => {
       { name: "Texas cat", listedAt: daysBefore(11), species: "cat", state: "TX" },
       { name: "Nevada dog", listedAt: daysBefore(12), species: "dog", state: "NV" },
     ]);
-    const page = await loadBrowsePage(db, { species: "dog", state: "TX" }, null, NOW, []);
+    const page = await loadBrowsePage(db, { ...NO_FILTERS, species: "dog", state: "TX" }, null, NOW, []);
     expect(names(page)).toEqual(["Texas dog"]);
   });
 
@@ -338,11 +350,71 @@ describe.skipIf(SKIP_DB_TESTS)("ADR-0015 browse page", () => {
 
     // Counted under the OTHER menu's selection, so "cat (1)" beside a chosen
     // state is a promise about that state.
-    const inTexas = facetOptions(grid, { species: null, state: "TX" });
+    const inTexas = facetOptions(grid, { ...NO_FILTERS, state: "TX" });
     expect(inTexas.species).toEqual([
       { value: "cat", count: 1 },
       { value: "dog", count: 1 },
     ]);
+  });
+
+  // ADR-0015 as amended 2026-10-26: age and sex are menus like kind and state,
+  // each counted under the others' picks.
+  it("filters by age and sex, and counts each menu under the others", async () => {
+    await seed([
+      { name: "Old girl", listedAt: daysBefore(10), age: "Senior", sex: "Female" },
+      { name: "Old boy", listedAt: daysBefore(11), age: "Senior", sex: "Male" },
+      { name: "Pup", listedAt: daysBefore(12), age: "Baby", sex: "Female" },
+    ]);
+    const page = await loadBrowsePage(db, { ...NO_FILTERS, age: "Senior", sex: "Female" }, null, NOW, []);
+    expect(names(page)).toEqual(["Old girl"]);
+
+    const grid = await loadFacetGrid(db, NOW, []);
+    expect(facetOptions(grid, NO_FILTERS).ages.map((a) => a.value)).toEqual(["Baby", "Senior"]);
+    expect(facetOptions(grid, { ...NO_FILTERS, sex: "Female" }).ages).toEqual([
+      { value: "Baby", count: 1 },
+      { value: "Senior", count: 1 },
+    ]);
+    expect(facetOptions(grid, { ...NO_FILTERS, age: "Senior" }).sexes).toEqual([
+      { value: "Female", count: 1 },
+      { value: "Male", count: 1 },
+    ]);
+  });
+
+  // The scope narrows the page, the menus' counts and the random pick alike.
+  it("scopes browse to one shelter, and names it from its visible animals", async () => {
+    const ids = await seed([
+      { name: "Paws A", listedAt: daysBefore(10), shelter: "s1", org: "Paws Rescue" },
+      { name: "Paws B", listedAt: daysBefore(11), shelter: "s1", org: "Paws Rescue", species: "cat" },
+      { name: "Elsewhere", listedAt: daysBefore(12), shelter: "s2", org: "Other Rescue" },
+      { name: "Gone", listedAt: daysBefore(13), shelter: "s1", org: "Paws Rescue", status: "adopted" },
+    ]);
+    const scope = { shelter: "s1", zips: null };
+    expect(names(await loadBrowsePage(db, NO_FILTERS, null, NOW, [], "newest", scope))).toEqual(["Paws A", "Paws B"]);
+    expect(facetOptions(await loadFacetGrid(db, NOW, [], scope), NO_FILTERS).species).toEqual([
+      { value: "cat", count: 1 },
+      { value: "dog", count: 1 },
+    ]);
+    expect(await loadShelter(db, "s1", NOW, [])).toEqual({ id: "s1", name: "Paws Rescue", count: 2 });
+    expect(await loadShelter(db, "nobody", NOW, [])).toBeNull();
+    for (let roll = 0; roll < 10; roll++) {
+      expect(await pickRandomAnimalId(db, { ...NO_FILTERS, species: "cat" }, NOW, [], scope)).toBe(ids.get("Paws B"));
+      expect(await pickRandomAnimalId(db, NO_FILTERS, NOW, [], { shelter: "s2", zips: null })).toBe(ids.get("Elsewhere"));
+    }
+  });
+
+  // A radius is a list of shelter zips, matched on the first five characters
+  // (zip+4 included); an empty list is an empty page, never every animal.
+  it("scopes browse to a set of zips, and a radius reaching none shows nothing", async () => {
+    await seed([
+      { name: "Lincoln Park", listedAt: daysBefore(10), zip: "60614" },
+      { name: "Plus four", listedAt: daysBefore(11), zip: "60614-1234" },
+      { name: "Far", listedAt: daysBefore(12), zip: "90210" },
+    ]);
+    expect(await loadShelterZips(db, NOW)).toEqual(expect.arrayContaining(["60614", "90210"]));
+    const near = await loadBrowsePage(db, NO_FILTERS, null, NOW, [], "newest", { shelter: null, zips: ["60614"] });
+    expect(names(near)).toEqual(["Lincoln Park", "Plus four"]);
+    const none = await loadBrowsePage(db, NO_FILTERS, null, NOW, [], "newest", { shelter: null, zips: [] });
+    expect(names(none)).toEqual([]);
   });
 
   it("gives a card its photo only from a licensed display row", async () => {

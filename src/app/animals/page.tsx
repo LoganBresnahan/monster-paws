@@ -6,13 +6,17 @@ import {
   loadBrowsePage,
   loadCardDisplay,
   loadFacetGrid,
+  loadShelter,
+  loadShelterZips,
   parseCursor,
   parseSort,
-  DEFAULT_SORT,
   type BrowseFilters,
   type BrowsePosition,
-  type BrowseSort,
+  type BrowseScope,
+  type FacetCell,
 } from "@/core/browse";
+import { browseSearch, parseRadius, ZIP_CODE, type BrowseQuery } from "@/core/facets";
+import { zipPoint, zipsWithin } from "@/core/geo";
 import { getDb } from "@/db/client";
 import { AnimalCard, speciesEmoji } from "@/ui/animal";
 import { BrowseFilterForm, BrowseResults, BrowseShell } from "@/ui/browse-filters";
@@ -51,17 +55,21 @@ export const metadata: Metadata = {
  * The state check is the same `^[A-Z]{2}$` the options are built from: 27
  * animals still carry a junk `T` state that replay cannot retract.
  */
-function filtersFrom(
-  params: Record<string, string | string[] | undefined>,
-  known: { species: Set<string>; states: Set<string> },
-): BrowseFilters {
-  const one = (value: string | string[] | undefined) =>
-    typeof value === "string" && value.length > 0 ? value : null;
+const one = (value: string | string[] | undefined) =>
+  typeof value === "string" && value.length > 0 ? value : null;
+
+function filtersFrom(params: Record<string, string | string[] | undefined>, grid: readonly FacetCell[]): BrowseFilters {
+  const has = (key: "species" | "state" | "age" | "sex", value: string | null) =>
+    value !== null && grid.some((cell) => cell[key] === value);
   const species = one(params.species);
   const state = one(params.state);
+  const age = one(params.age);
+  const sex = one(params.sex);
   return {
-    species: species && known.species.has(species) ? species : null,
-    state: state && STATE_CODE.test(state) && known.states.has(state) ? state : null,
+    species: has("species", species) ? species : null,
+    state: state && STATE_CODE.test(state) && has("state", state) ? state : null,
+    age: has("age", age) ? age : null,
+    sex: has("sex", sex) ? sex : null,
   };
 }
 
@@ -73,18 +81,11 @@ function positionFrom(params: Record<string, string | string[] | undefined>): Br
   return before ? { before } : null;
 }
 
-function hrefWith(
-  filters: BrowseFilters,
-  sort: BrowseSort,
-  position?: { after: string } | { before: string },
-): string {
-  const query = new URLSearchParams();
-  if (filters.species) query.set("species", filters.species);
-  if (filters.state) query.set("state", filters.state);
-  if (sort !== DEFAULT_SORT) query.set("sort", sort);
-  if (position && "after" in position) query.set("after", position.after);
-  if (position && "before" in position) query.set("before", position.before);
-  const suffix = query.toString();
+function hrefWith(query: BrowseQuery, position?: { after: string } | { before: string }): string {
+  const search = browseSearch(query);
+  if (position && "after" in position) search.set("after", position.after);
+  if (position && "before" in position) search.set("before", position.before);
+  const suffix = search.toString();
   return suffix ? `/animals?${suffix}` : "/animals";
 }
 
@@ -105,22 +106,28 @@ export default async function BrowsePage({
   const params = await searchParams;
   const db = getDb();
 
-  const grid = await loadFacetGrid(db, asOf);
-  const known = {
-    species: new Set(grid.map((cell) => cell.species)),
-    states: new Set(grid.flatMap((cell) => (cell.state ? [cell.state] : []))),
-  };
-  const filters = filtersFrom(params, known);
-  const sort = parseSort(typeof params.sort === "string" ? params.sort : null);
+  // The scope first (ADR-0015 as amended 2026-10-26): one shelter, and the
+  // shelter zips within a radius of the visitor's. A zip we cannot place is
+  // said so on the page and limits nothing, never an empty list with no reason.
+  const shelterParam = one(params.shelter);
+  const shelter = shelterParam ? await loadShelter(db, shelterParam, asOf) : null;
+  const zipParam = one(params.zip);
+  const zip = zipParam && ZIP_CODE.test(zipParam) ? zipParam : null;
+  const miles = parseRadius(one(params.miles));
+  const origin = zip ? zipPoint(zip) : null;
+  const zips = origin ? zipsWithin(origin, miles, await loadShelterZips(db, asOf)) : null;
+  const scope: BrowseScope = { shelter: shelter?.id ?? null, zips };
+  const scoped = scope.shelter !== null || scope.zips !== null;
 
-  const page = await loadBrowsePage(
-    db,
-    filters,
-    positionFrom(params),
-    asOf,
-    undefined,
-    sort,
-  );
+  const grid = await loadFacetGrid(db, asOf, undefined, scope);
+  // A pick is kept when the whole visible set offers it, not only this scope: a
+  // dog search that narrows to a zip with no dogs shows "none near you", never
+  // silently every animal nearby.
+  const filters = filtersFrom(params, scoped ? await loadFacetGrid(db, asOf) : grid);
+  const sort = parseSort(typeof params.sort === "string" ? params.sort : null);
+  const query: BrowseQuery = { ...filters, zip: origin ? zip : null, miles, shelter: scope.shelter, sort };
+
+  const page = await loadBrowsePage(db, filters, positionFrom(params), asOf, undefined, sort, scope);
   const teaser = waitingTeaser(page.nextNames);
   const display = await loadCardDisplay(
     db,
@@ -141,12 +148,34 @@ export default async function BrowsePage({
       </p>
 
       <BrowseShell>
-        <BrowseFilterForm grid={grid} species={filters.species} state={filters.state} sort={sort} />
+        <BrowseFilterForm grid={grid} query={query} />
+
+        {shelter && (
+          <p className="mt-6 flex flex-wrap items-center gap-2">
+            <span className="inline-flex items-center gap-2 rounded-full bg-leaf/15 px-4 py-1.5 font-semibold text-leaf-deep">
+              Animals from {shelter.name ?? "one shelter"}
+              <Link
+                href={hrefWith({ ...query, shelter: null })}
+                aria-label={`Show animals from every shelter, not only ${shelter.name ?? "this one"}`}
+                className="rounded-full px-1.5 text-lg leading-none hover:bg-leaf/20"
+              >
+                ✕
+              </Link>
+            </span>
+          </p>
+        )}
+        {zip && !origin && (
+          <p className="mt-6 text-muted">
+            We couldn&apos;t place zip {zip}, so this list isn&apos;t limited by distance.
+          </p>
+        )}
 
         <BrowseResults>
           {page.animals.length === 0 ? (
             <p className="mt-12 text-lg text-muted">
-              No animals match that yet.{" "}
+              {zips && zips.length === 0
+                ? `No shelters we list are within ${miles} miles of ${zip}. A wider radius may reach one.`
+                : "No animals match that yet."}{" "}
               <Link href="/animals" className="font-medium text-foreground underline">
                 Show every animal
               </Link>
@@ -180,7 +209,7 @@ export default async function BrowsePage({
             <nav aria-label="Pages" className="mt-10 flex flex-wrap items-start justify-between gap-4">
               {page.prevCursor ? (
                 <Link
-                  href={hrefWith(filters, sort, { before: page.prevCursor })}
+                  href={hrefWith(query, { before: page.prevCursor })}
                   className="inline-block rounded-cuddly border-2 border-paw px-6 py-3 font-bold transition-colors hover:bg-paw/10"
                 >
                   ← Previous {BROWSE_PAGE_SIZE}
@@ -191,7 +220,7 @@ export default async function BrowsePage({
               {page.nextCursor && (
                 <div className="flex flex-col items-end gap-2 text-right">
                   <Link
-                    href={hrefWith(filters, sort, { after: page.nextCursor })}
+                    href={hrefWith(query, { after: page.nextCursor })}
                     className="inline-block rounded-cuddly border-2 border-paw px-6 py-3 font-bold transition-colors hover:bg-paw/10"
                   >
                     Next {BROWSE_PAGE_SIZE} animals →

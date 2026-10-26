@@ -24,10 +24,19 @@ export default function robots(): MetadataRoute.Robots {
       {
         userAgent: "*",
         allow: "/",
-        // Filtered browse views repeat the same animals under every species ×
-        // state × cursor combination, each a per-request query (ADR-0024).
+        // Filtered browse views repeat the same animals under every combination
+        // of filters, zip, shelter and cursor, each a per-request query (ADR-0024).
         // `/animals/random` answers each visit with a different animal: a crawler trap.
-        disallow: ["/api/", "/animals?*species=", "/animals?*state=", "/animals/random"],
+        disallow: [
+          "/api/",
+          "/animals?*species=",
+          "/animals?*state=",
+          "/animals?*age=",
+          "/animals?*sex=",
+          "/animals?*zip=",
+          "/animals?*shelter=",
+          "/animals/random",
+        ],
       },
     ],
   };

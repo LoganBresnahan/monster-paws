@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { cache } from "react";
 import { lastSeenOf, loadAnimalDetail, type AnimalDetail } from "@/core/animals";
+import { loadShelter } from "@/core/browse";
 import { isDisplayLicensed, pickLicensedDisplay } from "@/core/display";
 import { getDb } from "@/db/client";
 import { speciesEmoji, TrackerPixel } from "@/ui/animal";
@@ -96,6 +97,9 @@ export default async function AnimalPage({ params }: { params: Promise<{ id: str
   const lastSeen = lastSeenOf(identities);
   const place = placeOf(animal);
   const age = ageLine(animal, asOf);
+  // The shelter view (ADR-0015 as amended 2026-10-26): offered only when it
+  // holds more than this animal, or the link would lead back to one card.
+  const shelter = animal.shelterExternalId ? await loadShelter(getDb(), animal.shelterExternalId, asOf) : null;
   const facts = [
     animal.breed ?? animal.species,
     animal.sex,
@@ -181,6 +185,14 @@ export default async function AnimalPage({ params }: { params: Promise<{ id: str
               branch nothing can take is a promise waiting to be made by
               accident. */}
         </p>
+        {shelter && shelter.count > 1 && (
+          <Link
+            href={`/animals?shelter=${encodeURIComponent(shelter.id)}`}
+            className="mt-4 inline-block font-semibold text-leaf-deep underline hover:text-leaf"
+          >
+            See all {shelter.count} animals from {org ?? "this shelter"} →
+          </Link>
+        )}
       </div>
 
       <p className="mt-8 text-sm text-muted">

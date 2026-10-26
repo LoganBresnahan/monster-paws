@@ -139,15 +139,41 @@ export function parseCursor(raw: string | null | undefined): BrowseCursor | null
  * `asOf` is a parameter for the same reason `visibleAnimals` takes one: a
  * boundary is only testable when the caller owns the clock.
  */
+/**
+ * What narrows browse besides the four menus (ADR-0015 as amended 2026-10-26):
+ * one shelter, and the shelter zips within a radius. They scope the facet grid
+ * too, so every menu count is a count inside them. `zips: []` is a radius that
+ * reaches no shelter — an empty page, never the whole country.
+ */
+export interface BrowseScope {
+  shelter: string | null;
+  zips: readonly string[] | null;
+}
+
+export const NO_SCOPE: BrowseScope = { shelter: null, zips: null };
+
+function scopeParts(scope: BrowseScope): SQL[] {
+  const parts: SQL[] = [];
+  if (scope.shelter) parts.push(eq(animals.shelterExternalId, scope.shelter));
+  if (scope.zips) {
+    // The first five characters: 668 visible animals carry a zip+4 or longer.
+    parts.push(scope.zips.length ? inArray(sql`left(${animals.postalCode}, 5)`, [...scope.zips]) : sql`false`);
+  }
+  return parts;
+}
+
 /** Which animals a filtered browse may show — shared by the page and the random pick, so they can never disagree. */
 function matchingParts(
   filters: BrowseFilters,
   asOf: Date,
   exclusions: readonly BrowseExclusion[],
+  scope: BrowseScope = NO_SCOPE,
 ): SQL[] {
-  const parts: SQL[] = [visibleAnimals(asOf), notExcluded(exclusions)];
+  const parts: SQL[] = [visibleAnimals(asOf), notExcluded(exclusions), ...scopeParts(scope)];
   if (filters.species) parts.push(eq(animals.species, filters.species));
   if (filters.state) parts.push(eq(animals.state, filters.state));
+  if (filters.age) parts.push(eq(animals.ageGroup, filters.age));
+  if (filters.sex) parts.push(eq(animals.sex, filters.sex));
   return parts;
 }
 
@@ -166,8 +192,14 @@ function beyond(sort: BrowseSort, side: "after" | "before", row: BrowseCursor): 
     : sql`(${animals.listedAt}, ${animals.id}) < (${row.listedAt}, ${row.id})`;
 }
 
-function sortWhere(filters: BrowseFilters, asOf: Date, exclusions: readonly BrowseExclusion[], sort: BrowseSort): SQL[] {
-  const parts = matchingParts(filters, asOf, exclusions);
+function sortWhere(
+  filters: BrowseFilters,
+  asOf: Date,
+  exclusions: readonly BrowseExclusion[],
+  sort: BrowseSort,
+  scope: BrowseScope,
+): SQL[] {
+  const parts = matchingParts(filters, asOf, exclusions, scope);
   // Newest-first descends, where Postgres puts a null date FIRST: an animal no
   // source dated would lead the page. RescueGroups dates every visible animal
   // today; a source that does not needs its own decision, not the top slot.
@@ -207,13 +239,14 @@ export async function loadBrowsePage(
   asOf: Date = new Date(),
   exclusions: readonly BrowseExclusion[] = BROWSE_EXCLUSIONS,
   sort: BrowseSort = DEFAULT_SORT,
+  scope: BrowseScope = NO_SCOPE,
 ): Promise<BrowsePage> {
   const at: BrowsePosition =
     position && "listedAt" in position ? { after: position } : (position as BrowsePosition);
   const backward = at !== null && "before" in at;
   const anchor = at === null ? null : "before" in at ? at.before : at.after;
 
-  const parts = sortWhere(filters, asOf, exclusions, sort);
+  const parts = sortWhere(filters, asOf, exclusions, sort, scope);
   if (anchor) parts.push(beyond(sort, backward ? "before" : "after", anchor));
   // Walking backward reads the rows just above the anchor nearest-first, so
   // the order flips; the page is flipped back into display order below.
@@ -249,7 +282,7 @@ export async function loadBrowsePage(
     const hits = await db
       .select({ name: animals.name })
       .from(animals)
-      .where(and(...sortWhere(filters, asOf, exclusions, sort), beyond(sort, side, { listedAt: row.listedAt, id: row.id }))!)
+      .where(and(...sortWhere(filters, asOf, exclusions, sort, scope), beyond(sort, side, { listedAt: row.listedAt, id: row.id }))!)
       .orderBy(
         nearestFirst
           ? sql`${animals.listedAt} asc, ${animals.id} asc`
@@ -286,22 +319,23 @@ export async function pickRandomAnimalId(
   filters: BrowseFilters = NO_FILTERS,
   asOf: Date = new Date(),
   exclusions: readonly BrowseExclusion[] = BROWSE_EXCLUSIONS,
+  scope: BrowseScope = NO_SCOPE,
 ): Promise<number | null> {
   const [row] = await db
     .select({ id: animals.id })
     .from(animals)
-    .where(and(...matchingParts(filters, asOf, exclusions))!)
+    .where(and(...matchingParts(filters, asOf, exclusions, scope))!)
     .orderBy(sql`random()`)
     .limit(1);
   return row?.id ?? null;
 }
 
 /**
- * Every (species, state) pair in the VISIBLE set with its count — the whole
- * grid in one query, ~700 cells, measured at 30 ms on the 64k corpus. The two
- * filter menus are derived from it rather than from two queries, so a species
- * count under a chosen state and the state count under a chosen species can
- * never disagree with each other or with the page they open.
+ * Every (species, state, age group, sex) combination in the VISIBLE set, inside
+ * the scope, with its count — the whole grid in one query: 1,553 cells on the
+ * 63k corpus (2026-10-26). The four filter menus are derived from it rather
+ * than from four queries, so no count under one pick can disagree with
+ * another menu's or with the page they open.
  *
  * Never a hardcoded list: the options are what the corpus actually holds today,
  * so a filter can only ever open a page with animals on it.
@@ -310,17 +344,54 @@ export async function loadFacetGrid(
   db: Db,
   asOf: Date = new Date(),
   exclusions: readonly BrowseExclusion[] = BROWSE_EXCLUSIONS,
+  scope: BrowseScope = NO_SCOPE,
 ): Promise<FacetCell[]> {
   const rows = await db
     .select({
       species: animals.species,
       state: animals.state,
+      age: animals.ageGroup,
+      sex: animals.sex,
       count: sql<number>`count(*)::int`,
     })
     .from(animals)
-    .where(and(visibleAnimals(asOf), notExcluded(exclusions))!)
-    .groupBy(animals.species, animals.state);
+    .where(and(visibleAnimals(asOf), notExcluded(exclusions), ...scopeParts(scope))!)
+    .groupBy(animals.species, animals.state, animals.ageGroup, animals.sex);
   return rows;
+}
+
+/** Every shelter zip the visible set holds (first five characters) — the candidates a radius is measured to. */
+export async function loadShelterZips(db: Db, asOf: Date = new Date()): Promise<string[]> {
+  const rows = await db
+    .selectDistinct({ zip: sql<string>`left(${animals.postalCode}, 5)` })
+    .from(animals)
+    .where(and(visibleAnimals(asOf), isNotNull(animals.postalCode))!);
+  return rows.map((r) => r.zip);
+}
+
+/**
+ * One shelter as browse names it: the name its visible animals most often
+ * carry, and how many are visible. `null` when none is — a shelter view that
+ * would be empty, or an id nobody publishes.
+ */
+export async function loadShelter(
+  db: Db,
+  shelterExternalId: string,
+  asOf: Date = new Date(),
+  exclusions: readonly BrowseExclusion[] = BROWSE_EXCLUSIONS,
+): Promise<{ id: string; name: string | null; count: number } | null> {
+  const rows = await db
+    .select({ name: animals.orgName, count: sql<number>`count(*)::int` })
+    .from(animals)
+    .where(and(visibleAnimals(asOf), notExcluded(exclusions), eq(animals.shelterExternalId, shelterExternalId))!)
+    .groupBy(animals.orgName)
+    .orderBy(sql`count(*) desc`);
+  if (!rows.length) return null;
+  return {
+    id: shelterExternalId,
+    name: rows.find((r) => r.name)?.name ?? null,
+    count: rows.reduce((n, r) => n + r.count, 0),
+  };
 }
 
 /**
