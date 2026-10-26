@@ -1,47 +1,63 @@
-# 0001: Production launch — database, animal pages, worker, error reporting
+# 0001: Production launch — browse first: database, animal pages, the crew, worker, error reporting
 
 Status: planned
-Planned: 2026-09-29 · Run: —
-Why: roadmap item 3b; ADR-0010 as amended 2026-09-28 / 2026-09-29, ADR-0015,
-ADR-0017, ADR-0007 as amended; `doc/infra.md` steps 6 and 7
+Planned: 2026-09-29, revised 2026-10-26 · Run: —
+Why: roadmap item 3b; ADR-0028 as amended 2026-10-23 (browse before the
+donate loop) and 2026-10-26 (the home section includes `/demo`); ADR-0010 as
+amended 2026-09-28 / 2026-09-29, ADR-0015, ADR-0017, ADR-0007 as amended;
+`doc/infra.md` steps 6 and 7
 Commit deployed: —
 
-Production today is the v0.1.0 landing page with no database; the worker
-container runs but idles because `DATABASE_URL` is unset. This entry turns on
-everything at once: Managed Postgres, the animal pages, the worker's daily
-poll, Better Stack error reporting and the poll heartbeat. **Revise this plan
-as each item 3b prerequisite lands** — it was drafted before they were built,
-and a step that changed underneath it must be rewritten here, not improvised
-on the day.
+Production today is the v0.1.0 landing page from `hotfix/next-16.3.8`
+(`c58d87f`, oplog 0002) with no database; the worker container runs but idles
+because `DATABASE_URL` is unset. This entry turns on, in one run: Managed
+Postgres, the animal pages over a first poll of RescueGroups, today's home
+page (the crew, "How it works, with Ducky", `/demo`), the worker's daily poll,
+Better Stack error reporting and the poll heartbeat.
 
-**Re-scoped 2026-10-05:** item 3b is now the *MVP* launch. It waits for the
-loop to work end to end on the dev database — animal list, the donate flow
-(item 4) and keepsake art (item 3c, one real grant from item 5) — and turns
-those on in the same run, including the home worker's scoped credentials
-(`doc/infra.md`, Home worker). The prerequisite list below grows those steps
-as they land.
+**Revised 2026-10-26 for browse first** (ADR-0028 as amended 2026-10-23):
+Chicago shelters reading the consent email should find real animals and a
+real home page, so the database and pages launch now and the donate loop,
+keepsake art and the home worker's scoped credentials follow in their own
+entries. Nothing here takes a donation: no page has a Sponsor button
+(ADR-0015 decision 6), `/demo` moves no money, and every page says a donation
+goes to the shelter and we keep $0, never "100%" (ADR-0002 as amended
+2026-10-26). The 2026-10-05 re-scope (the whole loop first) is superseded.
 
 ## Prerequisites
-- [ ] Roadmap item 3b's checklist is complete (SDK integration,
-      `lastCompletePollAt`, the disappearance-rate gate, the revalidation
-      decision, the UI + user-flow audit) — every box checked, none "nearly";
-      any audit finding marked launch-blocking in `doc/issues.md` is fixed.
-- [ ] CI is green on the commit being deployed: `images` pushed
-      `monster-paws-app:<sha>` and `monster-paws-worker:<sha>` (ADR-0007), and
-      **`sourcemaps` is green for that sha** — errors that arrive before the
-      maps are processed stay minified forever (ADR-0010 as amended
-      2026-09-30). The job's green check is the gate, never a timer.
-- [ ] The droplet is on `hotfix/next-16.3.8` with `IMAGE_TAG` pinned
-      (oplog 0002) — step 4 moves it back to `topdog`.
-- [ ] `npm run e2e` green on that commit locally too (`/deploy` step 2).
-- [ ] `pass` holds `rescuegroups/api-key`, `betterstack/errors-dsn`,
-      `betterstack/heartbeat-ingest-poll`; `gh secret list` shows
-      `BETTERSTACK_ERRORS_DSN` and `BETTERSTACK_SOURCEMAPS_TOKEN`.
+- [ ] Roadmap item 3b's launch prerequisites hold for browse: SDK
+      integration, `lastCompletePollAt`, the disappearance-rate gate and the
+      revalidation decision are done (2026-09-30 / 10-01); the UI audit's
+      open items are not launch-blocking for browse — the browse disclaimer
+      wording (`doc/issues.md`, UI) ships as it reads today and is dogfooded
+      in step 9, and the donation flow is no longer on these pages.
+- [ ] topdog is pushed and CI is green on the commit being deployed:
+      `images` pushed `monster-paws-app:<sha>` and `monster-paws-worker:<sha>`
+      (ADR-0007), and **`sourcemaps` is green for that sha** — errors that
+      arrive before the maps are processed stay minified forever (ADR-0010 as
+      amended 2026-09-30). The job's green check is the gate, never a timer.
+- [ ] `npm run e2e` green on that commit locally (`/deploy` step 2): 23
+      specs as of 2026-10-26, the demo and the crew's lightbox among them.
+- [ ] The droplet is on `hotfix/next-16.3.8` with `IMAGE_TAG` pinned to
+      `c58d87f…` (oplog 0002; `/api/health` reported that sha 2026-10-26) —
+      step 4 moves it back to `topdog`.
+- [ ] `pass` is unlocked and holds `digitalocean/api-token`,
+      `rescuegroups/api-key`, `betterstack/errors-dsn`,
+      `betterstack/heartbeat-ingest-poll`, `betterstack/uptime-token`;
+      `gh secret list` shows `BETTERSTACK_ERRORS_DSN` and
+      `BETTERSTACK_SOURCEMAPS_TOKEN`.
 - [ ] Nothing else is changing production today.
 - [ ] Not within an hour of 07:00 UTC — the scheduled poll must not overlap
       the manual first one (step 7).
 
 ## Steps
+
+### 0. Push topdog and wait for CI
+    git push origin topdog
+    gh run watch "$(gh run list --branch topdog --limit 1 --json databaseId -q '.[0].databaseId')" --exit-status
+Verify: the run is green, `images` and `sourcemaps` included; `<sha>` below
+is that run's head sha.
+Rollback: n/a — nothing on the droplet has changed.
 
 ### 1. Record what is running — this is the rollback
     ssh root@$IP 'cd monsterpaws && docker compose -f docker-compose.prod.yml images'
@@ -75,7 +91,8 @@ Rollback: `doctl databases delete <db-id>` — it holds nothing yet.
         | ssh root@$IP 'cat >> monsterpaws/.env'
     done
 Verify: `ssh root@$IP 'cut -d= -f1 monsterpaws/.env | sort'` lists the four
-names exactly once each (names only — never cat the file).
+names exactly once each (names only — never cat the file). No Every.org
+credential goes in: nothing in this release reads one.
 Rollback: delete the four lines; the worker idles again without
 `DATABASE_URL`.
 
@@ -91,8 +108,11 @@ Rollback: `git checkout hotfix/next-16.3.8` and restore the oplog-0002
 ### 5. Migrate the new database
     ssh root@$IP 'cd monsterpaws && docker compose -f docker-compose.prod.yml \
       run --rm worker npx drizzle-kit migrate'
-Verify: every migration under `drizzle/` applied; `\dt` shows `raw_payloads`,
-`animals`, `animal_identities`, `animal_display`, `event_log`, `ingest_runs`.
+Verify: every migration under `drizzle/` applied, through `0011` (the donor
+schema, ADR-0027 — its tables ship empty and nothing writes them yet); `\dt`
+shows `raw_payloads`, `animals`, `animal_identities`, `animal_display`,
+`event_log`, `ingest_runs`, and the donor tables (`donation_intents`,
+`keepsake`, `email_suppressions`, …).
 Rollback: drop and recreate the database — it is empty.
 
 ### 6. Start the new images
@@ -108,7 +128,8 @@ monitor first, or it opens an incident mid-launch:
 Verify: health is **503** with `"db":"up"`, `"lastCompletePollAt":null` and the
 deployed sha (not `"dev"` — `doc/issues.md`); any other `db` value is a real
 failure — stop. The worker log says `ingest.poll registered (0 7 * * *)`;
-`/animals` renders an empty browse, not a 500.
+`/animals` renders an empty browse, not a 500; the home page shows the crew
+and `/demo` walks through.
 Rollback: set `IMAGE_TAG` back to the step-1 sha, `git checkout
 hotfix/next-16.3.8`, `up -d`, and unpause 4995794; the landing page returns.
 
@@ -117,12 +138,15 @@ hotfix/next-16.3.8`, `up -d`, and unpause 4995794; the landing page returns.
       run --rm worker npm run ingest -- poll'
     # in a second session, the whole time:
     ssh root@$IP 'docker stats --no-stream; free -m'
-Verify: the run summary reports ~64–85k observed, 0 failures, and a complete
-run (no `lifecycleSkipped`); `/api/health` is now **200**, its
-`lastCompletePollAt` this run's finish — the CLI records its run in
-`ingest_runs` exactly as the worker's job does; memory stays under the DO alert (90%); `/animals` lists animals and a
-detail page renders with its photos and tracker. Record the counts and the
-duration in **Run**.
+Verify: the run summary reports ~60–85k observed (63,198 on dev,
+2026-10-26), 0 failures, and a complete run (no `lifecycleSkipped`); nothing
+disappears on an empty database, so the rate gate passes by construction.
+`/api/health` is now **200**, its `lastCompletePollAt` this run's finish — the
+CLI records its run in `ingest_runs` exactly as the worker's job does; memory
+stays under the DO alert (90%); `/animals` lists animals, the State filter
+narrows to IL (1,978 visible on dev that day), and a detail page renders with
+its photos, tracker and — where the source published one — its "full listing"
+link. Record the counts and the duration in **Run**.
 Rollback: the corpus is append-only and correct even if the run is partial;
 a failed run is re-run, never cleaned up by hand.
 
@@ -141,9 +165,13 @@ Rollback: PATCH `{"paused":true}` on both.
 ### 9. Smoke and dogfood (`/deploy` steps 4–5)
 Verify: both uptime monitors green (4995794 is the silent-worker alert now: it
 goes red 27 h after the last complete poll); one deliberate error reaches Better Stack
-tagged with the deployed sha and `environment=production`; browse, filter,
-open a detail page, follow the listing link; the next morning's 07:00 UTC
-poll pings the heartbeat on its own.
+tagged with the deployed sha and `environment=production`; whether "The
+destination stream closed early" (`doc/issues.md`, UI) arrives there as an
+error is noted in **Run**. Logan, on a phone and a laptop: the home page's
+first screen shows the crew; a painting and a photo open whole and carry the
+mark; the demo walks from pick to adoption day; browse, filter to Illinois,
+open a detail page, follow the listing link; the favicon is the M. The next
+morning's 07:00 UTC poll pings the heartbeat on its own.
 Rollback: step 6's rollback.
 
 ## Run

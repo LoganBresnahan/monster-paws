@@ -167,9 +167,8 @@ export default async function AnimalPage({ params }: { params: Promise<{ id: str
         <h2 className="text-xl font-bold">Where {animal.name} is</h2>
         <p className="mt-2 text-muted">
           Listed by {orgLink}
-          {place ? ` in ${place}` : ""}. When sponsoring opens, every cent of a donation for{" "}
-          {animal.name} goes to {org ?? "their shelter"} — we never take a cut and never hold the
-          money.
+          {place ? ` in ${place}` : ""}. When sponsoring opens, a donation for {animal.name} will go
+          to {org ?? "their shelter"}, and we keep $0 — we never hold the money.
         </p>
         {/* No sponsor button here: item 4 owns the Every.org flow, and a page
             with a dead button is worse than a page without one (ADR-0015

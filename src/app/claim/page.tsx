@@ -36,9 +36,10 @@ export default function ClaimPage() {
 
       <p className="mt-4 text-lg text-muted">
         Listings refresh at most once a day, so ours can be behind yours. Donations go to your
-        organization directly through Every.org —{" "}
+        organization directly through Every.org, once you&apos;ve claimed your free profile
+        there —{" "}
         <span className="font-semibold text-foreground">
-          we never take a cut and never hold your money.
+          we keep $0 and never hold your money.
         </span>
       </p>
 
