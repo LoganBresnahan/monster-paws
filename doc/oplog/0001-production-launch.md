@@ -24,6 +24,12 @@ entries. Nothing here takes a donation: no page has a Sponsor button
 goes to the shelter and we keep $0, never "100%" (ADR-0002 as amended
 2026-10-26). The 2026-10-05 re-scope (the whole loop first) is superseded.
 
+**Production starts from an empty database** (Logan, 2026-10-26; ADR-0003 as
+amended): migrations, then a first poll — the dev corpus since 2026-08-25
+stays in dev and its `var/dumps/` copies, never restored here. **The off-DO
+backup goes live in the same sitting** (step 9): nightly, not weekly, with the
+vault key kept out of the shared `.env`.
+
 ## Prerequisites
 - [ ] Roadmap item 3b's launch prerequisites hold for browse: SDK
       integration, `lastCompletePollAt`, the disappearance-rate gate and the
@@ -43,7 +49,9 @@ goes to the shelter and we keep $0, never "100%" (ADR-0002 as amended
       step 4 moves it back to `topdog`.
 - [ ] `pass` is unlocked and holds `digitalocean/api-token`,
       `rescuegroups/api-key`, `betterstack/errors-dsn`,
-      `betterstack/heartbeat-ingest-poll`, `betterstack/uptime-token`;
+      `betterstack/heartbeat-ingest-poll`, `betterstack/uptime-token`,
+      `cloudflare/r2-vault-access-key-id`, `cloudflare/r2-vault-secret-access-key`,
+      `cloudflare/r2-endpoint`;
       `gh secret list` shows `BETTERSTACK_ERRORS_DSN` and
       `BETTERSTACK_SOURCEMAPS_TOKEN`.
 - [ ] Nothing else is changing production today.
@@ -78,7 +86,9 @@ Store the private connection string straight into `pass` as
 `infra.md` registry in the same commit as this entry's **Run**.
 Verify: `doctl databases get <db-id>` shows online, PG 16, nyc3; the firewall
 lists only the droplet; the `vector` extension is available (the pgvector
-image is what dev and CI run — confirm `create extension vector` works).
+image is what dev and CI run — confirm `create extension vector` works). Read
+the cluster's Backups tab and record in **Run** what this size gets: daily
+backups only, or point-in-time restore too (ADR-0003 as amended 2026-10-26).
 Rollback: `doctl databases delete <db-id>` — it holds nothing yet.
 
 ### 3. Fill the droplet's `.env` — values piped, never echoed
@@ -162,7 +172,35 @@ ingest CLI does not ping the heartbeat — only the worker's job does — hence
 the manual ping; it does write `ingest_runs`, which is what the monitor reads.
 Rollback: PATCH `{"paused":true}` on both.
 
-### 9. Smoke and dogfood (`/deploy` steps 4–5)
+### 9. The nightly off-DO backup (ADR-0003 as amended 2026-10-26)
+    U=$(pass show betterstack/uptime-token)
+    curl -s -X POST https://uptime.betterstack.com/api/v2/heartbeats -H "Authorization: Bearer $U" \
+      -H "Content-Type: application/json" -d '{"name":"db backup — nightly 08:30 UTC",
+      "period":86400,"grace":7200,"email":true}' \
+      | jq -r .data.attributes.url | pass insert -m betterstack/heartbeat-db-backup
+    for pair in R2_VAULT_ACCESS_KEY_ID:cloudflare/r2-vault-access-key-id \
+                R2_VAULT_SECRET_ACCESS_KEY:cloudflare/r2-vault-secret-access-key \
+                R2_ENDPOINT:cloudflare/r2-endpoint \
+                HEARTBEAT_DB_BACKUP_URL:betterstack/heartbeat-db-backup; do
+      var=${pair%%:*}; entry=${pair#*:}
+      printf '%s=%s\n' "$var" "$(pass show "$entry" | head -n1)" \
+        | ssh root@$IP 'umask 077; cat >> monsterpaws/.env.backup'
+    done
+    ssh root@$IP 'monsterpaws/scripts/backup-db.sh'          # the first copy, by hand
+    ssh root@$IP 'echo "30 8 * * * root /root/monsterpaws/scripts/backup-db.sh >> /var/log/monsterpaws-backup.log 2>&1" \
+      > /etc/cron.d/monsterpaws-backup'
+Verify: the script prints `pgdump/<date>.sql.gz` and a size over 1 MB, and
+`rclone_r2 vault lsl r2:monsterpaws-vault/pgdump/` (from dev) lists it; the
+heartbeat shows "up". The key stayed out of the worker's reach:
+`ssh root@$IP 'grep -c R2_VAULT monsterpaws/.env; stat -c %a monsterpaws/.env.backup'`
+prints `0` and `600`, and `docker exec monsterpaws-worker-1 env | grep -c R2_VAULT`
+prints `0`. `/etc/cron.d/monsterpaws-backup` exists with that one line. Add
+the heartbeat's id to infra.md's registry row in the same commit as **Run**.
+Rollback: `rm /etc/cron.d/monsterpaws-backup monsterpaws/.env.backup`, delete
+the heartbeat, `pass rm betterstack/heartbeat-db-backup`; the uploaded dump is
+harmless and stays.
+
+### 10. Smoke and dogfood (`/deploy` steps 4–5)
 Verify: both uptime monitors green (4995794 is the silent-worker alert now: it
 goes red 27 h after the last complete poll); one deliberate error reaches Better Stack
 tagged with the deployed sha and `environment=production`; whether "The
@@ -171,7 +209,8 @@ error is noted in **Run**. Logan, on a phone and a laptop: the home page's
 first screen shows the crew; a painting and a photo open whole and carry the
 mark; the demo walks from pick to adoption day; browse, filter to Illinois,
 open a detail page, follow the listing link; the favicon is the M. The next
-morning's 07:00 UTC poll pings the heartbeat on its own.
+morning's 07:00 UTC poll pings its heartbeat on its own, and the 08:30 UTC
+backup lands in the vault and pings its own.
 Rollback: step 6's rollback.
 
 ## Run

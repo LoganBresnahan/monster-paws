@@ -82,9 +82,9 @@ dashboard (step 5b).
 | `cloudflare/r2-endpoint` | The account's S3 endpoint URL | Where every S3 client points, both pairs | droplet `.env` once the worker's R2 client is wired (not yet) |
 | `cloudflare/r2-access-key-id` | Worker pair, access key id | Read/write media + corpus: vaulting scraped HTML (ADR-0011), card images | droplet `.env` `R2_ACCESS_KEY_ID`, once wired (not yet) |
 | `cloudflare/r2-secret-access-key` | Worker pair, secret | same | droplet `.env` `R2_SECRET_ACCESS_KEY`, once wired (not yet) |
-| `cloudflare/r2-vault-access-key-id` | Vault pair, access key id | Read/write the vault: nightly pg_dumps, the attestation mirror | droplet `.env` `R2_VAULT_ACCESS_KEY_ID`, when backups go live (step 6) |
-| `cloudflare/r2-vault-secret-access-key` | Vault pair, secret | same | droplet `.env` `R2_VAULT_SECRET_ACCESS_KEY`, when backups go live |
-| `cloudflare/r2-vault-endpoint` | Same URL as `r2-endpoint`, stored beside the vault pair | Nothing reads it today (`rclone_r2` uses `r2-endpoint` for both) | dev only |
+| `cloudflare/r2-vault-access-key-id` | Vault pair, access key id | Read/write the vault: nightly pg_dumps, the attestation mirror | droplet `.env.backup` (never `.env`), set by oplog 0001 |
+| `cloudflare/r2-vault-secret-access-key` | Vault pair, secret | same | droplet `.env.backup` (never `.env`), set by oplog 0001 |
+| `cloudflare/r2-vault-endpoint` | Same URL as `r2-endpoint`, stored beside the vault pair | Nothing reads it today (`rclone_r2` and the backup script use `r2-endpoint`) | dev only |
 | `cloudflare/r2-token` | Account-owned R2 token, Object Read & Write on media + corpus | The token the worker pair was derived from — re-derive the pair from it, or roll it to revoke the pair | dev only |
 | `cloudflare/r2-vault-token` | Account-owned R2 token, Object Read & Write on the vault only | The token the vault pair was derived from | dev only |
 
@@ -175,6 +175,7 @@ create; a global one would only add cross-team, billing and usage access.
 | `betterstack/uptime-token` | Team uptime API token (premade), read & write | Creating, pausing and inspecting monitors and heartbeats by API | dev only |
 | `betterstack/errors-dsn` | DSN of the Errors application `monsterpaws` (id `2778816`, `next_js_errors`, 90-day retention, linked to the GitHub repo), assembled as `https://<token>@<ingesting_host>/<id>` | Where the app and worker send errors through the Sentry SDK. Ingest-only, and public in the browser bundle by design — CI passes it to the image build as `NEXT_PUBLIC_SENTRY_DSN` | GH Actions secret `BETTERSTACK_ERRORS_DSN`; droplet `.env` `SENTRY_DSN` at the next deploy |
 | `betterstack/heartbeat-ingest-poll` | URL of heartbeat `499765`, "ingest.poll — RescueGroups daily 07:00 UTC": period 24h, grace 3h, **created paused** | The worker pings it after each complete poll, `/fail` on failure; silence past the grace alerts. Secret, since anyone holding it can ping it and hide a real failure. Unpause it in the same deploy that turns the poller on, or it alerts every morning | droplet `.env` at the poller deploy |
+| `betterstack/heartbeat-db-backup` | URL of the heartbeat "db backup — nightly 08:30 UTC": period 24h, grace 2h (**not created yet**: oplog 0001 creates it) | `scripts/backup-db.sh` pings it after an upload over 1 MB lands in the R2 vault; silence past the grace means a night with no off-DO copy (ADR-0003 as amended 2026-10-26). Secret for the same reason as the poll's | droplet `.env.backup`, set by oplog 0001 |
 | `betterstack/sql-host` | Host of the ClickHouse HTTP "SQL API" connection (team Monster Paws, created in the dashboard 2026-09-30 — a global token would be needed to create it by API) | Reading stored errors, stack frames and their source-map results: `scripts/betterstack-sql.sh` | dev only |
 | `betterstack/sql-username` | That connection's username (rotated 2026-09-30 after the first was pasted into a chat) | same | dev only |
 | `betterstack/sql-password` | That connection's password — shown once at creation, never retrievable. Read-only, IP-allowlisted to the dev machine's public address | same; if queries start failing, the home IP changed — update the allowlist | dev only |
@@ -399,13 +400,17 @@ grep -n "^ARG" comfyui/Dockerfile                        # what we pin
 # Deploy (also in /deploy skill) — images from GHCR, built by CI
 ssh <droplet> 'cd monsterpaws && git pull && docker compose -f docker-compose.prod.yml pull && docker compose -f docker-compose.prod.yml up -d'
 
-# Weekly DB copy outside DO (ADR-0003 belt-and-suspenders) — cron on droplet.
-# NOT LIVE YET: waits on Managed Postgres (step 6). Set it up in the same
-# sitting, or the belt-and-suspenders copy is a plan rather than a backup.
-# Uses the VAULT key, not the worker's (ADR-0011) — add R2_VAULT_ACCESS_KEY_ID
-# / R2_VAULT_SECRET_ACCESS_KEY to the droplet .env at that point; today the
-# droplet holds neither, and nothing on it touches R2.
-pg_dump "$DATABASE_URL" | gzip | rclone_r2 vault rcat r2:monsterpaws-vault/pgdump/$(date +%F).sql.gz
+# Nightly DB copy outside DO (ADR-0003 as amended 2026-10-26) — droplet cron,
+# 08:30 UTC, after the 07:00 poll. Set up by oplog 0001 in the launch sitting.
+# scripts/backup-db.sh runs pg_dump and rclone in pinned containers, uploads
+# r2:monsterpaws-vault/pgdump/<date>.sql.gz, refuses an object under 1 MB,
+# and pings the betterstack/heartbeat-db-backup heartbeat. The VAULT key lives
+# in monsterpaws/.env.backup (mode 600), NEVER in .env: compose hands .env to
+# the app and the worker (ADR-0011).
+#   /etc/cron.d/monsterpaws-backup:
+#   30 8 * * * root /root/monsterpaws/scripts/backup-db.sh >> /var/log/monsterpaws-backup.log 2>&1
+# By hand: ssh root@$IP 'monsterpaws/scripts/backup-db.sh'
+# List:    rclone_r2 vault lsl r2:monsterpaws-vault/pgdump/
 
 # Attestation mirror spot-check
 wrangler r2 object get monsterpaws-vault/attestations/<id>.json --pipe
@@ -876,7 +881,7 @@ on the box: Commons dogs and the crew only.
         │  │ Caddy ├────────►│  app  │  │   │  monsterpaws-vault      │
         │  │ HTTPS │         │ Next  │  │   │   · attestation mirror  │
         │  └───────┘         │  SSR  │  │   │     (flat files)        │
-        │                    └───┬───┘  │   │   · weekly pg_dumps     │
+        │                    └───┬───┘  │   │   · nightly pg_dumps    │
         │                        │      │   │  monsterpaws-corpus     │
         │                        │      │   │   · scraped HTML,       │
         │                        │      │   │     content-addressed   │
@@ -893,7 +898,7 @@ on the box: Commons dogs and the crew only.
   ┌────────────────┐ ┌──────────────────────────────┐
   │  DO Managed    │ │        external APIs         │
   │  Postgres 16   │ │  RescueGroups (poll daily)   │
-  │  · PITR        │ │  Every.org   (donations)     │
+  │  · DO backups  │ │  Every.org   (donations)     │
   │  · pgvector    │ │  Replicate   (LoRA training; │
   │  · pg-boss q   │ │     image-gen escape hatch)  │
   │  · corpus+FTS  │ │  Shelterluv/Petango (tier 1) │
@@ -984,7 +989,7 @@ an oplog entry when it happens.
   │ donor accounts           │           │                          │
   └───────────┬──────────────┘           └──────────────────────────┘
               │ backed up: DO PITR (continuous)
-              │            + weekly pg_dump → R2 vault (off-DO copy)
+              │            + nightly pg_dump → R2 vault (off-DO copy)
               ▼
   purge exceptions (ADR-0006 as amended): rows tagged
   source='rescuegroups' (ToS termination) or source='scrape:<slug>'

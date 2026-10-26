@@ -3,6 +3,9 @@
 > Amended by ADR-0006: RescueGroups-derived rows are source-tagged and
 > set-deletable (ToS purge obligation) — the one sanctioned exception to
 > append-only.
+>
+> Amended 2026-10-26: the off-DigitalOcean dump is nightly, not weekly, and
+> production starts from an empty database — see the amendment below.
 
 ## Context
 The corpus — listings across sources, care events, attestations, donations —
@@ -38,3 +41,39 @@ even if we cease to exist. Weekly pg_dump to R2 outside DO's ecosystem.
 ## Revisit triggers
 - ~10M+ vectors or vector QPS pgvector can't serve.
 - Queue throughput beyond Postgres-as-queue comfort (~hundreds of jobs/sec).
+
+## Amendment (2026-10-26): nightly off-DO dump; production starts fresh
+
+### Context
+Before the launch (oplog 0001), Logan walked the backup story and two things
+needed settling. DigitalOcean backs a Managed Postgres cluster up once a day
+and keeps 7 days; a restore makes a new cluster, and **destroying the cluster
+destroys its backups** (DO docs, read 2026-10-26), so an account loss or a
+deleted cluster takes every DO copy with it — the off-DO dump above is the
+only copy that survives that. Whether our size (db-s-1vcpu-1gb) gets
+point-in-time restore or only the daily backups is unconfirmed: one third
+party says PITR needs a larger plan, DO's page does not say. And the dev
+database holds every poll since 2026-08-25 (the disappearances, the listing
+changes), which production would not have.
+
+### Decision
+1. **The dump to the R2 vault is nightly** (Logan), at 08:30 UTC after the
+   07:00 poll, by `scripts/backup-db.sh` from the droplet's cron, pinging its
+   own Better Stack heartbeat. Weekly would lose up to a week of donor data
+   once donations land; the cost difference is cents.
+2. **The vault key never enters the droplet's `.env`.** Compose hands `.env`
+   to the app and the worker, and the worker parses untrusted data daily
+   (ADR-0011); the key lives in `.env.backup`, read only by the backup script.
+3. **Production starts from an empty database** (Logan): migrations, then a
+   first poll. The dev corpus since 2026-08-25 stays where it is, in the dev
+   database and its `var/dumps/` copies (ADR-0017), and is never restored
+   into production.
+
+### Consequences
+- Production's history begins at launch: an animal adopted before then never
+  appears there as a disappearance.
+- What our plan gets from DO (daily only, or PITR) is read off the cluster's
+  Backups tab at launch and recorded in oplog 0001.
+- A dump nobody has restored is not yet a backup: a restore drill (pull one
+  from R2 into a scratch database, compare row counts) and a retention rule
+  for the vault's `pgdump/` prefix follow the launch (roadmap, Launch).
