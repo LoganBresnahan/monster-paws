@@ -1166,6 +1166,100 @@ reference — the tripod chain of batches 8e–8h (`legmask.py`'s outline and
 band) aimed at the groin. Keypoint masks wait: for these six the hand
 ellipses are as tight, and the mask is not what failed.
 
+## Batch 12f — the lines put back before the repaint, line sheets only (Claude, 2026-10-23; nothing painted)
+
+Sheets in `var/explore/batch12f/lines/`; the code was replaced by 12g's
+hand-placed `comfyui/groinlines.py` and not kept. Two automatic ways, both
+read before any repaint, and neither is fit to paint from:
+
+- **Continuing the ink.** Strokes darker than their neighbourhood that
+  touch the rim, joined end to end across the hole. The watercolour's wash
+  edges read as strokes (8–13 ends per hole where the painter has two or
+  three lines), so the pairing joins unrelated ones: long diagonals across
+  Beetle's belly, an X on Beetle standing, curves from Plum's belly down
+  into the legs.
+- **Continuing the silhouette only** (Logan's pick to try): SAM's dog is
+  known outside the hole and interpolated across it. It cannot know where a
+  leg runs through the hole, so standing it punches paper lenses between
+  belly and thigh (Ducky, Plum) instead of the belly line; sitting it
+  carves an arch of paper out of the shadow under the body (Plum, Beetle,
+  Ducky), where the painter has no paper at all.
+
+Why the tripods worked and this does not: there SAM outlined the leg
+itself, so the new edge was the dog's own outline with one short cut
+across the leg's top, and nothing inside the hole had to be guessed. Here
+SAM cannot outline the anatomy, the ellipse also erases belly and thigh
+that must come back, and their shape inside the hole is unknown. Next:
+the two or three lines each of the six needs, placed by hand on a grid as
+the ellipses were, checked by Logan, then 12d's repaint from them — the
+test of whether lines back make the repaint read as painted, before any
+more automation.
+
+## Batch 12g — the anatomy alone traced out, its lines put back by eye, first read (Claude, 2026-10-23; Logan's eye decides)
+
+Logan's idea: erase only the anatomy, not an ellipse round it.
+`comfyui/groinlines.py` takes a polygon traced round the anatomy on a 0.01
+grid (or SAM 2.1's answer to points placed on it and off it), widens it
+0.004 of the width, fills it with LaMa, draws the painter's lines the hole
+cut back through hand-placed points, and 12d's repaint (klein Base, the
+anatomy words as its negative, the fill as reference and start) paints it;
+the result goes back onto the original through the hole feathered. The
+hole is 0.3–1% of the painting, against 2–4% for 12d's ellipses. 36
+paintings (lined at 0.6 and 0.85, the unlined fill at 0.85 as the control,
+seeds 1 and 2), about 85 s each. Sheets: `var/explore/batch12g/lines/`
+(the holes and lines, read before painting) and
+`var/explore/batch12g/compare/` (original, 12d, the fill unpainted, the
+three repaints, per seed).
+
+- **The tight hole is what fixed it, more than the lines.** With the
+  painter's outline left standing round a small hole, LaMa's fill alone
+  already reads as painted on four of six, and no 12g repaint is blurry.
+- **Plum standing, Beetle standing, Plum sitting: clean on every variant.**
+  The belly line runs on into the thigh; Plum sitting keeps the pale
+  underbelly and its outline with the ring gone.
+- **Ducky standing:** the anatomy is gone, but the drawn belly line is
+  greyer and heavier than the painter's, and klein keeps it at 0.6 and 0.85
+  alike; the unlined control reads the most natural. The ink colour wants
+  the painter's brown and a lighter hand.
+- **Ducky sitting:** SAM's answer was erased (the traced polygon left the
+  sac's lower outline standing as a V); the thigh's front edge is drawn
+  back. What is left is a mauve shadow between foreleg and thigh, smooth,
+  where a reader may still see the sac's shape. Yours to judge.
+- **Beetle sitting:** both testicles and the bulge's lower edge are gone,
+  but the rounded pink belly between the thighs keeps the bulge's
+  silhouette, and LaMa left a white patch at its lower right that the
+  repaints keep. Weakest of the six.
+- Lined against unlined barely differs once the hole is tight: on these
+  six, only a line the hole fully cut (Ducky sitting's thigh) needs
+  drawing back.
+
+Placing a polygon and its lines took a few minutes a painting, two of
+six needing a second pass after reading the sheet; that is the per-image
+cost of the LoRA set's hand step.
+
+## Batch 12g — Logan's picks (2026-10-26), and 12h, Ducky's lines inked after the repaint
+
+Picks (`var/explore/batch12g/picks.txt`): Plum standing and Beetle both
+ways on the unlined fill at 0.85, both seeds; Plum sitting on all six. None
+of Ducky. Logan: on all three dogs many paintings keep "a leftover visible
+brown trace line that looks out of place" — the line drawn before the
+repaint, softened by klein into a wash — and on Ducky, where no line was
+drawn, "a clear line wasn't drawn at all where it should have been":
+sitting, her belly blends into the ground; the two unlined standing were
+close but lack the line where the belly meets the far leg. So the unlined
+fill wins, and a line the repaint still lacks is inked afterwards, where
+nothing washes it.
+
+12h (`comfyui/groinink.py`, no GPU): on Ducky's four unlined repaints, the
+missing line placed by eye on a 0.01 grid over the repaint and inked crisp
+— the darkest 3% of the pixels near its points (the painter's own line
+colour), tapered at both ends, its opacity broken a little — at 0.0018 and
+0.0026 of the width. Sitting, the belly's lower edge now stops above the
+ground shadow; standing, the line runs from the near thigh to the painter's
+belly line along the top of the far leg (the first placement arched above
+that edge and was lowered). Sheets and full paintings:
+`var/explore/batch12h/inked/`. Logan's eye decides.
+
 ## Avenues (Logan, 2026-10-11)
 
 "Just because we find something that works doesn't mean I don't want to

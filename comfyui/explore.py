@@ -288,17 +288,17 @@ def build_pass_graph(run: dict, prefix: str) -> dict:
         else:
             g["latent"] = {"class_type": "EmptyFlux2LatentImage", "inputs": {"width": width, "height": height, "batch_size": 1}}
             latent = ["latent", 0]
-    elif run.get("mask_kind") == "groin":  # klein Base repaints a LaMa'd groin ellipse with no references (comfyui/groinmask.py, batch 12c)
-        s = Path(p["file"]).stem
-        g["work"] = {"class_type": "LoadImage", "inputs": {"image": f"groin/{s}.lama.png"}}
+    elif run.get("mask_kind") in ("groin", "sheath"):  # klein Base repaints a LaMa'd groin ellipse (comfyui/groinmask.py, batch 12c) or a hand-traced sheath with its lines drawn back (comfyui/groinlines.py, batch 12g)
+        s, d = Path(p["file"]).stem, run["mask_kind"]
+        g["work"] = {"class_type": "LoadImage", "inputs": {"image": f"{d}/{s}.{'lined' if run['source'] == 'linedref' else 'lama'}.png"}}
         g["paint_latent"] = {"class_type": "VAEEncode", "inputs": {"pixels": ["work", 0], "vae": ["vae", 0]}}
-        g["mask"] = {"class_type": "LoadImageMask", "inputs": {"image": f"groin/{s}.mask.png", "channel": "red"}}
+        g["mask"] = {"class_type": "LoadImageMask", "inputs": {"image": f"{d}/{s}.mask.png", "channel": "red"}}
         g["masked"] = {"class_type": "SetLatentNoiseMask", "inputs": {"samples": ["paint_latent", 0], "mask": ["mask", 0]}}
-        if run["source"] == "lamaref":  # the LaMa'd painting is also a reference, read un-noised at every step: the belly there is smooth (batch 12d)
+        if run["source"] in ("lamaref", "linedref"):  # the filled painting is also a reference, read un-noised at every step: the belly there is smooth (batch 12d)
             g["refcond"] = {"class_type": "ReferenceLatent", "inputs": {"conditioning": pos, "latent": ["paint_latent", 0]}}
             pos = ["refcond", 0]
-        # the repaint goes back onto the ORIGINAL through a feathered mask: no pixel outside the ellipse changes, not even by the VAE
-        g["soft"] = {"class_type": "LoadImageMask", "inputs": {"image": f"groin/{s}.soft.png", "channel": "red"}}
+        # the repaint goes back onto the ORIGINAL through a feathered mask: no pixel outside the hole changes, not even by the VAE
+        g["soft"] = {"class_type": "LoadImageMask", "inputs": {"image": f"{d}/{s}.soft.png", "channel": "red"}}
         g["composite"] = {"class_type": "ImageCompositeMasked", "inputs": {"destination": ["paint", 0], "source": ["decode", 0], "x": 0, "y": 0, "resize_source": False, "mask": ["soft", 0]}}
         g["save"]["inputs"]["images"] = ["composite", 0]
         latent, denoise = ["masked", 0], run["denoise"]
