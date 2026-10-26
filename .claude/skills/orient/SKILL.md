@@ -43,9 +43,13 @@ names the date it expires and the doc that owns the detail.
   and the long-term product stays local on the A770. klein paints the demo,
   SAM 3.1 finds the animal, the demo runs on its own stack under our domain.
   The stretch — real donations on production — turns on a Chicago shelter's
-  grant by **2026-10-30**. Lead the bearing with: which branch this is, how
-  many days to 11-04, and whether the 10-30 decision has been made
-  (`git log --grep ADR-0028`, the track row). The ten-day plan is
+  grant by **2026-10-30**. **Only work dated 2026-10-27 or later is the
+  entry** (ADR-0028 as amended 2026-10-26): the demo and video show nothing
+  built before it except as labelled context, or the entry is disqualified.
+  Lead the bearing with: which branch this is, how many days to 11-04, and
+  whether the 10-30 decision has been made (`git log --grep ADR-0028`, the
+  track row). The branch is checked out as a worktree at
+  `../monsterpaws-meta`; `git worktree list` shows both. The ten-day plan is
   `doc/plans/meta-hackathon.md` **on the branch** — read it when on `meta`,
   and say when it is missing.
 

@@ -223,3 +223,81 @@ ships.
   amended 2026-08-25): hotlinked photos, the Tracker on every detail page,
   purgeable — the same terms the dev pages already follow.
 
+
+## Amendment (2026-10-26): the Official Rules — only work built in the window is the entry
+
+### Context
+The Participant Guide published on 2026-10-26 (building period **2026-10-27
+to 2026-11-04**; kickoff 10-26 12:00 ET; daily text office hours 10:00–11:00
+ET in Discord; the open-models session 10-30 12:00 ET; closing ceremony
+11-09 12:00 ET with the top five per track judged live; community vote to
+11-16). It settles the clause the Decision left open, and adds four things.
+
+1. **New work only.** "What you present at this Hackathon must have been
+   built during the event," and the demo "must only highlight the specific
+   features, code, and functionality that you built during the Hackathon.
+   Judges must be able to clearly identify what was created during the
+   Hackathon. Failure to clearly identify your original contributions will
+   result in immediate disqualification." Startups "may build on existing
+   products or codebases, but you must clearly identify what was newly
+   developed"; the Indie track, which Logan is in, gets no explicit
+   carve-out.
+2. **Stage one is pass/fail**: the project fits a theme and "reasonably used
+   Meta Model API and/or Meta's open-weight models to build the project in
+   the Hackathon". Stages two and three use the rubric already recorded.
+3. **The repository must be public**; projects using "code, data, or assets
+   you do not have the rights to" are disqualified. The video is three
+   minutes and is a primary artifact beside the code and the live product.
+4. **Bonus prizes**: Most Viral ($20k, engagement on X until 11-08),
+   Community Vote ($10k, one vote per verified account in the public
+   gallery, announced 11-16), Best Build on Meta Open Weight Models ($10k,
+   Muse Glimmer or Muse Spark Open on own hardware or partner inference),
+   Best Agentic ($5k), Best Creative Build ($5k, Muse Image or Muse Wonder).
+   The $150 of credits are claimed by a form, need a card on the account
+   (a pre-authorisation that releases) and a spend-limit notification, and
+   must be claimed by 11-04 21:00 ET.
+
+### Decision
+1. **The entry is the branch's work dated 2026-10-27 or later, and nothing
+   else is presented as ours.** The branch's README carries a table of what
+   was built in the window and what existed before (the browse pages, the
+   klein painter, the OWLv2 + SAM 2.1 detector, the donor schema), the video
+   opens on the same table, and `git log --since=2026-10-27` on the public
+   repo is the proof. Existing pieces appear in the demo only as labelled
+   context for the new ones. Work on topdog in the window (the browse-first
+   launch, the donate loop if it ships) is new work too and is listed, with
+   its commits, but the demo centres on the Meta piece: the detector is
+   what stage one checks. Nothing is built today, 10-26: today is credits,
+   the key, the Discord, the blind set and the README skeleton.
+2. **No ruling is sought.** Logan, 2026-10-26: the only reason to be in
+   the hackathon is Monster Paws's exposure, "whatever happens happens", and
+   the Meta integration is new work by any reading — none of it existed
+   before 10-27. The delineation is the README table, the first frame and
+   the git history, done well, and the disqualification risk is accepted
+   rather than asked about.
+3. **Two bonus prizes are targeted, two are maybes, one is out.** Targeted:
+   Most Viral (the demo posted on X and the link submitted) and Community
+   Vote (the people who care about shelter animals can vote; the shelters
+   we have written to are told). Maybes, decided in the plan: Best Build on
+   Open Weight Models, if Muse Glimmer can read a listing's colour words or
+   assess a listing (ADR-0021) on the DigitalOcean GPU or a partner's
+   inference — a real need, not a prop; Muse Image stays the maybe of §1,
+   lower now that Qwen-Image-Edit's cleanup was rejected on 2026-10-23 for
+   restyling the brushwork. Out: Best Creative Build, because Muse Image
+   never paints a card (§3), and Best Agentic.
+4. **The credits are claimed on 10-26** with a spend limit at $150; the key
+   goes in `pass` as `meta/model-api-key` and in `doc/infra.md`'s table by
+   name, with a commented `.env.example` line, on the branch only.
+
+### Consequences
+- The 2026-10-30 decision point and §5 stand: the donate loop, if built in
+  the window, is new work and may be shown, but it is not the Meta piece,
+  and the video's three minutes go to the detector, the card and the live
+  site first.
+- The Revisit trigger "the Official Rules forbid pre-existing projects" is
+  resolved: they do not, provided the new work is unmistakable. The
+  disqualification is at the judges' sole discretion and is an accepted
+  risk; the delineation is over-done rather than under-done, and that is
+  the whole mitigation.
+- An X account and a gallery entry become part of the submission work; the
+  plan budgets a day for the video and the posts.
