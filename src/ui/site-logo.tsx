@@ -10,7 +10,7 @@ export function SiteLogo() {
         alt="Monster Paws"
         width={582}
         height={326}
-        priority
+        preload
         className="h-auto w-28 transition-transform hover:-rotate-2 hover:scale-105"
       />
     </Link>

@@ -3,6 +3,7 @@ import { Swatches, ThemeToggle } from "./swatches";
 import { AnimalCard } from "@/ui/animal";
 import { AnimalGallery } from "@/ui/animal-gallery";
 import { agoInWords } from "@/ui/dates";
+import { SiteLogo } from "@/ui/site-logo";
 import { TYPE_SCALE } from "@/ui/tokens";
 
 /** Local, so the guide never hotlinks a real shelter's photo to demo a component. */
@@ -49,7 +50,8 @@ function Section({
 export default function DesignPage() {
   if (process.env.NODE_ENV === "production") notFound();
   return (
-    <main className="mx-auto w-full max-w-4xl flex-1 px-6 py-12">
+    <main className="mx-auto flex w-full max-w-4xl flex-1 flex-col px-6 py-12">
+      <SiteLogo />
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold">Monster Paws design</h1>
         <ThemeToggle />

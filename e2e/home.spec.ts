@@ -11,7 +11,7 @@ test("home page renders the Monster Paws landing", async ({ page }) => {
 
 // AGPL-3.0 section 13 asks the running site to offer its source; the footer is
 // how every page does it, so it is checked on more than the home page.
-for (const path of ["/", "/animals", "/claim"]) {
+for (const path of ["/", "/animals", "/claim", "/demo"]) {
   test(`${path} carries the footer: contact address and the source link`, async ({ page }) => {
     await page.goto(path);
     const footer = page.getByRole("contentinfo");
