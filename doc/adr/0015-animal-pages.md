@@ -697,3 +697,29 @@ The "← Monster Paws" link above browse, detail and `/claim` read as "back to t
 list", though it went home. It is replaced by the wordmark (`SiteLogo`), which is
 the web's own convention for "home". A site Back button was tried the same day
 and removed. The browser's own Back is the one readers already use.
+
+## Amendment (2026-10-26): a filter change applies itself
+
+The 2026-10-04 filters recount as you pick but wait for "Show me". Logan,
+2026-10-26: a change to a dropdown should change the list. With JavaScript, a
+change to Kind, State or Sort now navigates to the filtered URL by itself
+(`BrowseFilterForm`, `src/ui/browse-filters.tsx`):
+
+- **One history entry per change** (Logan's pick over replacing the entry):
+  Back undoes the last change, and every URL still opens exactly the list it
+  names.
+- **400 ms after the last change**, so arrowing through a closed menu —
+  Windows fires a change per key — is one navigation where the arrows stop.
+- **Focus stays on the menu.** The form stays mounted and its picks follow
+  the URL during render; it is no longer re-keyed by the URL's filters, which
+  remounted it after every change and threw keyboard focus off the menu.
+- **The old list is dimmed and marked busy** while the new one loads, so it
+  never passes for the new filter's (`BrowseResults`).
+- **Without JavaScript nothing changes:** it is still a plain GET form, and
+  "Show me" applies it. The button is hidden only once the page has
+  hydrated, so no visitor is left without a way to apply a pick.
+
+A change still starts at the first animal (no `after`), still clears the
+other menu's pick when it would empty the page, and a filtered view is still
+the per-request query it was (ADR-0024), now one per change instead of one
+per "Show me".

@@ -15,7 +15,7 @@ import {
 } from "@/core/browse";
 import { getDb } from "@/db/client";
 import { AnimalCard, speciesEmoji } from "@/ui/animal";
-import { BrowseFilterForm } from "@/ui/browse-filters";
+import { BrowseFilterForm, BrowseResults, BrowseShell } from "@/ui/browse-filters";
 import { agoInWords, formatDate } from "@/ui/dates";
 import { waitingTeaser } from "@/ui/text";
 import { SiteLogo } from "@/ui/site-logo";
@@ -140,73 +140,69 @@ export default async function BrowsePage({
         Every animal here is real, and every listing links back to the shelter that published it.
       </p>
 
-      {/* Keyed by the URL's filters: Clear and Back are client navigations that
-          keep the component mounted, and its picks would outlive the reset. */}
-      <BrowseFilterForm
-        key={`${filters.species ?? ""}|${filters.state ?? ""}|${sort}`}
-        grid={grid}
-        species={filters.species}
-        state={filters.state}
-        sort={sort}
-      />
+      <BrowseShell>
+        <BrowseFilterForm grid={grid} species={filters.species} state={filters.state} sort={sort} />
 
-      {page.animals.length === 0 ? (
-        <p className="mt-12 text-lg text-muted">
-          No animals match that yet.{" "}
-          <Link href="/animals" className="font-medium text-foreground underline">
-            Show every animal
-          </Link>
-          .
-          {/* If this is empty with no filters at all, the corpus is there but
-              `source_updated_at` is null on every identity, which hides every
-              animal: run `npm run ingest -- replay rescuegroups` before
-              believing it (ADR-0015 as amended). */}
-        </p>
-      ) : (
-        <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {page.animals.map((animal) => {
-            const licensed = display.get(animal.id);
-            const place = [animal.city, animal.state].filter(Boolean).join(", ");
-            return (
-              <AnimalCard
-                key={animal.id}
-                href={`/animals/${animal.id}`}
-                name={animal.name}
-                facts={[animal.breed ?? animal.species, place].filter(Boolean).join(" · ")}
-                photo={licensed?.photos[0]}
-                footer={waitingLine(animal.listedAt, asOf) ?? undefined}
-                fallbackEmoji={speciesEmoji(animal.species)}
-              />
-            );
-          })}
-        </div>
-      )}
-
-      {(page.prevCursor || page.nextCursor) && (
-        <nav aria-label="Pages" className="mt-10 flex flex-wrap items-start justify-between gap-4">
-          {page.prevCursor ? (
-            <Link
-              href={hrefWith(filters, sort, { before: page.prevCursor })}
-              className="inline-block rounded-cuddly border-2 border-paw px-6 py-3 font-bold transition-colors hover:bg-paw/10"
-            >
-              ← Previous {BROWSE_PAGE_SIZE}
-            </Link>
-          ) : (
-            <span />
-          )}
-          {page.nextCursor && (
-            <div className="flex flex-col items-end gap-2 text-right">
-              <Link
-                href={hrefWith(filters, sort, { after: page.nextCursor })}
-                className="inline-block rounded-cuddly border-2 border-paw px-6 py-3 font-bold transition-colors hover:bg-paw/10"
-              >
-                Next {BROWSE_PAGE_SIZE} animals →
+        <BrowseResults>
+          {page.animals.length === 0 ? (
+            <p className="mt-12 text-lg text-muted">
+              No animals match that yet.{" "}
+              <Link href="/animals" className="font-medium text-foreground underline">
+                Show every animal
               </Link>
-              {teaser && <p className="max-w-xs text-sm text-muted">{teaser}</p>}
+              .
+              {/* If this is empty with no filters at all, the corpus is there but
+                  `source_updated_at` is null on every identity, which hides every
+                  animal: run `npm run ingest -- replay rescuegroups` before
+                  believing it (ADR-0015 as amended). */}
+            </p>
+          ) : (
+            <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {page.animals.map((animal) => {
+                const licensed = display.get(animal.id);
+                const place = [animal.city, animal.state].filter(Boolean).join(", ");
+                return (
+                  <AnimalCard
+                    key={animal.id}
+                    href={`/animals/${animal.id}`}
+                    name={animal.name}
+                    facts={[animal.breed ?? animal.species, place].filter(Boolean).join(" · ")}
+                    photo={licensed?.photos[0]}
+                    footer={waitingLine(animal.listedAt, asOf) ?? undefined}
+                    fallbackEmoji={speciesEmoji(animal.species)}
+                  />
+                );
+              })}
             </div>
           )}
-        </nav>
-      )}
+
+          {(page.prevCursor || page.nextCursor) && (
+            <nav aria-label="Pages" className="mt-10 flex flex-wrap items-start justify-between gap-4">
+              {page.prevCursor ? (
+                <Link
+                  href={hrefWith(filters, sort, { before: page.prevCursor })}
+                  className="inline-block rounded-cuddly border-2 border-paw px-6 py-3 font-bold transition-colors hover:bg-paw/10"
+                >
+                  ← Previous {BROWSE_PAGE_SIZE}
+                </Link>
+              ) : (
+                <span />
+              )}
+              {page.nextCursor && (
+                <div className="flex flex-col items-end gap-2 text-right">
+                  <Link
+                    href={hrefWith(filters, sort, { after: page.nextCursor })}
+                    className="inline-block rounded-cuddly border-2 border-paw px-6 py-3 font-bold transition-colors hover:bg-paw/10"
+                  >
+                    Next {BROWSE_PAGE_SIZE} animals →
+                  </Link>
+                  {teaser && <p className="max-w-xs text-sm text-muted">{teaser}</p>}
+                </div>
+              )}
+            </nav>
+          )}
+        </BrowseResults>
+      </BrowseShell>
 
       <p className="mt-12 text-sm text-muted">
         Listings refresh at most once a day, so ours can be behind a shelter&apos;s — always

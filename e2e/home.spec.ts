@@ -44,7 +44,7 @@ test("a visitor whose OS prefers dark still gets the light ground", async ({ pag
 // Tailwind v4's preflight leaves buttons on the default arrow; globals.css puts the hand back.
 test("buttons and filter dropdowns show the pointer cursor", async ({ page }) => {
   await page.goto("/animals");
-  for (const control of [page.getByRole("button", { name: /show me/i }), page.locator("select").first()]) {
-    await expect(control).toHaveCSS("cursor", "pointer");
-  }
+  await expect(page.locator("select").first()).toHaveCSS("cursor", "pointer");
+  await page.goto("/demo");
+  await expect(page.getByRole("button", { name: "Sponsor Plum" })).toHaveCSS("cursor", "pointer");
 });
