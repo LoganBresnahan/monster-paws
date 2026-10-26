@@ -175,8 +175,8 @@ export function DemoFlow() {
             </div>
           </fieldset>
           <p className="mt-5 text-sm text-muted">
-            <span className="font-semibold text-foreground">100% goes to {pet.name}&apos;s shelter.</span>{" "}
-            In the real thing, this opens Every.org&apos;s secure checkout. We never take a cut.
+            <span className="font-semibold text-foreground">Your donation goes to {pet.name}&apos;s shelter, and we keep $0.</span>{" "}
+            In the real thing, this opens Every.org&apos;s secure checkout.
           </p>
           <div className="mt-6 flex flex-wrap items-center justify-between gap-4">
             <button type="button" onClick={restart} className={quiet}>

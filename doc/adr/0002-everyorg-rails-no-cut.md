@@ -72,8 +72,9 @@ found otherwise on the live site, 2026-10-26:
    payouts for every donor, not only ours.
 3. **0% stays permanent; the processor's fee is named, not hidden.** We
    take nothing and Every.org takes nothing; a card's processing fee is the
-   processor's. Copy that says "100% goes to the shelter" is reviewed against
-   this before the donate loop ships.
+   processor's. So the site never claims "100%": it says "Every donation
+   goes to the shelter. We keep $0." (Logan, 2026-10-26), true whatever the
+   payment method costs.
 
 ### Consequences
 - A shelter that never claims its profile can be browsed but never

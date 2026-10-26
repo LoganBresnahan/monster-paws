@@ -16,7 +16,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Monster Paws",
   description:
-    "Sponsor a real shelter animal, get a keepsake painting in their likeness, and follow their story all the way to adoption day. 100% of every donation goes to the shelter.",
+    "Sponsor a real shelter animal, get a keepsake painting in their likeness, and follow their story all the way to adoption day. Every donation goes to the shelter, and we keep $0.",
 };
 
 export default function RootLayout({

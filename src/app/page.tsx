@@ -7,7 +7,7 @@ import { Lightbox } from "@/ui/lightbox";
 // never a real listing, donation or attested care event (DIRECTION.md, bright lines).
 const HOW = [
   { title: "Find", blurb: "Browse real adoptable animals from shelters near you." },
-  { title: "Sponsor", blurb: "Donate any amount. 100% goes to their shelter; we never take a cut." },
+  { title: "Sponsor", blurb: "Donate any amount. It goes to their shelter, and we keep $0." },
   { title: "Keepsake", blurb: "Get a watercolour keepsake painted in their likeness." },
   { title: "Follow", blurb: "Hear about the care you helped pay for, confirmed by the shelter." },
   { title: "Celebrate", blurb: "Their card changes on the day they go home." },
@@ -30,7 +30,7 @@ function HowVisual({ step }: { step: string }) {
       return (
         <div className={`${frame} flex flex-col items-center justify-center gap-2`}>
           <span className="rounded-cuddly bg-leaf px-5 py-2 text-lg font-bold text-white shadow">$5</span>
-          <span className="text-xs text-muted">→ all of it to the shelter</span>
+          <span className="text-xs text-muted">→ to the shelter, $0 to us</span>
         </div>
       );
     case "Keepsake":
@@ -77,7 +77,7 @@ export default function Home() {
         Sponsor a real shelter animal, get a keepsake painting in their
         likeness, and follow their story all the way to adoption day.{" "}
         <span className="font-semibold text-foreground">
-          100% of every donation goes to the shelter.
+          Every donation goes to the shelter. We keep $0.
         </span>
       </p>
 
