@@ -35,6 +35,15 @@ is the record, and a file of ticked boxes stops being read.
 
 ## UI
 
+- **A client navigation got plain text where it expected the page's RSC
+  payload** — Better Stack `InvariantError: Expected RSC response, got
+  text/plain`, 6 events in production around 11:00 UTC 2026-10-27, during
+  Logan's first walk-through after the launch (oplog 0001). Plain text is
+  Caddy's error body, a response Cloudflare cached for a different request
+  (it ignores the `Vary: RSC` header Next sets), or one of our own text
+  routes followed as a navigation. Next falls back to a full page load, so
+  nothing visibly broke. Next step: the events' URL and breadcrumbs
+  (`scripts/betterstack-sql.sh`). Found 2026-10-27.
 - **The production server logs "The destination stream closed early"** when a
   page is closed mid-response: three times in one e2e run (2026-10-26, 20/20
   green) and once in dev on `/animals`. It is the browser hanging up on a
