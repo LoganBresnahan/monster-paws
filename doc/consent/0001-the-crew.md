@@ -12,8 +12,9 @@
 - **Files:** `public/brand/crew/<pet>-painting.jpg`, `<pet>-photo.jpg` (the
   whole photo, opened from the card) and `<pet>-thumb.jpg` (a square on the pet)
   (TRADEMARKS.md: all rights reserved), each re-encoded from pixels alone so
-  no EXIF, GPS or generator metadata ships, the paintings and whole photos
-  marked `monsterpaws.org` in the bottom-right corner; `tests/crew-assets.test.ts`
+  no EXIF, GPS or generator metadata ships, the paintings marked
+  `monsterpaws.org · 2026` and the whole photos `monsterpaws.org` in the
+  bottom-right corner; `tests/crew-assets.test.ts`
   fails on any metadata segment.
 
 | Pet | Painting (Logan's pick) | Made by |

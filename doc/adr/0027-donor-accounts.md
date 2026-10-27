@@ -205,3 +205,22 @@ and the headers are how we learn whether Every.org sends it.
 - Someone writes in to lift a suppression: count them, and if they are more
   than rare, offer the lift on the sign-in page itself.
 
+
+## Amendment (2026-10-26): the donate loop's pages are designed in the demo first
+
+The account-less donate loop (decisions 3–5; phases 3–5) has no page design
+yet. Its pages are drawn first as `/demo`'s sponsor, thank-you and collection
+pages (ADR-0028 as amended 2026-10-26), with the crew and no money moving,
+and Logan reviews them there. The real pages are built from that design, with
+what the demo cannot show added on: the intent minted before the hand-off,
+the Every.org donate link carrying its id, the webhook, the claim link. Three
+things the design must already respect:
+
+- **the amount starts at $1** in the design and follows Every.org's real
+  minimum once a measured donation shows it (ADR-0002 as amended 2026-10-26);
+- **"we keep $0"**, never "100%" (same amendment);
+- **the keepsake arrives when it is ready**, never instantly (ADR-0004 as
+  amended 2026-10-05): the thank-you page shows the animal's real photo and a
+  link to their card ("See {name} in your collection"), and the card shows
+  the painting under way until it lands. No separate "save" step: the card is
+  already in the donor's collection (Logan, 2026-10-26).

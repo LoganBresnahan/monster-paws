@@ -10,7 +10,7 @@ const HOW = [
   { title: "Sponsor", blurb: "Donate any amount. It goes to their shelter, and we keep $0." },
   { title: "Keepsake", blurb: "Get a watercolour keepsake painted in their likeness." },
   { title: "Follow", blurb: "Hear about the care you helped pay for, confirmed by the shelter." },
-  { title: "Celebrate", blurb: "Their card changes on the day they go home." },
+  { title: "Celebrate", blurb: "Hear the day they go home, and share their keepsake with everyone." },
 ];
 
 function HowVisual({ step }: { step: string }) {
@@ -18,12 +18,11 @@ function HowVisual({ step }: { step: string }) {
   switch (step) {
     case "Find":
       return (
-        <div className={`${frame} flex items-center gap-2 p-3`}>
-          <Image src="/brand/crew/ducky-thumb.jpg" alt="" width={480} height={480} sizes="64px" className="h-16 w-16 shrink-0 rounded-[0.75rem] object-cover" />
-          <div className="text-left">
-            <p className="font-bold">Ducky</p>
-            <p className="text-xs text-muted">Pit Bull mix · 5</p>
-          </div>
+        <div className={frame}>
+          <Image src="/brand/crew/ducky-photo.jpg" alt="" fill sizes="(min-width: 1024px) 190px, (min-width: 640px) 30vw, 90vw" className="object-cover" />
+          <span className="absolute bottom-2 left-2 rounded-full bg-card/90 px-2.5 py-1 text-xs shadow">
+            <span className="font-bold">Ducky</span> · Pit Bull mix
+          </span>
         </div>
       );
     case "Sponsor":
@@ -52,9 +51,12 @@ function HowVisual({ step }: { step: string }) {
       );
     default:
       return (
-        <div className={`${frame} border-2 border-honey`}>
-          <Image src="/brand/crew/ducky-painting.jpg" alt="" fill sizes="(min-width: 1024px) 190px, (min-width: 640px) 30vw, 90vw" className="object-cover" />
-          <span className="absolute top-2 left-2 rounded-full bg-honey px-2.5 py-1 text-xs font-bold text-foreground shadow">🎉 Adopted!</span>
+        <div className={`${frame} flex flex-col items-center justify-center gap-2 p-3 text-xs`}>
+          <span className="flex w-full items-center justify-between gap-1 rounded-full bg-card px-3 py-1.5 text-left shadow-sm">
+            🎉 Ducky went home!
+            <span className="font-bold text-leaf-deep">✓</span>
+          </span>
+          <span className="rounded-full border-2 border-leaf px-3 py-1 font-bold text-leaf-deep">Share ↗</span>
         </div>
       );
   }
@@ -102,7 +104,7 @@ export default function Home() {
         </h2>
         <p className="mx-auto mt-2 max-w-2xl text-muted">
           The founders&apos; own pets, already home. Each watercolour is painted
-          by AI from a real photo, like the keepsake a sponsor collects.
+          by AI from real photos, like the keepsakes a sponsor collects.
         </p>
         <ul className="mt-6 flex flex-wrap justify-center gap-8">
           {CREW.map((pet) => (
@@ -159,7 +161,7 @@ export default function Home() {
 
       <section aria-labelledby="how" className="mt-20 w-full max-w-5xl">
         <h2 id="how" className="text-3xl font-bold">
-          How it works, with Ducky
+          How it works
         </h2>
         <p className="mx-auto mt-2 max-w-2xl text-muted">
           Ducky&apos;s already home with us, so this is an illustration of what a sponsor sees.

@@ -8,6 +8,7 @@ test("robots.txt fences filtered browse and the API, and opts out of AI training
   expect(body).toMatch(/User-Agent: GPTBot\nUser-Agent: ClaudeBot[\s\S]*?Disallow: \/\n/);
   expect(body).toContain("Disallow: /api/");
   expect(body).toContain("Disallow: /animals?*species=");
+  expect(body).toContain("Disallow: /demo/");
   expect(body).toContain("Disallow: /animals?*state=");
   expect(body).toContain("Disallow: /animals/random");
   // Link previews are how donors arrive; they must never be fenced out.

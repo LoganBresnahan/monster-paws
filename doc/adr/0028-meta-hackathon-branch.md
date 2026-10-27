@@ -313,3 +313,23 @@ the crew (pick, sponsor with no money moving, the keepsake, example updates,
 adoption day; every step labelled an illustration, DIRECTION.md's bright
 lines). It is topdog's, built before the window opens; nothing in it calls
 Meta's API, and the hackathon entry's own demo lives on the `meta` branch.
+
+## Amendment (2026-10-26, later): the demo walks the real pages
+
+Logan: the demo should look like the real thing. `/demo` becomes five pages
+that mirror the site, the crew in place of listings: browse (`/demo`, the
+`/animals` grid), a listing (`/demo/<pet>`, the animal page plus a Sponsor
+button), the sponsor page, a thank-you, and the donor's collection
+(`/demo/collection/<pet>`: the keepsake arriving, the story, adoption day). It
+replaces the one-page demo of the amendment above. Rules for every page:
+
+- a banner says it is a demo, no money moves, and the crew are already home;
+  the pages sit under `/demo` and are kept off crawlers (ADR-0024);
+- the components are the real ones (`AnimalCard`, `AnimalGallery`), so the
+  demo cannot drift from the site;
+- state lives in the URL (pet, amount), so Back works and nothing is stored;
+- the checkout step is a labelled placeholder in our own styling — never
+  Every.org's look, logo or wording, which would be impersonating them.
+
+The sponsor, thank-you and collection pages are the first design of ADR-0027's
+donate loop (its amendment of today).

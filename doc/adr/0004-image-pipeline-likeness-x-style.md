@@ -747,3 +747,40 @@ negative; then klein Base repainting a LaMa'd groin box with the negative
 decision 3's `cu128`: PyTorch publishes torch 2.14.1 for CUDA 13.0 only
 (`doc/infra.md`, GPU rental).
 
+
+## Amendment (2026-10-26): the crew's dogs cleaned by a hand step; the LoRA's set cleaned the same way
+
+The 2026-10-23 amendment let a cleaned crew painting onto the home section and
+recorded none approved. After NAG (batches 12a–12b) and klein Base repainting a
+LaMa'd ellipse (12c–12d, blurry: the painter's lines erased and never redrawn),
+the method that passed Logan's eye (`doc/plans/base-model-candidates.md`,
+batches 12f–12h):
+
+1. **Erase the anatomy alone**, never a box or ellipse round it: a polygon
+   traced by eye on a 0.01 grid, or SAM 2.1's answer to points placed on it
+   and off it, widened 0.4% of the width, filled by LaMa
+   (`comfyui/groinlines.py`). With the painter's outline left standing round a
+   small hole, the fill already reads as painted.
+2. **klein Base repaints the hole** at 0.85, the anatomy words as its
+   negative, the fill as its reference and its start, composited back through
+   the hole feathered (the explore `sheath` pass).
+3. **A line the repaint still lacks is inked afterwards**, onto the repaint
+   (`comfyui/groinink.py`): crisp, in the painter's darkest nearby ink,
+   tapered. A line drawn before the repaint comes back as a soft brown trace
+   (Logan).
+
+Logan's picks (2026-10-26): Plum 12g-007, Beetle 12g-029, Ducky 12h-022 (the
+0.0018 line); Marty 11b-020 and Stacey 11c-023 as painted. They are on the home
+section (`doc/consent/0001-the-crew.md`), each marked `monsterpaws.org · 2026`
+in the corner.
+
+**The LoRA's training set is cleaned by this hand step**, not by
+Qwen-Image-Edit as the 2026-10-22 amendment planned: Commons dogs across
+breeds, coats and poses, painted by klein-v1, each traced and inked by hand
+and checked by Logan on a sheet — a few minutes a painting, two of six needing
+a second pass. Before hundreds are pulled: a checker bake-off (a local
+vision-language model against the Claude API, on generated paintings only,
+scored against Logan's 12c–12h verdicts) to sort candidates, and the set's
+photo licences decided in their own ADR. A horse LoRA follows the dog one
+(Logan, 2026-10-23). Nothing here enters the donation path: decision 4 of
+2026-10-15 holds, and the LoRA is how production stops painting anatomy.

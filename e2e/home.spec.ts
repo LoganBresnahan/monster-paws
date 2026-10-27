@@ -45,6 +45,6 @@ test("a visitor whose OS prefers dark still gets the light ground", async ({ pag
 test("buttons and filter dropdowns show the pointer cursor", async ({ page }) => {
   await page.goto("/animals");
   await expect(page.locator("select").first()).toHaveCSS("cursor", "pointer");
-  await page.goto("/demo");
-  await expect(page.getByRole("button", { name: "Sponsor Plum" })).toHaveCSS("cursor", "pointer");
+  await page.goto("/demo/plum/sponsor");
+  await expect(page.getByRole("button", { name: "$5" })).toHaveCSS("cursor", "pointer");
 });

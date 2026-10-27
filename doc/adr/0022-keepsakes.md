@@ -111,3 +111,31 @@ It must be in the first email: asking at the first revocation is too late.
   `grant` basis with a purge term, or stay `aggregator`-basis.
 - A donor asks to delete their own keepsake — donor-initiated deletion is a
   privacy question, not a basis question; it needs its own decision.
+
+## Open question (2026-10-26): a mark on the keepsake
+
+The crew's portraits on the home section carry a small `monsterpaws.org ·
+2026` in the bottom-right corner — the year it was painted, as an artist
+dates a work (Logan) — baked into the file (`doc/consent/0001-the-crew.md`):
+a shared image leads back to us. Whether a **donor's** keepsake carries the
+same mark is not decided — it helps sharing, but the keepsake is theirs. To
+settle before the first keepsake is painted for a donor (roadmap item 3c/4),
+in this ADR.
+
+Two notes from the same day, for whoever settles it:
+
+- **The donor keeps all four paintings.** Copy never says they "choose one",
+  which reads as losing three (Logan); the face of the card is a pick among
+  paintings they keep (ADR-0004 as amended 2026-10-14).
+- **Keepsakes as cards to send** (Logan's long-term idea): the paintings
+  laid out as designed cards a donor emails or prints — a holiday card of
+  the animal they sponsored. A mark and a year sit naturally on a card; a
+  layout that crops the painting must keep both. Not scheduled: an idea for
+  DIRECTION.md's collector loop when the keepsake ships.
+- **Frames, not a changed card** (Logan, the same day): once a donor has the
+  painting, they share it; custom frames for the photos could celebrate
+  holidays, and an adoption could **unlock a frame** to share it in. Nothing
+  covers the painting itself — the demo shows adoption as the story's last
+  update, never a badge over the keepsake. No frame designs exist yet.
+  DIRECTION.md's "Evolve" step (the card transforms into a gotcha-day
+  version) is the thing this would revise, and is Logan's to settle there.
