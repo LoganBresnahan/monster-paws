@@ -36,7 +36,8 @@
     "explore:groinink": "docker compose -f comfyui/compose.yml run --rm --no-deps --entrypoint python explore /home/comfy/harness/groinink.py",
     "explore:legs": "docker compose -f comfyui/compose.yml run --rm --no-deps --entrypoint python explore /home/comfy/harness/legs.py",
     "explore:signature": "docker compose -f comfyui/compose.yml run --rm --no-deps --entrypoint python explore /home/comfy/harness/signature.py",
-    "explore:consensus": "docker compose -f comfyui/compose.yml run --rm --entrypoint python explore /home/comfy/harness/likeness.py consensus"
+    "explore:consensus": "docker compose -f comfyui/compose.yml run --rm --entrypoint python explore /home/comfy/harness/likeness.py consensus",
+    "explore:fetch": "python3 -I comfyui/commons_fetch.py"
   },
   "dependencies": {
     "@sentry/nextjs": "^11.1.0",

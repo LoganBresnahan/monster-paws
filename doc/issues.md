@@ -52,6 +52,18 @@ is the record, and a file of ticked boxes stops being read.
 
 ## Ops
 
+- **`npm install` under npm 11.19.0 rewrites `package-lock.json` by 66 lines**,
+  adding the nested optional wasm packages under
+  `node_modules/@tailwindcss/oxide-wasm32-wasi` (`@emnapi/core`,
+  `@emnapi/runtime`, `@emnapi/wasi-threads`, `@napi-rs/wasm-runtime`,
+  `@tybys/wasm-util`, `tslib`). The lock on topdog at da83275 predates today's
+  work and CI's `npm ci` is green without them, so this is a newer npm than the
+  one that wrote the lock, not a dependency change. The trap: after any
+  `npm install` the lock shows a 66-line diff that must not ride along in an
+  unrelated commit — stage by path, and commit the lock alone and on purpose
+  if it is ever meant to move. Found by the moderator session 2026-10-27 while
+  checking the outreach rebase.
+
 - **The dev box freezes hard every few days, mostly within minutes of
   waking from S3 sleep — hardware or firmware, not the pipeline.** Twelve
   unexpected shutdowns in thirty days from 2026-09-14; nine within 1–14

@@ -1260,6 +1260,95 @@ belly line along the top of the far leg (the first placement arched above
 that edge and was lowered). Sheets and full paintings:
 `var/explore/batch12h/inked/`. Logan's eye decides.
 
+## The checker bake-off — sorting the LoRA set's paintings before Logan looks (design, Claude, 2026-10-27; nothing run)
+
+ADR-0004 as amended 2026-10-26 asks, before hundreds of Commons dogs are
+pulled, for a checker that sorts generated paintings into clean and not,
+chosen by a bake-off: a local vision-language model against the Claude API,
+on paintings only, scored against Logan's verdicts from batches 12c–12h.
+This is the design; the first result goes under "first read" below it.
+
+**What the checker is for.** The set is ~100 approved paintings out of
+several hundred painted, and the hand step costs minutes a painting. The
+checker's job is one question per painting — *does it show male genitals
+(a testicle, scrotum, sheath or penis drawn as a distinct shape; teats are
+not), batch 9b's rule* — so Logan's sheet shows the clean candidates first
+and the anatomy ones go straight to the hand step. It never decides what
+enters the set: Logan's eye does, as always. So the number that matters is
+**recall on anatomy** — a painting it calls clean that is not costs a
+dirty pair in the set; a clean painting it flags only costs Logan a look.
+
+**Ground truth, and its gap.** Logan's verdicts so far are *picks*, and a
+pick mixes faults: 12c's eleven rejects "either regrew or read wrong";
+12g's 24 non-picks include clean groins with a "leftover visible brown
+trace line". A non-pick is therefore not an anatomy label. What exists:
+
+| Paintings | Anatomy labels | By whom |
+| --- | --- | --- |
+| 9b, 24 (klein-v1, Plum and Ducky) | anatomy in 22 | Claude by eye, 9b's rule (`batch9b/marks/labels.json`) |
+| 10a, 24 (klein Base, the negative) | anatomy in 19 | Claude by eye (`batch10a/groin/labels.json`, five doubtful named) |
+| 12c, 12 repaints | 1 pick; the first read names regrown vs clean per painting | Logan's pick; Claude's read |
+| 12d, 24 repaints | 0 picks; the read says no regrowth, blur | Logan; Claude |
+| 12g, 36 repaints + 12h, 8 inked | 12 + 1 picks; reads name anatomy per dog | Logan; Claude |
+
+So the first step is a label sheet, not a model: every one of those ~130
+paintings as a groin crop and the full painting side by side, Logan
+marking each `clean` / `anatomy` / `unsure` in
+`var/explore/anatomy-labels.tsv` (batch, id, label, who, date), Claude's
+labels pre-filled where they exist so he confirms rather than starts
+blank. Roughly 60 with anatomy and 70 without — enough to separate
+checkers, not enough for a percentage point.
+
+**Candidates**, each on two views — the full painting, and a groin crop
+(the lower third of the detector's subject box; the hand step's polygon
+is not available for a new painting):
+
+1. **The Claude API**: Claude Opus 5.5 (`claude-opus-5-5`) and Claude
+   Haiku 5.5 (`claude-haiku-5-5`), the image as base64, one structured
+   answer (`anatomy: yes | no | unsure`, one line of why), thinking left
+   at its default. Cost is cents: a 1216×832 painting is ~1,300 input
+   tokens, so ~130 paintings × 2 views × 2 models is a few dollars at
+   most. **Paintings only, never a photo** (ADR-0031 decision 5; ADR-0004
+   as amended 2026-08-02 §2 is about photos leaving us). A refusal
+   (`stop_reason: refusal`) is a result to count, not an error to hide —
+   the subject is exactly what a classifier might decline. The dependency
+   is `@anthropic-ai/sdk`, already named as our first Claude dependency by
+   ADR-0021 ("whichever lands first brings it"); the key goes into `pass`
+   as `anthropic/api-key` and the `doc/infra.md` registry table, by Logan
+   — the registry has none today. A tsx script under `scripts/`, run with
+   `--env-file-if-exists` like the others.
+2. **A local VLM on the Arc**, in the ComfyUI image under the guard,
+   each with a `models.manifest` line (licence read) before it runs:
+   Qwen3-VL-4B-Instruct or Qwen2.5-VL-3B-Instruct (Apache-2.0; the 7–8B
+   fit the card only quantised and the explore container's 12 GB CPU cap
+   not at all), and Moondream2 (Apache-2.0, ~2B, runs on the CPU in
+   seconds) as the cheap end. Same question, same two views.
+3. **A baseline that is already licensed and in the store**: OWLv2's
+   zero-shot score for "dog testicles", "sheath", "penis" inside the
+   subject box (ADR-0026's detector, `detect.py`), thresholded. If it
+   matches the VLMs it wins by cost.
+
+**Scoring.** Per candidate and view: the confusion matrix against Logan's
+labels, recall on anatomy first, then how many clean paintings it flags;
+seconds and cents per painting; refusals and unparseable answers counted
+as `unsure`. On `unsure` the painting goes to Logan's sheet unsorted.
+Written as a table under "first read", the sheets beside it under
+`var/explore/checker/`.
+
+**What decides.** Logan's eye, reading the table: the checker that misses
+no anatomy painting on these ~130 with the fewest clean ones flagged. If
+none reaches that, the best one *ranks* the sheet by its confidence and
+Logan still looks at every painting, in that order — the bake-off then
+buys ordering, not a filter, and the ADR-0004 amendment that names the
+winner says so. A tie between a local model and the API goes to the local
+one (nothing leaves the box, no key, no per-image cost).
+
+**Order.** The label sheet and Logan's labels first (no model, no key);
+the OWLv2 baseline (nothing new to license); the Claude side once the key
+is in `pass`; the local VLMs last, since each is a manifest line and a
+download. Nothing here paints: the card is used only for the local VLM
+runs, under `guard.sh` as any batch.
+
 ## Avenues (Logan, 2026-10-11)
 
 "Just because we find something that works doesn't mean I don't want to
