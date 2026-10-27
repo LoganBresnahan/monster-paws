@@ -168,7 +168,9 @@ async function main(argv: string[]) {
       const sent = await mailpitTransport(process.env).send({ from, to: status.confirmedAddress ?? "preview@example.org", ...rendered });
       out({ preview: args.shelter, to: status.confirmedAddress ?? "preview@example.org", messageId: sent.messageId, inbox: process.env.MAILPIT_API_URL ?? "http://localhost:8025" });
     } else if (args.command === "send") {
-      const shelters = await waveShelters(db, args.wave);
+      const skip = new Set(args.skip);
+      const shelters = (await waveShelters(db, args.wave)).filter((s) => !skip.has(s.shelterExternalId));
+      if (skip.size) console.error(`held out by --skip: ${[...skip].join(" ")}`);
       const messages = await assembleWave(db, shelters, { sender, from, timing: timingFor(new Date()) });
       if (!args.live) {
         printReport(await rehearseWave(db, args.wave.name, messages, { transport: mailpitTransport(process.env) }), true);

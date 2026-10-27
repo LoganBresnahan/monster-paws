@@ -13,7 +13,7 @@ export type OutreachArgs =
   | { command: "find-emails"; shelter: string }
   | { command: "preview"; shelter: string }
   | { command: "prepare"; wave: WaveSpec }
-  | { command: "send"; wave: WaveSpec; live: boolean; override: string | null }
+  | { command: "send"; wave: WaveSpec; live: boolean; override: string | null; skip: string[] }
   | {
       command: "record";
       shelter: string;
@@ -32,7 +32,7 @@ export const USAGE = [
   "       outreach find-emails <shelter-key>",
   "       outreach preview <shelter-key>",
   "       outreach prepare --wave <name> [--zip <zip> --miles <n> | --states IL,WI] [--limit <n>]",
-  "       outreach send --wave <name> [--zip <zip> --miles <n> | --states IL,WI] [--limit <n>] [--live] [--override <note>]",
+  "       outreach send --wave <name> [--zip <zip> --miles <n> | --states IL,WI] [--limit <n>] [--skip <key,key>] [--live] [--override <note>]",
   "       outreach record <shelter-key> --wave <name> --kind sent|bounced|replied|opted_out|granted [--message-id <id>] [--note <text>] [--at <iso>] [--eml <file>]",
   "       outreach status",
   "a shelter key is animals.shelter_external_id, e.g. rescuegroups:org:3077; chicagoland-1 needs no region",
@@ -103,12 +103,14 @@ function waveSpec(flag: Map<string, string | true>, required: boolean): WaveSpec
   return spec;
 }
 
+const SHELTER_KEY = /^[a-z0-9-]+(?::[a-z0-9-]+)?:org:[^\s]+$/;
+
 export function parseOutreachArgs(args: readonly string[]): OutreachArgs {
   const [command, ...rest] = args;
   const { positional, flag } = flags(rest);
   const shelter = () => {
     const key = positional[0];
-    if (!key || !/^[a-z0-9-]+(?::[a-z0-9-]+)?:org:[^\s]+$/.test(key)) {
+    if (!key || !SHELTER_KEY.test(key)) {
       throw new Error(`${command} takes a shelter key like rescuegroups:org:3077\n${USAGE}`);
     }
     return key;
@@ -127,7 +129,10 @@ export function parseOutreachArgs(args: readonly string[]): OutreachArgs {
       const live = flag.get("--live") === true;
       const override = text(flag, "--override");
       if (override !== null && !live) throw new Error("--override only means something with --live");
-      return { command, wave: waveSpec(flag, true)!, live, override };
+      // Shelters held out of this run by hand — a city department whose ask would not fit, say — never a filter on the list itself.
+      const skip = (text(flag, "--skip") ?? "").split(",").map((k) => k.trim()).filter(Boolean);
+      for (const key of skip) if (!SHELTER_KEY.test(key)) throw new Error(`--skip takes shelter keys like rescuegroups:org:3077, not '${key}'`);
+      return { command, wave: waveSpec(flag, true)!, live, override, skip };
     }
     case "record": {
       const key = shelter();

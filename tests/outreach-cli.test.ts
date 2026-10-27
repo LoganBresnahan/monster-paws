@@ -27,7 +27,12 @@ describe("ADR-0029 parseOutreachArgs", () => {
       wave: { name: "milwaukee-1", within: { zip: "53202", miles: 40 }, limit: 50 },
       live: false,
       override: null,
+      skip: [],
     });
+    expect(parseOutreachArgs(["send", "--wave", "chicagoland-1", "--skip", "rescuegroups:org:11266, rescuegroups:org:9756"])).toMatchObject({
+      skip: ["rescuegroups:org:11266", "rescuegroups:org:9756"],
+    });
+    expect(() => parseOutreachArgs(["send", "--wave", "chicagoland-1", "--skip", "11266"])).toThrow(/--skip takes shelter keys/);
     expect(parseOutreachArgs(["send", "--wave", "midwest-1", "--states", "il, wi"])).toMatchObject({ wave: { name: "midwest-1", states: ["IL", "WI"] } });
     expect(parseOutreachArgs(["send", "--wave", "chicagoland-1"])).toMatchObject({ wave: CHICAGOLAND });
     expect(() => parseOutreachArgs(["send", "--wave", "elsewhere-1"])).toThrow(/names no region/);
