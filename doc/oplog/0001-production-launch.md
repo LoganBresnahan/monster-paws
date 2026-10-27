@@ -335,6 +335,24 @@ monsterpaws-worker-1 env` shows none. `scripts/backup-db.sh` by hand:
 `pgdump/2026-10-27.sql.gz`, 10,021,979 bytes — the database mid-poll — listed
 from dev with the vault key; heartbeat "up". `/etc/cron.d/monsterpaws-backup`
 installed: `30 8 * * *`. The 08:30 run takes the first full copy.
+
+**7, finished** 08:27:06 UTC, 6 h 11 min: `observed 63,435, persisted 63,434,
+deduped 1, conflicted 0, failures 0`, one `animal.seen` per animal, a
+complete `ingest_runs` row (02:16:25 → 08:27:06). Heartbeat pinged. Health
+**200**: `db up`, `lastCompletePollAt 08:27:06`, `pollStale false`, sha
+`34d36ff…`. `/animals`, `?state=IL` and `?zip=60614` each list a full page.
+The droplet's own 07:00 job failed as expected — `ingest.poll` failed after 3
+attempts by 07:49 with `ECONNRESET` (RescueGroups' block).
+Memory after (08:37): app 115 MB, worker 72 MB, caddy 16 MB; 416 MB available,
+swap 166 MB.
+
+**9, first full copy.** The 08:30 cron: `pgdump/2026-10-27.sql.gz` 109,342,400
+bytes, replacing the 02:37 mid-poll dump of the same date.
+
+**10, smoke (machine).** 200 for `/`, an Illinois animal page, `/demo`,
+`/demo/ducky`, `/demo/collection/ducky`, `/claim`, `/robots.txt`,
+`/favicon.ico`. Left for Logan: the walk-through on a phone and a laptop, and
+one deliberate error seen in Better Stack with the sha and `environment` tag.
 Storage 10 GiB; maintenance window Tuesdays 00:15 UTC.
 
 ## Follow-ups
