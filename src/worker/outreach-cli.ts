@@ -4,6 +4,8 @@
  *   npm run outreach -- list [--wave <name> …]     the shelters with visible animals, or one wave's
  *   npm run outreach -- match <shelter>            IRS rows for the name → Logan picks → Every.org by EIN → recorded
  *   npm run outreach -- find-emails <shelter>      the shelter's own site → candidates → Logan confirms one
+ *   npm run outreach -- prepare --wave <name>      both of the above for every shelter in the wave, in one
+ *                                                  sitting; the ones already recorded are skipped, q stops
  *   npm run outreach -- preview <shelter>          the rendered ask into Mailpit (localhost:8025)
  *   npm run outreach -- send --wave <name> [--live] the wave through the guard: into Mailpit and rolled back,
  *                                                  or, with --live, as Logan through Gmail — a person confirms
@@ -63,6 +65,55 @@ function printReport(report: WaveSendReport, rehearsal: boolean): void {
   if (report.remaining.length) console.error(`  ${report.remaining.length} not reached: ${report.remaining.join(" ")}`);
 }
 
+class Quit extends Error {}
+
+/** `q` at any prompt ends a `prepare` walk; what was recorded stays recorded. */
+function quitOn(answer: string): string {
+  if (answer.trim().toLowerCase() === "q") throw new Quit("quit");
+  return answer;
+}
+
+type MatchOutcome = { written: true; message: string; recorded: { ein: string; slug: string; claim: string } } | { written: false; message: string };
+
+/** The IRS rows for the name, a person's pick, Every.org by that EIN, and one row only after a second yes. */
+async function matchShelter(db: Db, shelter: OutreachShelter, io: LiveConsole, checkedBy: string): Promise<MatchOutcome> {
+  if (!shelter.name || !shelter.state) return { written: false, message: "no listed name or state to match on — nothing written" };
+  const { file, fetchedAt } = await ensureBmf(shelter.state);
+  const candidates = matchEin({ name: shelter.name, city: shelter.city, state: shelter.state }, readBmf(file));
+  console.error(`${shelter.name} (${shelter.city ?? "?"}, ${shelter.state}) against ${file} of ${fetchedAt.toISOString().slice(0, 10)}:`);
+  if (candidates.length === 0) return { written: false, message: "no IRS row within reach of that name — nothing written" };
+  candidates.forEach((c, i) => console.error(`  ${i + 1}. ${c.ein}  ${c.row.name}  ${c.row.city}  score ${c.score.toFixed(2)}  (${c.reasons.join(", ")})`));
+  const pick = Number((await io.ask("Which is it? [number, or n]: ")).trim());
+  if (!(Number.isInteger(pick) && pick >= 1 && pick <= candidates.length)) return { written: false, message: "no pick — nothing written" };
+  const nonprofit = await everyorgClientFromEnv(process.env).nonprofitByEin(candidates[pick - 1].ein);
+  if (!nonprofit) return { written: false, message: `Every.org holds nothing under EIN ${candidates[pick - 1].ein} — nothing written` };
+  console.error(`Every.org: ${nonprofit.name}  ${nonprofit.profileUrl}  ${nonprofit.claim}  ${nonprofit.locationAddress ?? ""}`);
+  if ((await io.ask("Record this match? [y/n]: ")).trim().toLowerCase() !== "y") return { written: false, message: "not recorded" };
+  await recordShelterNonprofit(db, { shelterExternalId: shelter.shelterExternalId, nonprofit, checkedBy, fetchedAt: new Date() });
+  return { written: true, message: `recorded ${nonprofit.ein} ${nonprofit.slug} (${nonprofit.claim})`, recorded: { ein: nonprofit.ein, slug: nonprofit.slug, claim: nonprofit.claim } };
+}
+
+type AddressOutcome = { written: true; message: string; email: string } | { written: false; message: string };
+
+/** The shelter's own site read politely, every address a candidate, one confirmed only by a person — or typed by one. */
+async function findShelterAddress(db: Db, shelter: OutreachShelter, io: LiveConsole, confirmedBy: string): Promise<AddressOutcome> {
+  // No website listed: nothing to read, so the only address is one a person types.
+  const found = shelter.website
+    ? await findAddresses(shelter.website, politeFetcher())
+    : { candidates: [], contactFormOnly: false, pagesRead: [], blockedByRobots: [], errors: [`${shelter.shelterExternalId} lists no website`] };
+  await recordAddressCandidates(db, shelter.shelterExternalId, found.candidates, new Date());
+  out({ ...found, website: shelter.website });
+  found.candidates.forEach((c, i) => console.error(`  ${i + 1}. ${c.email}  (${c.sourceUrl})`));
+  if (found.contactFormOnly) console.error("  a contact form and no address: write through the form by hand, or skip");
+  if (!shelter.website) console.error("  no website listed: type an address you found yourself (their Every.org page, a directory), or n");
+  const answer = (await io.ask("Confirm which? [number, an address to type, or n]: ")).trim();
+  const pick = Number(answer);
+  const email = Number.isInteger(pick) && pick >= 1 && pick <= found.candidates.length ? found.candidates[pick - 1].email : answer.includes("@") ? answer : null;
+  if (!email) return { written: false, message: "nothing confirmed" };
+  await confirmAddress(db, shelter.shelterExternalId, email, confirmedBy, new Date());
+  return { written: true, message: `confirmed ${email}`, email };
+}
+
 async function main(argv: string[]) {
   const args = parseOutreachArgs(argv);
   const db = getDb();
@@ -77,37 +128,35 @@ async function main(argv: string[]) {
       console.error(`${shelters.length} shelters${args.wave ? ` in wave '${args.wave.name}'` : ""}`);
     } else if (args.command === "match") {
       const shelter = await shelterByKey(db, args.shelter);
-      if (!shelter.name || !shelter.state) throw new Error(`${args.shelter} has no listed name or state to match on`);
-      const { file, fetchedAt } = await ensureBmf(shelter.state);
-      const candidates = matchEin({ name: shelter.name, city: shelter.city, state: shelter.state }, readBmf(file));
-      console.error(`${shelter.name} (${shelter.city ?? "?"}, ${shelter.state}) against ${file} of ${fetchedAt.toISOString().slice(0, 10)}:`);
-      if (candidates.length === 0) throw new Error("no IRS row within reach of that name — nothing written");
-      candidates.forEach((c, i) => console.error(`  ${i + 1}. ${c.ein}  ${c.row.name}  ${c.row.city}  score ${c.score.toFixed(2)}  (${c.reasons.join(", ")})`));
-      const pick = Number((await io.ask("Which is it? [number, or n]: ")).trim());
-      if (!(Number.isInteger(pick) && pick >= 1 && pick <= candidates.length)) throw new Error("no pick — nothing written");
-      const nonprofit = await everyorgClientFromEnv(process.env).nonprofitByEin(candidates[pick - 1].ein);
-      if (!nonprofit) throw new Error(`Every.org holds nothing under EIN ${candidates[pick - 1].ein} — nothing written`);
-      console.error(`Every.org: ${nonprofit.name}  ${nonprofit.profileUrl}  ${nonprofit.claim}  ${nonprofit.locationAddress ?? ""}`);
-      if ((await io.ask("Record this match? [y/n]: ")).trim().toLowerCase() !== "y") throw new Error("not recorded");
-      await recordShelterNonprofit(db, { shelterExternalId: args.shelter, nonprofit, checkedBy: sender.name, fetchedAt: new Date() });
-      out({ recorded: args.shelter, ein: nonprofit.ein, slug: nonprofit.slug, claim: nonprofit.claim });
+      const outcome = await matchShelter(db, shelter, io, sender.name);
+      if (!outcome.written) throw new Error(outcome.message);
+      out({ recorded: args.shelter, ...outcome.recorded });
     } else if (args.command === "find-emails") {
       const shelter = await shelterByKey(db, args.shelter);
-      // No website listed: nothing to read, so the only address is one a person types.
-      const found = shelter.website
-        ? await findAddresses(shelter.website, politeFetcher())
-        : { candidates: [], contactFormOnly: false, pagesRead: [], blockedByRobots: [], errors: [`${args.shelter} lists no website`] };
-      await recordAddressCandidates(db, args.shelter, found.candidates, new Date());
-      out({ ...found, website: shelter.website });
-      found.candidates.forEach((c, i) => console.error(`  ${i + 1}. ${c.email}  (${c.sourceUrl})`));
-      if (found.contactFormOnly) console.error("  a contact form and no address: write through the form by hand, or skip");
-      if (!shelter.website) console.error("  no website listed: type an address you found yourself (their Every.org page, a directory), or n");
-      const answer = (await io.ask("Confirm which? [number, an address to type, or n]: ")).trim();
-      const pick = Number(answer);
-      const email = Number.isInteger(pick) && pick >= 1 && pick <= found.candidates.length ? found.candidates[pick - 1].email : answer.includes("@") ? answer : null;
-      if (!email) throw new Error("nothing confirmed");
-      await confirmAddress(db, args.shelter, email, sender.name, new Date());
-      out({ confirmed: args.shelter, email });
+      const outcome = await findShelterAddress(db, shelter, io, sender.name);
+      if (!outcome.written) throw new Error(outcome.message);
+      out({ confirmed: args.shelter, email: outcome.email });
+    } else if (args.command === "prepare") {
+      const shelters = await waveShelters(db, args.wave);
+      const statuses = await shelterStatuses(db, shelters);
+      const quitting = { isTTY: io.isTTY, ask: async (q: string) => quitOn(await io.ask(q)) };
+      console.error(`${shelters.length} shelters in wave '${args.wave.name}' — the match and the address for each; n skips a question, q stops (progress is kept)`);
+      let done = 0;
+      try {
+        for (const [i, shelter] of shelters.entries()) {
+          const status = statuses.get(shelter.shelterExternalId)!;
+          console.error(`\n[${i + 1}/${shelters.length}] ${shelter.name ?? shelter.shelterExternalId}  (${shelter.city ?? "?"}, ${shelter.state ?? "?"})  ${shelter.visibleCount} animals  ${shelter.website ?? "no website"}  ${shelter.shelterExternalId}`);
+          if (status.everyorgProfileUrl) console.error(`  match: already recorded — ${status.claim}, ${status.everyorgProfileUrl}`);
+          else console.error(`  ${(await matchShelter(db, shelter, quitting, sender.name)).message}`);
+          if (status.confirmedAddress) console.error(`  address: already confirmed — ${status.confirmedAddress}`);
+          else console.error(`  ${(await findShelterAddress(db, shelter, quitting, sender.name)).message}`);
+          done++;
+        }
+      } catch (error) {
+        if (!(error instanceof Quit)) throw error;
+        console.error(`\nstopped after ${done} of ${shelters.length}; run prepare again to continue from what is not yet recorded`);
+      }
+      out({ wave: args.wave.name, shelters: shelters.length, walked: done });
     } else if (args.command === "preview") {
       const shelter = await shelterByKey(db, args.shelter);
       const status = (await shelterStatuses(db, [shelter])).get(args.shelter)!;

@@ -17,6 +17,8 @@ describe("ADR-0029 parseOutreachArgs", () => {
     expect(parseOutreachArgs(["find-emails", "rescuegroups:org:3077"])).toEqual({ command: "find-emails", shelter: "rescuegroups:org:3077" });
     expect(parseOutreachArgs(["preview", "rescuegroups:org:3077"])).toEqual({ command: "preview", shelter: "rescuegroups:org:3077" });
     expect(parseOutreachArgs(["status"])).toEqual({ command: "status" });
+    expect(parseOutreachArgs(["prepare", "--wave", "chicagoland-1"])).toEqual({ command: "prepare", wave: { ...CHICAGOLAND, limit: undefined } });
+    expect(() => parseOutreachArgs(["prepare"])).toThrow(/--wave <name> is required/);
   });
 
   it("builds a wave from a radius or states, never both, never none, never more than 200", () => {

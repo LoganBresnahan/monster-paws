@@ -12,6 +12,7 @@ export type OutreachArgs =
   | { command: "match"; shelter: string }
   | { command: "find-emails"; shelter: string }
   | { command: "preview"; shelter: string }
+  | { command: "prepare"; wave: WaveSpec }
   | { command: "send"; wave: WaveSpec; live: boolean; override: string | null }
   | {
       command: "record";
@@ -30,6 +31,7 @@ export const USAGE = [
   "       outreach match <shelter-key>",
   "       outreach find-emails <shelter-key>",
   "       outreach preview <shelter-key>",
+  "       outreach prepare --wave <name> [--zip <zip> --miles <n> | --states IL,WI] [--limit <n>]",
   "       outreach send --wave <name> [--zip <zip> --miles <n> | --states IL,WI] [--limit <n>] [--live] [--override <note>]",
   "       outreach record <shelter-key> --wave <name> --kind sent|bounced|replied|opted_out|granted [--message-id <id>] [--note <text>] [--at <iso>] [--eml <file>]",
   "       outreach status",
@@ -119,6 +121,8 @@ export function parseOutreachArgs(args: readonly string[]): OutreachArgs {
     case "find-emails":
     case "preview":
       return { command, shelter: shelter() };
+    case "prepare":
+      return { command, wave: waveSpec(flag, true)! };
     case "send": {
       const live = flag.get("--live") === true;
       const override = text(flag, "--override");
