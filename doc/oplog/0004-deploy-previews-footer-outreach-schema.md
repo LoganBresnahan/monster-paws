@@ -1,14 +1,14 @@
 # 0004: Deploy `c45e085` — link previews, the profiles in the footer, the outreach schema
 
-Status: planned
-Planned: 2026-10-27 · Run: —
+Status: run
+Planned: 2026-10-27 · Run: 2026-10-27 21:16 – 21:27 UTC
 Why: ADR-0030 (every page sends a card; the launch post waits on it), ADR-0032
 as amended (the four profiles in the footer, "Donations coming soon!"),
 ADR-0029 phases 1–6 (`outreach_events`, `shelter_nonprofits.everyorg_claim`
 and `claim_checked_at`, `shelter_contacts`; the outreach CLI runs from dev and
 nothing on the droplet reads these yet), ADR-0022 as amended 2026-10-27,
 ADR-0031 (docs and a dev script); roadmap: Launch (3b), Shelter consent (5)
-Commit deployed: `c45e085` (15 commits on `a2610f5`, oplog 0003)
+Commit deployed: `c45e085` (15 commits on `a2610f5`, oplog 0003; CI run 40585352995: verify, images, sourcemaps green)
 
 What changes on the droplet: the app and worker images (Open Graph and Twitter
 card tags from the root layout, the `/opengraph-image` route, the footer's four
@@ -90,7 +90,52 @@ LinkedIn Post Inspector on `https://monsterpaws.org` and on one animal page
 page cold; the X card on `https://monsterpaws.org` by pasting it in a draft.
 
 ## Run
-(filled on the day)
+**Prerequisites.** Tree clean at `c45e085`; ship bar: vitest 409/409 twice,
+typecheck clean. Pushed `c45e085` to `topdog` 21:16 UTC (16 commits on
+`a2610f5` counting this entry, which followed in its own push so the image
+tag matches the planned sha); CI run 40585352995. Rehearsal: the 2026-10-26
+dump restored into `monsterpaws_rehearsal` (112,123 animals, 12 migrations),
+`drizzle-kit migrate` applied `0012`–`0014` — 15 rows, `outreach_events` and
+`shelter_contacts` present, `shelter_nonprofits` with both columns, the
+animals count unchanged — then dropped. 21:15 UTC, clear of the crons; the
+card idle (lora's batches down), nobody else on `:3200` or `monsterpaws_e2e`.
+CI green 21:20 UTC (verify's first run with the Mailpit service passed).
+e2e 34/34 against `ghcr.io/loganbresnahan/monster-paws-app:c45e085…` on
+`:3200`, the previews spec and the footer assertions among them.
+
+**1.** Running: `IMAGE_TAG=a2610f5…`, checkout `a2610f5`, app and worker up
+7 h, caddy 20 h; health 200 with `a2610f5`, `lastCompletePollAt` 08:27:06 UTC.
+
+**2.** One session: `git pull --ff-only` to `c45e085`, `IMAGE_TAG` set, both
+images pulled; `config --images` resolves both to `c45e085…`; nothing
+restarted. The droplet keeps `a2610f5`, `34d36ff` and `c58d87f` images beside
+the new pair.
+
+**3.** `drizzle-kit migrate` through the worker image (`--no-deps`):
+15 rows in `drizzle.__drizzle_migrations`, `outreach_events` and
+`shelter_contacts` present, `shelter_nonprofits` with `everyorg_claim` and
+`claim_checked_at`; health still 200 on `a2610f5`.
+
+**4.** 21:24:01 UTC `up -d app worker`: both on `c45e085…` in 10 s, caddy
+untouched; the worker logged `ingest.poll registered (0 7 * * *)`; health 200
+with `c45e085`, the poll still fresh.
+
+**5.** 200 for `/`, `/animals`, `/animals/63205`, `/claim`, `/demo`,
+`/demo/ducky`, `/robots.txt`. The home page carries `og:title`,
+`og:description`, `og:site_name`, `og:locale`, `og:type`, `og:image` with
+type, width 1216 and height 832, and the `twitter:*` set; the animal page its
+own title ("Darlene — Monster Paws") and our own sentence as the description,
+never the listing's. The card image is served at
+`/opengraph-image.jpg?opengraph-image.<hash>.jpg` (Next's file convention),
+200 `image/jpeg`, 181,465 bytes, 1216×832 — the plan's bare `/opengraph-image`
+path was my guess and 404s; `/opengraph-image.jpg` without the query also
+answers 200. No `og:url`. The four profile hrefs and "Donations coming soon!"
+render. Nothing differed from the plan otherwise. 21:27 UTC.
 
 ## Follow-ups
-(filled on the day)
+- Logan: LinkedIn Post Inspector on the home page and an animal page before
+  the launch post; the X card by pasting the link in a draft.
+- The deploy skill's smoke should fetch the `og:image` URL the page carries,
+  not a guessed path (this entry's step 5).
+- `npm` inside the worker image prints an update notice on every
+  `drizzle-kit migrate`; cosmetic.
