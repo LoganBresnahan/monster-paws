@@ -209,6 +209,28 @@ Notes: `flarectl` (Cloudflare's older Go CLI) is effectively superseded —
 the two API curls below are all the DNS we need. `cloudflared` (tunnels) is
 not needed; the droplet has a public IP behind the proxy.
 
+### Social accounts (ADR-0032)
+
+Three accounts, all registered to hello@monsterpaws.org (a Cloudflare Email
+Routing forward, above), display name "Monster Paws", link
+https://monsterpaws.org. Posted by hand only (ADR-0032 decision 3): no API
+key, app password or scheduler credential exists for any of them, and none is
+created without an ADR saying what for. The LinkedIn logo and cover, and the
+X and Bluesky avatar and header, are built by `npm run social:assets` into
+`var/social/` (gitignored) from `public/brand/`.
+
+| Account | Handle | Made |
+| --- | --- | --- |
+| LinkedIn company page | Monster Paws | 2026-10-26, assets and copy updated 2026-10-27 |
+| X | `@monsterpawsorg` | 2026-10-27 |
+| Bluesky | `@monsterpaws.org` (the `_atproto` TXT record set 2026-10-27 through `cloudflare/dns-token`; `@monsterpawsorg.bsky.social` redirects) | 2026-10-27 |
+
+| Entry | What it is | What it's for | Lands in |
+| --- | --- | --- | --- |
+| `social/linkedin` | The page admin's login is Logan's own LinkedIn; this entry holds the page's URL and admin notes only | Finding the page and who administers it | dev only |
+| `social/x` | Password, 2FA recovery codes and TOTP secret of `@monsterpawsorg` | Signing in from a new browser or phone; re-enrolling the authenticator | dev only, never `.env` |
+| `social/bluesky` | Password, 2FA recovery codes and TOTP secret of the Bluesky account | Same; and the handle change to the domain | dev only, never `.env` |
+
 ## Provisioning (one-time, in order)
 
 ```sh

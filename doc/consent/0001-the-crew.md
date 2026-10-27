@@ -12,6 +12,9 @@
   painting by `npm run og:image`) and in posts Logan writes about Monster
   Paws on his own accounts, which is off-site display the original grant did
   not name.
+- **Extended 2026-10-27 (ADR-0032):** bands of Beetle's painting as the cover and
+  header of the project's own social accounts (LinkedIn, X, Bluesky), built by
+  `npm run social:assets`.
 - **Basis:** the founder's own pets and his own photos; given in the working
   session that built the section, and in the commit that adds this file.
 - **Files:** `public/brand/crew/<pet>-painting.jpg`, `<pet>-photo.jpg` (the

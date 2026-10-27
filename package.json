@@ -20,6 +20,7 @@
     "db:up": "docker compose -f docker-compose.dev.yml up -d",
     "db:dump": "tsx scripts/db-dump.ts",
     "og:image": "tsx scripts/og-image.ts",
+    "social:assets": "tsx scripts/social-assets.ts",
     "comfy:build": "docker compose -f comfyui/compose.yml build",
     "comfy:smoke": "docker compose -f comfyui/compose.yml run --rm comfyui python /home/comfy/smoke.py",
     "comfy:models": "npm run -s comfy:dirs && docker compose -f comfyui/compose.yml run --rm comfyui python /home/comfy/models.py fetch",
