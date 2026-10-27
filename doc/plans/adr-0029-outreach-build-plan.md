@@ -126,7 +126,7 @@ email a real shelter. Check items off as they ship.
      lawyer reads the rendered ask before any shelter does.
 
 4. **the live send guard** (alone, so the verify pass reads only this)
-   - [ ] `live-send-throttled` — medium, moderate ⚠ verify. A guard over
+   - [x] `live-send-throttled` — **done 2026-10-27** (`src/core/outreach/send.ts`: `judgeSend` is the pure rule set over `SendFacts`, `loadSendFacts` reads them from the record before EACH message, `sendWave` the loop; the day is a rolling 24 hours, so no calendar midnight in any zone resets it; the follow-up clock runs from the first send and a third contact is refused outright; an `opted_out`, `replied` or `granted` row refuses a follow-up; the `to` comes only from `confirmedAddress`; the transport's throw stops the wave with no row; `google/gmail-user` and `google/gmail-app-password` in infra.md's table and `env-dev.sh`, not yet in `pass`. Verify pass the same day, a fresh agent on its own database: single-process the guard held on every attack, but two concurrent runs each sent the 40th and the same shelter twice in one wave, and a row insert failing after SMTP accepted threw the report away — fixed by judging, sending and recording inside one transaction under `pg_advisory_xact_lock`, the insert inside the guarded section with the message id in the error; also from the pass: a future-dated `sent` row refuses instead of sleeping, a bounce refuses the follow-up, a `granted` or `replied` row refuses any send). Medium, moderate ⚠ verify. A guard over
      `outreach_events` with six predicates — one `sent` per shelter per
      wave; a follow-up only seven or more days after the **first** send;
      fewer than 40 today; at least 60 s since the last send; the address
@@ -152,7 +152,10 @@ email a real shelter. Check items off as they ship.
      and a person at a TTY answering a readline prompt, and the tests pin
      that a missing wave or a non-TTY stdin refuses. The two check points
      (EIN matches, addresses) are interactive confirmations whose rejections
-     write no row.
+     write no row. `record opted_out` takes the exported `.eml`, hashes it
+     and prints the `evidence` line for the entry in `SHELTER_EXCLUSIONS`,
+     so the hash in the repo and the file in the vault cannot disagree by
+     hand (ADR-0029 as amended 2026-10-27).
    - [ ] `wave-health-stop` — medium, moderate. A `status` verb: per-wave
      counts by kind, bounced / sent and replied / sent, waves ordered by
      first `sent`; a zero-send wave is neither divided by nor healthy. The

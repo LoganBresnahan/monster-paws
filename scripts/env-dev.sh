@@ -35,3 +35,5 @@ fill EVERYORG_WEBHOOK_TOKEN everyorg/staging-webhook-token
 fill EVERYORG_AUTH_TOKEN everyorg/staging-auth-token
 fill EVERYORG_WEBHOOK_SECRET everyorg/staging-webhook-secret
 fill EVERYORG_API_KEY everyorg/api-key
+fill GMAIL_USER google/gmail-user
+fill GMAIL_APP_PASSWORD google/gmail-app-password

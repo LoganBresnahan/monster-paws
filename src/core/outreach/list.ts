@@ -129,6 +129,9 @@ export async function loadOutreachShelters(
 /** Nothing goes to the whole list at once (ADR-0029 §1). */
 export const WAVE_MAX = 200;
 
+/** A wave's name as Logan types it on the command line and as it is stored: lowercase kebab-case. */
+export const WAVE_NAME = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+
 /**
  * One wave: a name Logan chose, and a region — shelters within `miles` of a
  * zip, or in the named states. Never both absent: a wave with no region is
@@ -171,7 +174,7 @@ export function selectWave(
   if (!spec.within && !spec.states?.length) {
     throw new Error(`wave '${spec.name}' names no region — a radius or states, never the whole list (ADR-0029 §1)`);
   }
-  if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(spec.name)) {
+  if (!WAVE_NAME.test(spec.name)) {
     throw new Error(`wave name '${spec.name}' is not lowercase kebab-case`);
   }
 

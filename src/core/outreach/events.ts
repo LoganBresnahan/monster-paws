@@ -29,7 +29,7 @@ export function isOutreachEventKind(value: string): value is OutreachEventKind {
  * DELETE a row — a correction is another row with a note (ADR-0029 §5). A
  * second `sent` for the same shelter and wave is refused by the database.
  */
-export async function recordOutreachEvent(db: Db, event: OutreachEvent): Promise<number> {
+export async function recordOutreachEvent(db: Pick<Db, "insert">, event: OutreachEvent): Promise<number> {
   const [row] = await db
     .insert(outreachEvents)
     .values({

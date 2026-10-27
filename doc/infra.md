@@ -164,6 +164,15 @@ production webhook is a separate setup with its own three entries
 | `everyorg/api-key` | Every.org **production** public API key, created by Logan 2026-10-27 at every.org/developer | Nonprofit lookups by EIN for the shelter-to-nonprofit match (ADR-0029 §2, ADR-0027's `shelter_nonprofits`) | local `.env` once the outreach CLI reads it |
 | `everyorg/api-secret` | The secret issued with that key | Not needed for public lookups; kept for any authenticated partner call | dev only |
 
+### Google — Gmail as Logan (ADR-0029)
+
+Outreach mail leaves as Logan from his own Gmail account over SMTP, never from Resend (ADR-0029 §4). Both entries are made when the first live wave is ready and the app password revoked when outreach ends.
+
+| Entry | What it is | What it's for | Lands in |
+| --- | --- | --- | --- |
+| `google/gmail-user` | Logan's Gmail address, the one outreach mail is sent as | `GMAIL_USER` for `npm run outreach -- send --live` (ADR-0029 §4) | local `.env` via `npm run env:dev` |
+| `google/gmail-app-password` | A Google app password for that account (Google Account → Security → 2-Step Verification → App passwords), made when the first live wave is ready and revoked when outreach ends | `GMAIL_APP_PASSWORD`: Gmail SMTP on 465 as Logan, at most 40 a day a minute apart, live sends only — Mailpit takes everything else (ADR-0029 §4). Not yet in `pass` (2026-10-27): the gate on the first live wave | local `.env` via `npm run env:dev`; never the droplet |
+
 ### Better Stack (ADR-0010) — errors, uptime, heartbeats
 
 Team **Monster Paws** (id `606375`). Every resource below was created by API

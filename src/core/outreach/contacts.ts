@@ -63,12 +63,12 @@ export async function contactsOf(db: Db, shelterExternalId: string): Promise<(ty
  * never a candidate, however good it looks (ADR-0029 §2). The send guard
  * reads this and nothing else.
  */
-export async function confirmedAddress(db: Db, shelterExternalId: string): Promise<string | null> {
+export async function confirmedAddress(db: Pick<Db, "select">, shelterExternalId: string): Promise<string | null> {
   const [row] = await db
     .select({ email: shelterContacts.email })
     .from(shelterContacts)
     .where(and(eq(shelterContacts.shelterExternalId, shelterExternalId), isNotNull(shelterContacts.confirmedAt)))
-    .orderBy(sql`${shelterContacts.confirmedAt} desc nulls last`)
+    .orderBy(sql`${shelterContacts.confirmedAt} desc nulls last`, shelterContacts.email)
     .limit(1);
   return row?.email ?? null;
 }
