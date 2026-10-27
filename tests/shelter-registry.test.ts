@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
   SHELTERS,
+  SHELTER_EXCLUSIONS,
+  exclusionProblems,
   hasGrant,
   registryProblems,
   shelterBySlug,
@@ -88,6 +90,35 @@ describe("shelter registry (ADR-0006 as amended)", () => {
     ];
     expect(sheltersWithGrant("scrape", asOf("2026-06-01"), registry).map((s) => s.slug)).toEqual([
       "happy-tails-rescue",
+    ]);
+  });
+
+  it("holds no opt-outs yet — outreach is ADR-0029", () => {
+    expect(SHELTER_EXCLUSIONS).toHaveLength(0);
+    expect(exclusionProblems()).toEqual([]);
+  });
+
+  it("flags an opt-out keyed by anything but the shelter's source key, or missing its record (ADR-0029 §5)", () => {
+    const optOut = {
+      shelterExternalId: "rescuegroups:org:3077",
+      name: "Border Tails Rescue",
+      askedBy: "Dana Ruiz, shelter director",
+      askedAt: "2026-11-02",
+      evidence: "doc/consent/border-tails-rescue-opt-out-2026-11-02.md",
+    };
+    expect(exclusionProblems([optOut])).toEqual([]);
+    expect(
+      exclusionProblems([
+        { ...optOut, shelterExternalId: "3077" },
+        { ...optOut, askedAt: "11/02/2026", askedBy: " ", evidence: "" },
+        optOut,
+      ]),
+    ).toEqual([
+      "exclusion 3077: not a '<source>:org:<id>' shelter key",
+      "exclusion rescuegroups:org:3077: askedAt '11/02/2026' is not an ISO date",
+      "exclusion rescuegroups:org:3077: has no askedBy",
+      "exclusion rescuegroups:org:3077: has no evidence pointer",
+      "exclusion rescuegroups:org:3077: duplicate",
     ]);
   });
 

@@ -131,6 +131,58 @@ export function windowProblems(window: ConsentWindow, where: string): string[] {
   return problems;
 }
 
+/**
+ * A shelter that asked us to take its listings down (ADR-0029 §5). An opt-out
+ * is a consent record like a grant, so it lives here in the repository and
+ * never in a table: who asked, when, and the email it came in. Never delete an
+ * entry — a shelter that later says yes gets a grant beside it, and the
+ * registry stays the history of the relationship.
+ */
+export interface ShelterExclusion {
+  /** the organisation's key as `animals.shelter_external_id` carries it, e.g. `rescuegroups:org:3077` — never our ids */
+  shelterExternalId: string;
+  /** the organisation's name as listed, so a reviewer can find it again */
+  name: string;
+  /** who asked, and their role at the shelter */
+  askedBy: string;
+  /** ISO date the request arrived */
+  askedAt: string;
+  /** pointer to the evidence: the email, under doc/consent/ */
+  evidence: string;
+}
+
+/**
+ * Applied INSIDE `visibleAnimals` (ADR-0029 §5), unlike `BROWSE_EXCLUSIONS`:
+ * "take our listings down" closes browse, detail, "Surprise me" and the
+ * donation path alike, and the outreach list skips the shelter. Committed and
+ * deployed the day the request arrives.
+ */
+export const SHELTER_EXCLUSIONS: readonly ShelterExclusion[] = [];
+
+/** The shape `animals.shelter_external_id` takes: `<source>:org:<id>` (src/core/ingest/rescuegroups.ts). */
+const SHELTER_KEY = /^[a-z0-9-]+(?::[a-z0-9-]+)?:org:[^\s]+$/;
+
+export function exclusionProblems(
+  exclusions: readonly ShelterExclusion[] = SHELTER_EXCLUSIONS,
+): string[] {
+  const problems: string[] = [];
+  const seen = new Set<string>();
+  for (const exclusion of exclusions) {
+    const where = `exclusion ${exclusion.shelterExternalId}`;
+    if (!SHELTER_KEY.test(exclusion.shelterExternalId)) {
+      problems.push(`${where}: not a '<source>:org:<id>' shelter key`);
+    }
+    if (seen.has(exclusion.shelterExternalId)) problems.push(`${where}: duplicate`);
+    seen.add(exclusion.shelterExternalId);
+    if (!ISO_DATE.test(exclusion.askedAt)) {
+      problems.push(`${where}: askedAt '${exclusion.askedAt}' is not an ISO date`);
+    }
+    if (!exclusion.askedBy.trim()) problems.push(`${where}: has no askedBy`);
+    if (!exclusion.evidence.trim()) problems.push(`${where}: has no evidence pointer`);
+  }
+  return problems;
+}
+
 export function registryProblems(registry: readonly ShelterEntry[] = SHELTERS): string[] {
   const problems: string[] = [];
   const seen = new Set<string>();

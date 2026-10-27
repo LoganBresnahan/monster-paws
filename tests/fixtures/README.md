@@ -14,5 +14,7 @@ preserve.
 | --- | --- | --- | --- |
 | `rescuegroups-available.json` | 2026-08-17 | Claude, hand-checked with Logan | Live `POST /v5/public/animals/search/available/` (`limit=2&page=1`). Per-request `meta.transactionId` dropped; records otherwise untouched. Expectations in `tests/rescuegroups.test.ts`. Also the e2e seed (`e2e/seed.ts`), which clones it into variants and restamps their dates in memory — the file itself is never rewritten. |
 
+| `irs-bmf-sample.csv` | 2026-10-27 | Claude, read by Logan | Hand-made, NOT a download: nine rows in the exact column layout of the IRS Exempt Organizations Business Master File (`eo_il.csv`, header read 2026-10-27), with fictional organisations, EINs and addresses. It exists to pin the matcher's behaviour on the ways a listed name differs from a legal one — legal form, word order, a foundation beside its body, a care-of line, a quoted name, a short EIN, another state's namesake. Expectations in `tests/ein-match.test.ts`. The real file is public domain and lands under `var/irs/`, never here (ADR-0029 §2). |
+
 Per-site scrape fixtures land here at shelter onboarding (roadmap item 5), one
 row each.

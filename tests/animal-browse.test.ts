@@ -4,6 +4,7 @@ import {
   BROWSE_EXCLUSIONS,
   BROWSE_PAGE_SIZE,
   NO_FILTERS,
+  NO_SCOPE,
   encodeCursor,
   facetOptions,
   loadBrowsePage,
@@ -17,6 +18,7 @@ import {
   type BrowseExclusion,
 } from "@/core/browse";
 import { loadAnimalDetail } from "@/core/animals";
+import type { ShelterExclusion } from "@/core/shelters";
 import type { Source } from "@/core/sources";
 import { closeDb, type Db } from "@/db/client";
 import { animalDisplay, animalIdentities, animals } from "@/db/schema";
@@ -327,6 +329,40 @@ describe.skipIf(SKIP_DB_TESTS)("ADR-0015 browse page", () => {
     const page = await loadBrowsePage(db, NO_FILTERS, null, NOW, [EXCLUSION]);
     expect(names(page)).toEqual(["Rex"]);
     expect(await loadAnimalDetail(db, ids.get("ADOPTION-Read First")!, NOW)).not.toBeNull();
+  });
+
+  it("drops every listing of a shelter that opted out — browse, detail, random and the shelter view alike (ADR-0029 §5)", async () => {
+    // The opposite of the browse exclusion above: a shelter's "take our
+    // listings down" composes INSIDE `visibleAnimals`, so no page can reach
+    // its animals by any route — including the detail page a reader has
+    // bookmarked. An animal with no organisation key is untouched.
+    const optOut: ShelterExclusion = {
+      shelterExternalId: "rescuegroups:org:77",
+      name: "Quiet Hollow Rescue",
+      askedBy: "a fixture standing in for the shelter's director",
+      askedAt: "2026-03-10",
+      evidence: "doc/consent/fixture-quiet-hollow-2026-03-10.md",
+    };
+    const ids = await seed([
+      { name: "Hidden", listedAt: daysBefore(1), shelter: "rescuegroups:org:77", org: "Quiet Hollow Rescue" },
+      { name: "Rex", listedAt: daysBefore(2), shelter: "rescuegroups:org:78", org: "Other Rescue" },
+      { name: "Orphan", listedAt: daysBefore(3), shelter: undefined },
+    ]);
+    const excl = [optOut];
+    expect(names(await loadBrowsePage(db, NO_FILTERS, null, NOW, [], "newest", NO_SCOPE, excl))).toEqual(["Rex", "Orphan"]);
+    expect(await loadAnimalDetail(db, ids.get("Hidden")!, NOW, excl)).toBeNull();
+    expect(await loadAnimalDetail(db, ids.get("Orphan")!, NOW, excl)).not.toBeNull();
+    const scope = { shelter: "rescuegroups:org:77", zips: null };
+    for (let roll = 0; roll < 5; roll++) {
+      expect(await pickRandomAnimalId(db, NO_FILTERS, NOW, [], scope, excl)).toBeNull();
+    }
+    expect(await loadShelter(db, "rescuegroups:org:77", NOW, [], excl)).toBeNull();
+    expect(facetOptions(await loadFacetGrid(db, NOW, [], NO_SCOPE, excl), NO_FILTERS).species).toEqual([
+      { value: "dog", count: 2 },
+    ]);
+    // And without the registry entry, the same rows are all visible: the
+    // list is the only thing hiding them.
+    expect(names(await loadBrowsePage(db, NO_FILTERS, null, NOW, []))).toEqual(["Hidden", "Rex", "Orphan"]);
   });
 
   it("offers a filter only for a value the visible corpus holds, and never the junk state", async () => {

@@ -1,4 +1,5 @@
 import { and, eq, isNull, sql, type SQL } from "drizzle-orm";
+import { SHELTER_EXCLUSIONS, type ShelterExclusion } from "@/core/shelters";
 import type { Db } from "@/db/client";
 import { animalDisplay, animalIdentities, animals } from "@/db/schema";
 
@@ -46,12 +47,23 @@ export function upkeepCutoff(asOf: Date): Date {
  * Only for `db.select().from(animals)` with `animals` unaliased — the
  * correlated subquery names the table outright, so `db.query.animals.*` and
  * `alias(animals, …)` rewrite it into a query that throws.
+ *
+ * `exclusions` is a parameter for the same reason `asOf` is: the empty
+ * registry is the production value, and the predicate is only testable when
+ * the caller can hand it a shelter.
  */
-export function visibleAnimals(asOf: Date = new Date()): SQL {
+export function visibleAnimals(
+  asOf: Date = new Date(),
+  exclusions: readonly ShelterExclusion[] = SHELTER_EXCLUSIONS,
+): SQL {
   const cutoff = stalenessCutoff(asOf);
   const upkeep = upkeepCutoff(asOf);
   return and(
     eq(animals.status, VISIBLE_STATUS),
+    // Inside the predicate, not beside it like `BROWSE_EXCLUSIONS`: a shelter's
+    // "take our listings down" must close detail, "Surprise me" and the
+    // donation path too, not just browse (ADR-0029 §5).
+    notFromExcludedShelter(exclusions),
     // All THREE conditions on ONE identity row: an animal present under a
     // disappeared source, stale under a live one, and maintained under a third
     // is not visible, and splitting these across rows would show it (ADR-0014,
@@ -72,9 +84,27 @@ export function visibleAnimals(asOf: Date = new Date()): SQL {
   )!;
 }
 
+/**
+ * An animal with no organisation key is not from the excluded organisation,
+ * so null stays visible — a bare `NOT IN` would read null as unknown and hide
+ * every such animal the moment the first shelter opted out.
+ */
+function notFromExcludedShelter(exclusions: readonly ShelterExclusion[]): SQL {
+  if (exclusions.length === 0) return sql`true`;
+  const keys = sql.join(
+    exclusions.map((e) => sql`${e.shelterExternalId}`),
+    sql`, `,
+  );
+  return sql`(${animals.shelterExternalId} is null or ${animals.shelterExternalId} not in (${keys}))`;
+}
+
 /** Detail's lookup — never `eq(animals.id, …)` alone, or the predicate is bypassed. */
-export function visibleAnimalById(id: number, asOf: Date = new Date()): SQL {
-  return and(eq(animals.id, id), visibleAnimals(asOf))!;
+export function visibleAnimalById(
+  id: number,
+  asOf: Date = new Date(),
+  exclusions: readonly ShelterExclusion[] = SHELTER_EXCLUSIONS,
+): SQL {
+  return and(eq(animals.id, id), visibleAnimals(asOf, exclusions))!;
 }
 
 export interface AnimalDetail {
@@ -99,11 +129,12 @@ export async function loadAnimalDetail(
   db: Db,
   id: number,
   asOf: Date = new Date(),
+  exclusions: readonly ShelterExclusion[] = SHELTER_EXCLUSIONS,
 ): Promise<AnimalDetail | null> {
   const [animal] = await db
     .select()
     .from(animals)
-    .where(visibleAnimalById(id, asOf))
+    .where(visibleAnimalById(id, asOf, exclusions))
     .limit(1);
   if (!animal) return null;
 

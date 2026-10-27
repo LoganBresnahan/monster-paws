@@ -50,6 +50,12 @@ export async function truncateDonor(db: Db): Promise<void> {
   );
 }
 
+/** Empties the outreach record (ADR-0029 §5) — test databases only, like `truncateCorpus`. */
+export async function truncateOutreach(db: Db): Promise<void> {
+  await assertTestDatabase(db);
+  await db.execute(sql`truncate table outreach_events restart identity`);
+}
+
 /**
  * Drops the DERIVED tables and leaves `raw_payloads` standing — what a replay
  * test needs, since the corpus is the thing it rebuilds from. Never widen this

@@ -26,6 +26,13 @@ jobs:
           --health-interval 5s
           --health-timeout 5s
           --health-retries 10
+      # The transport suite sends through a real Mailpit and FAILS without one
+      # (ADR-0029 §4) — same image and ports as docker-compose.dev.yml.
+      mailpit:
+        image: axllent/mailpit:v1.32.0
+        ports:
+          - 1025:1025
+          - 8025:8025
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

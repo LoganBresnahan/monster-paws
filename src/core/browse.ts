@@ -1,5 +1,6 @@
 import { and, eq, inArray, isNotNull, sql, type SQL } from "drizzle-orm";
 import { visibleAnimals } from "@/core/animals";
+import { SHELTER_EXCLUSIONS, type ShelterExclusion } from "@/core/shelters";
 import { pickLicensedDisplay } from "@/core/display";
 import type { Source } from "@/core/sources";
 import type { Db } from "@/db/client";
@@ -168,8 +169,13 @@ function matchingParts(
   asOf: Date,
   exclusions: readonly BrowseExclusion[],
   scope: BrowseScope = NO_SCOPE,
+  shelterExclusions: readonly ShelterExclusion[] = SHELTER_EXCLUSIONS,
 ): SQL[] {
-  const parts: SQL[] = [visibleAnimals(asOf), notExcluded(exclusions), ...scopeParts(scope)];
+  const parts: SQL[] = [
+    visibleAnimals(asOf, shelterExclusions),
+    notExcluded(exclusions),
+    ...scopeParts(scope),
+  ];
   if (filters.species) parts.push(eq(animals.species, filters.species));
   if (filters.state) parts.push(eq(animals.state, filters.state));
   if (filters.age) parts.push(eq(animals.ageGroup, filters.age));
@@ -198,8 +204,9 @@ function sortWhere(
   exclusions: readonly BrowseExclusion[],
   sort: BrowseSort,
   scope: BrowseScope,
+  shelterExclusions: readonly ShelterExclusion[],
 ): SQL[] {
-  const parts = matchingParts(filters, asOf, exclusions, scope);
+  const parts = matchingParts(filters, asOf, exclusions, scope, shelterExclusions);
   // Newest-first descends, where Postgres puts a null date FIRST: an animal no
   // source dated would lead the page. RescueGroups dates every visible animal
   // today; a source that does not needs its own decision, not the top slot.
@@ -240,13 +247,14 @@ export async function loadBrowsePage(
   exclusions: readonly BrowseExclusion[] = BROWSE_EXCLUSIONS,
   sort: BrowseSort = DEFAULT_SORT,
   scope: BrowseScope = NO_SCOPE,
+  shelterExclusions: readonly ShelterExclusion[] = SHELTER_EXCLUSIONS,
 ): Promise<BrowsePage> {
   const at: BrowsePosition =
     position && "listedAt" in position ? { after: position } : (position as BrowsePosition);
   const backward = at !== null && "before" in at;
   const anchor = at === null ? null : "before" in at ? at.before : at.after;
 
-  const parts = sortWhere(filters, asOf, exclusions, sort, scope);
+  const parts = sortWhere(filters, asOf, exclusions, sort, scope, shelterExclusions);
   if (anchor) parts.push(beyond(sort, backward ? "before" : "after", anchor));
   // Walking backward reads the rows just above the anchor nearest-first, so
   // the order flips; the page is flipped back into display order below.
@@ -282,7 +290,12 @@ export async function loadBrowsePage(
     const hits = await db
       .select({ name: animals.name })
       .from(animals)
-      .where(and(...sortWhere(filters, asOf, exclusions, sort, scope), beyond(sort, side, { listedAt: row.listedAt, id: row.id }))!)
+      .where(
+        and(
+          ...sortWhere(filters, asOf, exclusions, sort, scope, shelterExclusions),
+          beyond(sort, side, { listedAt: row.listedAt, id: row.id }),
+        )!,
+      )
       .orderBy(
         nearestFirst
           ? sql`${animals.listedAt} asc, ${animals.id} asc`
@@ -320,11 +333,12 @@ export async function pickRandomAnimalId(
   asOf: Date = new Date(),
   exclusions: readonly BrowseExclusion[] = BROWSE_EXCLUSIONS,
   scope: BrowseScope = NO_SCOPE,
+  shelterExclusions: readonly ShelterExclusion[] = SHELTER_EXCLUSIONS,
 ): Promise<number | null> {
   const [row] = await db
     .select({ id: animals.id })
     .from(animals)
-    .where(and(...matchingParts(filters, asOf, exclusions, scope))!)
+    .where(and(...matchingParts(filters, asOf, exclusions, scope, shelterExclusions))!)
     .orderBy(sql`random()`)
     .limit(1);
   return row?.id ?? null;
@@ -345,6 +359,7 @@ export async function loadFacetGrid(
   asOf: Date = new Date(),
   exclusions: readonly BrowseExclusion[] = BROWSE_EXCLUSIONS,
   scope: BrowseScope = NO_SCOPE,
+  shelterExclusions: readonly ShelterExclusion[] = SHELTER_EXCLUSIONS,
 ): Promise<FacetCell[]> {
   const rows = await db
     .select({
@@ -355,17 +370,21 @@ export async function loadFacetGrid(
       count: sql<number>`count(*)::int`,
     })
     .from(animals)
-    .where(and(visibleAnimals(asOf), notExcluded(exclusions), ...scopeParts(scope))!)
+    .where(and(visibleAnimals(asOf, shelterExclusions), notExcluded(exclusions), ...scopeParts(scope))!)
     .groupBy(animals.species, animals.state, animals.ageGroup, animals.sex);
   return rows;
 }
 
 /** Every shelter zip the visible set holds (first five characters) — the candidates a radius is measured to. */
-export async function loadShelterZips(db: Db, asOf: Date = new Date()): Promise<string[]> {
+export async function loadShelterZips(
+  db: Db,
+  asOf: Date = new Date(),
+  shelterExclusions: readonly ShelterExclusion[] = SHELTER_EXCLUSIONS,
+): Promise<string[]> {
   const rows = await db
     .selectDistinct({ zip: sql<string>`left(${animals.postalCode}, 5)` })
     .from(animals)
-    .where(and(visibleAnimals(asOf), isNotNull(animals.postalCode))!);
+    .where(and(visibleAnimals(asOf, shelterExclusions), isNotNull(animals.postalCode))!);
   return rows.map((r) => r.zip);
 }
 
@@ -379,11 +398,18 @@ export async function loadShelter(
   shelterExternalId: string,
   asOf: Date = new Date(),
   exclusions: readonly BrowseExclusion[] = BROWSE_EXCLUSIONS,
+  shelterExclusions: readonly ShelterExclusion[] = SHELTER_EXCLUSIONS,
 ): Promise<{ id: string; name: string | null; count: number } | null> {
   const rows = await db
     .select({ name: animals.orgName, count: sql<number>`count(*)::int` })
     .from(animals)
-    .where(and(visibleAnimals(asOf), notExcluded(exclusions), eq(animals.shelterExternalId, shelterExternalId))!)
+    .where(
+      and(
+        visibleAnimals(asOf, shelterExclusions),
+        notExcluded(exclusions),
+        eq(animals.shelterExternalId, shelterExternalId),
+      )!,
+    )
     .groupBy(animals.orgName)
     .orderBy(sql`count(*) desc`);
   if (!rows.length) return null;

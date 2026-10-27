@@ -533,3 +533,40 @@ export const shelterNonprofits = pgTable("shelter_nonprofits", {
   source: text("source").notNull(),
   fetchedAt: timestamp("fetched_at", { withTimezone: true }).notNull(),
 });
+
+/** What happened between us and a shelter, by name (ADR-0029 §5). */
+export type OutreachEventKind = "sent" | "bounced" | "replied" | "opted_out" | "granted";
+
+/**
+ * The record of every approach to a shelter (ADR-0029 §5). Never UPDATE or
+ * DELETE — a bounce, a reply and an opt-out are new rows, and a wrong row is
+ * corrected by another row with a note. Keyed by the same string as
+ * `animals.shelter_external_id`, e.g. `rescuegroups:org:3077`. A `granted`
+ * row records interest only; the grant itself is the registry entry in
+ * `src/core/shelters.ts`, written from the formal letter (ADR-0028).
+ */
+export const outreachEvents = pgTable(
+  "outreach_events",
+  {
+    id: bigserial("id", { mode: "number" }).primaryKey(),
+    shelterExternalId: text("shelter_external_id").notNull(),
+    /** the wave the shelter was approached in, named by Logan, e.g. `chicagoland-1` */
+    wave: text("wave").notNull(),
+    kind: text("kind").$type<OutreachEventKind>().notNull(),
+    occurredAt: timestamp("occurred_at", { withTimezone: true }).notNull(),
+    /** the SMTP Message-ID of what we sent, or of the reply it answers */
+    messageId: text("message_id"),
+    note: text("note"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    // One send per shelter per wave is a constraint the database holds, not
+    // a check the CLI remembers to make (ADR-0029 §5); the follow-up is a
+    // second wave, never a second `sent` row here.
+    uniqueIndex("outreach_events_one_send_per_wave_uq")
+      .on(t.shelterExternalId, t.wave)
+      .where(sql`kind = 'sent'`),
+    index("outreach_events_shelter_idx").on(t.shelterExternalId, t.occurredAt),
+    index("outreach_events_wave_idx").on(t.wave, t.kind),
+  ],
+);
