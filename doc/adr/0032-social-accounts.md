@@ -57,9 +57,14 @@ What constrains the accounts:
   Cloudflare 2026-10-27 (`cloudflare/dns-token`, TTL 300, `did=did:plc:…`,
   resolving at 1.1.1.1 and 8.8.8.8 the same hour); the domain as the handle
   is the verification.
+- **YouTube**: a Monster Paws channel under Logan's own Google account
+  (a brand channel: its own name, handle, avatar and banner; owners and
+  managers added under its permissions, never a second Google account for
+  one channel), created 2026-10-27, handle `@monsterpawsorg`. A home for
+  the hackathon video and nothing else yet.
 
-All three are registered to hello@monsterpaws.org, display-named "Monster
-Paws", linking to https://monsterpaws.org and nowhere else, with the
+All four carry the same display name, "Monster
+Paws", link to https://monsterpaws.org and nowhere else, and use the
 card's sentence as the bio (ADR-0030's description, shortened to fit).
 **Instagram and Facebook wait** for the first shelter's grant: they are
 where shelters and adopters are, and a feed there wants a shelter's animals
@@ -81,6 +86,15 @@ the card, ADR-0030):
   her muzzle at the painting's own scale, for LinkedIn's cover.
 - `header-beetle-1500x500.png`: the whole painting's width from her ears
   to her shoulders, scaled to 3:1, for X's and Bluesky's headers.
+- `banner-beetle-1024x576.png` and `-2560x1440.png`: the painting's whole
+  width at 16:9 with her eyes and nose at the vertical centre, for YouTube,
+  which shows the middle 29% of a banner on every device and the rest only
+  on a TV. Her head is at the top of the painting, so the canvas is
+  extended above it with the painting's own top wash, stretched and
+  flipped so the seam is continuous; nothing of her is duplicated and she
+  is not zoomed.
+- `watermark-150.png` (the wordmark on nothing) and `watermark-cream-150.png`:
+  YouTube's video watermark, laid over the bottom-right of every video.
 
 **No wordmark on a cover or header**: every platform lays the avatar over
 it, and the first LinkedIn cover with the wordmark doubled the name.

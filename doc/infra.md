@@ -220,12 +220,12 @@ not needed; the droplet has a public IP behind the proxy.
 
 ### Social accounts (ADR-0032)
 
-Three accounts, all registered to hello@monsterpaws.org (a Cloudflare Email
-Routing forward, above), display name "Monster Paws", link
+Four accounts: three registered to hello@monsterpaws.org (a Cloudflare Email
+Routing forward, above) and the YouTube channel under Logan's Google account; display name "Monster Paws", link
 https://monsterpaws.org. Posted by hand only (ADR-0032 decision 3): no API
 key, app password or scheduler credential exists for any of them, and none is
 created without an ADR saying what for. The LinkedIn logo and cover, and the
-X and Bluesky avatar and header, are built by `npm run social:assets` into
+X and Bluesky avatar and header, and the YouTube banner, are built by `npm run social:assets` into
 `var/social/` (gitignored) from `public/brand/`.
 
 | Account | Handle | Made |
@@ -233,6 +233,7 @@ X and Bluesky avatar and header, are built by `npm run social:assets` into
 | LinkedIn company page | Monster Paws | 2026-10-26, assets and copy updated 2026-10-27 |
 | X | `@monsterpawsorg` | 2026-10-27 |
 | Bluesky | `@monsterpaws.org` (the `_atproto` TXT record set 2026-10-27 through `cloudflare/dns-token`; `@monsterpawsorg.bsky.social` redirects) | 2026-10-27 |
+| YouTube | `@monsterpawsorg`, a brand channel under Logan's Google account | 2026-10-27 |
 
 | Entry | What it is | What it's for | Lands in |
 | --- | --- | --- | --- |
