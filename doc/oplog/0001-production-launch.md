@@ -1,12 +1,12 @@
 # 0001: Production launch — browse first: database, animal pages, the crew, worker, error reporting
 
-Status: planned
-Planned: 2026-09-29, revised 2026-10-26 · Run: 2026-10-27 01:12 UTC –
+Status: run
+Planned: 2026-09-29, revised 2026-10-26 · Run: 2026-10-27 01:12 UTC – 2026-10-27 14:11 UTC
 Why: roadmap item 3b; ADR-0028 as amended 2026-10-23 (browse before the
 donate loop) and 2026-10-26 (the home section includes `/demo`); ADR-0010 as
 amended 2026-09-28 / 2026-09-29, ADR-0015, ADR-0017, ADR-0007 as amended;
 `doc/infra.md` steps 6 and 7
-Commit deployed: —
+Commit deployed: images `34d36ff` (CI run 40431254413, green); the droplet's checkout at `2be3acb` (the compose file's CA mount)
 
 Production today is the v0.1.0 landing page from `hotfix/next-16.3.8`
 (`c58d87f`, oplog 0002) with no database; the worker container runs but idles
@@ -353,6 +353,9 @@ bytes, replacing the 02:37 mid-poll dump of the same date.
 `/demo/ducky`, `/demo/collection/ducky`, `/claim`, `/robots.txt`,
 `/favicon.ico`. Left for Logan: the walk-through on a phone and a laptop, and
 one deliberate error seen in Better Stack with the sha and `environment` tag.
+
+**10, dogfood.** Logan walked the live site (2026-10-27): "the website is
+looking good". Step 8 waits on RescueGroups (Follow-ups). Status run.
 Storage 10 GiB; maintenance window Tuesdays 00:15 UTC.
 
 ## Follow-ups
@@ -367,3 +370,8 @@ Storage 10 GiB; maintenance window Tuesdays 00:15 UTC.
   admits only 22/80/443 — remove the two rules in a later entry.
 - The app connects as the cluster's admin user; a least-privilege role for
   app and worker.
+- Not yet seen: an error in Better Stack carrying the deployed sha and
+  `environment=production` (the 07:00 job's failure should be one).
+- `scripts/poll-via-home.sh` took 6 h through the tunnel; the faster shape
+  (poll on the droplet, only RescueGroups' requests out through home).
+- Recheck DO's restore screen after the 15:55 UTC backup.
