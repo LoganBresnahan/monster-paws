@@ -104,7 +104,7 @@ describe("shelter registry (ADR-0006 as amended)", () => {
       name: "Border Tails Rescue",
       askedBy: "Dana Ruiz, shelter director",
       askedAt: "2026-11-02",
-      evidence: "doc/consent/border-tails-rescue-opt-out-2026-11-02.md",
+      evidence: `<CAF1x2y3@mail.gmail.com> sha256:${"ab".repeat(32)}`,
     };
     expect(exclusionProblems([optOut])).toEqual([]);
     expect(
@@ -117,9 +117,27 @@ describe("shelter registry (ADR-0006 as amended)", () => {
       "exclusion 3077: not a '<source>:org:<id>' shelter key",
       "exclusion rescuegroups:org:3077: askedAt '11/02/2026' is not an ISO date",
       "exclusion rescuegroups:org:3077: has no askedBy",
-      "exclusion rescuegroups:org:3077: has no evidence pointer",
+      "exclusion rescuegroups:org:3077: evidence is not '<Message-ID> sha256:<hex of the .eml in the vault>'",
       "exclusion rescuegroups:org:3077: duplicate",
     ]);
+  });
+
+  it("refuses evidence that is a file in the repo, or the email's words, or a hash alone (ADR-0029 as amended 2026-10-27)", () => {
+    const optOut = {
+      shelterExternalId: "rescuegroups:org:3077",
+      name: "Border Tails Rescue",
+      askedBy: "Dana Ruiz, shelter director",
+      askedAt: "2026-11-02",
+      evidence: "",
+    };
+    for (const evidence of [
+      "doc/consent/border-tails-rescue-opt-out-2026-11-02.md",
+      "Dana wrote: please remove our listings",
+      `sha256:${"ab".repeat(32)}`,
+      `<CAF1x2y3@mail.gmail.com> sha256:${"ab".repeat(31)}`,
+    ]) {
+      expect(exclusionProblems([{ ...optOut, evidence }])).toHaveLength(1);
+    }
   });
 
   it("flags malformed entries and evidence-free grants", () => {

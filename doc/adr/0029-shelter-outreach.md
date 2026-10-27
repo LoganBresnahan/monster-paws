@@ -146,3 +146,46 @@ drives it.
 - The lawyer's read changes what the first email must say (ADR-0028).
 - Replies under one in ten after two waves: rethink the message, not the
   volume.
+
+## Amendment (2026-10-27): the evidence stays out of the repo
+
+### Context
+§5 above puts an opt-out in git "with the email it came in", and a grant's
+evidence "under `doc/consent/`", where the crew's consent lives. Logan asked
+(2026-10-27) whether a shelter's email belongs in plain text in a public
+repository, and whether the database would serve attestation better. The
+crew's consent is Logan's own; a shelter's reply is a third party's
+correspondence — a person's name, address and words — and a shelter that
+asked to be left alone would find its request indexed. A database row, on
+the other hand, proves nothing on its own: we can change it and nobody
+outside can tell. What the reply actually carries is a DKIM signature from
+the shelter's mail provider: the raw message with its headers is proof that
+their domain sent those words at that time, as long as it is kept intact.
+
+### Decision
+- **The record stays in git, the evidence stays private, a hash joins them.**
+  A `SHELTER_EXCLUSIONS` entry names the shelter, who asked and their role,
+  the date, and as `evidence` the message's `Message-ID` and the SHA-256 of
+  the exported raw message (`.eml`, headers included). Nothing in the repo
+  quotes the email; `exclusionProblems` refuses an entry whose evidence is a
+  path or lacks the hash.
+- **The raw message is kept twice, both privately:** the original in Gmail,
+  and the `.eml` export in the vault bucket under `consent/`
+  (`r2:monsterpaws-vault/consent/<shelter-key>-<date>.eml`, the vault pair,
+  infra.md), the same custody as the attestation mirror. Its hash matches the
+  entry's, so anyone we show it to can check it was not altered.
+- **The database keeps the event**, an `opted_out` row in `outreach_events`
+  with the same message id, which the send guard reads.
+- **A grant's evidence takes the same shape**: the signed letter's hash in
+  the registry entry, the letter itself in the vault. `doc/consent/` holds
+  first-party consent only (the crew). The registry's check is tightened the
+  same way when the first shelter grant lands (ADR-0028).
+
+### Consequences
+- An opt-out takes three writes, all the same day: the `.eml` to the vault,
+  the entry to git with its hash, the `opted_out` row through the CLI. The
+  CLI's `record` verb computes the hash from the file so the two cannot
+  disagree by hand.
+- The repo never holds a shelter's words; the proof is reproducible from a
+  file only we hold, which is the right way round for a public repository.
+

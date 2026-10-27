@@ -147,9 +147,16 @@ export interface ShelterExclusion {
   askedBy: string;
   /** ISO date the request arrived */
   askedAt: string;
-  /** pointer to the evidence: the email, under doc/consent/ */
+  /**
+   * `<Message-ID> sha256:<hex>` of the raw message, which is kept in the
+   * vault — never a file in this public repo and never the email's words
+   * (ADR-0029 as amended 2026-10-27).
+   */
   evidence: string;
 }
+
+/** A message id in its angle brackets, then the raw message's hash: what `exclusionProblems` requires of `evidence`. */
+export const EVIDENCE = /^<[^\s<>]+@[^\s<>]+>\s+sha256:[0-9a-f]{64}$/;
 
 /**
  * Applied INSIDE `visibleAnimals` (ADR-0029 §5), unlike `BROWSE_EXCLUSIONS`:
@@ -178,7 +185,9 @@ export function exclusionProblems(
       problems.push(`${where}: askedAt '${exclusion.askedAt}' is not an ISO date`);
     }
     if (!exclusion.askedBy.trim()) problems.push(`${where}: has no askedBy`);
-    if (!exclusion.evidence.trim()) problems.push(`${where}: has no evidence pointer`);
+    if (!EVIDENCE.test(exclusion.evidence.trim())) {
+      problems.push(`${where}: evidence is not '<Message-ID> sha256:<hex of the .eml in the vault>'`);
+    }
   }
   return problems;
 }
