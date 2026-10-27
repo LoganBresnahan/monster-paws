@@ -73,6 +73,9 @@ export async function generateMetadata({
   const place = placeOf(animal);
   // Our own words, never the licensed description: a display license covers
   // the page, and a meta tag is syndicated far past it.
+  // No `openGraph` here: the card takes these words and the brand image from
+  // the root. Never the listing's photo — a display licence covers our pages,
+  // and a card is cached everywhere the link goes (ADR-0030).
   return {
     title: `${animal.name} — Monster Paws`,
     description: `${animal.name} is a ${animal.breed ?? animal.species} looking for a home${

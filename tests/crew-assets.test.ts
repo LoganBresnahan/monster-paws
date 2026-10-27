@@ -27,6 +27,29 @@ function segments(b: Buffer): number[] {
   return seen;
 }
 
+function dimensions(b: Buffer): [number, number] {
+  let i = 2;
+  while (i < b.length) {
+    const m = b[i + 1];
+    if (m >= 0xc0 && m <= 0xc2) return [b.readUInt16BE(i + 7), b.readUInt16BE(i + 5)];
+    i += 2 + b.readUInt16BE(i + 2);
+  }
+  throw new Error("no frame header");
+}
+
+// The link-preview card is built from the crew's files (ADR-0030) and ships
+// under the same rule.
+const card = path.resolve(__dirname, "..", "src", "app", "opengraph-image.jpg");
+
+describe("the link-preview card carries pixels only", () => {
+  it("is the painting-sized JPEG with no metadata segment", () => {
+    const b = readFileSync(card);
+    const extra = segments(b).filter((m) => m !== 0xda && !ALLOWED.has(m));
+    expect(extra.map((m) => `0x${m.toString(16)}`)).toEqual([]);
+    expect(dimensions(b)).toEqual([1216, 832]);
+  });
+});
+
 describe("public/brand/crew carries pixels only", () => {
   const files = readdirSync(dir);
 

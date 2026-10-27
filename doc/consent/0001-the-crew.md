@@ -7,6 +7,11 @@
   monsterpaws.org's home section ("Meet the crew", roadmap item 3c), labelled
   the founders' pets, not up for adoption. Not a shelter grant: nothing here
   enters the registry (`src/core/shelters.ts`) or the corpus.
+- **Extended 2026-10-27 (ADR-0030):** the same paintings and photos in the
+  site's link-preview card (`src/app/opengraph-image.jpg`, built from Beetle's
+  painting by `npm run og:image`) and in posts Logan writes about Monster
+  Paws on his own accounts, which is off-site display the original grant did
+  not name.
 - **Basis:** the founder's own pets and his own photos; given in the working
   session that built the section, and in the commit that adds this file.
 - **Files:** `public/brand/crew/<pet>-painting.jpg`, `<pet>-photo.jpg` (the
