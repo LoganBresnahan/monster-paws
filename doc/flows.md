@@ -389,15 +389,26 @@ nothing here touches `raw_payloads`.
 Browse (`/animals`) is the same predicate, one page at a time.
 
 ```
-  request /animals?species=&state=&after=   rendered PER REQUEST — filters and
+  request /animals?species=&state=&age=     rendered PER REQUEST — filters and
+           &sex=&zip=&miles=&shelter=&after=
        │                                    the cursor are search params, so
        │                                    there is no URL set to revalidate
        │                                    (ADR-0015 as amended). Fresher than
        │                                    detail's hour, never staler
        ▼
-  loadFacetGrid(db, asOf)                   one aggregate over the VISIBLE set:
-       │                                    (species, state, count), ~700 cells,
-       │                                    30 ms on the 64k corpus
+  scope (ADR-0015 as amended 2026-10-26)    ?shelter= → loadShelter (null when
+       │                                    it lists no visible animal); ?zip= →
+       │                                    zipPoint (src/core/geo.ts, Census
+       │                                    ZCTA; a PO-Box zip by its sectional
+       │                                    center) → zipsWithin(miles) over
+       │                                    loadShelterZips: a BrowseScope that
+       │                                    narrows the grid, the page and the
+       │                                    random pick alike. An unplaceable
+       │                                    zip limits nothing and says so
+       ▼
+  loadFacetGrid(db, asOf, scope)            one aggregate over the VISIBLE set:
+       │                                    (species, state, age, sex, count),
+       │                                    1,553 cells on the 63k corpus
        ▼
   facetOptions(grid, filters)               src/core/facets.ts, database-free so
        │                                    the filter island runs it too. The
@@ -406,17 +417,18 @@ Browse (`/animals`) is the same predicate, one page at a time.
        │                                    states must match ^[A-Z]{2}$ (replay
        │                                    cannot retract the junk `T` state).
        │                                    Each menu counted under the OTHER
-       │                                    menu's selection, so a count is a
+       │                                    menus' selections, so a count is a
        │                                    promise about the page it opens
        ▼
-  filtersFrom(searchParams, known)          a value the corpus does not hold is
+  filtersFrom(searchParams, grid)           a value the corpus does not hold is
        │                                    DROPPED, never queried: silently
        │                                    ignored shows animals nobody asked
        │                                    for; silently applied empties a page
        ▼
-  loadBrowsePage(db, filters, cursor, asOf, exclusions, sort)
+  loadBrowsePage(db, filters, cursor, asOf, exclusions, sort, scope)
        │                                    "Surprise me" → GET /animals/random:
-       │                                    pickRandomAnimalId, same matchingParts,
+       │                                    pickRandomAnimalId, same matchingParts
+       │                                    and scope,
        │                                    uniform random() → 307 to /animals/<id>
        │
        ├─ visibleAnimals(asOf)              THE predicate — the same one detail
@@ -427,7 +439,10 @@ Browse (`/animals`) is the same predicate, one page at a time.
        │                                    rebuild reassigns. BESIDE visibility,
        │                                    so /animals/[id] still resolves.
        │                                    Interim only — ADR-0021 item 7b
-       ├─ species / state = $               the v1 filters (ADR-0015 decision 5)
+       ├─ species / state / age / sex = $   the menus (ADR-0015 decision 5, as
+       │                                    amended 2026-10-26; no breed menu)
+       ├─ shelter = $ / left(zip,5) in (…)  the scope; an empty zip list is an
+       │                                    empty page, never the whole country
        ├─ sort = parseSort(?sort)           newest (default) | longest — ADR-0015
        │                                    as amended 2026-10-05; newest also
        │                                    requires listed_at, which desc would
@@ -456,11 +471,15 @@ Browse (`/animals`) is the same predicate, one page at a time.
                 height, and the alternative to ground around a photo is the crop
                 that cut a dog's head off on detail
     filters     BrowseFilterForm (src/ui/browse-filters.tsx), browse's one
-                client island (ADR-0015 as amended 2026-10-04): the server
-                hands it the grid, and each pick re-runs facetOptions so the
-                other menu recounts before "Show me". Still a plain GET form —
-                works with JS off, a shareable URL per combination, and no
-                `after` field: a new filter starts at the first animal
+                client island (ADR-0015 as amended 2026-10-04, 2026-10-26): the
+                server hands it the grid, each pick re-runs facetOptions so the
+                other menus recount, and with JS a change applies itself 400 ms
+                later as one history entry (Back undoes it), the list dimmed
+                while it loads. Without JS it is the plain GET form and "Show
+                me". Every URL comes from browseSearch, and none carries
+                `after`: a new filter starts at the first animal
+    shelter     a chip naming it, its ✕ leaving the view; detail links "See all
+                N animals from <org>" when the shelter lists more than one
     paging      "← Previous 24" / "Next 24 animals →" (ADR-0015 as amended
                 2026-10-05): ?before= walks the same keyset backward, and each
                 button shows only when a row really lies that way — probed,
