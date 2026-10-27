@@ -9,6 +9,7 @@ import {
   jsonb,
   numeric,
   pgTable,
+  primaryKey,
   text,
   timestamp,
   uniqueIndex,
@@ -544,6 +545,29 @@ export const shelterNonprofits = pgTable("shelter_nonprofits", {
 });
 
 export type EveryorgClaim = "claimed" | "unclaimed" | "unknown";
+
+/**
+ * Where to write to a shelter (ADR-0029 §2): an address found on the
+ * shelter's own site, on its Every.org page, or typed by Logan — never
+ * RescueGroups' `email` field, which is outside the key's declared use. A row
+ * is a candidate until `confirmed_at` is set by a person; a fact table like
+ * `shelter_nonprofits`, so a re-find keeps the row and a confirmation
+ * updates it.
+ */
+export const shelterContacts = pgTable(
+  "shelter_contacts",
+  {
+    shelterExternalId: text("shelter_external_id").notNull(),
+    email: text("email").notNull(),
+    /** the page it was read from, `every.org`, or `typed by <who>` */
+    sourceUrl: text("source_url").notNull(),
+    foundAt: timestamp("found_at", { withTimezone: true }).notNull(),
+    confirmedAt: timestamp("confirmed_at", { withTimezone: true }),
+    confirmedBy: text("confirmed_by"),
+    note: text("note"),
+  },
+  (t) => [primaryKey({ columns: [t.shelterExternalId, t.email] })],
+);
 
 /** What happened between us and a shelter, by name (ADR-0029 §5). */
 export type OutreachEventKind = "sent" | "bounced" | "replied" | "opted_out" | "granted";

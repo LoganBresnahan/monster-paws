@@ -99,6 +99,13 @@
       "when": 1793118569369,
       "tag": "0013_equal_miracleman",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1793120194978,
+      "tag": "0014_low_mad_thinker",
+      "breakpoints": true
     }
   ]
 }

@@ -97,7 +97,7 @@ email a real shelter. Check items off as they ship.
 
 3. **the address finder and the template** (parallel; both consume the
    phase-2 row type)
-   - [ ] `shelter-email-finder` — medium, moderate. For each shelter on the
+   - [x] `shelter-email-finder` — **done 2026-10-27** (`src/core/outreach/addresses.ts`: `extractAddresses` over mailto, entities and the bracketed obfuscations with the file-name look-alikes refused; a robots.txt matcher for our token or `*`, longest rule, allow on a tie; `politeFetcher` one request a second with `MonsterPawsBot/1.0 (+https://monsterpaws.org; hello@monsterpaws.org)`; `findAddresses` over home, the standard contact/about paths and the home page's own contact links; candidates and Logan's confirmation in `shelter_contacts`, `drizzle/0014`, the page each was read from a stored column; `src/core/outreach/contacts.ts`, `confirmedAddress` the only thing a send may read). Medium, moderate. For each shelter on the
      wave list: its website's home, contact and about pages, a minimal
      `robots.txt` matcher (user-agent groups, Allow / Disallow prefixes, no
      library), one request a second with timeouts and redirects behind a
@@ -109,7 +109,7 @@ email a real shelter. Check items off as they ship.
      a session; a contact-form-only shelter is recorded as such. Every
      address is a candidate until Logan confirms it. The Every.org page is
      one more candidate source, not a dependency.
-   - [ ] `outreach-template-renderer` — medium, moderate. One template to
+   - [x] `outreach-template-renderer` — **done 2026-10-27** (`src/core/outreach/template.ts`, `renderAsk`; every clause pinned in `tests/outreach-template.test.ts`, the hackathon a `timing` input, the claim line on unclaimed and unknown, Ducky's painting the one image, from our origin; a rendered ask sent through Mailpit in the suite). **The lawyer's read of the rendered text is still open** — `preview` prints it once the CLI lands. Medium, moderate. One template to
      subject, plain text and HTML from a list row plus the claimed
      tri-state. Each obligation is a clause a fixture test pins present or
      absent: who we are and "we keep $0"; their count and shelter-view link

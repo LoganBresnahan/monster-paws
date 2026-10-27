@@ -53,7 +53,7 @@ export async function truncateDonor(db: Db): Promise<void> {
 /** Empties the outreach record (ADR-0029 §5) — test databases only, like `truncateCorpus`. */
 export async function truncateOutreach(db: Db): Promise<void> {
   await assertTestDatabase(db);
-  await db.execute(sql`truncate table outreach_events restart identity`);
+  await db.execute(sql`truncate table outreach_events, shelter_contacts restart identity`);
 }
 
 /**
