@@ -196,7 +196,8 @@ there is a shelter and a card to show.
 ## Amendment (2026-10-27): the four profiles in the footer now
 Decided with Logan the same evening. The four profiles are linked from the
 site-wide footer (`SOCIAL_LINKS` in `src/ui/site.ts`, rendered by
-`src/ui/site-footer.tsx` as a nav labelled "Monster Paws elsewhere") before
+`src/ui/site-footer.tsx` in the footer's nav between the contact address
+and the source link) before
 any of them has a post, rather than after: the shelter outreach (ADR-0029)
 sends people to the site this week, and a shelter looking for where Monster
 Paws is should find the four from the page rather than from a search that
