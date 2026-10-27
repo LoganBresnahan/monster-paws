@@ -758,3 +758,86 @@ Planned: roadmap item 7b. Derived data like `embeddings`; gates browse only.
                                     on REAL animals clears the bar, not when
                                     junk-catch does
 ```
+
+## Shelter outreach — our own listings, their own site, one guarded door (ADR-0029)
+
+Built 2026-10-27 (`doc/plans/adr-0029-outreach-build-plan.md`), driven by
+hand through `npm run outreach`. Every fact about a shelter comes from what
+we already display or from the shelter's own site; RescueGroups' contact
+fields are never read. A message leaves only through `sendWave`, and a live
+run needs a person at a terminal.
+
+```
+  animals                           loadOutreachShelters(): the organisations
+       │                            with a visible animal, described by what
+       │  visibleAnimals()          most of their visible animals carry — name,
+       │  ↳ SHELTER_EXCLUSIONS      city, state, zip, website, count, the live
+       │    applied INSIDE it       shelter-view link; never raw_payloads
+       ▼
+  selectWave()                      a named wave: 50 mi of 60614 or states,
+       │                            ≤200, the already-approached dropped
+       │
+       ├──► match ──────────────────────────────────────────────────────────
+       │     ensureBmf()            ── IRS boundary: eo_<state>.csv, public
+       │          │                    domain, into var/irs/ (gitignored) ──
+       │     matchEin()             Dice over the name, city and filing codes
+       │          │                 as nudges; a person picks the row
+       │     nonprofitByEin()       ── Every.org boundary: EVERYORG_API_KEY;
+       │          │                    a 404 is a normal null ──
+       │     recordShelterNonprofit()
+       │          ▼
+       │     shelter_nonprofits     everyorg_slug, ein, everyorg_claim read
+       │                            from hasAdmin — claimed | unclaimed |
+       │                            unknown, never a boolean
+       │
+       ├──► find-emails ────────────────────────────────────────────────────
+       │     findAddresses()        ── the shelter's site: robots.txt kept,
+       │          │  politeFetcher()   1 req/s, MonsterPawsBot named ──
+       │     recordAddressCandidates()
+       │          ▼
+       │     shelter_contacts       every address a CANDIDATE with its
+       │          │                 source_url; confirmAddress() by a person
+       │          ▼                 sets confirmed_at — nothing else sends
+       │
+       ▼
+  assembleWave()                    renderAsk() per shelter: claim line only
+       │                            when not claimed, the hackathon clause as
+       │                            an input with a date, no address on it
+       ▼
+  sendWave()                        one transaction per message under
+       │  loadSendFacts()           pg_advisory_xact_lock: judgeSend() reads
+       │  judgeSend()               outreach_events + shelter_contacts —
+       │                            ≤40 / rolling 24 h · ≥60 s apart · one per
+       │                            shelter per wave · follow-up ≥7 d after the
+       │                            FIRST, never a third · confirmedAddress()
+       │                            only · not excluded, opted out, answered
+       │                            or bounced
+       ├──► rehearseWave()          `send`: the same loop into Mailpit inside
+       │                            a transaction rolled back — the record
+       │                            judged as live, nothing kept
+       │
+       │    `send --live`:          gmailTransport() (GMAIL_USER + app
+       │     liveSendGate()         password from pass), liveSendGate() on
+       │     confirmLiveSend()      the previous wave (>5% bounced or a
+       │                            complaint refuses; --override noted on
+       │                            every send), the wave's name typed back
+       ▼
+  ── SMTP boundary: Mailpit (localhost:1025) or smtp.gmail.com as Logan ──
+       │
+       ▼
+  recordOutreachEvent()             the `sent` row ONLY after the transport
+       │                            returned a message_id; a throw stops the
+       ▼                            wave with no row
+  outreach_events                   append-only: sent | bounced | replied |
+       │                            opted_out | granted, by shelter_external_id
+       │                            and wave; `record` writes the replies
+       │                            Logan reads in Gmail
+       ▼
+  waveHealth()                      `status`: per wave by kind, bounce and
+                                    reply rates against its sends
+
+  an opt-out  →  evidenceOf(.eml)   Message-ID + sha256 of the raw message;
+                 SHELTER_EXCLUSIONS the entry in git, the .eml in the vault
+                 (exclusionProblems) under consent/, the opted_out row here
+                 (ADR-0029 as amended 2026-10-27)
+```

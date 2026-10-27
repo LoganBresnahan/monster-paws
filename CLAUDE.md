@@ -202,6 +202,12 @@ the monthly check in infra.md's Recurring ops.
   — one-shot ingest through all five stages, or stages 2–4 over the corpus;
   `--max-daily-disappearance R` raises the stage-5 gate for one run a person
   has checked (ADR-0014 as amended)
+- `npm run outreach -- list | match | find-emails | preview | send | record | status`
+  — shelter outreach by hand (ADR-0029): the wave list from our own listings,
+  the EIN and Every.org match and the address each confirmed by a person,
+  `send --wave <name>` rehearsed into Mailpit and rolled back, `--live` only
+  with the Gmail pair, a terminal and the wave's name typed back; the flow is
+  in `doc/flows.md`
 - `npm run db:up` — local Postgres via `docker-compose.dev.yml`
   (pgvector/pg16 image — same extensions as production)
 - `npm run db:generate` / `npm run db:migrate` — Drizzle migrations

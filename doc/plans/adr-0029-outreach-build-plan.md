@@ -168,7 +168,7 @@ email a real shelter. Check items off as they ship.
 
 6. **docs and flow** (closes the track; the boxes must grep against real
    symbols)
-   - [ ] `outreach-docs-and-flow` — low, mechanical. One ASCII diagram in
+   - [x] `outreach-docs-and-flow` — **done 2026-10-27** (the "Shelter outreach" flow in `doc/flows.md`, every box greppable; infra.md: the Gmail section carries the Mailpit and `var/irs/` notes, `everyorg/api-key` lands in `.env` by `env:dev`, `outreach_events` / `shelter_contacts` / the vault's `consent/` in the custody picture; `npm run outreach` in CLAUDE.md; roadmap item 5 NOT ticked — its milestone is a donation, not the code — but carries the wave, the count and the two gates). Low, mechanical. One ASCII diagram in
      `doc/flows.md` with the external boundaries drawn (the IRS file,
      Every.org's API, the shelter's site, Gmail SMTP); `doc/infra.md`'s pass
      table gains `google/gmail-app-password` (`everyorg/api-key` is there

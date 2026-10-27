@@ -161,12 +161,12 @@ production webhook is a separate setup with its own three entries
 | `everyorg/staging-webhook-token` | The staging webhook's token, shown at creation | The donate link's `webhook_token` parameter, which makes Every.org POST that donation to our webhook. Rides in a URL every donor sees — an identifier, not a secret | local `.env` `EVERYORG_WEBHOOK_TOKEN` via `npm run env:dev` |
 | `everyorg/staging-auth-token` | The staging webhook's auth token, shown at creation | Undocumented (docs.every.org, Partner Webhook, read 2026-10-22): asked of partners@every.org whether it rides on each webhook POST | local `.env` `EVERYORG_AUTH_TOKEN` via `npm run env:dev` |
 | `everyorg/staging-webhook-secret` | 32 random characters (`pass generate -n`) | The last path segment of the webhook URL above — our own secret beside Every.org's token (ADR-0027 §4) | local `.env` `EVERYORG_WEBHOOK_SECRET` via `npm run env:dev` |
-| `everyorg/api-key` | Every.org **production** public API key, created by Logan 2026-10-27 at every.org/developer | Nonprofit lookups by EIN for the shelter-to-nonprofit match (ADR-0029 §2, ADR-0027's `shelter_nonprofits`) | local `.env` once the outreach CLI reads it |
+| `everyorg/api-key` | Every.org **production** public API key, created by Logan 2026-10-27 at every.org/developer | Nonprofit lookups by EIN for the shelter-to-nonprofit match (ADR-0029 §2, ADR-0027's `shelter_nonprofits`) | local `.env` via `npm run env:dev`; read by `npm run outreach -- match` |
 | `everyorg/api-secret` | The secret issued with that key | Not needed for public lookups; kept for any authenticated partner call | dev only |
 
 ### Google — Gmail as Logan (ADR-0029)
 
-Outreach mail leaves as Logan from his own Gmail account over SMTP, never from Resend (ADR-0029 §4). Both entries are made when the first live wave is ready and the app password revoked when outreach ends.
+Outreach mail leaves as Logan from his own Gmail account over SMTP, never from Resend (ADR-0029 §4). Both entries are made when the first live wave is ready and the app password revoked when outreach ends. Everything that is not `send --live` goes to **Mailpit** (`docker-compose.dev.yml` and CI's `verify` job: SMTP on 1025, the inbox at http://localhost:8025, nothing leaves the machine), and `match` reads the IRS Business Master File from `var/irs/eo_<state>.csv` (public domain, downloaded once by `ensureBmf`, gitignored; delete the file to refresh it).
 
 | Entry | What it is | What it's for | Lands in |
 | --- | --- | --- | --- |
@@ -1047,6 +1047,10 @@ an oplog entry when it happens.
   │ event_log                │           │ FTS indexes              │
   │ attestations + R2 mirror │           │ ISR page cache           │
   │ donor accounts           │           │                          │
+  │ outreach_events,         │           │                          │
+  │ shelter_contacts, the    │           │                          │
+  │ consent/ .eml in the     │           │                          │
+  │ vault (ADR-0029)         │           │                          │
   └───────────┬──────────────┘           └──────────────────────────┘
               │ backed up: DO PITR (continuous)
               │            + nightly pg_dump → R2 vault (off-DO copy)
