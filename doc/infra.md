@@ -45,6 +45,7 @@ pushes to GHCR with the workflow's built-in `GITHUB_TOKEN`.
 | Entry | What it is | What it's for | Lands in |
 | --- | --- | --- | --- |
 | `digitalocean/api-token` | DO account API token (created 2026-07-29) | Everything `doctl` does: the droplet, firewall, monitoring alert policies (step 6c), snapshots, Managed Postgres when step 6 lands, and the per-job GPU Droplets of GPU rental (below) | dev only |
+| `digitalocean/database-url` | Private connection string of Managed Postgres `monsterpaws-pg` (id `a464ff4f…`, PG 16, db-s-1vcpu-1gb, nyc3; created 2026-10-27 by oplog 0001), the cluster's admin user, `sslmode=require`; reachable only from the droplet (firewall rule `droplet:588758367`, private network) | The app's and the worker's `DATABASE_URL`, and `scripts/backup-db.sh`'s source. Admin credentials: a least-privilege app role is a follow-up (oplog 0001) | droplet `.env` |
 
 ```sh
 DIGITALOCEAN_ACCESS_TOKEN=$(pass show digitalocean/api-token) doctl compute droplet list
@@ -305,10 +306,22 @@ rclone_r2() { # $1 = worker|vault, rest = rclone args
 #     Write token cannot read bucket-level config; rclone assumes unversioned
 #     and deletes correctly. Don't chase it; verified 2026-08-17.
 
-# 6. Managed Postgres — DEFERRED until ingest (roadmap item 2). When needed:
+# 6. Managed Postgres — DONE 2026-10-27 by oplog 0001 (monsterpaws-pg, PG 16,
+#    db-s-1vcpu-1gb, nyc3; firewall: the droplet only; daily backups with
+#    point-in-time restore over 7 days). Rebuild:
 doctl databases create monsterpaws-pg --engine pg --version 16 \
   --size db-s-1vcpu-1gb --region nyc3
-doctl databases connection monsterpaws-pg   # → DATABASE_URL for .env
+doctl databases firewalls append <db-id> --rule droplet:<droplet-id>
+#    The PRIVATE connection string, with sslmode=verify-full, piped into
+#    pass as digitalocean/database-url and from there into the droplet .env.
+#    TRAP: Node's pg treats sslmode=require as verify-full too, and DO signs
+#    the cluster with its own project CA, so every connection fails
+#    SELF_SIGNED_CERT_IN_CHAIN (2026-10-27) until the droplet holds the CA:
+doctl databases get-ca <db-id> -o json | jq -r .certificate | base64 -d \
+  | ssh root@$IP 'cat > monsterpaws/do-ca.crt'
+#    docker-compose.prod.yml mounts it into app and worker as
+#    NODE_EXTRA_CA_CERTS; scripts/backup-db.sh passes it to pg_dump as
+#    PGSSLROOTCERT. Public, never committed (.gitignore). Valid to 2036.
 
 # 6b. SSH hardening — part of provisioning, not a later chore. The repo is
 #     public: architecture is documented, so the security budget goes to the

@@ -1,7 +1,7 @@
 # 0001: Production launch — browse first: database, animal pages, the crew, worker, error reporting
 
 Status: planned
-Planned: 2026-09-29, revised 2026-10-26 · Run: —
+Planned: 2026-09-29, revised 2026-10-26 · Run: 2026-10-27 01:12 UTC –
 Why: roadmap item 3b; ADR-0028 as amended 2026-10-23 (browse before the
 donate loop) and 2026-10-26 (the home section includes `/demo`); ADR-0010 as
 amended 2026-09-28 / 2026-09-29, ADR-0015, ADR-0017, ADR-0007 as amended;
@@ -214,7 +214,66 @@ backup lands in the vault and pings its own.
 Rollback: step 6's rollback.
 
 ## Run
-—
+Logan approved the run 2026-10-26 (local evening); started 2026-10-27 01:12 UTC.
+
+**0. Push and CI.** topdog pushed at `34d36ff` (b9d7c07..34d36ff, 14 commits);
+CI run 40431254413. Ship bar on that code the same evening: vitest 309/309
+twice, typecheck clean, e2e 29/29 on the production build.
+
+**1. What was running (the rollback).** Droplet `monsterpaws` (nyc3, 1 GB) on
+`hotfix/next-16.3.8` at `c58d87f`; `IMAGE_TAG=c58d87f7ee095ab9f81f947bce4aacca7c5c21b9`
+for both `monster-paws-app` and `monster-paws-worker`, caddy `2-alpine`. `.env`
+held `IMAGE_TAG` and `NODE_ENV` only. `/api/health`
+`{"ok":true,"sha":"c58d87f…","uptimeSec":2277021}`. No Managed Postgres
+existed (`doctl databases list` empty). Memory 957 MB total, 509 MB available;
+disk 48% used.
+
+**Gate before the droplet.** CI 40431254413 green: verify, images, sourcemaps.
+The published images `34d36ffb3e1d57a412c4851d1bd5346109701942` pulled; e2e
+29/29 against that app image (`npm run e2e:prod`), its health reporting the
+sha; the worker image's `npx drizzle-kit migrate` on an empty scratch database
+applied all 12 migrations (0000–0011), 19 tables. Logan chose to keep the
+worker running beside step 7's hand-run poll and measure memory, since a poll
+by hand beside the live worker is how recovery runs work later.
+
+**2. Managed Postgres.** `monsterpaws-pg` (id `a464ff4f…`), PG 16, db-s-1vcpu-1gb,
+nyc3, one node, created 01:29 UTC and online after ~280 s. Firewall: one rule,
+`droplet:588758367`. The private connection string went straight into `pass`
+as `digitalocean/database-url` (the cluster's admin user, `sslmode=require`);
+never printed. From the droplet over the private network:
+PostgreSQL 16.15, `vector` 0.8.7 available and created, `pg_trgm` 1.6
+available. Backups (API, 2026-10-27): one daily, scheduled 15:55 UTC, every
+24 h, the first taken at 01:33 UTC. **Point-in-time restore is offered** at this
+size: Overview → Actions → Restore from backup reads "restore to any
+transaction, as far back as 7 days" with "Choose a point in time" (Logan,
+read 01:50 UTC). The same screen said "No backups available" twenty minutes
+after creation although the API listed the 01:33 backup — to recheck after
+the 15:55 UTC scheduled backup; a ticket to DO if it persists.
+
+**3. `.env`.** The live `.env` was copied to `.env.before-0001` (mode 600)
+first. The four values were piped from `pass`; a fifth, not in the plan,
+`SENTRY_ENVIRONMENT=production`, because step 10 checks that tag and nothing
+set it. SSH refused connections for about a minute after the burst of six
+quick sessions (socket-activated sshd); the four appends had landed, the fifth
+was re-run in one session, and from then on each step is one session. `.env`
+had been mode 644 and is 600 now. Names checked once each, values never shown.
+
+**4. Pull.** Checkout `topdog` at `34d36ff`; `IMAGE_TAG` set to that sha; both
+images pulled, nothing restarted. The pull also fetched a newer
+`caddy:2-alpine`, which step 6 picks up.
+
+**5. Migrate — stopped, then fixed.** `drizzle-kit migrate` ended without
+applying anything: `pg` treats `sslmode=require` as verify-full, and DO signs
+the cluster with its own project CA, so every connection failed
+`SELF_SIGNED_CERT_IN_CHAIN`. Fix (Logan chose verification over
+`uselibpqcompat` encrypt-only): the cluster's CA from `doctl databases get-ca`
+(CN "… Project CA", valid to 2036-10-24) at `monsterpaws/do-ca.crt` on the
+droplet; `docker-compose.prod.yml` mounts it into app and worker as
+`NODE_EXTRA_CA_CERTS`; `scripts/backup-db.sh` hands it to `pg_dump` as
+`PGSSLROOTCERT`; the URL in `pass` and `.env` says `sslmode=verify-full`.
+Proven first with a one-off container: connected, `ssl: true`. The compose
+change ships in its own commit; the images stay `34d36ff` (no code changed).
+Storage 10 GiB; maintenance window Tuesdays 00:15 UTC.
 
 ## Follow-ups
 —

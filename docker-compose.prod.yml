@@ -38,6 +38,14 @@ services:
     <<: *logging
     restart: unless-stopped
     env_file: .env
+    environment: &trust-do-ca
+      # DATABASE_URL says sslmode=verify-full, and DO signs Managed Postgres
+      # with its own project CA: without this Node rejects the connection as
+      # SELF_SIGNED_CERT_IN_CHAIN. The cert is public; the droplet fetches it
+      # with `doctl databases get-ca` (doc/infra.md, step 6; oplog 0001).
+      NODE_EXTRA_CA_CERTS: /run/do-ca.crt
+    volumes: &do-ca
+      - ./do-ca.crt:/run/do-ca.crt:ro
     expose:
       - "3000"
 
@@ -49,6 +57,8 @@ services:
     <<: *logging
     restart: unless-stopped
     env_file: .env
+    environment: *trust-do-ca
+    volumes: *do-ca
 
 volumes:
   caddy_data:

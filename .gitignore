@@ -60,3 +60,6 @@ comfyui/gpu.env
 
 # ephemeral thinking-session notes (never committed)
 /scratch/
+
+# DO Managed Postgres's project CA on the droplet (oplog 0001) — public, fetched by doctl, never committed
+do-ca.crt

@@ -31,7 +31,9 @@ rclone() {
 }
 
 # PG 16 client for the PG 16 cluster: pg_dump must be the server's major or newer.
-docker run --rm -e DATABASE_URL postgres:16.4-alpine sh -c 'pg_dump --no-owner "$DATABASE_URL"' \
+# sslmode=verify-full needs DO's project CA (do-ca.crt, as the app and worker mount it).
+docker run --rm -e DATABASE_URL -e PGSSLROOTCERT=/run/do-ca.crt -v "$PWD/do-ca.crt:/run/do-ca.crt:ro" \
+  postgres:16.4-alpine sh -c 'pg_dump --no-owner "$DATABASE_URL"' \
   | gzip | rclone rcat "r2:monsterpaws-vault/$KEY"
 
 # An empty or missing object is a failed backup, whatever the pipeline exit said.
