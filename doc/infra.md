@@ -226,14 +226,16 @@ https://monsterpaws.org. Posted by hand only (ADR-0032 decision 3): no API
 key, app password or scheduler credential exists for any of them, and none is
 created without an ADR saying what for. The LinkedIn logo and cover, and the
 X and Bluesky avatar and header, and the YouTube banner, are built by `npm run social:assets` into
-`var/social/` (gitignored) from `public/brand/`.
+`var/social/` (gitignored) from `public/brand/`. Avatars, covers and bios were
+up on all four by 2026-10-27 (Logan); the Bluesky profile is readable without
+a login through `public.api.bsky.app/xrpc/app.bsky.actor.getProfile?actor=monsterpaws.org`.
 
 | Account | Handle | Made |
 | --- | --- | --- |
-| LinkedIn company page | Monster Paws | 2026-10-26, assets and copy updated 2026-10-27 |
-| X | `@monsterpawsorg` | 2026-10-27 |
-| Bluesky | `@monsterpaws.org` (the `_atproto` TXT record set 2026-10-27 through `cloudflare/dns-token`; `@monsterpawsorg.bsky.social` redirects) | 2026-10-27 |
-| YouTube | `@monsterpawsorg`, a brand channel under Logan's Google account | 2026-10-27 |
+| LinkedIn company page | Monster Paws — https://www.linkedin.com/company/monster-paws/ | 2026-10-26, assets and copy updated 2026-10-27 |
+| X | `@monsterpawsorg` — https://x.com/monsterpawsorg | 2026-10-27 |
+| Bluesky | `@monsterpaws.org` — https://bsky.app/profile/monsterpaws.org (the `_atproto` TXT record set 2026-10-27 through `cloudflare/dns-token`; `@monsterpawsorg.bsky.social` redirects) | 2026-10-27 |
+| YouTube | `@monsterpawsorg` — https://www.youtube.com/@monsterpawsorg, a brand channel under Logan's Google account | 2026-10-27 |
 
 | Entry | What it is | What it's for | Lands in |
 | --- | --- | --- | --- |

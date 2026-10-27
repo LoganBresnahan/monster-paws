@@ -7,3 +7,15 @@ export const CONTACT_EMAIL = "hello@monsterpaws.org";
  * stays in the site-wide footer, never only in a README.
  */
 export const SOURCE_URL = "https://github.com/LoganBresnahan/monster-paws";
+
+/**
+ * Where Monster Paws posts, by hand (ADR-0032), linked from the site-wide
+ * footer. Never a share widget or an embedded feed here: either loads a
+ * platform's script on every page a shelter's animal is shown on.
+ */
+export const SOCIAL_LINKS = [
+  { label: "LinkedIn", href: "https://www.linkedin.com/company/monster-paws/" },
+  { label: "X", href: "https://x.com/monsterpawsorg" },
+  { label: "Bluesky", href: "https://bsky.app/profile/monsterpaws.org" },
+  { label: "YouTube", href: "https://www.youtube.com/@monsterpawsorg" },
+] as const;

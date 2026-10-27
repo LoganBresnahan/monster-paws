@@ -1,5 +1,5 @@
 import { expect, test } from "./fixtures";
-import { CONTACT_EMAIL, SOURCE_URL } from "@/ui/site";
+import { CONTACT_EMAIL, SOCIAL_LINKS, SOURCE_URL } from "@/ui/site";
 
 test("home page renders the Monster Paws landing", async ({ page }) => {
   await page.goto("/");
@@ -30,6 +30,13 @@ for (const path of ["/", "/animals", "/claim", "/demo"]) {
       "href",
       `mailto:${CONTACT_EMAIL}`,
     );
+    // The four profiles Monster Paws posts on, as text links (ADR-0032 as amended 2026-10-27).
+    for (const { label, href } of SOCIAL_LINKS) {
+      const profile = footer.getByRole("link", { name: label, exact: true });
+      await expect(profile).toHaveAttribute("href", href);
+      await expect(profile).toHaveAttribute("target", "_blank");
+      await expect(profile).toHaveAttribute("rel", /noopener/);
+    }
   });
 }
 

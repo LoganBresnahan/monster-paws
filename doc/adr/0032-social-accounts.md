@@ -46,13 +46,16 @@ What constrains the accounts:
 ## Decision
 
 ### 1. Three channels now, under one address and one name
-- **LinkedIn**: the company page (made 2026-10-26), where Logan's own
+- **LinkedIn**: the company page (made 2026-10-26,
+  https://www.linkedin.com/company/monster-paws/), where Logan's own
   profile posts and the page reposts. Updated 2026-10-27: the logo on the
   site's cream, a cover that is a band of Beetle's painting, the tagline
   and description with "we keep $0".
-- **X**: `@monsterpawsorg`, created 2026-10-27. The hackathon's channel
+- **X**: `@monsterpawsorg` (https://x.com/monsterpawsorg), created
+  2026-10-27. The hackathon's channel
   (ADR-0028) and the one the Most Viral post goes out on.
-- **Bluesky**: `@monsterpawsorg.bsky.social`, created 2026-10-27. The
+- **Bluesky**: `@monsterpawsorg.bsky.social`, created 2026-10-27
+  (https://bsky.app/profile/monsterpaws.org). The
   handle becomes `@monsterpaws.org` by the `_atproto` TXT record set in
   Cloudflare 2026-10-27 (`cloudflare/dns-token`, TTL 300, `did=did:plc:…`,
   resolving at 1.1.1.1 and 8.8.8.8 the same hour); the domain as the handle
@@ -60,12 +63,14 @@ What constrains the accounts:
 - **YouTube**: a Monster Paws channel under Logan's own Google account
   (a brand channel: its own name, handle, avatar and banner; owners and
   managers added under its permissions, never a second Google account for
-  one channel), created 2026-10-27, handle `@monsterpawsorg`. A home for
+  one channel), created 2026-10-27, handle `@monsterpawsorg`
+  (https://www.youtube.com/@monsterpawsorg). A home for
   the hackathon video and nothing else yet.
 
 All four carry the same display name, "Monster
 Paws", link to https://monsterpaws.org and nowhere else, and use the
 card's sentence as the bio (ADR-0030's description, shortened to fit).
+Avatars, covers and bios were up on all four by the end of 2026-10-27.
 **Instagram and Facebook wait** for the first shelter's grant: they are
 where shelters and adopters are, and a feed there wants a shelter's animals
 and a real card, neither of which exists yet. Nothing else (TikTok,
@@ -148,7 +153,8 @@ there is a shelter and a card to show.
   is a `top` in the script, as the card's is in `og-image.ts`.
 - The site's footer still links the email and the source only. Social
   links in the footer are a product change for when the accounts have
-  something on them (revisit trigger).
+  something on them (revisit trigger). *Withdrawn the same day: see the
+  amendment of 2026-10-27.*
 - Three more entries in `pass`, three more rows in the registry, and a
   recovery path that does not depend on a browser session or one phone.
 - `npm run social:assets` is a package.json script with no new dependency:
@@ -182,6 +188,25 @@ there is a shelter and a card to show.
   place of the wordmark on cream.
 - A second person posts: shared-credential rules for `social/`.
 - Any post that is not by hand — a scheduler, a bot, an API — is a new ADR.
-- The accounts have posts: social links in the site's footer.
+- ~~The accounts have posts: social links in the site's footer.~~ Done
+  early by the amendment of 2026-10-27.
 - A platform's harassment, impersonation or a handle squat: the response is
   written as an amendment, not improvised in a reply.
+
+## Amendment (2026-10-27): the four profiles in the footer now
+Decided with Logan the same evening. The four profiles are linked from the
+site-wide footer (`SOCIAL_LINKS` in `src/ui/site.ts`, rendered by
+`src/ui/site-footer.tsx` as a nav labelled "Monster Paws elsewhere") before
+any of them has a post, rather than after: the shelter outreach (ADR-0029)
+sends people to the site this week, and a shelter looking for where Monster
+Paws is should find the four from the page rather than from a search that
+turns up the squatted `monsterpaws` handles. The consequence and the revisit
+trigger that deferred this are withdrawn above.
+
+Text links only, no platform icons: each platform's mark carries its own
+usage terms, and four words read fine. No share widget and no embedded
+feed: either loads a platform's script on every page a shelter's animal is
+shown on, which is the tracking ADR-0024 keeps off the listings. `rel="me"`
+on each so a platform that verifies by back-link can. Checked by
+`e2e/home.spec.ts` on the home, browse, claim and demo pages. Instagram and
+Facebook join the list when decision 1 opens them.
