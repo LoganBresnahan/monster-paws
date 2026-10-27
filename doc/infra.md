@@ -220,7 +220,7 @@ not needed; the droplet has a public IP behind the proxy.
 
 ### Social accounts (ADR-0032)
 
-Four accounts: three registered to hello@monsterpaws.org (a Cloudflare Email
+Five accounts: four registered to hello@monsterpaws.org (a Cloudflare Email
 Routing forward, above) and the YouTube channel under Logan's Google account; display name "Monster Paws", link
 https://monsterpaws.org. Posted by hand only (ADR-0032 decision 3): no API
 key, app password or scheduler credential exists for any of them, and none is
@@ -236,6 +236,7 @@ a login through `public.api.bsky.app/xrpc/app.bsky.actor.getProfile?actor=monste
 | X | `@monsterpawsorg` — https://x.com/monsterpawsorg | 2026-10-27 |
 | Bluesky | `@monsterpaws.org` — https://bsky.app/profile/monsterpaws.org (the `_atproto` TXT record set 2026-10-27 through `cloudflare/dns-token`; `@monsterpawsorg.bsky.social` redirects) | 2026-10-27 |
 | YouTube | `@monsterpawsorg` — https://www.youtube.com/@monsterpawsorg, a brand channel under Logan's Google account | 2026-10-27 |
+| Instagram | `@monsterpawsorg` — https://www.instagram.com/monsterpawsorg/ | 2026-10-27 |
 
 | Entry | What it is | What it's for | Lands in |
 | --- | --- | --- | --- |

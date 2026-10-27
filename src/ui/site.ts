@@ -18,4 +18,5 @@ export const SOCIAL_LINKS = [
   { label: "X", href: "https://x.com/monsterpawsorg" },
   { label: "Bluesky", href: "https://bsky.app/profile/monsterpaws.org" },
   { label: "YouTube", href: "https://www.youtube.com/@monsterpawsorg" },
+  { label: "Instagram", href: "https://www.instagram.com/monsterpawsorg/" },
 ] as const;

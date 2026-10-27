@@ -211,3 +211,12 @@ shown on, which is the tracking ADR-0024 keeps off the listings. `rel="me"`
 on each so a platform that verifies by back-link can. Checked by
 `e2e/home.spec.ts` on the home, browse, claim and demo pages. Instagram and
 Facebook join the list when decision 1 opens them.
+
+## Amendment (2026-10-27, evening): Instagram opened early
+Logan opened `@monsterpawsorg` on Instagram
+(https://www.instagram.com/monsterpawsorg/) the same evening, ahead of the
+first shelter's grant that decision 1 waited for, because the handle was
+worth holding and the intro post has an image to carry there (the crew, under
+consent). It joins `SOCIAL_LINKS` and the registry. Posting rules are
+decision 3's unchanged; a shelter's animals appear there only under its
+grant. Facebook follows the same way when its page is through.
