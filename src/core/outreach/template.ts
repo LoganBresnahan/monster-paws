@@ -3,8 +3,9 @@ import type { EveryorgClaim } from "@/db/schema";
 /**
  * The one ask, rendered per shelter (ADR-0029 §3). Every sentence here is an
  * obligation a test pins by presence or absence; change the wording and run
- * `tests/outreach-template.test.ts` before `preview`. A lawyer reads the
- * rendered ask before any shelter does (ADR-0028).
+ * `tests/outreach-template.test.ts` before `preview`. Logan reads the
+ * rendered ask in Mailpit before any shelter does (ADR-0029 as amended
+ * 2026-10-27: no lawyer's read).
  */
 export interface AskShelter {
   name: string | null;

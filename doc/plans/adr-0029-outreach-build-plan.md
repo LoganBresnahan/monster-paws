@@ -122,8 +122,9 @@ email a real shelter. Check items off as they ship.
      endorsement, **as a renderer input, not a constant**, since it comes
      out if a wave slips past 11-04; "reply 'remove' and we take your
      listings down"; images only from monsterpaws.org, the text whole with
-     images blocked. Acceptance: `preview <shelter>` lands in Mailpit. A
-     lawyer reads the rendered ask before any shelter does.
+     images blocked. Acceptance: `preview <shelter>` lands in Mailpit. Logan
+     reads the rendered ask in Mailpit before any shelter does — no lawyer
+     (Logan, 2026-10-27; ADR-0029 as amended).
 
 4. **the live send guard** (alone, so the verify pass reads only this)
    - [x] `live-send-throttled` — **done 2026-10-27** (`src/core/outreach/send.ts`: `judgeSend` is the pure rule set over `SendFacts`, `loadSendFacts` reads them from the record before EACH message, `sendWave` the loop; the day is a rolling 24 hours, so no calendar midnight in any zone resets it; the follow-up clock runs from the first send and a third contact is refused outright; an `opted_out`, `replied` or `granted` row refuses a follow-up; the `to` comes only from `confirmedAddress`; the transport's throw stops the wave with no row; `google/gmail-user` and `google/gmail-app-password` in infra.md's table and `env-dev.sh`, not yet in `pass`. Verify pass the same day, a fresh agent on its own database: single-process the guard held on every attack, but two concurrent runs each sent the 40th and the same shelter twice in one wave, and a row insert failing after SMTP accepted threw the report away — fixed by judging, sending and recording inside one transaction under `pg_advisory_xact_lock`, the insert inside the guarded section with the message id in the error; also from the pass: a future-dated `sent` row refuses instead of sleeping, a bounce refuses the follow-up, a `granted` or `replied` row refuses any send). Medium, moderate ⚠ verify. A guard over
@@ -173,9 +174,10 @@ email a real shelter. Check items off as they ship.
      Every.org's API, the shelter's site, Gmail SMTP); `doc/infra.md`'s pass
      table gains `google/gmail-app-password` (`everyorg/api-key` is there
      already), a Mailpit note and the `var/irs/` download; roadmap item 5
-     ticked with the Chicagoland wave pinned as the first run and its two
-     gates named: the lawyer's read of the rendered ask, and the Gmail app
-     password in `pass`.
+     ticked with the Chicagoland wave pinned as the first run and its gate
+     named: the Gmail app password in `pass` (in, 2026-10-27). The lawyer's
+     read was dropped the same day (ADR-0029 as amended): Logan's read of the
+     preview is the read.
 
 **Critical path:** `shelter-exclusions-opt-out` → `outreach-list-query` →
 `shelter-email-finder` → `live-send-throttled` → `outreach-cli` →
@@ -206,7 +208,8 @@ makes Chicagoland about two days of sending once the list is checked
    phase 1, or every later test-DB suite leaks rows between tests.
 7. **Two slices, one dispatcher.** Phase 5 is one session, CLI first, the
    health gate on top.
-8. **Two gates outside code.** The first live wave needs the lawyer's read
-   of the rendered ask (ADR-0004, ADR-0022) and `google/gmail-app-password`
-   in `pass`; they are pinned on the roadmap in phase 6 so `send --live` is
+8. **Gates outside code.** The first live wave needs `google/gmail-app-password`
+   in `pass` (in, 2026-10-27) and Logan's read of the rendered ask in Mailpit —
+   the lawyer's read was dropped 2026-10-27 (ADR-0029 as amended); they are
+   pinned on the roadmap in phase 6 so `send --live` is
    not the first time anyone notices.

@@ -189,3 +189,15 @@ their domain sent those words at that time, as long as it is kept intact.
 - The repo never holds a shelter's words; the proof is reproducible from a
   file only we hold, which is the right way round for a public repository.
 
+## Amendment (2026-10-27, later): no lawyer's read of the ask
+
+Logan, with the first wave's runbook in hand: a lawyer's read of the rendered
+ask is not realistic for this project, so it is not a gate. Logan reads the
+`preview` in Mailpit himself before the wave; that is the read. The ask's
+clauses are the ADRs' own terms (ADR-0004 as amended §2, ADR-0022 §5 as
+amended 2026-10-27, ADR-0002 as amended 2026-10-26, ADR-0028), each pinned
+by a test, so the wording promises nothing the system does not do. The
+ADR-0028 read of the formal three-grant letter after the first yes is a
+separate line and is not changed here. The remaining gate on the first live
+wave was the Gmail pair in `pass`, in since the same day.
+

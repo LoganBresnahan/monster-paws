@@ -1,4 +1,4 @@
-import { existsSync, readFileSync, statSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import path from "node:path";
 
 /**
@@ -58,6 +58,7 @@ export async function ensureBmf(
     if (!response.ok) throw new Error(`IRS BMF ${bmfUrl(state)} answered ${response.status}`);
     const text = await response.text();
     parseBmfCsv(text.slice(0, 2000)); // the header, before anything is written
+    mkdirSync(path.dirname(file), { recursive: true });
     writeFileSync(file, text);
   }
   return { file, fetchedAt: statSync(file).mtime };

@@ -168,5 +168,6 @@ photo is the thing we paint from.
   basis; `art` facts hold the paintings' R2 keys only, as they already do.
 - A shelter is asked to let go of less: a withdrawn photo exists nowhere
   outside its own listing, which makes the yes easier.
-- The lawyer reads the amended sentence, not the old one.
+- Logan reads the amended sentence in Mailpit before the first wave; there is
+  no lawyer's read (ADR-0029 as amended 2026-10-27, later).
 

@@ -93,12 +93,15 @@ async function main(argv: string[]) {
       out({ recorded: args.shelter, ein: nonprofit.ein, slug: nonprofit.slug, claim: nonprofit.claim });
     } else if (args.command === "find-emails") {
       const shelter = await shelterByKey(db, args.shelter);
-      if (!shelter.website) throw new Error(`${args.shelter} lists no website — type the address: find-emails is for reading their site`);
-      const found = await findAddresses(shelter.website, politeFetcher());
+      // No website listed: nothing to read, so the only address is one a person types.
+      const found = shelter.website
+        ? await findAddresses(shelter.website, politeFetcher())
+        : { candidates: [], contactFormOnly: false, pagesRead: [], blockedByRobots: [], errors: [`${args.shelter} lists no website`] };
       await recordAddressCandidates(db, args.shelter, found.candidates, new Date());
       out({ ...found, website: shelter.website });
       found.candidates.forEach((c, i) => console.error(`  ${i + 1}. ${c.email}  (${c.sourceUrl})`));
       if (found.contactFormOnly) console.error("  a contact form and no address: write through the form by hand, or skip");
+      if (!shelter.website) console.error("  no website listed: type an address you found yourself (their Every.org page, a directory), or n");
       const answer = (await io.ask("Confirm which? [number, an address to type, or n]: ")).trim();
       const pick = Number(answer);
       const email = Number.isInteger(pick) && pick >= 1 && pick <= found.candidates.length ? found.candidates[pick - 1].email : answer.includes("@") ? answer : null;

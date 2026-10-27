@@ -52,6 +52,16 @@ is the record, and a file of ticked boxes stops being read.
 
 ## Ops
 
+- **The follow-up wave cannot be built from the CLI.** The guard allows one
+  follow-up seven or more days after the first message (ADR-0029 §5) and
+  `tests/outreach-send.test.ts` proves it, but `send --wave <name>` builds its
+  list through `selectWave`, which drops every shelter already written to —
+  right for a first wave, and exactly the set a follow-up wants. Needed before
+  day seven of `chicagoland-1`: a `--follow-up-to <wave>` flag that selects the
+  shelters sent to in that wave with no `replied`, `granted`, `opted_out` or
+  `bounced` row, and renders the ask with `inReplyTo` set to each first
+  message's id so it threads. Found 2026-10-27 writing Logan's runbook.
+
 - **`npm install` under npm 11.19.0 rewrites `package-lock.json` by 66 lines**,
   adding the nested optional wasm packages under
   `node_modules/@tailwindcss/oxide-wasm32-wasi` (`@emnapi/core`,
