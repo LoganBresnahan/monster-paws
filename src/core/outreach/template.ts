@@ -42,6 +42,11 @@ export const DEFAULT_ORIGIN = "https://monsterpaws.org";
 /** Our own painting, hosted by us — never a stored copy of a shelter's listing photo (ADR-0029 §3). */
 export const ASK_IMAGE = { path: "/brand/crew/beetle-painting.jpg", alt: "A watercolour keepsake of Beetle, one of our own dogs — the face of Monster Paws" };
 
+/** Every URL in the prose is a link in the HTML, so a reader taps it; the text part keeps the bare URL. Runs on escaped text. */
+function linkify(escaped: string): string {
+  return escaped.replace(/https?:\/\/[^\s<]+?(?=[.,;:)]*(?:\s|$|<))/g, (url) => `<a href="${url}">${url}</a>`);
+}
+
 function escapeHtml(text: string): string {
   return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
@@ -88,7 +93,7 @@ export function renderAsk(input: AskInput): RenderedAsk {
   }
 
   paragraphs.push({
-    text: `One plain term, so there is no surprise later: if you withdraw permission, we stop painting and take the paintings down, but keepsakes already given to donors — the animal's name, breed, age, photo and artwork — stay with those donors.`,
+    text: `One plain term, so there is no surprise later: if you withdraw permission, we stop painting, take the paintings down and delete the photos we painted from, but keepsakes already given to donors — the animal's name, breed, age and painting — stay with those donors.`,
   });
 
   if (input.timing) {
@@ -108,7 +113,7 @@ export function renderAsk(input: AskInput): RenderedAsk {
   const html = [
     `<!doctype html><html><body style="font-family: Georgia, serif; font-size: 16px; line-height: 1.5; color: #2b2320; max-width: 36em; margin: 0 auto; padding: 1em;">`,
     ...paragraphs.map((p) => {
-      const body = escapeHtml(p.text).replace(/\n/g, "<br>");
+      const body = linkify(escapeHtml(p.text)).replace(/\n/g, "<br>");
       const link = p.link ? `<br><a href="${escapeHtml(p.link)}">${escapeHtml(p.link)}</a>` : "";
       return `<p>${body}${link}</p>`;
     }),

@@ -139,3 +139,34 @@ Two notes from the same day, for whoever settles it:
   update, never a badge over the keepsake. No frame designs exist yet.
   DIRECTION.md's "Evolve" step (the card transforms into a gotcha-day
   version) is the thing this would revise, and is Logan's to settle there.
+
+## Amendment (2026-10-27): the keepsake is the painting, never the photo
+
+### Context
+§2 above lists the photo among what a shelter grant lets a keepsake hold, and
+§5's retention clause says the photo stays with a donor after a withdrawal.
+Reading that clause rendered in the ADR-0029 ask, Logan said (2026-10-27) that
+a donor is never given the listing photo: what we give is the painting. The
+photo is the thing we paint from.
+
+### Decision
+- **Under a grant, a keepsake holds the facts and the art — no photo field.**
+  The `grant:<slug>:<permission>` row in §2 reads "facts, art"; the listing
+  photo is read to paint and is never a `keepsake_fact`. The aggregator row is
+  unchanged: that photo is hotlinked on the live listing, never held, and
+  leaves with the licence (§4).
+- **On a withdrawal we stop painting, take the paintings down, and delete the
+  photos we hold for painting.** What a donor already has — the animal's
+  name, breed, age and the painting — stays with that donor.
+- **The ask says exactly that** (ADR-0029 §3, `renderAsk`): "if you withdraw
+  permission, we stop painting, take the paintings down and delete the photos
+  we painted from, but keepsakes already given to donors — the animal's name,
+  breed, age and painting — stay with those donors."
+
+### Consequences
+- `snapshotKeepsake` (ADR-0027, planned) writes no photo field on a grant
+  basis; `art` facts hold the paintings' R2 keys only, as they already do.
+- A shelter is asked to let go of less: a withdrawn photo exists nowhere
+  outside its own listing, which makes the yes easier.
+- The lawyer reads the amended sentence, not the old one.
+

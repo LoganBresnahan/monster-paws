@@ -562,7 +562,8 @@ slice or change build order.
       in the registry, honored whatever the license says. The `/claim` line
       is on every RG detail page, so this can arrive before any grant does.
       Carry-in: **the ask carries a retention clause (ADR-0022 §5)** —
-      keepsakes already given to donors (name, breed, age, photo, art) stay
+      keepsakes already given to donors (name, breed, age, the painting — never
+      the photo, ADR-0022 as amended 2026-10-27) stay
       in their accounts if the shelter later withdraws. It must be in the
       FIRST email; the answer becomes the grant's end terms (ADR-0006 as
       amended 2026-09-28). Have a lawyer read the wording first.

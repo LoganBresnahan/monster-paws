@@ -47,10 +47,12 @@ describe("ADR-0029 the ask", () => {
     expect(ask.text).toContain("confirm the photos are yours to license");
   });
 
-  it("states the retention term up front: keepsakes already given stay with those donors (ADR-0022 §5)", () => {
+  it("states the retention term up front: the painting stays with the donor, the photo is deleted (ADR-0022 §5 as amended 2026-10-27)", () => {
+    expect(ask.text).toContain("delete the photos we painted from");
     expect(ask.text).toContain(
-      "keepsakes already given to donors — the animal's name, breed, age, photo and artwork — stay with those donors",
+      "keepsakes already given to donors — the animal's name, breed, age and painting — stay with those donors",
     );
+    expect(ask.text).not.toMatch(/photo and artwork/);
   });
 
   it("carries the claim line, with the profile link, when the profile is unclaimed or unknown — and not when claimed", () => {
@@ -92,6 +94,14 @@ describe("ADR-0029 the ask", () => {
     ]) {
       expect(ask.html).toContain(sentence.replace(/"/g, "&quot;"));
     }
+  });
+
+  it("makes every URL in the prose a link in the HTML, without swallowing the punctuation after it", () => {
+    expect(ask.html).toContain(`<a href="https://monsterpaws.org/#crew">https://monsterpaws.org/#crew</a>,`);
+    expect(ask.html).toContain(`<a href="https://monsterpaws.org/demo">https://monsterpaws.org/demo</a>.`);
+    expect(ask.html).toContain(`(<a href="https://monsterpaws.org">https://monsterpaws.org</a>)`);
+    expect(ask.html).toContain(`<a href="https://monsterpaws.org/animals?shelter=rescuegroups%3Aorg%3A77">`);
+    expect(ask.html.match(/<a href=/g)).toHaveLength(5);
   });
 
   it("loads images only from monsterpaws.org, and never a listing's photo", () => {
