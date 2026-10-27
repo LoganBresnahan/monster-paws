@@ -35,15 +35,6 @@ is the record, and a file of ticked boxes stops being read.
 
 ## UI
 
-- **Next.js 16.3.8 is in the range of three advisories fixed in 16.4.1, and a
-  scanner is probing for one** — Better Stack `InvariantError: Expected RSC
-  response, got text/plain`, 6 events 10:52–10:53 UTC 2026-10-27: POSTs to
-  `/`, `/api`, `/app` from Belgium with `Next-Action: cachefn`, a probe for
-  GHSA-673q-mjm6-r5xr (RCE in `use cache` functions). Not exposed as built: no
-  `use cache`, no Server Actions (GHSA-p3m5-59mp-jv5r), and the image is
-  Alpine/musl with `sharp` 0.35.5 (GHSA-2464-fhr4-w9xw needs glibc; 0.35.5 is
-  its workaround). Fix: Next 16.4.3 and the five unused starter SVGs out of
-  `public/`, as a hotfix deploy. Found 2026-10-27.
 - **The production server logs "The destination stream closed early"** when a
   page is closed mid-response: three times in one e2e run (2026-10-26, 20/20
   green) and once in dev on `/animals`. It is the browser hanging up on a

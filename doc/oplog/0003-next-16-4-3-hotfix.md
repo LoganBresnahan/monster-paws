@@ -1,11 +1,11 @@
 # 0003: Security hotfix — Next.js 16.3.8 → 16.4.3, the starter SVGs removed
 
-Status: planned
-Planned: 2026-10-27 · Run: —
+Status: run
+Planned: 2026-10-27 · Run: 2026-10-27 14:31 – 14:32 UTC
 Why: three Next.js advisories fixed in 16.4.1 (GHSA-673q-mjm6-r5xr,
 GHSA-2464-fhr4-w9xw, GHSA-p3m5-59mp-jv5r), and a scanner probing production
 for the first (`doc/issues.md`, UI); ADR-0007 as amended, oplog 0001
-Commit deployed: —
+Commit deployed: `a2610f5` (CI run 40521006645: verify, images, sourcemaps green)
 
 Production runs Next.js 16.3.8 (images `34d36ff`, oplog 0001). A scanner from
 Belgium POSTed `Next-Action: cachefn` to `/`, `/api` and `/app` at 10:52 UTC
@@ -49,7 +49,26 @@ advisory on the deployed commit.
 Rollback: step 2's.
 
 ## Run
-—
+**Prerequisites.** Ship bar on `a2610f5`: vitest 309/309 twice, typecheck
+clean, e2e 29/29 on the production build. Lint shows two errors, both present
+on 16.3.8 and outside CI (`global-error.tsx`'s `<a>`, `e2e/fixtures.ts`'s
+Playwright `use`). `npm audit --omit=dev`: no `next` advisory; one high left,
+`source-map-js` 1.2.1 through tailwind's postcss, build time only. CI
+40521006645 green; e2e 29/29 against the published app image. 14:31 UTC.
+
+**1.** Running: `IMAGE_TAG=34d36ff…`, checkout `2be3acb`; health 200 with
+`34d36ff…`, `lastCompletePollAt` 08:27:06.
+
+**2.** One session: `git pull` (to `a2610f5`), `IMAGE_TAG` set, app and worker
+pulled and recreated; caddy untouched (up 13 h). The worker logged
+`ingest.poll registered (0 7 * * *)`. Health 200 with `a2610f5…`, the poll
+still fresh.
+
+**3.** 200 for `/`, `/animals`, an Illinois animal page (62983), `/demo`,
+`/demo/ducky`, `/demo/ducky/sponsor`, `/demo/collection/ducky`, `/claim`;
+404 for `/next.svg` and `/vercel.svg`.
 
 ## Follow-ups
-—
+- `source-map-js` to 1.2.2 (build time only; `npm audit fix` also moves
+  vitest, drizzle-kit, rolldown and postcss, so its own small commit).
+- The two lint errors, and lint in CI's `verify` so a third cannot land.
