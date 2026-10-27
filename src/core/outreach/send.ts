@@ -157,6 +157,8 @@ export interface WaveSendOptions {
   /** injected so the suite does not sit out a minute between messages */
   sleep?: (ms: number) => Promise<void>;
   exclusions?: readonly ShelterExclusion[];
+  /** written on every `sent` row of this run — how an override of the wave-health stop is recorded (ADR-0029, revisit triggers) */
+  note?: string;
 }
 
 export interface WaveSendReport {
@@ -182,7 +184,10 @@ type Attempt =
  * judges. The lock is held across the SMTP round trip on purpose: that is
  * the window the rules are about.
  */
-async function attempt(db: Db, wave: string, message: WaveMessage, options: WaveSendOptions, now: () => Date): Promise<Attempt> {
+/** The pool, or a transaction on it — a rehearsal runs the loop inside one it rolls back. */
+export type SendDb = Pick<Db, "transaction">;
+
+async function attempt(db: SendDb, wave: string, message: WaveMessage, options: WaveSendOptions, now: () => Date): Promise<Attempt> {
   return db.transaction(async (tx) => {
     await tx.execute(sql`select pg_advisory_xact_lock(hashtext('outreach-send'))`);
     const verdict = judgeSend(await loadSendFacts(tx, message.shelterExternalId, wave, now(), options.exclusions), now());
@@ -198,7 +203,7 @@ async function attempt(db: Db, wave: string, message: WaveMessage, options: Wave
     // have happened. And if the row cannot be written, the mail is still gone:
     // the report must carry the message id so a person can record it by hand.
     try {
-      await recordOutreachEvent(tx, { shelterExternalId: message.shelterExternalId, wave, kind: "sent", occurredAt: now(), messageId });
+      await recordOutreachEvent(tx, { shelterExternalId: message.shelterExternalId, wave, kind: "sent", occurredAt: now(), messageId, note: options.note ?? null });
     } catch (error) {
       return {
         verdict: "failed",
@@ -215,7 +220,7 @@ async function attempt(db: Db, wave: string, message: WaveMessage, options: Wave
  * account; so does a `sent` row that could not be written. The cap stops it
  * too — the rest of the list is tomorrow's, not forty refusals.
  */
-export async function sendWave(db: Db, wave: string, messages: readonly WaveMessage[], options: WaveSendOptions): Promise<WaveSendReport> {
+export async function sendWave(db: SendDb, wave: string, messages: readonly WaveMessage[], options: WaveSendOptions): Promise<WaveSendReport> {
   const now = options.now ?? (() => new Date());
   const sleep = options.sleep ?? ((ms) => new Promise((resolve) => setTimeout(resolve, ms)));
   const report: WaveSendReport = { wave, sent: [], refused: [], failed: null, remaining: [] };

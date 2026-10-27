@@ -143,7 +143,7 @@ email a real shelter. Check items off as they ship.
 
 5. **the CLI entry and wave health** (one batch, in order — both edit the
    dispatcher)
-   - [ ] `outreach-cli` — medium, moderate. `src/worker/outreach-cli.ts` in
+   - [x] `outreach-cli` — **done 2026-10-27** (`src/worker/outreach-cli.ts` the dispatcher, `src/worker/outreach-args.ts` the pure `parseOutreachArgs`, `confirmLiveSend` (a TTY, the wave's name typed back), `timingFor` (the hackathon clause until 21:00 ET 11-04) and `senderFromEnv`; `src/core/outreach/wave.ts` assembles a wave's messages from `shelter_nonprofits` and rehearses it — the real guard and loop into Mailpit inside a transaction that is rolled back, the clock advancing by what it would have slept; `src/core/outreach/evidence.ts` hashes the exported `.eml` for the exclusion entry; `npm run outreach`; run against the dev database: 33 shelters in `chicagoland-1`, a preview in Mailpit, the rehearsal refusing all 33 for want of a confirmed address and leaving the record empty, `--live` refusing on the missing Gmail pair before it asks). Medium, moderate. `src/worker/outreach-cli.ts` in
      the shape of `ingest-cli.ts` (`main([command, ...rest])`, db opened and
      closed in `finally`, pure modules wired with the fetchers and transport
      injected, JSON out) and `npm run outreach -- list | match | find-emails |
@@ -156,7 +156,7 @@ email a real shelter. Check items off as they ship.
      and prints the `evidence` line for the entry in `SHELTER_EXCLUSIONS`,
      so the hash in the repo and the file in the vault cannot disagree by
      hand (ADR-0029 as amended 2026-10-27).
-   - [ ] `wave-health-stop` — medium, moderate. A `status` verb: per-wave
+   - [x] `wave-health-stop` — **done 2026-10-27** (`src/core/outreach/health.ts`: `tallyWaves` / `waveHealth` per wave by kind with the rates against its sends, a zero-send wave neither divided by nor healthy; `liveSendGate` judges the previous wave — the latest anything was sent in other than the one resuming — and refuses over 5% bounced or a complaint in any note, `--override <note>` recorded on every `sent` row of the wave it allowed; the reply-rate warning after two waves). Medium, moderate. A `status` verb: per-wave
      counts by kind, bounced / sent and replied / sent, waves ordered by
      first `sent`; a zero-send wave is neither divided by nor healthy. The
      ADR's revisit triggers as a precondition on `send --live`: refuse when

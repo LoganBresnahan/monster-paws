@@ -14,6 +14,7 @@
     "e2e:prod": "PW_BASE_URL=${PW_BASE_URL:-http://localhost:3000} playwright test",
     "worker": "tsx --env-file-if-exists=.env src/worker/index.ts",
     "ingest": "tsx --env-file-if-exists=.env src/worker/ingest-cli.ts",
+    "outreach": "tsx --env-file-if-exists=.env src/worker/outreach-cli.ts",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "env:dev": "scripts/env-dev.sh",
