@@ -69,7 +69,7 @@ email a real shelter. Check items off as they ship.
      `tests/fixtures/README.md`, never the real download.
 
 2. **the wave list and the Every.org client** (parallel)
-   - [ ] `outreach-list-query` — medium, moderate. The organisations whose
+   - [x] `outreach-list-query` — **done 2026-10-27** (`src/core/outreach/list.ts`: `loadOutreachShelters` groups the visible set by shelter and takes the mode of each displayed field; `selectWave` applies a radius or states, drops the already-approached and caps at 200; `CHICAGOLAND` is the first wave; `tests/outreach-list.test.ts`). Medium, moderate. The organisations whose
      animals are visible: `visibleAnimals` (now carrying the exclusions)
      grouped by `shelter_external_id` the way `loadShelter` does, with the
      most frequent name, city, state, zip and `org_url`, the visible count
@@ -82,7 +82,7 @@ email a real shelter. Check items off as they ship.
      `raw_payloads`; one comment with the ADR says so. **This slice defines
      the row type** the finder and renderer consume; export it and do not
      start phase 3 on a provisional one.
-   - [ ] `everyorg-nonprofit-lookup` — medium, moderate. An adapter over
+   - [x] `everyorg-nonprofit-lookup` — **done 2026-10-27** (`src/core/outreach/everyorg.ts`; the claim is Every.org's `hasAdmin`, read live against Border Tails Rescue and PAWS Chicago; recorded by name in two new `shelter_nonprofits` columns, `drizzle/0013`, where ADR-0002 as amended 2026-10-26 says the claim lives; `recordShelterNonprofit` upserts; `tests/everyorg.test.ts`). Medium, moderate. An adapter over
      Every.org's public nonprofit endpoint by EIN behind a small interface
      (`everyorg/api-key` into `.env.example` and the `env-dev.sh` fill, by
      name), a fake client in vitest, and the insert into

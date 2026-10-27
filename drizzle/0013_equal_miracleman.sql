@@ -1,0 +1,2 @@
+ALTER TABLE "shelter_nonprofits" ADD COLUMN "everyorg_claim" text DEFAULT 'unknown' NOT NULL;--> statement-breakpoint
+ALTER TABLE "shelter_nonprofits" ADD COLUMN "claim_checked_at" timestamp with time zone;

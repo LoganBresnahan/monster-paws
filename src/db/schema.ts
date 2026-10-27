@@ -532,7 +532,18 @@ export const shelterNonprofits = pgTable("shelter_nonprofits", {
   /** who matched it and how, e.g. "every.org search by name, checked by Logan" */
   source: text("source").notNull(),
   fetchedAt: timestamp("fetched_at", { withTimezone: true }).notNull(),
+  /**
+   * Whether the shelter has claimed its Every.org profile, by name and never
+   * a boolean: `unknown` must stay distinguishable from `unclaimed`, because
+   * the outreach ask includes the claim line on both and only a confirmed
+   * `claimed` suppresses it, and the Sponsor button shows only on `claimed`
+   * (ADR-0002 as amended 2026-10-26, ADR-0029 §3).
+   */
+  everyorgClaim: text("everyorg_claim").$type<EveryorgClaim>().notNull().default("unknown"),
+  claimCheckedAt: timestamp("claim_checked_at", { withTimezone: true }),
 });
+
+export type EveryorgClaim = "claimed" | "unclaimed" | "unknown";
 
 /** What happened between us and a shelter, by name (ADR-0029 §5). */
 export type OutreachEventKind = "sent" | "bounced" | "replied" | "opted_out" | "granted";
