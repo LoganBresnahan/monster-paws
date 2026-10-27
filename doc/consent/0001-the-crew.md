@@ -15,6 +15,10 @@
 - **Extended 2026-10-27 (ADR-0032):** bands of Beetle's painting as the cover and
   header of the project's own social accounts (LinkedIn, X, Bluesky), built by
   `npm run social:assets`.
+- **Extended 2026-10-27 (ADR-0029):** Beetle's painting as the one image in the
+  shelter outreach ask (`ASK_IMAGE` in `src/core/outreach/template.ts`), loaded
+  from monsterpaws.org into a shelter's inbox — Logan's choice the same day, as
+  the face of Monster Paws everywhere.
 - **Basis:** the founder's own pets and his own photos; given in the working
   session that built the section, and in the commit that adds this file.
 - **Files:** `public/brand/crew/<pet>-painting.jpg`, `<pet>-photo.jpg` (the

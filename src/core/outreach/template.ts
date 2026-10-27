@@ -40,7 +40,7 @@ export interface RenderedAsk {
 export const DEFAULT_ORIGIN = "https://monsterpaws.org";
 
 /** Our own painting, hosted by us — never a stored copy of a shelter's listing photo (ADR-0029 §3). */
-export const ASK_IMAGE = { path: "/brand/crew/ducky-painting.jpg", alt: "A watercolour keepsake of Ducky, one of our own dogs" };
+export const ASK_IMAGE = { path: "/brand/crew/beetle-painting.jpg", alt: "A watercolour keepsake of Beetle, one of our own dogs — the face of Monster Paws" };
 
 function escapeHtml(text: string): string {
   return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");

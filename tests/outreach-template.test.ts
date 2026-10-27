@@ -96,7 +96,7 @@ describe("ADR-0029 the ask", () => {
 
   it("loads images only from monsterpaws.org, and never a listing's photo", () => {
     const sources = [...ask.html.matchAll(/src="([^"]+)"/g)].map((m) => m[1]);
-    expect(sources).toEqual(["https://monsterpaws.org/brand/crew/ducky-painting.jpg"]);
+    expect(sources).toEqual(["https://monsterpaws.org/brand/crew/beetle-painting.jpg"]);
     expect(ask.html).not.toMatch(/rescuegroups\.org|cloudfront|cloudinary/);
   });
 
@@ -120,7 +120,7 @@ describe("ADR-0029 the ask", () => {
     expect(landed?.Subject).toBe(rendered.subject);
     const body = await mailpitMessageBody(landed!.ID);
     expect(body.Text).toContain("We keep $0.");
-    expect(body.HTML).toContain("https://monsterpaws.org/brand/crew/ducky-painting.jpg");
+    expect(body.HTML).toContain("https://monsterpaws.org/brand/crew/beetle-painting.jpg");
   });
 
   it("writes to a shelter whose name nobody published without inventing one", () => {
