@@ -425,6 +425,19 @@ ssh <droplet> 'cd monsterpaws && git pull && docker compose -f docker-compose.pr
 # By hand: ssh root@$IP 'monsterpaws/scripts/backup-db.sh'
 # List:    rclone_r2 vault lsl r2:monsterpaws-vault/pgdump/
 
+# Poll from home (scripts/poll-via-home.sh) — the production poll run on
+# this machine, writing to the production database through one SSH
+# connection to the droplet (oplog 0001). For a day the droplet cannot reach a
+# source: RescueGroups resets every connection from the droplet's address
+# (2026-10-27, allowlist asked). Same worker image and command as the
+# droplet's job, read from its .env; the database firewall unchanged; TLS
+# still verified (the container resolves the database's hostname to the
+# tunnel). Pings the poll heartbeat on a complete run. pass unlocked:
+scripts/poll-via-home.sh [--max-daily-disappearance R]
+# TRAP: the droplet's ufw LIMITs 22/tcp — 6 connections in 30 s and it refuses
+# that source for minutes, and every retry restarts the count. One SSH
+# session per step; never a loop of ssh calls, never a port-22 probe loop.
+
 # Attestation mirror spot-check
 wrangler r2 object get monsterpaws-vault/attestations/<id>.json --pipe
 

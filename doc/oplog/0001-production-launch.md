@@ -273,7 +273,62 @@ droplet; `docker-compose.prod.yml` mounts it into app and worker as
 `PGSSLROOTCERT`; the URL in `pass` and `.env` says `sslmode=verify-full`.
 Proven first with a one-off container: connected, `ssl: true`. The compose
 change ships in its own commit; the images stay `34d36ff` (no code changed).
+Then `2be3acb` pulled onto the droplet (`IMAGE_TAG` unchanged) and
+`drizzle-kit migrate` through the worker image: "migrations applied
+successfully"; 12 rows in `drizzle.__drizzle_migrations`, 19 tables (accounts
+through sign_in_links, the donor tables empty). The live site still served
+`c58d87f` throughout.
+
+**6. Start.** Monitor 4995794 paused 01:50 UTC; `up -d` started app and worker
+at `34d36ff` and recreated caddy on the newer `2-alpine`. Health 503 as
+designed (`db: up`, `lastCompletePollAt: null`, sha `34d36ff…`); `/`,
+`/animals` (empty) and `/demo` 200; the worker logged `ingest.poll registered
+(0 7 * * *)`. Memory: worker 152 MB waiting on the queue, app 81 MB, caddy
+19 MB; 363 MB available, swap 70 MB.
+
+**7. First poll — blocked by RescueGroups.** The poll exited at once with
+`fetch failed`. From the droplet, every RescueGroups host resets the
+connection mid-TLS-handshake (`ECONNRESET`, after Encrypted Extensions):
+`api.rescuegroups.org` and `rescuegroups.org` alike, from the container and
+from the host's own curl, while `example.com` answers 200. From Logan's home
+machine the same API answers normally (404 on the bare `/v5/` path; this
+morning's dev poll fetched 63,198). RescueGroups refuses the droplet's
+address, not our code. Nothing was written; the database is empty.
+
+**7, revised during the run — the first poll from home** (planned 02:15 UTC,
+Logan's call: ask RescueGroups to allowlist the droplet, and bridge now).
+`scripts/poll-via-home.sh` runs the same worker image (`34d36ff`, read from
+the droplet's `.env`) with the same `npm run ingest -- poll` on Logan's
+machine, where RescueGroups answers, writing to production through an SSH
+tunnel to the droplet. The database firewall is unchanged (the droplet only);
+the container resolves the database's own hostname to the tunnel, so TLS
+still verifies against DO's CA. Everything rides ONE SSH connection: the
+droplet's ufw `LIMIT` on 22/tcp refused this machine twice tonight after six
+connections in 30 s.
+
+    scripts/poll-via-home.sh            # pass unlocked; prints the run summary
+
+Verify: the summary reports ~60–85k observed, 0 failures, a complete run; the
+heartbeat ping succeeds; `/api/health` 200 with this run's
+`lastCompletePollAt`; `/animals` lists animals and filters to IL. Dry run
+first, read-only (02:12 UTC): connected through the tunnel, TLS verified,
+`raw_payloads` 0; RescueGroups answered from home.
+Rollback: none needed — append-only; a partial run is correct as far as it
+got, and a failed run is run again.
+Steps 8–10 then run as planned, except that the heartbeat and monitor stay
+paused until RescueGroups allowlists the droplet: health is green only within
+27 h of a complete poll, and from home that is only as daily as Logan runs it.
 Storage 10 GiB; maintenance window Tuesdays 00:15 UTC.
 
 ## Follow-ups
-—
+- RescueGroups asked (2026-10-27, Logan, in the 2026-08-02 key thread) to
+  allowlist the droplet's address; until then, `scripts/poll-via-home.sh`
+  every day or two, the heartbeat and monitor 4995794 paused, and the
+  droplet's own 07:00 job failing once a day in Better Stack. When it is
+  allowlisted: check from the droplet, then step 8 (unpause both). The script
+  stays as a standing tool (Logan).
+- ufw on the droplet allows 2375/2376 (the Docker API, left by DO's Docker
+  image); nothing listens there (`dockerd -H fd://`) and the cloud firewall
+  admits only 22/80/443 — remove the two rules in a later entry.
+- The app connects as the cluster's admin user; a least-privilege role for
+  app and worker.
