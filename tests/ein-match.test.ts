@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { acronymsOf, formatEin, matchConfidence, matchEin, normalizeOrgName, parseBmfCsv } from "@/core/outreach/ein-match";
+import { acronymsOf, formatEin, labelMatchesName, matchConfidence, matchEin, normalizeOrgName, parseBmfCsv, websiteLabel } from "@/core/outreach/ein-match";
 
 /**
  * The EIN matcher over a hand-made BMF excerpt (tests/fixtures/README.md):
@@ -16,7 +16,7 @@ const first = (q: Parameters<typeof matchEin>[0]) => matchEin(q, ROWS).map((c) =
 
 describe("ADR-0029 IRS BMF EIN matcher", () => {
   it("reads the IRS layout, quoted names and the care-of line included", () => {
-    expect(ROWS).toHaveLength(11);
+    expect(ROWS).toHaveLength(12);
     const paws = ROWS.find((r) => r.ein === "363333333")!;
     expect(paws).toMatchObject({ name: "PAWS CHICAGO", city: "CHICAGO", state: "IL", subsection: "03", ntee: "D20" });
     expect(ROWS.find((r) => r.ein === "36888888")!.name).toBe("ST HUBERT'S COMPANIONS, INC");
@@ -53,7 +53,7 @@ describe("ADR-0029 IRS BMF EIN matcher", () => {
   });
 
   it("prefers the body to its foundation when the listing names the body", () => {
-    expect(first({ name: "PAWS Chicago", city: "Chicago", state: "IL" })).toEqual(["PAWS CHICAGO", "PAWS CHICAGO FOUNDATION"]);
+    expect(first({ name: "PAWS Chicago", city: "Chicago", state: "IL" }).slice(0, 2)).toEqual(["PAWS CHICAGO", "PAWS CHICAGO FOUNDATION"]);
   });
 
   it("matches a listing whose words are in another order", () => {
@@ -81,6 +81,39 @@ describe("ADR-0029 IRS BMF EIN matcher", () => {
     expect(acronymsOf("Animal Rescue Foundation (ARF-IL)", "IL")).toEqual(["ARF"]);
     expect(acronymsOf("PAWS Chicago")).toEqual(["PC"]);
     expect(normalizeOrgName("A R F ANIMAL RESCUE")).toEqual(["ARF", "ANIMAL", "RESCUE"]);
+    // An acronym must lead a short IRS name: CARE as a word inside a long one is not Community Animal Rescue Effort.
+    const care = matchEin({ name: "Community Animal Rescue Effort", city: "Skokie", state: "IL" }, [
+      ...ROWS,
+      { ...ROWS[0], ein: "362327294", name: "TURNING POINT BEHAVIORAL HEALTH CARE CENTER", city: "SKOKIE", ntee: "F32" },
+    ]);
+    expect(care.map((c) => c.row.name)).not.toContain("TURNING POINT BEHAVIORAL HEALTH CARE CENTER");
+  });
+
+  it("finds the legal name through the listing's own website — touchedbyananimal.org for Cats-Are-Purrsons-Too — and ignores a platform's domain", () => {
+    const candidates = matchEin({ name: "Cats-Are-Purrsons-Too", city: "Chicago", state: "IL", website: "http://www.touchedbyananimal.org" }, ROWS);
+    expect(candidates[0].row.name).toBe("TOUCHED BY AN ANIMAL");
+    expect(candidates[0].ein).toBe("36-4204496");
+    expect(candidates[0].reasons).toContain("website touchedbyananimal");
+    expect(matchConfidence(candidates)).toBe("strong");
+    // Without the site, the name shares nothing and the city pool is all there is.
+    expect(matchEin({ name: "Cats-Are-Purrsons-Too", city: "Chicago", state: "IL" }, ROWS).every((c) => c.via === "nearby")).toBe(true);
+
+    expect(websiteLabel("http://www.touchedbyananimal.org/adopt", "IL")).toBe("touchedbyananimal");
+    expect(websiteLabel("https://www.arf-il.org", "IL")).toBe("arf");
+    expect(websiteLabel("https://www.facebook.com/WorldClassFelineCompanions?ref=hl")).toBeNull();
+    expect(websiteLabel("http://wow.rescuegroups.org")).toBeNull();
+    expect(websiteLabel("https://linktr.ee/guttercatadoptions")).toBeNull();
+    expect(websiteLabel("n/a")).toBeNull();
+    expect(websiteLabel(null)).toBeNull();
+
+    expect(labelMatchesName("touchedbyananimal", "TOUCHED BY AN ANIMAL INC")).toBe(true);
+    expect(labelMatchesName("animalhouseshelter", "ANIMAL HOUSE SHELTER INC")).toBe(true);
+    expect(labelMatchesName("arf", "ARF")).toBe(true);
+    // A short label never claims a long name that merely starts with it.
+    expect(labelMatchesName("aurora", "AURORA CARES ANIMAL FOUNDATION INC")).toBe(false);
+    expect(labelMatchesName("palsplacerescue", "PALS PLACE FOUNDATION")).toBe(false);
+    // The label beginning with a short name is not a match: projecthopearf.org is not every Project Hope Inc.
+    expect(labelMatchesName("projecthopearf", "PROJECT HOPE INC")).toBe(false);
   });
 
   it("offers the animal-related bodies in the listing's own city after the named ones, marked as such, and calls the match weak", () => {

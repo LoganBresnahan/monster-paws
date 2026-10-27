@@ -207,6 +207,54 @@ export interface EinQuery {
   name: string;
   city: string | null;
   state: string;
+  /** the organisation's own site as listed; a platform's domain (Facebook, Petfinder, RescueGroups) is ignored */
+  website?: string | null;
+}
+
+/** Hosts that are somebody's platform, not the organisation's own name. */
+const PLATFORM_HOSTS = /(^|\.)(facebook|fb|instagram|petfinder|rescuegroups|adoptapet|linktr|wixsite|wix|squarespace|weebly|wordpress|blogspot|google|sites|shelterluv|petango|youtube|tiktok|x|twitter|gofundme|paypal)\.(com|org|net|ee|io)$/i;
+
+/**
+ * The site's own label, the thing a shelter chose to be known by:
+ * `www.touchedbyananimal.org/adopt` → `touchedbyananimal`, `arf-il.org` →
+ * `arf`. The IRS name squashed the same way ("TOUCHED BY AN ANIMAL INC" →
+ * `touchedbyananimal`) is compared whole, so no word list is needed to cut
+ * the run-together text: the file's names are the dictionary.
+ */
+export function websiteLabel(website: string | null | undefined, state?: string): string | null {
+  if (!website) return null;
+  let host: string;
+  try {
+    host = new URL(/^https?:\/\//i.test(website) ? website : `https://${website}`).hostname.toLowerCase();
+  } catch {
+    return null;
+  }
+  if (PLATFORM_HOSTS.test(host)) return null;
+  const parts = host.replace(/^www\./, "").split(".");
+  if (parts.length < 2) return null;
+  let label = parts[parts.length - 2];
+  if (state && label.endsWith(`-${state.toLowerCase()}`)) label = label.slice(0, -3);
+  label = label.replace(/[^a-z0-9]/g, "");
+  // Three letters is an acronym (arf); under that is noise.
+  return label.length >= 3 ? label : null;
+}
+
+/** An IRS name as a domain label would be written: letters and digits, the trailing legal form dropped. */
+export function squashOrgName(name: string): string {
+  const tokens = normalizeOrgName(name);
+  return tokens.join("").toLowerCase();
+}
+
+/** Whether a site's label is the IRS name itself, or begins with it word for word (a long enough label, so "aurora" never claims Aurora Cares). */
+export function labelMatchesName(label: string, name: string): boolean {
+  const squashed = squashOrgName(name);
+  if (!squashed) return false;
+  if (label === squashed) return true;
+  const squashedRaw = name.toUpperCase().replace(/[^A-Z0-9]/g, "").toLowerCase();
+  if (label === squashedRaw) return true;
+  // Only the name beginning with the label, never the label beginning with
+  // the name: projecthopearf.org is not every "Project Hope Inc" in the state.
+  return label.length >= 10 && (squashed.startsWith(label) || squashedRaw.startsWith(label));
 }
 
 export interface EinCandidate {
@@ -242,8 +290,18 @@ export function scoreCandidate(query: EinQuery, row: BmfRow): EinCandidate & { n
   // words share nothing, the identity is the same (found on ARF-IL, 2026-10-27).
   // Only a BMF name that IS the acronym counts: two long names with the same
   // initials (Aurora Animal Care and Control, Asian American Culture Center) are not one body.
-  const acronym = acronymsOf(query.name, query.state).find((a) => have.has(a));
-  if (acronym && dice < 1) {
+  // ... and it must lead a short name: "CARE" inside "Turning Point Behavioral
+  // Health Care Center" is a word, not Community Animal Rescue Effort.
+  const haveTokens = [...have];
+  const acronym = acronymsOf(query.name, query.state).find((a) => haveTokens[0] === a && haveTokens.length <= 3);
+  // The site the listing links is often the only bridge from the name a
+  // shelter goes by to the one it filed under: touchedbyananimal.org for
+  // "Cats-Are-Purrsons-Too" (found 2026-10-27).
+  const label = websiteLabel(query.website, query.state);
+  if (label && labelMatchesName(label, row.name) && dice < 1) {
+    dice = Math.max(dice, 0.95);
+    reasons.push(`website ${label}`);
+  } else if (acronym && dice < 1) {
     dice = Math.max(dice, 0.9);
     reasons.push(`acronym ${acronym}`);
   } else if (dice === 1) reasons.push("same name");

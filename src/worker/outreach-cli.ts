@@ -79,7 +79,7 @@ type MatchOutcome = { written: true; message: string; recorded: { ein: string; s
 async function matchShelter(db: Db, shelter: OutreachShelter, io: LiveConsole, checkedBy: string): Promise<MatchOutcome> {
   if (!shelter.name || !shelter.state) return { written: false, message: "no listed name or state to match on — nothing written" };
   const { file, fetchedAt } = await ensureBmf(shelter.state);
-  const candidates = matchEin({ name: shelter.name, city: shelter.city, state: shelter.state }, readBmf(file));
+  const candidates = matchEin({ name: shelter.name, city: shelter.city, state: shelter.state, website: shelter.website }, readBmf(file));
   console.error(`${shelter.name} (${shelter.city ?? "?"}, ${shelter.state}) against ${file} of ${fetchedAt.toISOString().slice(0, 10)}:`);
   if (candidates.length === 0) return { written: false, message: "no IRS row within reach of that name — nothing written" };
   candidates.forEach((c, i) => {
