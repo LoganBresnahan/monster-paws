@@ -318,6 +318,23 @@ got, and a failed run is run again.
 Steps 8–10 then run as planned, except that the heartbeat and monitor stay
 paused until RescueGroups allowlists the droplet: health is green only within
 27 h of a complete poll, and from home that is only as daily as Logan runs it.
+
+**7, run.** Started 02:16:24 UTC. Through the tunnel the poll is round-trip
+bound — every write crosses home → droplet → database — at ~335 listings a
+minute (5,700 stored by 02:33), so the first full poll takes ~3 hours where the
+dev poll took 15 minutes; CPU here ~4%. Logan let it run overnight. A faster
+shape (the poll on the droplet, only RescueGroups' requests leaving through
+home) is a follow-up.
+
+**9. Backup, run early** (02:35 UTC, while `pass` was unlocked — it would
+relock before the poll ended). Heartbeat 518590 "db backup — nightly 08:30
+UTC" created (24 h, grace 2 h), its URL straight into `pass` as
+`betterstack/heartbeat-db-backup`. `.env.backup` written in one session: four
+names, mode 600; `.env` holds no `R2_VAULT` line, and `docker exec
+monsterpaws-worker-1 env` shows none. `scripts/backup-db.sh` by hand:
+`pgdump/2026-10-27.sql.gz`, 10,021,979 bytes — the database mid-poll — listed
+from dev with the vault key; heartbeat "up". `/etc/cron.d/monsterpaws-backup`
+installed: `30 8 * * *`. The 08:30 run takes the first full copy.
 Storage 10 GiB; maintenance window Tuesdays 00:15 UTC.
 
 ## Follow-ups
