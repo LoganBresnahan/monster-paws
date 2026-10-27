@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { formatEin, matchEin, normalizeOrgName, parseBmfCsv } from "@/core/outreach/ein-match";
+import { acronymsOf, formatEin, matchConfidence, matchEin, normalizeOrgName, parseBmfCsv } from "@/core/outreach/ein-match";
 
 /**
  * The EIN matcher over a hand-made BMF excerpt (tests/fixtures/README.md):
@@ -16,7 +16,7 @@ const first = (q: Parameters<typeof matchEin>[0]) => matchEin(q, ROWS).map((c) =
 
 describe("ADR-0029 IRS BMF EIN matcher", () => {
   it("reads the IRS layout, quoted names and the care-of line included", () => {
-    expect(ROWS).toHaveLength(9);
+    expect(ROWS).toHaveLength(11);
     const paws = ROWS.find((r) => r.ein === "363333333")!;
     expect(paws).toMatchObject({ name: "PAWS CHICAGO", city: "CHICAGO", state: "IL", subsection: "03", ntee: "D20" });
     expect(ROWS.find((r) => r.ein === "36888888")!.name).toBe("ST HUBERT'S COMPANIONS, INC");
@@ -71,9 +71,43 @@ describe("ADR-0029 IRS BMF EIN matcher", () => {
     expect(noCity[0].reasons).not.toContain("same city");
   });
 
-  it("returns nothing for a shelter the file does not hold, never its least-wrong neighbour", () => {
-    expect(first({ name: "Sunny Meadows Horse Sanctuary", city: "Elmwood", state: "IL" })).toEqual([]);
+  it("finds a body filed under its acronym — ARF for Animal Rescue Foundation (ARF-IL) — and says so", () => {
+    const candidates = matchEin({ name: "Animal Rescue Foundation (ARF-IL)", city: "Wheaton", state: "IL" }, ROWS);
+    expect(candidates[0].row.name).toBe("ARF");
+    expect(candidates[0].ein).toBe("36-4236669");
+    expect(candidates[0].reasons).toContain("acronym ARF");
+    expect(candidates[0].via).toBe("name");
+    expect(matchConfidence(candidates)).toBe("strong");
+    expect(acronymsOf("Animal Rescue Foundation (ARF-IL)", "IL")).toEqual(["ARF"]);
+    expect(acronymsOf("PAWS Chicago")).toEqual(["PC"]);
+    expect(normalizeOrgName("A R F ANIMAL RESCUE")).toEqual(["ARF", "ANIMAL", "RESCUE"]);
+  });
+
+  it("offers the animal-related bodies in the listing's own city after the named ones, marked as such, and calls the match weak", () => {
+    const candidates = matchEin({ name: "Wheaton Whiskers Collective", city: "Wheaton", state: "IL" }, ROWS);
+    expect(candidates.map((c) => [c.row.name, c.via])).toEqual([
+      ["ARF", "nearby"],
+      ["ST SOPHIAS FORGOTTEN FELINES", "nearby"],
+    ]);
+    expect(candidates[0].reasons[0]).toContain("in the listing's city");
+    expect(matchConfidence(candidates)).toBe("weak");
+    expect(matchConfidence([])).toBe("none");
+    // No city, no pool: the file is one state's, and a state is not a neighbourhood.
+    expect(matchEin({ name: "Wheaton Whiskers Collective", city: null, state: "IL" }, ROWS)).toEqual([]);
+  });
+
+  it("names nothing for a shelter the file does not hold, never its least-wrong neighbour — only the city's animal bodies, marked", () => {
+    const byName = (q: Parameters<typeof matchEin>[0]) => matchEin(q, ROWS).filter((c) => c.via === "name").map((c) => c.row.name);
+    expect(byName({ name: "Sunny Meadows Horse Sanctuary", city: "Elmwood", state: "IL" })).toEqual([]);
     // One shared word ("Elmwood") with three rows is not a candidate.
-    expect(first({ name: "Elmwood Cat Haven", city: "Elmwood", state: "IL" })).toEqual([]);
+    expect(byName({ name: "Elmwood Cat Haven", city: "Elmwood", state: "IL" })).toEqual([]);
+    // What does come back is Elmwood's animal-related bodies, each saying why it is there, never the historical society.
+    const offered = matchEin({ name: "Elmwood Cat Haven", city: "Elmwood", state: "IL" }, ROWS);
+    expect(offered.map((c) => [c.row.name, c.via])).toEqual([
+      ["ANIMAL WELFARE LEAGUE OF ELMWOOD", "nearby"],
+      ["FRIENDS OF THE ELMWOOD DOG PARK", "nearby"],
+      ["ST HUBERT'S COMPANIONS, INC", "nearby"],
+    ]);
+    expect(first({ name: "Sunny Meadows Horse Sanctuary", city: "Springfield", state: "IL" })).toEqual([]);
   });
 });

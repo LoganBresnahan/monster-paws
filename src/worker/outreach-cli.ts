@@ -20,7 +20,7 @@ import { createInterface } from "node:readline/promises";
 import { stdin, stdout } from "node:process";
 import { findAddresses, politeFetcher } from "@/core/outreach/addresses";
 import { confirmAddress, recordAddressCandidates } from "@/core/outreach/contacts";
-import { ensureBmf, matchEin, readBmf } from "@/core/outreach/ein-match";
+import { ensureBmf, matchConfidence, matchEin, readBmf } from "@/core/outreach/ein-match";
 import { recordOutreachEvent } from "@/core/outreach/events";
 import { everyorgClientFromEnv, recordShelterNonprofit } from "@/core/outreach/everyorg";
 import { evidenceOf } from "@/core/outreach/evidence";
@@ -82,7 +82,11 @@ async function matchShelter(db: Db, shelter: OutreachShelter, io: LiveConsole, c
   const candidates = matchEin({ name: shelter.name, city: shelter.city, state: shelter.state }, readBmf(file));
   console.error(`${shelter.name} (${shelter.city ?? "?"}, ${shelter.state}) against ${file} of ${fetchedAt.toISOString().slice(0, 10)}:`);
   if (candidates.length === 0) return { written: false, message: "no IRS row within reach of that name — nothing written" };
-  candidates.forEach((c, i) => console.error(`  ${i + 1}. ${c.ein}  ${c.row.name}  ${c.row.city}  score ${c.score.toFixed(2)}  (${c.reasons.join(", ")})`));
+  candidates.forEach((c, i) => {
+    if (c.via === "nearby" && (i === 0 || candidates[i - 1].via === "name")) console.error(`  also in ${shelter.city}, animal-related, the name matching nothing:`);
+    console.error(`  ${i + 1}. ${c.ein}  ${c.row.name}  ${c.row.city}  score ${c.score.toFixed(2)}  (${c.reasons.filter((r) => !r.startsWith("in the listing's city")).join(", ")})`);
+  });
+  if (matchConfidence(candidates) === "weak") console.error("  WEAK: none of these may be right — n writes nothing");
   const pick = Number((await io.ask("Which is it? [number, or n]: ")).trim());
   if (!(Number.isInteger(pick) && pick >= 1 && pick <= candidates.length)) return { written: false, message: "no pick — nothing written" };
   const nonprofit = await everyorgClientFromEnv(process.env).nonprofitByEin(candidates[pick - 1].ein);

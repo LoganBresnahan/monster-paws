@@ -153,13 +153,50 @@ const LEGAL_FORMS = new Set([
 ]);
 
 export function normalizeOrgName(name: string): string[] {
-  return name
+  const tokens = name
     .toUpperCase()
     .replace(/^%\s*/, "")
     .replace(/&/g, " AND ")
     .replace(/[^A-Z0-9 ]+/g, " ")
     .split(/\s+/)
-    .filter((token) => token && !LEGAL_FORMS.has(token));
+    .filter(Boolean);
+  // "A R F" is how the IRS prints some acronyms: one token, like "ARF" —
+  // joined before the legal forms go, or the A would be read as an article.
+  const joined: string[] = [];
+  let runLength = 0;
+  for (const token of tokens) {
+    if (token.length === 1 && runLength > 0) {
+      joined[joined.length - 1] += token;
+      runLength++;
+      continue;
+    }
+    joined.push(token);
+    runLength = token.length === 1 ? 1 : 0;
+  }
+  return joined.filter((token) => !LEGAL_FORMS.has(token));
+}
+
+const STATE_CODE = /^[A-Z]{2}$/;
+
+/**
+ * What a listing may be filed under that its words never share: the
+ * acronym in its parentheses ("Animal Rescue Foundation (ARF-IL)" → ARF,
+ * the state suffix dropped) and the initials of its own words (ARF again).
+ * The IRS holds many bodies by acronym or a DBA alone.
+ */
+export function acronymsOf(name: string, state?: string): string[] {
+  const out = new Set<string>();
+  for (const [, inside] of name.matchAll(/\(([^)]*)\)/g)) {
+    for (const part of inside.toUpperCase().split(/[^A-Z0-9]+/)) {
+      if (part.length >= 2 && part.length <= 6 && !(STATE_CODE.test(part) && part === (state ?? "").toUpperCase())) out.add(part);
+    }
+  }
+  const words = normalizeOrgName(name.replace(/\([^)]*\)/g, " "));
+  if (words.length >= 2) {
+    const initials = words.map((w) => w[0]).join("");
+    if (initials.length <= 6) out.add(initials);
+  }
+  return [...out];
 }
 
 function normalizePlace(place: string): string {
@@ -179,6 +216,15 @@ export interface EinCandidate {
   /** what the score is made of, for the person checking it */
   reasons: string[];
   ein: string;
+  /** `nearby`: in the listing's city and animal-related, offered although its name matches nothing — a DBA or an acronym the file holds another way */
+  via: "name" | "nearby";
+}
+
+/** Whether the first candidate is one to trust, or a list to read with suspicion. */
+export function matchConfidence(candidates: readonly EinCandidate[]): "strong" | "weak" | "none" {
+  const top = candidates[0];
+  if (!top) return "none";
+  return top.via === "name" && top.score >= 0.7 ? "strong" : "weak";
 }
 
 /**
@@ -190,11 +236,19 @@ export function scoreCandidate(query: EinQuery, row: BmfRow): EinCandidate & { n
   const want = new Set(normalizeOrgName(query.name));
   const have = new Set(normalizeOrgName(row.name));
   const shared = [...want].filter((t) => have.has(t)).length;
-  const dice = want.size + have.size === 0 ? 0 : (2 * shared) / (want.size + have.size);
+  let dice = want.size + have.size === 0 ? 0 : (2 * shared) / (want.size + have.size);
   const reasons: string[] = [];
-  let score = dice * 0.8;
-  if (dice === 1) reasons.push("same name");
+  // Filed under its acronym: "ARF" for "Animal Rescue Foundation (ARF-IL)" — the
+  // words share nothing, the identity is the same (found on ARF-IL, 2026-10-27).
+  // Only a BMF name that IS the acronym counts: two long names with the same
+  // initials (Aurora Animal Care and Control, Asian American Culture Center) are not one body.
+  const acronym = acronymsOf(query.name, query.state).find((a) => have.has(a));
+  if (acronym && dice < 1) {
+    dice = Math.max(dice, 0.9);
+    reasons.push(`acronym ${acronym}`);
+  } else if (dice === 1) reasons.push("same name");
   else if (shared > 0) reasons.push(`${shared} of ${want.size} name words`);
+  let score = dice * 0.8;
 
   if (query.city && normalizePlace(query.city) === normalizePlace(row.city)) {
     score += 0.1;
@@ -209,7 +263,7 @@ export function scoreCandidate(query: EinQuery, row: BmfRow): EinCandidate & { n
     reasons.push("501(c)(3)");
   }
   if (row.ico) reasons.push(`in care of ${row.ico.replace(/^%\s*/, "")}`);
-  return { row, score: Math.min(1, Number(score.toFixed(3))), reasons, ein: formatEin(row.ein), nameSimilarity: dice };
+  return { row, score: Math.min(1, Number(score.toFixed(3))), reasons, ein: formatEin(row.ein), via: "name", nameSimilarity: dice };
 }
 
 /**
@@ -219,7 +273,11 @@ export function scoreCandidate(query: EinQuery, row: BmfRow): EinCandidate & { n
  * least-wrong neighbour. The floor is on the name alone: the city and filing
  * nudges order candidates, and must never lift a one-word overlap into one.
  * The state is a filter because the file is one state's; the city is only a
- * tiebreak, since a rescue files from its treasurer's home.
+ * tiebreak, since a rescue files from its treasurer's home. After the named
+ * candidates come up to three animal-related bodies in the listing's own
+ * city whose names match nothing — the file holds many by a DBA or an
+ * acronym, and the person checking can tell "ARF" from "Animal Rescue
+ * Foundation" when the matcher cannot.
  */
 export function matchEin(
   query: EinQuery,
@@ -229,11 +287,19 @@ export function matchEin(
   const limit = options.limit ?? 5;
   const nameFloor = options.nameFloor ?? 0.5;
   const state = query.state.toUpperCase();
-  return rows
-    .filter((row) => row.state.toUpperCase() === state)
-    .map((row) => scoreCandidate(query, row))
+  const scored = rows.filter((row) => row.state.toUpperCase() === state).map((row) => scoreCandidate(query, row));
+  const byName = scored
     .filter((c) => c.nameSimilarity >= nameFloor)
     .sort((a, b) => b.score - a.score || a.row.name.localeCompare(b.row.name))
     .slice(0, limit)
-    .map(({ row, score, reasons, ein }) => ({ row, score, reasons, ein }));
+    .map(({ row, score, reasons, ein }): EinCandidate => ({ row, score, reasons, ein, via: "name" }));
+  if (!query.city) return byName;
+  const city = normalizePlace(query.city);
+  const taken = new Set(byName.map((c) => c.ein));
+  const nearby = scored
+    .filter((c) => !taken.has(c.ein) && c.row.ntee.startsWith("D") && normalizePlace(c.row.city) === city)
+    .sort((a, b) => b.score - a.score || a.row.name.localeCompare(b.row.name))
+    .slice(0, 3)
+    .map(({ row, score, reasons, ein }): EinCandidate => ({ row, score, reasons: ["in the listing's city and animal-related, the name matching nothing", ...reasons], ein, via: "nearby" }));
+  return [...byName, ...nearby];
 }

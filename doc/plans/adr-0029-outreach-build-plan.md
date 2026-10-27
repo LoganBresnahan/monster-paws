@@ -56,7 +56,7 @@ email a real shelter. Check items off as they ship.
      `SKIP_DB_TESTS` discipline of `tests/support/db.ts`, same flag or a
      sibling. Resend is never wired to this interface (ADR-0029 §4), stated
      on the interface. The `nodemailer` dependency line lands in the ADR.
-   - [x] `irs-bmf-ein-matcher` — **done 2026-10-27** (`src/core/outreach/ein-match.ts`: Dice over name tokens with legal forms dropped, a floor of half the words on the NAME alone, city and filing codes as nudges; `ensureBmf` fetches `eo_<state>.csv` into `var/irs/` and checks the header; fixture `tests/fixtures/irs-bmf-sample.csv`). Medium, moderate. `src/core/outreach/ein-match.ts`:
+   - [x] `irs-bmf-ein-matcher` — **done 2026-10-27** (`src/core/outreach/ein-match.ts`: Dice over name tokens with legal forms dropped, a floor of half the words on the NAME alone, city and filing codes as nudges; `ensureBmf` fetches `eo_<state>.csv` into `var/irs/` and checks the header; fixture `tests/fixtures/irs-bmf-sample.csv`; amended 2026-10-27 after ARF-IL was missed — the IRS files it as `ARF` — with `acronymsOf` (the parenthetical and the initials, counted only when the IRS name IS the acronym), a `nearby` pool of the city's animal-related bodies after the named candidates, and `matchConfidence` so a weak list says so). Medium, moderate. `src/core/outreach/ein-match.ts`:
      a candidate proposer over the IRS Business Master File (per-state
      files, `irs.gov/pub/irs-soi/eo_XX.csv`, streamed and filtered by state,
      downloaded to `var/irs/`, never committed) — a name normaliser (case,
