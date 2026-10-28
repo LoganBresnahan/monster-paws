@@ -132,7 +132,7 @@ producing a short report: a partial fetch must never reach stage 5.
 A failure at any derived stage is recorded in `failures` with its stage and
 the loop continues — one malformed payload must never truncate the run.
 
-## RescueGroups daily poll — what runs today (ADR-0006, ADR-0009, ADR-0013)
+## RescueGroups daily poll — what runs today (ADR-0006, ADR-0009, ADR-0013, ADR-0033)
 
 The only live poller. Since ADR-0013 it runs every stage; the same path
 is available one-shot as `npm run ingest -- poll [--max-pages N]`, and
@@ -161,7 +161,13 @@ is available one-shot as `npm run ingest -- poll [--max-pages N]`, and
        │  body {"data":{"filters":[]}}  ─────────────────► included[] orgs,  │
        │  ◄────────────────────────────────────────────── │  breeds, statuses │
        │  loop page = 1..meta.pages                       │  (unordered set)  │
-       ▼                                                 └──────────────────┘
+       │                                                 └────────▲─────────┘
+       │  until the allowlist the droplet is refused, so          │ ADR-0033
+       │  scripts/poll-via-bridge.sh runs this CLI on the droplet │
+       │  with HTTPS_PROXY → ssh -R → scripts/rg-proxy.ts at home ┘
+       │  (CONNECT api.rescuegroups.org:443 only); the database
+       │  connection stays droplet → Postgres
+       ▼
   per animal:
     sidecarFor(animal, included)   pick this animal's refs, SORT by (type,id)
                                    — unsorted, ~20% of re-polls hash as changed

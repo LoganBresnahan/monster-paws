@@ -59,12 +59,12 @@ is the record, and a file of ticked boxes stops being read.
   disappearance stage (ADR-0014) and no heartbeat, instead of retrying the
   write. Through the home tunnel this costs the whole poll: oplog 0005's
   first attempt died 1 h 29 min in on `Connection terminated unexpectedly`
-  (2026-10-28 17:44:32 UTC), and any rerun starts from the first page. Two
-  changes: a pool `error` handler with keepalive, so a dropped idle
-  connection is replaced rather than fatal; and the faster bridge (roadmap,
-  Launch carry-in: the poll on the droplet, only RescueGroups' requests
-  through home), which takes the tunnel out of the database path. Found
-  2026-10-28 by the moderator session reading the crash.
+  (2026-10-28 17:44:32 UTC), and any rerun starts from the first page. The
+  tunnel is out of the database path since ADR-0033 (`poll-via-bridge.sh`
+  runs the poll on the droplet), which makes the drop rarer, not harmless —
+  still open: a pool `error` handler with keepalive, so a dropped idle
+  connection is replaced rather than fatal. Needs a deploy; rides with the
+  next one. Found 2026-10-28 by the moderator session reading the crash.
 
 - **The follow-up wave cannot be built from the CLI.** The guard allows one
   follow-up seven or more days after the first message (ADR-0029 §5) and

@@ -472,6 +472,17 @@ ssh <droplet> 'cd monsterpaws && git pull && docker compose -f docker-compose.pr
 # still verified (the container resolves the database's hostname to the
 # tunnel). Pings the poll heartbeat on a complete run. pass unlocked:
 scripts/poll-via-home.sh [--max-daily-disappearance R]
+# Poll via the bridge (scripts/poll-via-bridge.sh, ADR-0033) — the faster
+# shape, and the one to reach for first: the poll runs ON THE DROPLET with
+# its own image, .env and CA, and only RescueGroups' requests leave through
+# this machine — scripts/rg-proxy.ts on 127.0.0.1:18443 (CONNECT to
+# api.rescuegroups.org:443 only), reached over one SSH reverse forward.
+# Minutes, not hours; a dropped home link costs a page fetch, never a
+# write. The proxy's log lands in var/rg-proxy-<stamp>.log. pass unlocked
+# (the DO token only):
+scripts/poll-via-bridge.sh [--max-daily-disappearance R]
+# Nightly and unattended from a home Task Scheduler task with a restricted
+# key is the next step (ADR-0033 decision 7, roadmap Launch).
 # TRAP: the droplet's ufw LIMITs 22/tcp — 6 connections in 30 s and it refuses
 # that source for minutes, and every retry restarts the count. One SSH
 # session per step; never a loop of ssh calls, never a port-22 probe loop.
@@ -967,7 +978,9 @@ on the box: Commons dogs and the crew only.
   │  · pg-boss q   │ │     image-gen escape hatch)  │
   │  · corpus+FTS  │ │  Shelterluv/Petango (tier 1) │
   └───────▲────────┘ └──────────────────────────────┘
-          │ SSH tunnel: home → droplet → Postgres
+          │ SSH tunnel: home → droplet → Postgres (the art
+          │  worker, planned); the poll bridge reverses it —
+          │  droplet → home → RescueGroups, below (ADR-0033)
           │ (the droplet is the trusted source; the house
           │  opens no port to the internet — outbound only)
   ┌───────┴──────────────────────────────────────────────────────┐
@@ -1003,6 +1016,35 @@ machine itself. Development never happens on the `monsterpaws` account.
 Provisioning it — the Windows user, the distro on the M.2, the Task Scheduler
 start, and the scoped credentials in the registry above — is a step here and
 an oplog entry when it happens.
+
+### The poll bridge, until RescueGroups allowlists the droplet (ADR-0033)
+
+```
+  Logan's machine (monsterpaws-dev)              DigitalOcean droplet
+  ┌──────────────────────────────────┐           ┌──────────────────────────────┐
+  │ scripts/poll-via-bridge.sh       │ ONE ssh   │ sshd                         │
+  │  · pass: DO token → doctl → $IP  ├──────────►│  -R 127.0.0.1:18443          │
+  │  · ssh master, -R 18443          │  (ufw     │        │                     │
+  │                                  │  LIMIT)   │        ▼                     │
+  │ scripts/rg-proxy.ts              │           │ docker run --network host    │
+  │  127.0.0.1:18443                 │◄──────────┤  worker:$IMAGE_TAG           │
+  │  CONNECT api.rescuegroups.org:443│  reverse  │  --env-file .env, do-ca.crt  │
+  │  only — 403 otherwise            │  forward  │  NODE_USE_ENV_PROXY=1        │
+  └───────────────┬──────────────────┘           │  HTTPS_PROXY=127.0.0.1:18443 │
+                  │ TLS end to end,              │  npm run ingest -- poll      │
+                  │ worker ⇄ RescueGroups        │  then curl the heartbeat     │
+                  ▼                              └──────────────┬───────────────┘
+        RescueGroups v5 API                                     │ pg, TLS verified
+        (refuses the droplet's address:                         ▼
+         Spamhaus PBL, UCEPROTECT L3)                    DO Managed Postgres
+                                                         (firewall: droplet only)
+
+  Fallback, scripts/poll-via-home.sh: the worker runs at home instead and
+  reaches Postgres through an ssh -L tunnel — every write a round trip, ~6 h.
+  Next (planned, ADR-0033 decision 7): a Task Scheduler task at 07:00 UTC,
+  a key restricted to the forced command and permitlisten, the droplet's
+  own 07:00 schedule off.
+```
 
 ## CI / deploy pipeline
 
