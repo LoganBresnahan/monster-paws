@@ -237,6 +237,7 @@ a login through `public.api.bsky.app/xrpc/app.bsky.actor.getProfile?actor=monste
 | Bluesky | `@monsterpaws.org` — https://bsky.app/profile/monsterpaws.org (the `_atproto` TXT record set 2026-10-27 through `cloudflare/dns-token`; `@monsterpawsorg.bsky.social` redirects) | 2026-10-27 |
 | YouTube | `@monsterpawsorg` — https://www.youtube.com/@monsterpawsorg, a brand channel under Logan's Google account | 2026-10-27 |
 | Instagram | `@monsterpawsorg` — https://www.instagram.com/monsterpawsorg/ | 2026-10-27 |
+| Facebook Page | Monster Paws — https://www.facebook.com/people/Monster-Paws/61595719932459/ (a Page under Logan's personal profile; no username yet, the numeric URL is the address) | 2026-10-28 |
 
 | Entry | What it is | What it's for | Lands in |
 | --- | --- | --- | --- |

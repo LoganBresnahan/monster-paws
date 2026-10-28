@@ -219,4 +219,23 @@ first shelter's grant that decision 1 waited for, because the handle was
 worth holding and the intro post has an image to carry there (the crew, under
 consent). It joins `SOCIAL_LINKS` and the registry. Posting rules are
 decision 3's unchanged; a shelter's animals appear there only under its
-grant. Facebook follows the same way when its page is through.
+grant. Facebook followed on 2026-10-28 (amendment below).
+
+## Amendment (2026-10-28): Facebook Page, and where hashtags go
+Logan opened the Facebook Page the morning after the intro post
+(https://www.facebook.com/people/Monster-Paws/61595719932459/), a Page under
+his personal profile. The account first made through Instagram's flow on
+2026-10-27 was disabled by Facebook the same day; a Page under an established
+profile was the way through, and the numeric URL is the address until
+Facebook offers a username. It joins `SOCIAL_LINKS` and the registry, sixth;
+posting rules are decision 3's.
+
+Hashtags, settled on the intro post (2026-10-28, posted by hand to LinkedIn,
+X, Bluesky and Instagram): **none on X or LinkedIn**, where they no longer
+route a post and read as spam; **two or three on Bluesky**, where custom
+feeds are built from them and there is no other discovery
+(`#dogsofbluesky #adoptdontshop #rescuedog`, `#catsofbluesky` for a cat);
+**three to five on Instagram**, where search, Explore and followed tags are
+the discovery (`#shelterdogs #adoptdontshop #rescueanimals #watercolor
+#monsterpaws`). The hackathon demo post on X carries whatever tag the
+Official Rules name, on that post only (ADR-0028).
