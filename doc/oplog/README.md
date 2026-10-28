@@ -19,6 +19,7 @@ is an ADR; the daily numbers brief is `doc/ops/` (ADR-0010 as amended).
 | [0006](0006-poll-via-bridge-first-run.md) | Poll via the bridge, the first run by hand: the poll on the droplet, only RescueGroups' requests through home (ADR-0033) — the bridge proved, the poll out of memory at ~45k | run | 2026-10-28 |
 | [0007](0007-deploy-poll-fixes-schedule-off.md) | Deploy `40cb846`: the poll fits the droplet, the droplet's schedule off (`INGEST_POLL_SCHEDULE=off`), the footer's six profiles | run | 2026-10-28 |
 | [0008](0008-poll-via-bridge-on-40cb846.md) | Poll via the bridge on `40cb846`: the poll that turns health green — complete, 64,111 in 27 min | run | 2026-10-28 |
+| [0009](0009-nightly-bridge-poll.md) | The nightly bridge poll: the restricted key, the droplet half, the Windows task (ADR-0033 decision 7) | planned | — |
 
 ## Entry format
 
