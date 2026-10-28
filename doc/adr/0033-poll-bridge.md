@@ -144,3 +144,36 @@ make the bridge the nightly job the heartbeat and monitor watch.
    ship in the same deploy: stages 2–4 per observation (ADR-0009 as amended
    2026-10-28), and an `error` listener on every pool client.
 
+
+## Amendment (2026-10-28, night): decision 7 as built
+
+Logan, after oplog 0008 turned health green: build the nightly now. Health
+stays green to 27 h after a complete poll — 2026-10-30 00:45 UTC for 0008's.
+
+1. **The droplet half is a checked-in script**,
+   `scripts/bridge-poll-droplet.sh`, run from the droplet's checkout. The
+   manual bridge calls it as root with a port and flags; the nightly key's
+   forced command calls it with `--from-key`, which throws the client's
+   command away. The one exception is the exact verb `check` — the preflight
+   (`.env` names, quotes, CA), no poll — so the key's path can be proved
+   without polling twice in a day (ADR-0006: daily, never more).
+2. **The key's line**: `restrict,port-forwarding,permitlisten="127.0.0.1:18443",
+   permitopen="127.0.0.1:9",command="…/bridge-poll-droplet.sh --from-key"`.
+   `restrict` alone refuses the reverse forward, so `port-forwarding` comes
+   back and the two `permit` options narrow it. `permitopen="none"` is
+   rejected as "invalid permission port" and sshd then ignores the whole
+   line, so the key would simply stop working; a closed port stands in for
+   none. Proved 2026-10-28 against OpenSSH 9.6p1 (Ubuntu 24.04, as the
+   droplet): a shell command, flags and a PTY all end in the poll or the
+   preflight; `-R` on any other port or address, `-L` and `-D` are refused.
+3. **Home**: `scripts/poll-nightly.sh` loads nvm (a task's shell reads no
+   `.bashrc`), sets `BRIDGE_SSH_HOST=monsterpaws-bridge` so nothing comes from
+   `pass`, bounds the run at 3 h so a hang cannot hold the port and the
+   container name into the next night, and appends to `var/nightly/`.
+   `scripts/windows/register-nightly-poll.ps1` registers the task: daily,
+   the trigger synchronized to UTC (07:00 does not move when Central time
+   leaves daylight saving on 2026-11-01), interactive logon only (WSL needs
+   the user's session), start when available, wake to run, one instance.
+4. The key's master copy is in `pass` as `digitalocean/droplet-bridge-key`
+   (`doc/infra.md`, registry); the working copy is `~/.ssh/monsterpaws-bridge`
+   in `monsterpaws-dev`.

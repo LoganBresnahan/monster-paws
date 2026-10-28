@@ -46,6 +46,7 @@ pushes to GHCR with the workflow's built-in `GITHUB_TOKEN`.
 | --- | --- | --- | --- |
 | `digitalocean/api-token` | DO account API token (created 2026-07-29) | Everything `doctl` does: the droplet, firewall, monitoring alert policies (step 6c), snapshots, Managed Postgres when step 6 lands, and the per-job GPU Droplets of GPU rental (below) | dev only |
 | `digitalocean/database-url` | Private connection string of Managed Postgres `monsterpaws-pg` (id `a464ff4f…`, PG 16, db-s-1vcpu-1gb, nyc3; created 2026-10-27 by oplog 0001), the cluster's admin user, `sslmode=require`; reachable only from the droplet (firewall rule `droplet:588758367`, private network) | The app's and the worker's `DATABASE_URL`, and `scripts/backup-db.sh`'s source. Admin credentials: a least-privilege app role is a follow-up (oplog 0001) | droplet `.env` |
+| `digitalocean/droplet-bridge-key` | ed25519 private key, no passphrase (the run is unattended), created by oplog 0009; its `authorized_keys` line on the droplet is `restrict,port-forwarding,permitlisten="127.0.0.1:18443",permitopen="127.0.0.1:9",command="/root/monsterpaws/scripts/bridge-poll-droplet.sh --from-key"` | The nightly bridge poll (ADR-0033 decision 7): it can start that poll or its preflight and open the one reverse forward — never a shell, never `-L` or `-D` (proved 2026-10-28 against OpenSSH 9.6p1). `pass` holds the master copy | home `~/.ssh/monsterpaws-bridge` (mode 600) in `monsterpaws-dev`, named by the ssh config host `monsterpaws-bridge` |
 
 ```sh
 DIGITALOCEAN_ACCESS_TOKEN=$(pass show digitalocean/api-token) doctl compute droplet list
@@ -486,8 +487,22 @@ scripts/poll-via-bridge.sh [--max-daily-disappearance R]
 # 2026-10-28) — delete the line and restart the worker after the allowlist;
 # never remove RESCUEGROUPS_API_KEY instead, the bridge reads it. The CLI exits
 # 2 on a full run that did not complete, and the bridge then pings /fail.
-# Nightly and unattended from a home Task Scheduler task with a restricted
-# key is the next step (ADR-0033 decision 7, roadmap Launch).
+# Nightly and unattended (ADR-0033 decision 7, oplog 0009): the Windows task
+# "Monster Paws nightly poll" runs scripts/poll-nightly.sh at 07:00 UTC in
+# monsterpaws-dev — BRIDGE_SSH_HOST=monsterpaws-bridge, so no pass: the ssh
+# config host names the droplet and ~/.ssh/monsterpaws-bridge, a key whose
+# forced command is scripts/bridge-poll-droplet.sh --from-key. Logs in
+# var/nightly/<date>.log; the poll heartbeat alerts. Fires only while Windows
+# is up with Logan logged on and WSL can start; a missed 07:00 runs when he
+# is back, never twice in a day. Through the key, by hand:
+BRIDGE_SSH_HOST=monsterpaws-bridge scripts/poll-via-bridge.sh --check   # preflight, no poll
+# Register or replace the task (from WSL), and look at it:
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$(wslpath -w scripts/windows/register-nightly-poll.ps1)"
+powershell.exe -NoProfile -Command "Get-ScheduledTaskInfo -TaskName 'Monster Paws nightly poll'"
+# TRAP: authorized_keys rejects permitopen="none" ("invalid permission port")
+# and then ignores the WHOLE line — the key stops working, silently. The line
+# names a closed port instead (permitopen="127.0.0.1:9"); keep `restrict` AND
+# `port-forwarding`, or the reverse forward is refused.
 # TRAP: the droplet's ufw LIMITs 22/tcp — 6 connections in 30 s and it refuses
 # that source for minutes, and every retry restarts the count. One SSH
 # session per step; never a loop of ssh calls, never a port-22 probe loop.
@@ -1028,10 +1043,11 @@ an oplog entry when it happens.
   Logan's machine (monsterpaws-dev)              DigitalOcean droplet
   ┌──────────────────────────────────┐           ┌──────────────────────────────┐
   │ scripts/poll-via-bridge.sh       │ ONE ssh   │ sshd                         │
-  │  · pass: DO token → doctl → $IP  ├──────────►│  -R 127.0.0.1:18443          │
+  │  · $IP: pass→doctl, or the host  ├──────────►│  -R 127.0.0.1:18443          │
   │  · ssh master, -R 18443          │  (ufw     │        │                     │
   │                                  │  LIMIT)   │        ▼                     │
-  │ scripts/rg-proxy.ts              │           │ docker run --network host    │
+  │ scripts/rg-proxy.ts              │           │ bridge-poll-droplet.sh:      │
+  │                                  │           │ docker run --network host    │
   │  127.0.0.1:18443                 │◄──────────┤  worker:$IMAGE_TAG           │
   │  CONNECT api.rescuegroups.org:443│  reverse  │  --env-file .env, do-ca.crt  │
   │  only — 403 otherwise            │  forward  │  NODE_USE_ENV_PROXY=1        │
@@ -1048,9 +1064,11 @@ an oplog entry when it happens.
   Fallback, scripts/poll-via-home.sh: the worker runs at home instead and
   reaches Postgres through an ssh -L tunnel — every write a round trip, ~6 h.
   The droplet's own 07:00 schedule: off (INGEST_POLL_SCHEDULE=off,
-  ADR-0033 as amended 2026-10-28). Next (planned, ADR-0033 decision 7): a
-  Task Scheduler task at 07:00 UTC, a key restricted to the forced command
-  and permitlisten.
+  ADR-0033 as amended 2026-10-28). Nightly (ADR-0033 decision 7): the
+  Windows task runs scripts/poll-nightly.sh at 07:00 UTC; the ssh config host
+  monsterpaws-bridge and its key, whose forced command on the droplet is
+  scripts/bridge-poll-droplet.sh --from-key — permitlisten 127.0.0.1:18443
+  only, no -L, no -D, no shell.
 ```
 
 ## CI / deploy pipeline
