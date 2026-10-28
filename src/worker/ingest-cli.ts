@@ -19,7 +19,7 @@ import { createPgStages, loadStoredObservations } from "@/core/ingest/pg";
 import { purgeDisplay } from "@/core/purge";
 import { replay, runIngest, type IngestRunReport } from "@/core/ingest/pipeline";
 import { createRescueGroupsAdapter, rescueGroupsNormalizer } from "@/core/ingest/rescuegroups";
-import { parsePollArgs, planIngestPoll } from "@/worker/ingest-poll";
+import { incompleteRun, parsePollArgs, planIngestPoll } from "@/worker/ingest-poll";
 
 function print(report: IngestRunReport) {
   const { events, failures, ...counts } = report;
@@ -41,12 +41,14 @@ async function main([command, ...rest]: string[]) {
       // A page-capped run is partial by construction: it must never
       // disappear the animals it did not fetch (ADR-0014).
       const adapter = createRescueGroupsAdapter({ apiKey: plan.apiKey!, maxPages });
-      print(
-        await runIngest(adapter, stages, {
-          complete: maxPages === undefined,
-          maxDailyDisappearanceRate,
-        }),
-      );
+      const complete = maxPages === undefined;
+      const report = await runIngest(adapter, stages, { complete, maxDailyDisappearanceRate });
+      print(report);
+      const incomplete = incompleteRun(report, complete);
+      if (incomplete) {
+        console.error(`ingest poll: the run did not complete — ${incomplete}`);
+        process.exitCode = 2;
+      }
     } else if (command === "replay" && rest[0]) {
       const stored = await loadStoredObservations(db, rest[0]);
       print(await replay(rest[0] as never, stored, stages));

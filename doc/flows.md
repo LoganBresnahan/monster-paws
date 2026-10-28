@@ -11,14 +11,17 @@ Change a flow's shape — add a stage, move a boundary, add an external call —
 and update its diagram in the same commit. `/shipshape` checks that every
 identifier boxed here still exists.
 
-## Ingest pipeline — the five stages (ADR-0009, ADR-0013, ADR-0014)
+## Ingest pipeline — the five stages (ADR-0009 as amended 2026-10-28, ADR-0013, ADR-0014)
 
 Every source, scrape or API, enters through one `SourceAdapter` and runs the
 same stage path. `runIngest` is the full run; `replay` re-enters at stage 2
 over the retained corpus, with no source contact — the two share
-`runDerivedStages`, and if they ever diverge replay stops proving anything
-about production. An adapter error propagates out of `runIngest` rather than
-producing a short report: a partial fetch must never reach stage 5.
+`deriveOne`, and if they ever diverge replay stops proving anything about
+production. `runIngest` runs stages 1–4 for each observation as the adapter
+yields it, so only the seen ids grow with the feed; stage 5 runs once, after
+the feed (ADR-0009 as amended 2026-10-28). An adapter error propagates out of
+`runIngest` rather than producing a short report: a partial fetch must never
+reach stage 5.
 
 ```
   source (live)                       corpus (retained)
@@ -36,7 +39,8 @@ producing a short report: a partial fetch must never reach stage 5.
             │   yes → touch last_seen only      │  ─ dedup:   last_seen UPDATE
             │   no  → INSERT                    │    (the one sanctioned UPDATE)
             └──────────────────┬───────────────┘
-                               │ StoredObservation<P>  (+rawId)
+                               │ StoredObservation<P>  (+rawId) — straight on
+                               │ to deriveOne, never buffered for the feed
                                ▼
    stage 2  ┌──────────────────────────────────┐
   normalize │ stages.normalizers.get(source)    │  per-source mapper; LLM
@@ -132,7 +136,7 @@ producing a short report: a partial fetch must never reach stage 5.
 A failure at any derived stage is recorded in `failures` with its stage and
 the loop continues — one malformed payload must never truncate the run.
 
-## RescueGroups daily poll — what runs today (ADR-0006, ADR-0009, ADR-0013, ADR-0033)
+## RescueGroups daily poll — what runs today (ADR-0006, ADR-0009, ADR-0013, ADR-0033 as amended 2026-10-28)
 
 The only live poller. Since ADR-0013 it runs every stage; the same path
 is available one-shot as `npm run ingest -- poll [--max-pages N]`, and
@@ -144,6 +148,9 @@ is available one-shot as `npm run ingest -- poll [--max-pages N]`, and
        ▼
   planIngestPoll(process.env)
        │
+       ├─ INGEST_POLL_SCHEDULE=off ──► boss.unschedule("ingest.poll"), logged;
+       │    the bridge polls instead (ADR-0033 as amended 2026-10-28) — the
+       │    production setting until RescueGroups allowlists the droplet
        ├─ RESCUEGROUPS_API_KEY missing or blank ──► register:false + skipReason
        │                                             logged, never silent (ADR-0010)
        ▼
@@ -200,6 +207,9 @@ is available one-shot as `npm run ingest -- poll [--max-pages N]`, and
        │
        ▼
   IngestRunReport → worker log  {event:"ingest.run.completed", …counts}
+                    CLI: stdout counts; exit 2 when a run asked to be
+                    complete was not — incompleteRun(report) — so the
+                    bridge pings the heartbeat /fail, never success
 ```
 
 Smoke 2026-08-21 (2 pages, 200 animals): first run 200 `animal.seen`;

@@ -446,80 +446,77 @@ function messageOf(error: unknown): string {
 }
 
 /**
- * Stages 2–4 over already-persisted observations. One bad observation is
- * recorded and skipped — never throw out of the loop, or a single malformed
- * payload silently truncates the run and the gates see a healthy short batch.
+ * Stages 2–4 for one persisted observation. A bad observation is recorded and
+ * skipped — never throw out of here, or a single malformed payload silently
+ * truncates the run and the gates see a healthy short batch.
  */
-async function runDerivedStages(
-  stored: StoredObservation<unknown>[],
+async function deriveOne(
+  obs: StoredObservation<unknown>,
   stages: IngestStages,
   report: IngestRunReport,
-): Promise<IngestRunReport> {
-  for (const obs of stored) {
-    const normalizer = stages.normalizers.get(obs.source);
-    if (!normalizer) {
-      report.failures.push({
-        externalId: obs.externalId,
-        stage: "normalize",
-        error: `no normalizer registered for source '${obs.source}'`,
-      });
-      continue;
-    }
-
-    let normalized: NormalizedAnimal;
-    try {
-      normalized = await normalizer.normalize(obs);
-    } catch (error) {
-      report.failures.push({
-        externalId: obs.externalId,
-        stage: "normalize",
-        error: messageOf(error),
-      });
-      continue;
-    }
-    report.normalized += 1;
-
-    const candidate: AnimalCandidate = {
-      source: obs.source,
+): Promise<void> {
+  const normalizer = stages.normalizers.get(obs.source);
+  if (!normalizer) {
+    report.failures.push({
       externalId: obs.externalId,
-      rawId: obs.rawId,
-      claims: normalized.claims,
-      display: normalized.display,
-      sourceUpdatedAt: normalized.sourceUpdatedAt,
-    };
-
-    let animalId: number | null;
-    try {
-      ({ animalId } = await stages.resolver.resolve(candidate));
-    } catch (error) {
-      report.failures.push({
-        externalId: obs.externalId,
-        stage: "resolve",
-        error: messageOf(error),
-      });
-      continue;
-    }
-
-    try {
-      const { events, conflicted } = await stages.writer.apply(candidate, animalId);
-      for (const e of events) report.events.push(e);
-      report.conflicted += conflicted.length;
-    } catch (error) {
-      report.failures.push({
-        externalId: obs.externalId,
-        stage: "write",
-        error: messageOf(error),
-      });
-    }
+      stage: "normalize",
+      error: `no normalizer registered for source '${obs.source}'`,
+    });
+    return;
   }
 
-  return report;
+  let normalized: NormalizedAnimal;
+  try {
+    normalized = await normalizer.normalize(obs);
+  } catch (error) {
+    report.failures.push({
+      externalId: obs.externalId,
+      stage: "normalize",
+      error: messageOf(error),
+    });
+    return;
+  }
+  report.normalized += 1;
+
+  const candidate: AnimalCandidate = {
+    source: obs.source,
+    externalId: obs.externalId,
+    rawId: obs.rawId,
+    claims: normalized.claims,
+    display: normalized.display,
+    sourceUpdatedAt: normalized.sourceUpdatedAt,
+  };
+
+  let animalId: number | null;
+  try {
+    ({ animalId } = await stages.resolver.resolve(candidate));
+  } catch (error) {
+    report.failures.push({
+      externalId: obs.externalId,
+      stage: "resolve",
+      error: messageOf(error),
+    });
+    return;
+  }
+
+  try {
+    const { events, conflicted } = await stages.writer.apply(candidate, animalId);
+    for (const e of events) report.events.push(e);
+    report.conflicted += conflicted.length;
+  } catch (error) {
+    report.failures.push({
+      externalId: obs.externalId,
+      stage: "write",
+      error: messageOf(error),
+    });
+  }
 }
 
 /**
- * Full run: fetch → persist → derived stages → lifecycle. An adapter error
- * propagates: a short batch reported as a run is how a partial fetch would
- * reach stage 5 and disappear everything it skipped (ADR-0014).
+ * Full run: fetch → persist and derive each observation as it lands →
+ * lifecycle once the feed is exhausted. An adapter error propagates: a short
+ * batch reported as a run is how a partial fetch would reach stage 5 and
+ * disappear everything it skipped (ADR-0014).
  */
 export async function runIngest(
   adapter: SourceAdapter<unknown>,
@@ -529,27 +526,30 @@ export async function runIngest(
   const now = options.now ?? (() => new Date());
   const startedAt = now();
   const report = emptyReport(adapter.source);
-  const stored: StoredObservation<unknown>[] = [];
   const seen = new Set<string>();
 
   for await (const obs of adapter.fetch()) {
     report.observed += 1;
     seen.add(obs.externalId);
+    let stored: StoredObservation<unknown>;
     try {
       const result = await stages.rawStore.persist(obs);
       if (result.inserted) report.persisted += 1;
       else report.deduped += 1;
-      stored.push(result.stored);
+      stored = result.stored;
     } catch (error) {
       report.failures.push({
         externalId: obs.externalId,
         stage: "persist",
         error: messageOf(error),
       });
+      continue;
     }
+    // Derive as each observation lands, never after the feed: holding every
+    // payload until the fetch ends ran the droplet out of heap at ~45k of
+    // ~63k (oplog 0006; ADR-0009 as amended 2026-10-28).
+    await deriveOne(stored, stages, report);
   }
-
-  await runDerivedStages(stored, stages, report);
 
   if (!options.complete) {
     report.lifecycleSkipped = "run declared partial by caller";
@@ -601,5 +601,6 @@ export async function replay(
   const report = emptyReport(source);
   report.observed = stored.length;
   report.deduped = stored.length;
-  return runDerivedStages(stored, stages, report);
+  for (const obs of stored) await deriveOne(obs, stages, report);
+  return report;
 }

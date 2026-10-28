@@ -52,35 +52,6 @@ is the record, and a file of ticked boxes stops being read.
 
 ## Ops
 
-- **`runIngest` buffers the whole feed, so the poll runs out of memory on the
-  droplet.** Stage 1 pushes every `StoredObservation`, payload included, into
-  `stored` (`src/core/ingest/pipeline.ts`, `runIngest`) and only calls
-  `runDerivedStages` once the feed is exhausted — memory grows with the feed.
-  On the 1 GB droplet V8's heap stops near 480 MB: oplog 0006's bridge poll
-  died at ~45k of ~63k (2026-10-28 20:22 UTC). At home the heap is sized on
-  home RAM, so the tunnel poll never showed it. The droplet's own scheduled
-  poll would die the same way once RescueGroups allowlists it, and the nightly
-  bridge (ADR-0033 decision 7) waits on this. The fix: run stages 2–4 per
-  observation or small chunk inside the fetch loop — `runDerivedStages`
-  already works one at a time — so only `seen` grows with the feed (ADR-0009;
-  stage 5 still runs once, after the whole feed, ADR-0014). Needs a deploy.
-  Found 2026-10-28 reading the crash; the moderator session confirmed it in
-  the code.
-
-- **A dropped database connection kills the whole poll.** `getDb` in
-  `src/db/client.ts` creates the `Pool` with no `error` listener and no
-  `keepAlive`, so when a connection drops, `pg` emits an unhandled `error`
-  event and Node exits — the run (ADR-0009) ends with no summary, no
-  disappearance stage (ADR-0014) and no heartbeat, instead of retrying the
-  write. Through the home tunnel this costs the whole poll: oplog 0005's
-  first attempt died 1 h 29 min in on `Connection terminated unexpectedly`
-  (2026-10-28 17:44:32 UTC), and any rerun starts from the first page. The
-  tunnel is out of the database path since ADR-0033 (`poll-via-bridge.sh`
-  runs the poll on the droplet), which makes the drop rarer, not harmless —
-  still open: a pool `error` handler with keepalive, so a dropped idle
-  connection is replaced rather than fatal. Needs a deploy; rides with the
-  next one. Found 2026-10-28 by the moderator session reading the crash.
-
 - **The follow-up wave cannot be built from the CLI.** The guard allows one
   follow-up seven or more days after the first message (ADR-0029 §5) and
   `tests/outreach-send.test.ts` proves it, but `send --wave <name>` builds its

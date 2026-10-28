@@ -138,3 +138,25 @@ first eval harness to ship — now also the model-selection mechanism, and a
 dry run for the item-8 text-faithfulness harness (same shape: LLM output
 diffed against ground truth). New revisit trigger: the platform-tier
 volume threshold above re-activates the deferred declarative tier.
+
+## Amendment (2026-10-28): stages 2–4 run per observation, inside the fetch
+
+`runIngest` persisted the whole feed in stage 1 and held every
+`StoredObservation`, payload and all, until the fetch ended, then ran stages
+2–4 over the lot. Memory grew with the feed: on the 1 GB droplet V8's heap
+stopped near 480 MB and the poll died at ~45k of ~63k (oplog 0006). At home
+the heap is sized on home RAM, so the 2026-10-27 poll never showed it, and
+the droplet's own scheduled poll would have died the same way.
+
+**Decision.** Each observation is persisted and then derived (`deriveOne`:
+normalize → resolve → write) before the adapter is asked for the next. Only
+the seen ids grow with the feed. Stage 5 is unchanged: it runs once, after
+the whole feed, and only for a complete run (ADR-0014). `replay` calls the
+same `deriveOne` over the corpus, so the one shared path holds.
+
+**Consequences.** A fetch that throws mid-feed now leaves stages 2–4 applied
+to what it fetched, not just stage 1 — true observations, the same rows a
+replay would write, and still no stage 5. Memory per run is bounded by the
+id set and the report's events, not the payloads.
+`tests/ingest-pipeline.test.ts` pins the order: the adapter sees each animal
+written before it yields the next.

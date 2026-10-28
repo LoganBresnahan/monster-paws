@@ -176,4 +176,25 @@ describe("ADR-0009 ingest pipeline", () => {
     expect(report.failures[0]).toMatchObject({ stage: "normalize" });
     expect(corpus.animals.size).toBe(0);
   });
+
+  // Memory must not grow with the feed: buffering every payload until the
+  // fetch ended ran the droplet out of heap at ~45k of ~63k (oplog 0006).
+  it("derives each observation before the adapter yields the next (ADR-0009 as amended 2026-10-28)", async () => {
+    const { stages, corpus } = createMemoryStages([normalizerFor("rescuegroups")]);
+    const animalsWhenAsked: number[] = [];
+    const adapter: SourceAdapter<RgPayload> = {
+      source: "rescuegroups",
+      async *fetch() {
+        for (const p of [REX, LUNA]) {
+          animalsWhenAsked.push(corpus.animals.size);
+          yield obs(p);
+        }
+        animalsWhenAsked.push(corpus.animals.size);
+      },
+    };
+
+    await runIngest(adapter, stages, { complete: true });
+
+    expect(animalsWhenAsked).toEqual([0, 1, 2]);
+  });
 });

@@ -67,9 +67,9 @@ rather than going direct (tested 2026-10-28 on `c45e085`).
      under the dedicated account in `monsterpaws-prod`, not built yet. Until
      it is, the task runs in `monsterpaws-dev` — acceptable because the key
      can do nothing but this — and moves when that distro exists.
-   - *The droplet's own 07:00 schedule is switched off* once the task takes
-     over: until the allowlist it only fails, and it is noise in the error
-     log.
+   - *The droplet's own 07:00 schedule is switched off* — with the
+     deploy that follows oplog 0006, not when the task takes over
+     (amendment 2026-10-28).
    - *Monitoring*: the poll heartbeat (499765) and the `/api/health` keyword
      monitor (4995794) are unpaused after the first unattended night
      completes, under their own oplog entry. The 27 h stale window in
@@ -116,3 +116,31 @@ rather than going direct (tested 2026-10-28 on `c45e085`).
   host:port in `rg-proxy.ts`, never by pattern.
 - Node changes `NODE_USE_ENV_PROXY` semantics: re-prove that a dead proxy
   fails the run rather than going direct.
+
+## Amendment (2026-10-28): the droplet's schedule goes off now; the CLI's exit tells the truth
+
+Logan, after oplog 0006: turn off the job that cannot work, deploy, and
+make the bridge the nightly job the heartbeat and monitor watch.
+
+1. **The droplet's own schedule goes off with this deploy**, not when the
+   nightly task takes over (decision 7). `INGEST_POLL_SCHEDULE=off` in the
+   droplet's `.env` makes the worker call `boss.unschedule("ingest.poll")`
+   at boot: not registering is not enough, because pg-boss keeps the cron
+   row and goes on creating jobs. The switch is read by the worker only —
+   never by `npm run ingest`, which the bridge runs with that same `.env` —
+   and it is never done by removing `RESCUEGROUPS_API_KEY`, which the
+   bridge needs. Back on after the allowlist: delete the line and restart
+   the worker.
+2. **Order.** The worker's job pings `/fail` to the poll heartbeat on its
+   last attempt, so the schedule is off before heartbeat 499765 is
+   unpaused.
+3. **`npm run ingest -- poll` exits 2 when a run asked to be complete was
+   not** (`incompleteRun`: stage 5 refused by the disappearance gate, or
+   skipped on an empty feed). The bridge pings the heartbeat on exit 0
+   only, and `/fail` otherwise — it never reports success for a run
+   `/api/health` will not count. A page-capped run is partial by the
+   caller's word and still exits 0.
+4. The worker's memory and connection faults found by oplogs 0005 and 0006
+   ship in the same deploy: stages 2–4 per observation (ADR-0009 as amended
+   2026-10-28), and an `error` listener on every pool client.
+

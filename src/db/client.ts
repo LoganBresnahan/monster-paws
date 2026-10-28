@@ -13,8 +13,21 @@ export type Db = ReturnType<typeof drizzle<typeof schema>>;
 
 export function getDb(connectionString = process.env.DATABASE_URL): Db {
   if (!connectionString) throw new Error("DATABASE_URL is not set");
-  pool ??= new Pool({ connectionString });
+  pool ??= createPool(connectionString);
   return drizzle(pool, { schema });
+}
+
+/**
+ * A dropped connection must fail its one query, never the process — the
+ * pool's listener covers idle clients only, so every client gets one on
+ * connect (oplog 0005).
+ */
+export function createPool(connectionString: string): Pool {
+  const p = new Pool({ connectionString, keepAlive: true });
+  const report = (err: Error) => console.error(`[db] connection error: ${err.message}`);
+  p.on("error", report);
+  p.on("connect", (client) => client.on("error", report));
+  return p;
 }
 
 export async function closeDb(): Promise<void> {

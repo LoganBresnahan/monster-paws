@@ -481,6 +481,11 @@ scripts/poll-via-home.sh [--max-daily-disappearance R]
 # write. The proxy's log lands in var/rg-proxy-<stamp>.log. pass unlocked
 # (the DO token only):
 scripts/poll-via-bridge.sh [--max-daily-disappearance R]
+# The droplet's own schedule is off meanwhile: INGEST_POLL_SCHEDULE=off in its
+# .env makes the worker unschedule ingest.poll (ADR-0033 as amended
+# 2026-10-28) — delete the line and restart the worker after the allowlist;
+# never remove RESCUEGROUPS_API_KEY instead, the bridge reads it. The CLI exits
+# 2 on a full run that did not complete, and the bridge then pings /fail.
 # Nightly and unattended from a home Task Scheduler task with a restricted
 # key is the next step (ADR-0033 decision 7, roadmap Launch).
 # TRAP: the droplet's ufw LIMITs 22/tcp — 6 connections in 30 s and it refuses
@@ -1032,7 +1037,8 @@ an oplog entry when it happens.
   │  only — 403 otherwise            │  forward  │  NODE_USE_ENV_PROXY=1        │
   └───────────────┬──────────────────┘           │  HTTPS_PROXY=127.0.0.1:18443 │
                   │ TLS end to end,              │  npm run ingest -- poll      │
-                  │ worker ⇄ RescueGroups        │  then curl the heartbeat     │
+                  │ worker ⇄ RescueGroups        │  heartbeat: ok on exit 0,    │
+                  │                              │  /fail otherwise             │
                   ▼                              └──────────────┬───────────────┘
         RescueGroups v5 API                                     │ pg, TLS verified
         (refuses the droplet's address:                         ▼
@@ -1041,9 +1047,10 @@ an oplog entry when it happens.
 
   Fallback, scripts/poll-via-home.sh: the worker runs at home instead and
   reaches Postgres through an ssh -L tunnel — every write a round trip, ~6 h.
-  Next (planned, ADR-0033 decision 7): a Task Scheduler task at 07:00 UTC,
-  a key restricted to the forced command and permitlisten, the droplet's
-  own 07:00 schedule off.
+  The droplet's own 07:00 schedule: off (INGEST_POLL_SCHEDULE=off,
+  ADR-0033 as amended 2026-10-28). Next (planned, ADR-0033 decision 7): a
+  Task Scheduler task at 07:00 UTC, a key restricted to the forced command
+  and permitlisten.
 ```
 
 ## CI / deploy pipeline

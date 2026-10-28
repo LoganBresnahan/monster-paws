@@ -15,6 +15,13 @@ export const INGEST_POLL_INTERVAL_HOURS = 24;
 
 export interface IngestPollPlan {
   register: boolean;
+  /**
+   * False when `INGEST_POLL_SCHEDULE=off`: the worker unschedules the job and
+   * the poll runs only by hand or by the bridge (ADR-0033 as amended
+   * 2026-10-28). Read by the worker only — never by `npm run ingest`, which
+   * the bridge runs with this same `.env`.
+   */
+  schedule: boolean;
   cron: string;
   apiKey: string | null;
   /** why registration was skipped — logged, so a silent non-poller can't hide */
@@ -29,15 +36,17 @@ export interface IngestPollPlan {
  */
 export function planIngestPoll(env: Record<string, string | undefined>): IngestPollPlan {
   const apiKey = env.RESCUEGROUPS_API_KEY?.trim();
+  const schedule = env.INGEST_POLL_SCHEDULE?.trim().toLowerCase() !== "off";
   if (!apiKey) {
     return {
       register: false,
+      schedule,
       cron: INGEST_POLL_CRON,
       apiKey: null,
       skipReason: `RESCUEGROUPS_API_KEY not set — ${INGEST_POLL} not registered`,
     };
   }
-  return { register: true, cron: INGEST_POLL_CRON, apiKey };
+  return { register: true, schedule, cron: INGEST_POLL_CRON, apiKey };
 }
 
 export interface PollArgs {
@@ -88,4 +97,17 @@ export function gateAlert(report: Pick<IngestRunReport, "gateRefused" | "lifecyc
     level: "error",
     tags: { job: INGEST_POLL, gate: "disappearance" },
   };
+}
+
+/**
+ * Why a run asked to be complete did not complete — stage 5 refused by the
+ * gate, or skipped on an empty feed — or null. The one-shot CLI exits non-zero
+ * on it, so the bridge never pings the poll heartbeat "success" for a run
+ * `/api/health` will not count (ADR-0033 as amended 2026-10-28).
+ */
+export function incompleteRun(
+  report: Pick<IngestRunReport, "lifecycleSkipped">,
+  requestedComplete: boolean,
+): string | null {
+  return requestedComplete && report.lifecycleSkipped ? report.lifecycleSkipped : null;
 }

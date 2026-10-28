@@ -29,6 +29,13 @@ const DATABASE_URL = process.env.DATABASE_URL;
 
 async function registerIngestPoll(boss: PgBoss) {
   const plan = planIngestPoll(process.env);
+  if (!plan.schedule) {
+    // Not registering is not enough: pg-boss keeps the cron row and goes on
+    // creating jobs until it is unscheduled (ADR-0033 as amended 2026-10-28).
+    await boss.unschedule(INGEST_POLL);
+    console.warn(`[worker] INGEST_POLL_SCHEDULE=off — ${INGEST_POLL} unscheduled; the bridge polls`);
+    return;
+  }
   if (!plan.register) {
     console.warn(`[worker] ${plan.skipReason}`);
     return;

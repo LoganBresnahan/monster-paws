@@ -59,11 +59,19 @@ done
 TAG=$(grep -m1 '^IMAGE_TAG=' .env | cut -d= -f2)
 echo "polling on the droplet, RescueGroups through home — worker image ${TAG:0:7}, $(date -u +%FT%TZ)"
 # The fixed name refuses a second bridge poll while one is still running.
+rc=0
 docker run --rm --name monsterpaws-bridge-poll --network host --env-file .env \
   -e NODE_EXTRA_CA_CERTS=/run/do-ca.crt -v "$PWD/do-ca.crt:/run/do-ca.crt:ro" \
   -e NODE_USE_ENV_PROXY=1 -e "HTTPS_PROXY=http://127.0.0.1:$PORT" -e npm_config_update_notifier=false \
-  "ghcr.io/loganbresnahan/monster-paws-worker:$TAG" npm run -s ingest -- poll "$@"
-# The droplet's job pings after a complete poll; this run stands in for it.
-curl -fsS -m 30 "$(grep -m1 '^HEARTBEAT_INGEST_POLL_URL=' .env | cut -d= -f2-)" >/dev/null && echo "heartbeat pinged"
+  "ghcr.io/loganbresnahan/monster-paws-worker:$TAG" npm run -s ingest -- poll "$@" || rc=$?
+# This run stands in for the droplet's job: success only when the CLI says the
+# run completed (it exits 2 when stage 5 was refused or skipped), /fail otherwise.
+HEARTBEAT=$(grep -m1 '^HEARTBEAT_INGEST_POLL_URL=' .env | cut -d= -f2-)
+if [ "$rc" -eq 0 ]; then
+  curl -fsS -m 30 "$HEARTBEAT" >/dev/null && echo "heartbeat pinged" || echo "heartbeat ping failed" >&2
+else
+  curl -fsS -m 30 "${HEARTBEAT%/}/fail" >/dev/null && echo "heartbeat pinged /fail" || echo "heartbeat ping failed" >&2
+  exit "$rc"
+fi
 REMOTE
 echo "finished $(date -u +%FT%TZ); the proxy's tunnels: $(grep -c ' CONNECT ' "$PROXY_LOG") allowed, $(grep -c ' refused ' "$PROXY_LOG") refused"

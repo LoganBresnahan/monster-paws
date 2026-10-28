@@ -4,6 +4,7 @@ import {
   gateAlert,
   INGEST_POLL,
   INGEST_POLL_CRON,
+  incompleteRun,
   parsePollArgs,
   planIngestPoll,
 } from "@/worker/ingest-poll";
@@ -25,6 +26,23 @@ describe("ingest.poll registration (ADR-0010: a silent non-poller must not hide)
       expect(plan.apiKey).toBeNull();
       expect(plan.skipReason).toContain(INGEST_POLL);
     }
+  });
+
+  it("keeps the schedule unless INGEST_POLL_SCHEDULE is off (ADR-0033 as amended 2026-10-28)", () => {
+    expect(planIngestPoll({ RESCUEGROUPS_API_KEY: "abc123" }).schedule).toBe(true);
+    expect(planIngestPoll({ RESCUEGROUPS_API_KEY: "abc123", INGEST_POLL_SCHEDULE: "on" }).schedule).toBe(true);
+    for (const off of ["off", "OFF", " off "]) {
+      expect(planIngestPoll({ RESCUEGROUPS_API_KEY: "abc123", INGEST_POLL_SCHEDULE: off }).schedule).toBe(false);
+    }
+  });
+
+  // The bridge runs `npm run ingest -- poll` with the droplet's own .env, where
+  // the schedule is off: switching the schedule off must leave the key usable.
+  it("leaves the poll registrable with the schedule off", () => {
+    const plan = planIngestPoll({ RESCUEGROUPS_API_KEY: "abc123", INGEST_POLL_SCHEDULE: "off" });
+
+    expect(plan.register).toBe(true);
+    expect(plan.apiKey).toBe("abc123");
   });
 
   it("polls at most once a day — RescueGroups sets a weekly minimum (ADR-0006)", () => {
@@ -85,5 +103,18 @@ describe("disappearance gate alert (ADR-0014 as amended 2026-09-30)", () => {
       level: "error",
       tags: { job: INGEST_POLL, gate: "disappearance" },
     });
+  });
+});
+
+describe("ingest poll's exit — the heartbeat must not say success for a run health will not count", () => {
+  it("names why a run asked to be complete did not complete", () => {
+    const refused = "disappearance gate: 9,000 of 60,000 over 1 day(s)";
+    expect(incompleteRun({ lifecycleSkipped: refused }, true)).toBe(refused);
+    expect(incompleteRun({ lifecycleSkipped: "run observed nothing" }, true)).toBe("run observed nothing");
+  });
+
+  it("is null for a complete run, and for a run the caller declared partial", () => {
+    expect(incompleteRun({}, true)).toBeNull();
+    expect(incompleteRun({ lifecycleSkipped: "run declared partial by caller" }, false)).toBeNull();
   });
 });

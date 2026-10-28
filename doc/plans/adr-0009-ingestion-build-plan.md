@@ -78,8 +78,9 @@ See Sequencing risks.
   implement only the fetch edge that emits observations.
 - **Code choices.** Stages are plain typed functions/interfaces, not a
   framework. Two properties are load-bearing and test-covered: stages are
-  **replayable** (`runIngest` = fetch loop + `runDerivedStages`; `replay` =
-  `runDerivedStages` alone — one shared path) and **per-source pluggable**
+  **replayable** (`runIngest` = fetch loop calling `deriveOne` per
+  observation, ADR-0009 as amended 2026-10-28; `replay` = `deriveOne` over
+  the corpus — one shared path) and **per-source pluggable**
   (a new source is one adapter + one mapper, zero pipeline edits).
 - **Found in the doing.** `resolveClaim(incoming, current)`, not the
   reverse: on an exact tier+fetchedAt tie the fresh derivation must win or
