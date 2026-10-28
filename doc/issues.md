@@ -52,6 +52,20 @@ is the record, and a file of ticked boxes stops being read.
 
 ## Ops
 
+- **A dropped database connection kills the whole poll.** `getDb` in
+  `src/db/client.ts` creates the `Pool` with no `error` listener and no
+  `keepAlive`, so when a connection drops, `pg` emits an unhandled `error`
+  event and Node exits — the run (ADR-0009) ends with no summary, no
+  disappearance stage (ADR-0014) and no heartbeat, instead of retrying the
+  write. Through the home tunnel this costs the whole poll: oplog 0005's
+  first attempt died 1 h 29 min in on `Connection terminated unexpectedly`
+  (2026-10-28 17:44:32 UTC), and any rerun starts from the first page. Two
+  changes: a pool `error` handler with keepalive, so a dropped idle
+  connection is replaced rather than fatal; and the faster bridge (roadmap,
+  Launch carry-in: the poll on the droplet, only RescueGroups' requests
+  through home), which takes the tunnel out of the database path. Found
+  2026-10-28 by the moderator session reading the crash.
+
 - **The follow-up wave cannot be built from the CLI.** The guard allows one
   follow-up seven or more days after the first message (ADR-0029 §5) and
   `tests/outreach-send.test.ts` proves it, but `send --wave <name>` builds its

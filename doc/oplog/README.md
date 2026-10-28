@@ -15,7 +15,7 @@ is an ADR; the daily numbers brief is `doc/ops/` (ADR-0010 as amended).
 | [0002](0002-next-security-hotfix.md) | Security hotfix: Next.js 16.2.12 → 16.3.8 on the live landing page, image tag pinned | run | 2026-09-30 |
 | [0003](0003-next-16-4-3-hotfix.md) | Security hotfix: Next.js 16.3.8 → 16.4.3, the starter SVGs removed | run | 2026-10-27 |
 | [0004](0004-deploy-previews-footer-outreach-schema.md) | Deploy `c45e085`: link previews, the profiles in the footer, the outreach schema (migrations 0012–0014) | run | 2026-10-27 |
-| [0005](0005-poll-from-home-2026-10-28.md) | Poll from home: today's production poll through the tunnel, RescueGroups still refusing the droplet | planned | — |
+| [0005](0005-poll-from-home-2026-10-28.md) | Poll from home: today's production poll through the tunnel, RescueGroups still refusing the droplet — crashed 1 h 29 min in, not rerun | run | 2026-10-28 |
 
 ## Entry format
 
