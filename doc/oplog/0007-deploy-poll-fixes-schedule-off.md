@@ -1,7 +1,7 @@
 # 0007: Deploy `40cb846` — the poll fits the droplet, the droplet's schedule off, the footer's six profiles
 
-Status: planned
-Planned: 2026-10-28 · Run: —
+Status: run
+Planned: 2026-10-28 · Run: 2026-10-28 21:09 – 21:13 UTC
 Why: ADR-0009 as amended 2026-10-28 (stages 2–4 per observation — oplog
 0006 ran the droplet out of heap at ~45k); ADR-0033 as amended 2026-10-28
 (`INGEST_POLL_SCHEDULE=off` unschedules the droplet's doomed 07:00 job; the
@@ -101,6 +101,48 @@ The footer on a phone and at xl width (one line, six profiles); an animal
 page cold. The poll itself is the next entry.
 
 ## Run
+
+Run by Claude on Logan's word ("you will do the steps in the oplog not me"),
+one SSH session per step, ~20 s apart.
+
+**Prerequisites.** topdog at `3269579` (this entry) on `40cb846`; ship bar
+on `40cb846`: vitest 424/424 twice, typecheck clean, e2e 34/34 against the
+dev build. `40cb846` pushed alone (`08f25f6..40cb846`), then this entry;
+CI run 40768648719 on `40cb846`: `verify`, `images`, `sourcemaps` green.
+e2e 34/34 against `ghcr.io/loganbresnahan/monster-paws-app:40cb846…` on
+`:3200` reading `monsterpaws_e2e`. Lora held off the card by the moderator
+session; `:3100`/`:3200` free; no bridge poll running; 21:09 UTC, clear of
+07:00 and 08:30.
+
+**1.** 21:09:16 UTC. `IMAGE_TAG=c45e085…`, `INGEST_POLL_SCHEDULE` count 0,
+checkout `c45e085`; app and worker on `c45e085…` up 24 h, caddy 43 h. Health
+503: `db up`, `lastCompletePollAt 2026-10-27T08:27:06Z`, `pollStale true`,
+sha `c45e085…`.
+
+**2.** 21:09:59 UTC, one session: `git pull --ff-only` to `3269579`;
+`IMAGE_TAG=40cb846…`; the switch appended and counted once; both images
+pulled; `config --images` resolves app and worker to `40cb846…`; both still
+running `c45e085…`.
+
+**3.** 21:11:10 UTC `up -d app worker`: both on `40cb846…` in 11 s, caddy
+untouched. The worker logged `[worker] INGEST_POLL_SCHEDULE=off —
+ingest.poll unscheduled; the bridge polls`, and no `ingest.poll registered`.
+Health 503 with sha `40cb846…`, `pollStale true`, as planned.
+
+**4.** 21:12:03 UTC: `SELECT count(*) FROM pgboss.schedule WHERE name =
+'ingest.poll'` → `0` (the query ran against the table the old worker had
+scheduled into; no error). No 07:00 job is created tomorrow.
+
+**5.** 21:12:30 UTC: `/`, `/animals`, `/claim`, `/demo` 200; an animal page
+cold (`/animals/63205`) 200 in 0.80 s; `/animals/random` 307 → 200. The
+footer carries the six profile hrefs: LinkedIn, X, Bluesky, YouTube,
+Instagram, Facebook.
+
+**6.** Handed to Logan: the footer on a phone and at xl width.
+
+Rollback, if ever wanted: `IMAGE_TAG=c45e085bee9923b7ce7a633ba3b9a1b1107e74eb`,
+delete the `INGEST_POLL_SCHEDULE` line, `up -d app worker` — the `c45e085`
+images are still on the droplet (nothing pruned).
 
 ## Follow-ups
 - The next entry: a bridge poll on `40cb846` (`scripts/poll-via-bridge.sh`),
