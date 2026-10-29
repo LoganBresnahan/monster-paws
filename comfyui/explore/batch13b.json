@@ -1,0 +1,328 @@
+{
+  "_": "Batch 13b — the anatomy LoRA's sitting and lying dogs (ADR-0031, 2026-10-27): batch 13a's recipe for every sitting or lying dog whose head the detector found, the three-quarter sitting prompt (there is no lying pose in production; a lying photo is painted sitting, as a listing's would be). klein-v1 exactly (BFL's fp8 klein, reference2, the grown subject and grown head from comfyui/explore/detect-lora.json, ADR-0026), the words written from the photos with no sex named, landscape canvas, two seeds — the better of the two goes to the hand step. Nothing experimental: these are the paintings the LoRA learns from. Never RescueGroups photos (ADR-0006 as amended 2026-08-25 §2).",
+  "animals": {
+    "2": {
+      "kind": "dog",
+      "describe": "black dog with a white chest",
+      "one": [
+        "2.jpg"
+      ],
+      "set": "lora-train"
+    },
+    "pies-nierasowy-20201225-1128-5275": {
+      "kind": "dog",
+      "describe": "white and tan small mixed-breed dog",
+      "one": [
+        "Pies-nierasowy-20201225-1128-5275.jpg"
+      ],
+      "set": "lora-train"
+    },
+    "young-mixed-breed-dog-aka": {
+      "kind": "dog",
+      "describe": "tan and black young mixed-breed dog",
+      "one": [
+        "Young-mixed-breed-dog-aka.jpg"
+      ],
+      "set": "lora-train"
+    },
+    "30-09-25-in-litochoro-01": {
+      "kind": "dog",
+      "describe": "white dog with black patches",
+      "one": [
+        "30-09-25-in-Litochoro-01.jpg"
+      ],
+      "set": "lora-train"
+    },
+    "chihuahua-qui-profite-du-soleil": {
+      "kind": "dog",
+      "describe": "long-haired tan chihuahua",
+      "one": [
+        "Chihuahua-qui-profite-du-soleil.jpg"
+      ],
+      "set": "lora-train"
+    },
+    "3": {
+      "kind": "dog",
+      "describe": "black dog with a white chest",
+      "one": [
+        "3.jpg"
+      ],
+      "set": "lora-train"
+    },
+    "20160801-pies-bagan-6550": {
+      "kind": "dog",
+      "describe": "white short-haired dog",
+      "one": [
+        "20160801-pies-Bagan-6550.jpg"
+      ],
+      "set": "lora-train"
+    },
+    "wild-lebender-hund-in-bosnien": {
+      "kind": "dog",
+      "describe": "brown and tan mixed-breed dog",
+      "one": [
+        "Wild-lebender-Hund-in-Bosnien.jpg"
+      ],
+      "set": "lora-train"
+    },
+    "beagle-in-viroinval-dsc04556": {
+      "kind": "dog",
+      "describe": "tricolour beagle",
+      "one": [
+        "Beagle-in-Viroinval-DSC04556.jpg"
+      ],
+      "set": "lora-train"
+    },
+    "maltipoo-95574": {
+      "kind": "dog",
+      "describe": "cream maltipoo",
+      "one": [
+        "Maltipoo-95574.jpg"
+      ],
+      "set": "lora-train"
+    },
+    "2-bernesemountaindogingrass": {
+      "kind": "dog",
+      "describe": "bernese mountain dog",
+      "one": [
+        "2-BerneseMountainDogInGrass.jpg"
+      ],
+      "set": "lora-train"
+    },
+    "beagliers-love-a-good-walk": {
+      "kind": "dog",
+      "describe": "tan and white beagle",
+      "one": [
+        "Beagliers-love-a-good-walk.jpg"
+      ],
+      "set": "lora-train"
+    },
+    "german-shepherd-aka-alsatian-and-alsatian-wolf-dog-deutscher": {
+      "kind": "dog",
+      "describe": "black and tan german shepherd",
+      "one": [
+        "German-Shepherd-aka-Alsatian-and-Alsatian-Wolf-Dog-Deutscher.jpg"
+      ],
+      "set": "lora-train"
+    },
+    "doberman-pinscher-aka-dobermann": {
+      "kind": "dog",
+      "describe": "black and tan doberman pinscher",
+      "one": [
+        "Doberman-Pinscher-aka-Dobermann.jpg"
+      ],
+      "set": "lora-train"
+    },
+    "golden-retriever-fiona-10-months": {
+      "kind": "dog",
+      "describe": "golden retriever",
+      "one": [
+        "Golden-Retriever-Fiona-10-months.jpg"
+      ],
+      "set": "lora-train"
+    },
+    "a-dog-sitting-outside-near-a-lake": {
+      "kind": "dog",
+      "describe": "black and tan hound mix",
+      "one": [
+        "A-dog-sitting-outside-near-a-lake.jpg"
+      ],
+      "set": "lora-train"
+    },
+    "australian-cattle-dog-sitting": {
+      "kind": "dog",
+      "describe": "blue australian cattle dog",
+      "one": [
+        "Australian-Cattle-Dog-sitting.jpg"
+      ],
+      "set": "lora-train"
+    },
+    "dog-sitting-on-grass-panoramio-1228": {
+      "kind": "dog",
+      "describe": "blenheim cavalier king charles spaniel",
+      "one": [
+        "Dog-sitting-on-grass-panoramio-1228.jpg"
+      ],
+      "set": "lora-train"
+    },
+    "franz-sische-bulldogge-gestromt": {
+      "kind": "dog",
+      "describe": "black french bulldog with a white chest",
+      "one": [
+        "Franz-sische-Bulldogge-Gestromt.jpg"
+      ],
+      "set": "lora-train"
+    },
+    "gaggenau-bad-rotenfels-2013-panoramio": {
+      "kind": "dog",
+      "describe": "black and white small dog",
+      "one": [
+        "Gaggenau-Bad-Rotenfels-2013-panoramio.jpg"
+      ],
+      "set": "lora-train"
+    },
+    "226poblacion-baliuag-bulacan-06": {
+      "kind": "dog",
+      "describe": "thin tan street dog",
+      "one": [
+        "226Poblacion-Baliuag-Bulacan-06.jpg"
+      ],
+      "set": "lora-train"
+    },
+    "2016-03-28-labradoodle-berlin-23": {
+      "kind": "dog",
+      "describe": "black shaggy labradoodle",
+      "one": [
+        "2016-03-28-Labradoodle-Berlin-23.jpg"
+      ],
+      "set": "lora-train"
+    },
+    "botox-resting-winter-2013": {
+      "kind": "dog",
+      "describe": "cream shar pei",
+      "one": [
+        "Botox-resting-Winter-2013.jpg"
+      ],
+      "set": "lora-train"
+    },
+    "daphne-reclining": {
+      "kind": "dog",
+      "describe": "tan mixed-breed dog",
+      "one": [
+        "Daphne-reclining.jpg"
+      ],
+      "set": "lora-train"
+    },
+    "2017-05-12-labradoodle": {
+      "kind": "dog",
+      "describe": "black shaggy labradoodle",
+      "one": [
+        "2017-05-12-Labradoodle.jpg"
+      ],
+      "set": "lora-train"
+    },
+    "2016-03-28-labradoodle-berlin-16": {
+      "kind": "dog",
+      "describe": "black shaggy labradoodle",
+      "one": [
+        "2016-03-28-Labradoodle-Berlin-16.jpg"
+      ],
+      "set": "lora-train"
+    },
+    "hippy-relaxing-on-the-sand": {
+      "kind": "dog",
+      "describe": "black and tan german shepherd",
+      "one": [
+        "Hippy-relaxing-on-the-sand.jpg"
+      ],
+      "set": "lora-train"
+    },
+    "princess-the-big-fat-dog": {
+      "kind": "dog",
+      "describe": "tan and white heavy dog",
+      "one": [
+        "Princess-The-Big-Fat-Dog.jpg"
+      ],
+      "set": "lora-train"
+    },
+    "teckel-39": {
+      "kind": "dog",
+      "describe": "black and tan wire-haired dachshund",
+      "one": [
+        "Teckel-39.jpg"
+      ],
+      "set": "lora-holdout"
+    },
+    "pies-nierasowy-20201003-1644-4305": {
+      "kind": "dog",
+      "describe": "white and tan small mixed-breed dog",
+      "one": [
+        "Pies-nierasowy-20201003-1644-4305.jpg"
+      ],
+      "set": "lora-holdout"
+    },
+    "chinese-crested-dog-on-the-beach-13200": {
+      "kind": "dog",
+      "describe": "white chinese crested powderpuff",
+      "one": [
+        "Chinese-crested-dog-on-the-beach-13200.jpg"
+      ],
+      "set": "lora-holdout"
+    },
+    "emily-maltese": {
+      "kind": "dog",
+      "describe": "white maltese",
+      "one": [
+        "Emily-Maltese.jpg"
+      ],
+      "set": "lora-holdout"
+    },
+    "bianca-2-meses": {
+      "kind": "dog",
+      "describe": "white boxer puppy",
+      "one": [
+        "Bianca-2-Meses.jpg"
+      ],
+      "set": "lora-holdout"
+    },
+    "dog-smiling-at-the-camera-reta-buenos-aires-argentina-04-01": {
+      "kind": "dog",
+      "describe": "white and tan short-haired dog",
+      "one": [
+        "Dog-smiling-at-the-camera-Reta-Buenos-Aires-Argentina-04-01-.jpg"
+      ],
+      "set": "lora-holdout"
+    },
+    "2016-03-28-labradoodle-berlin-21": {
+      "kind": "dog",
+      "describe": "black shaggy labradoodle",
+      "one": [
+        "2016-03-28-Labradoodle-Berlin-21.jpg"
+      ],
+      "set": "lora-train"
+    },
+    "bronco-laying-down-lr": {
+      "kind": "dog",
+      "describe": "tricolour beagle",
+      "one": [
+        "Bronco-laying-down-LR.jpg"
+      ],
+      "set": "lora-holdout"
+    }
+  },
+  "photos": [
+    "one"
+  ],
+  "crops": [
+    "grownsubject"
+  ],
+  "aspect": [
+    "landscape"
+  ],
+  "describe": [
+    "listing"
+  ],
+  "families": [
+    "kleinbfl8"
+  ],
+  "graphs": [
+    "reference2"
+  ],
+  "denoise": [],
+  "weights": [],
+  "weight_types": [],
+  "end_at": [],
+  "loras": [
+    null
+  ],
+  "seeds": [
+    11,
+    222
+  ],
+  "prompts": [
+    "storybook_sit34"
+  ],
+  "heads": [
+    "grownhead"
+  ]
+}

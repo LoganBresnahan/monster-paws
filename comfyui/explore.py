@@ -93,7 +93,13 @@ def prep() -> None:
         outs["full"].parent.mkdir(parents=True, exist_ok=True)
         # ImageOps.exif_transpose bakes the orientation in; `convert` then
         # drops the info dict, so no EXIF, GPS or XMP survives into the PNG.
-        im = ImageOps.exif_transpose(Image.open(src)).convert("RGB")
+        im = Image.open(src)
+        # A Commons JPEG can carry an EXIF block Pillow cannot parse (two of the LoRA set's, 2026-10-27); it is then read as it lies.
+        try:
+            im = ImageOps.exif_transpose(im)
+        except (SyntaxError, ValueError):
+            pass
+        im = im.convert("RGB")
         im.thumbnail((1536, 1536), Image.LANCZOS)
         for crop, box in wanted.items():
             variants = {outs[crop]: None if box is None else squared(im, box)}

@@ -1,5 +1,5 @@
 {
-  "_": "Subject and head boxes per crew photo, and per Commons test photo (`_src`, its ref in comfyui/explore/commons-photos.tsv; run 4 of its set, 2026-10-12 — set 1 from var/explore/detect-v4, the holdout's tripod dog from var/explore/detect-holdout-v4, the tripods set from var/explore/detect-tripods on 2026-10-15 with the rules unchanged; a head the detector did not find is left out) as the detector chose them (ADR-0026), fractions [x0, y0, x1, y1] of the upright photo like boxes.json: comfyui/detect.py run 4 (OWLv2 alone), 2026-10-12, var/explore/detect-v4/results.jsonl. `_margin` is the lead over the runner-up, null when the subject was the only candidate. `grownsubject` is `detsubject` grown by its own outline plus a margin only where it grew, and `grownhead` is `dethead` grown by the same outline sideways and a little upward, never down (comfyui/crops.py `grown.json`, 2026-10-14; doc/plans/subject-detection.md). explore.py prep cuts these as `detsubject`, `grownsubject`, `dethead` and `grownhead` beside the hand-drawn `subject` and `head`, so a batch can compare the two. Beetle, Stacey and Marty from var/explore/batch11a/detect on 2026-10-23 (comfyui/explore/detect-crew2.json), the rules unchanged.",
+  "_": "Subject and head boxes per crew photo, and per Commons test photo (`_src`, its ref in comfyui/explore/commons-photos.tsv; run 4 of its set, 2026-10-12 — set 1 from var/explore/detect-v4, the holdout's tripod dog from var/explore/detect-holdout-v4, the tripods set from var/explore/detect-tripods on 2026-10-15 with the rules unchanged; a head the detector did not find is left out) as the detector chose them (ADR-0026), fractions [x0, y0, x1, y1] of the upright photo like boxes.json: comfyui/detect.py run 4 (OWLv2 alone), 2026-10-12, var/explore/detect-v4/results.jsonl. `_margin` is the lead over the runner-up, null when the subject was the only candidate. `grownsubject` is `detsubject` grown by its own outline plus a margin only where it grew, and `grownhead` is `dethead` grown by the same outline sideways and a little upward, never down (comfyui/crops.py `grown.json`, 2026-10-14; doc/plans/subject-detection.md). explore.py prep cuts these as `detsubject`, `grownsubject`, `dethead` and `grownhead` beside the hand-drawn `subject` and `head`, so a batch can compare the two. Beetle, Stacey and Marty from var/explore/batch11a/detect on 2026-10-23 (comfyui/explore/detect-crew2.json), the rules unchanged. The anatomy LoRA's 121 dogs (lora-train, lora-holdout) from var/explore/detect-lora on 2026-10-27 (comfyui/explore/detect-lora.json), the rules unchanged.",
   "Plum/PXL_20250410_144425752": {
     "detsubject": [
       0.0,
@@ -986,6 +986,2721 @@
       0.024,
       1.0,
       0.537
+    ]
+  },
+  "dalmatian-fetching-a-stick/Dalmatian-fetching-a-stick": {
+    "_src": "commons:lora-train/Dalmatian-fetching-a-stick.jpg",
+    "detsubject": [
+      0.065,
+      0.0798,
+      0.6334,
+      0.7818
+    ],
+    "grownsubject": [
+      0.0013,
+      0.0778,
+      0.7056,
+      0.7816
+    ],
+    "dethead": [
+      0.2372,
+      0.3731,
+      0.3148,
+      0.4514
+    ],
+    "grownhead": [
+      0.2372,
+      0.3731,
+      0.3148,
+      0.4514
+    ]
+  },
+  "2/2": {
+    "_src": "commons:lora-train/2.jpg",
+    "detsubject": [
+      0.3754,
+      0.4881,
+      0.7248,
+      0.8268
+    ],
+    "grownsubject": [
+      0.375,
+      0.4878,
+      0.78,
+      0.8267
+    ],
+    "dethead": [
+      0.3808,
+      0.4978,
+      0.6001,
+      0.8287
+    ],
+    "grownhead": [
+      0.375,
+      0.4878,
+      0.6001,
+      0.8287
+    ]
+  },
+  "polski-owczarek-nizinny-rybnik-kamien-pl/Polski-owczarek-nizinny-rybnik-kamien-pl": {
+    "_src": "commons:lora-train/Polski-owczarek-nizinny-rybnik-kamien-pl.jpg",
+    "detsubject": [
+      0.0715,
+      0.0608,
+      0.697,
+      0.8214
+    ],
+    "grownsubject": [
+      0.0712,
+      0.0604,
+      0.7081,
+      0.821
+    ],
+    "dethead": [
+      0.0723,
+      0.084,
+      0.4517,
+      0.565
+    ],
+    "grownhead": [
+      0.0723,
+      0.084,
+      0.4517,
+      0.565
+    ]
+  },
+  "pies-nierasowy-20201225-1128-5275/Pies-nierasowy-20201225-1128-5275": {
+    "_src": "commons:lora-train/Pies-nierasowy-20201225-1128-5275.jpg",
+    "detsubject": [
+      0.1629,
+      0.0719,
+      0.6836,
+      0.8805
+    ],
+    "grownsubject": [
+      0.1625,
+      0.0,
+      0.6831,
+      0.8803
+    ],
+    "dethead": [
+      0.2191,
+      0.3051,
+      0.7086,
+      0.8299
+    ],
+    "grownhead": [
+      0.1818,
+      0.3051,
+      0.7086,
+      0.8299
+    ]
+  },
+  "greyhound-racing-amk/Greyhound-Racing-amk": {
+    "_src": "commons:lora-train/Greyhound-Racing-amk.jpg",
+    "detsubject": [
+      0.1041,
+      0.2365,
+      0.9347,
+      0.594
+    ],
+    "grownsubject": [
+      0.0119,
+      0.2362,
+      0.9344,
+      0.5936
+    ],
+    "dethead": [
+      0.7724,
+      0.253,
+      0.8711,
+      0.3577
+    ],
+    "grownhead": [
+      0.7724,
+      0.2362,
+      0.9231,
+      0.3577
+    ]
+  },
+  "young-mixed-breed-dog-aka/Young-mixed-breed-dog-aka": {
+    "_src": "commons:lora-train/Young-mixed-breed-dog-aka.jpg",
+    "detsubject": [
+      0.045,
+      0.0953,
+      0.9503,
+      0.9251
+    ],
+    "grownsubject": [
+      0.0444,
+      0.0944,
+      0.9581,
+      0.9249
+    ],
+    "dethead": [
+      0.2037,
+      0.0981,
+      0.4509,
+      0.4686
+    ],
+    "grownhead": [
+      0.2037,
+      0.0981,
+      0.4509,
+      0.4686
+    ]
+  },
+  "contre-jour-photograph-of-a-standing-puppy-at-sunset-with-co/Contre-jour-photograph-of-a-standing-puppy-at-sunset-with-co": {
+    "_src": "commons:lora-train/Contre-jour-photograph-of-a-standing-puppy-at-sunset-with-co.jpg",
+    "detsubject": [
+      0.3775,
+      0.5889,
+      0.6824,
+      0.9384
+    ],
+    "grownsubject": [
+      0.3769,
+      0.5884,
+      0.6819,
+      0.9384
+    ]
+  },
+  "viljo-koirarannalla-16/Viljo-koirarannalla-16": {
+    "_src": "commons:lora-train/Viljo-koirarannalla-16.jpg",
+    "detsubject": [
+      0.4351,
+      0.1654,
+      0.9682,
+      0.7682
+    ],
+    "grownsubject": [
+      0.37,
+      0.1649,
+      0.9681,
+      0.8379
+    ]
+  },
+  "viljo-koirarannalla-11/Viljo-koirarannalla-11": {
+    "_src": "commons:lora-train/Viljo-koirarannalla-11.jpg",
+    "detsubject": [
+      0.369,
+      0.4584,
+      0.6034,
+      0.7434
+    ],
+    "grownsubject": [
+      0.3624,
+      0.4562,
+      0.6363,
+      0.7462
+    ],
+    "dethead": [
+      0.3525,
+      0.4691,
+      0.5119,
+      0.6056
+    ],
+    "grownhead": [
+      0.3525,
+      0.4691,
+      0.5119,
+      0.6056
+    ]
+  },
+  "30-09-25-in-litochoro-01/30-09-25-in-Litochoro-01": {
+    "_src": "commons:lora-train/30-09-25-in-Litochoro-01.jpg",
+    "detsubject": [
+      0.1387,
+      0.0851,
+      0.7891,
+      0.8026
+    ],
+    "grownsubject": [
+      0.1381,
+      0.085,
+      0.7887,
+      0.895
+    ],
+    "dethead": [
+      0.3604,
+      0.084,
+      0.7891,
+      0.3737
+    ],
+    "grownhead": [
+      0.2768,
+      0.084,
+      0.7891,
+      0.3737
+    ]
+  },
+  "chihuahua-qui-profite-du-soleil/Chihuahua-qui-profite-du-soleil": {
+    "_src": "commons:lora-train/Chihuahua-qui-profite-du-soleil.jpg",
+    "detsubject": [
+      0.2132,
+      0.0084,
+      0.9305,
+      0.9963
+    ],
+    "grownsubject": [
+      0.2081,
+      0.0075,
+      0.93,
+      0.9963
+    ],
+    "dethead": [
+      0.3385,
+      0.5939,
+      0.6634,
+      0.9888
+    ],
+    "grownhead": [
+      0.2425,
+      0.5939,
+      0.6634,
+      0.9888
+    ]
+  },
+  "3/3": {
+    "_src": "commons:lora-train/3.jpg",
+    "detsubject": [
+      0.1647,
+      0.196,
+      0.8086,
+      0.8796
+    ],
+    "grownsubject": [
+      0.0938,
+      0.1893,
+      0.8962,
+      0.8791
+    ],
+    "dethead": [
+      0.1537,
+      0.2947,
+      0.3042,
+      0.5463
+    ],
+    "grownhead": [
+      0.1537,
+      0.2799,
+      0.3042,
+      0.5463
+    ]
+  },
+  "viljo-koirarannalla-19/Viljo-koirarannalla-19": {
+    "_src": "commons:lora-train/Viljo-koirarannalla-19.jpg",
+    "detsubject": [
+      0.0022,
+      0.4397,
+      0.8902,
+      0.907
+    ],
+    "grownsubject": [
+      0.0,
+      0.3575,
+      0.8901,
+      0.9069
+    ]
+  },
+  "toller-en-j-rvi/Toller-En-j-rvi": {
+    "_src": "commons:lora-train/Toller-En-j-rvi.jpg",
+    "detsubject": [
+      0.2921,
+      0.4855,
+      0.926,
+      0.96
+    ],
+    "grownsubject": [
+      0.2914,
+      0.485,
+      0.9257,
+      0.96
+    ]
+  },
+  "keeshond-siberian-husky-crossbreed-puppy/Keeshond-Siberian-Husky-crossbreed-puppy": {
+    "_src": "commons:lora-train/Keeshond-Siberian-Husky-crossbreed-puppy.jpg",
+    "detsubject": [
+      0.1889,
+      0.1265,
+      0.7537,
+      0.8989
+    ],
+    "grownsubject": [
+      0.1888,
+      0.1208,
+      0.7531,
+      0.8983
+    ]
+  },
+  "20160801-pies-bagan-6550/20160801-pies-Bagan-6550": {
+    "_src": "commons:lora-train/20160801-pies-Bagan-6550.jpg",
+    "detsubject": [
+      0.2135,
+      0.1485,
+      0.9896,
+      0.9484
+    ],
+    "grownsubject": [
+      0.1006,
+      0.1481,
+      1.0,
+      1.0
+    ],
+    "dethead": [
+      0.298,
+      0.162,
+      0.5701,
+      0.588
+    ],
+    "grownhead": [
+      0.2789,
+      0.162,
+      0.5701,
+      0.588
+    ]
+  },
+  "cavapoo-male-90675/Cavapoo-male-90675": {
+    "_src": "commons:lora-train/Cavapoo-male-90675.jpg",
+    "detsubject": [
+      0.0484,
+      0.1506,
+      0.7407,
+      0.8678
+    ],
+    "grownsubject": [
+      0.0482,
+      0.15,
+      0.7406,
+      0.8675
+    ],
+    "dethead": [
+      0.3901,
+      0.2525,
+      0.7449,
+      0.5859
+    ],
+    "grownhead": [
+      0.3901,
+      0.2089,
+      0.7449,
+      0.5859
+    ]
+  },
+  "benasque-linsoles-galgo-01/Benasque-Linsoles-Galgo-01": {
+    "_src": "commons:lora-train/Benasque-Linsoles-Galgo-01.jpg",
+    "detsubject": [
+      0.3805,
+      0.1002,
+      0.8845,
+      0.995
+    ],
+    "grownsubject": [
+      0.3775,
+      0.0999,
+      0.8856,
+      0.9982
+    ]
+  },
+  "wild-lebender-hund-in-bosnien/Wild-lebender-Hund-in-Bosnien": {
+    "_src": "commons:lora-train/Wild-lebender-Hund-in-Bosnien.jpg",
+    "detsubject": [
+      0.0925,
+      0.1615,
+      0.7362,
+      0.9965
+    ],
+    "grownsubject": [
+      0.0919,
+      0.1565,
+      0.7425,
+      0.9963
+    ],
+    "dethead": [
+      0.3553,
+      0.1623,
+      0.744,
+      0.9963
+    ],
+    "grownhead": [
+      0.3553,
+      0.1565,
+      0.744,
+      0.9963
+    ]
+  },
+  "lucky-en-panzerwiese-m-nich-alemania-2014-12-24-dd-02/Lucky-en-Panzerwiese-M-nich-Alemania-2014-12-24-DD-02": {
+    "_src": "commons:lora-train/Lucky-en-Panzerwiese-M-nich-Alemania-2014-12-24-DD-02.jpg",
+    "detsubject": [
+      0.2081,
+      0.2185,
+      0.5266,
+      0.7503
+    ],
+    "grownsubject": [
+      0.2075,
+      0.2182,
+      0.5844,
+      0.7502
+    ],
+    "dethead": [
+      0.4028,
+      0.2228,
+      0.5369,
+      0.4512
+    ],
+    "grownhead": [
+      0.4028,
+      0.2182,
+      0.5598,
+      0.4512
+    ]
+  },
+  "m-nster-wolbeck-wolbecker-tiergarten-hund-2014-7130/M-nster-Wolbeck-Wolbecker-Tiergarten-Hund-2014-7130": {
+    "_src": "commons:lora-train/M-nster-Wolbeck-Wolbecker-Tiergarten-Hund-2014-7130.jpg",
+    "detsubject": [
+      0.1911,
+      0.1127,
+      0.5121,
+      0.809
+    ],
+    "grownsubject": [
+      0.1906,
+      0.1124,
+      0.5675,
+      0.8086
+    ],
+    "dethead": [
+      0.1945,
+      0.1189,
+      0.3355,
+      0.3093
+    ],
+    "grownhead": [
+      0.1945,
+      0.1124,
+      0.3355,
+      0.3093
+    ]
+  },
+  "benasque-anciles-labrador-retriever/Benasque-Anciles-Labrador-Retriever": {
+    "_src": "commons:lora-train/Benasque-Anciles-Labrador-Retriever.jpg",
+    "detsubject": [
+      0.4732,
+      0.571,
+      0.7385,
+      0.8717
+    ],
+    "grownsubject": [
+      0.4425,
+      0.5707,
+      0.7381,
+      0.8714
+    ]
+  },
+  "beagle-in-viroinval-dsc04556/Beagle-in-Viroinval-DSC04556": {
+    "_src": "commons:lora-train/Beagle-in-Viroinval-DSC04556.jpg",
+    "detsubject": [
+      0.0,
+      0.2401,
+      0.6691,
+      1.0
+    ],
+    "grownsubject": [
+      0.0,
+      0.1552,
+      0.6894,
+      1.0
+    ],
+    "dethead": [
+      0.3157,
+      0.2345,
+      0.6427,
+      0.7321
+    ],
+    "grownhead": [
+      0.3157,
+      0.206,
+      0.6894,
+      0.7321
+    ]
+  },
+  "2008-07-11-white-german-shepherd-pup-chilling-at-the-coker-a/2008-07-11-White-German-Shepherd-pup-chilling-at-the-Coker-A": {
+    "_src": "commons:lora-train/2008-07-11-White-German-Shepherd-pup-chilling-at-the-Coker-A.jpg",
+    "detsubject": [
+      0.0231,
+      0.0459,
+      0.6813,
+      0.9579
+    ],
+    "grownsubject": [
+      0.0225,
+      0.045,
+      0.7631,
+      0.9578
+    ]
+  },
+  "tapsi-miniature-poodle-galloping-contraction-harangi-coorg-a/Tapsi-Miniature-Poodle-Galloping-Contraction-Harangi-Coorg-A": {
+    "_src": "commons:lora-train/Tapsi-Miniature-Poodle-Galloping-Contraction-Harangi-Coorg-A.jpg",
+    "detsubject": [
+      0.2506,
+      0.2818,
+      0.8232,
+      0.7499
+    ],
+    "grownsubject": [
+      0.25,
+      0.2814,
+      0.8912,
+      0.7495
+    ]
+  },
+  "maltipoo-95574/Maltipoo-95574": {
+    "_src": "commons:lora-train/Maltipoo-95574.jpg",
+    "detsubject": [
+      0.066,
+      0.1879,
+      0.9514,
+      0.8921
+    ],
+    "grownsubject": [
+      0.0,
+      0.1871,
+      1.0,
+      0.8912
+    ],
+    "dethead": [
+      0.4571,
+      0.1975,
+      0.7672,
+      0.5679
+    ],
+    "grownhead": [
+      0.4571,
+      0.1975,
+      0.7672,
+      0.5679
+    ]
+  },
+  "aussie-puppy-match-show/Aussie-puppy-match-show": {
+    "_src": "commons:lora-train/Aussie-puppy-match-show.jpg",
+    "detsubject": [
+      0.0919,
+      0.1334,
+      0.9597,
+      0.9453
+    ],
+    "grownsubject": [
+      0.0882,
+      0.1331,
+      0.9592,
+      0.9484
+    ]
+  },
+  "aimg-1526-nasser-hund/AIMG-1526-nasser-Hund": {
+    "_src": "commons:lora-train/AIMG-1526-nasser-Hund.jpg",
+    "detsubject": [
+      0.2801,
+      0.2032,
+      0.9935,
+      0.646
+    ],
+    "grownsubject": [
+      0.2756,
+      0.2025,
+      0.9938,
+      0.6458
+    ],
+    "dethead": [
+      0.2743,
+      0.2039,
+      0.5001,
+      0.541
+    ],
+    "grownhead": [
+      0.2743,
+      0.2039,
+      0.5001,
+      0.541
+    ]
+  },
+  "aht-blue2/Aht-blue2": {
+    "_src": "commons:lora-train/Aht-blue2.jpg",
+    "detsubject": [
+      0.1105,
+      0.0581,
+      0.9513,
+      0.9538
+    ],
+    "grownsubject": [
+      0.1105,
+      0.0574,
+      0.9513,
+      0.9535
+    ]
+  },
+  "deadgrass-chesapeake-bay-retriever-2/Deadgrass-Chesapeake-Bay-Retriever-2": {
+    "_src": "commons:lora-train/Deadgrass-Chesapeake-Bay-Retriever-2.jpg",
+    "detsubject": [
+      0.1602,
+      0.1484,
+      0.9825,
+      0.9625
+    ],
+    "grownsubject": [
+      0.1594,
+      0.148,
+      0.9819,
+      0.966
+    ],
+    "dethead": [
+      0.1567,
+      0.1492,
+      0.3695,
+      0.3719
+    ],
+    "grownhead": [
+      0.1567,
+      0.1492,
+      0.3695,
+      0.3719
+    ]
+  },
+  "2016-01-19-winter-2016-in-berlin-17/2016-01-19-Winter-2016-in-Berlin-17": {
+    "_src": "commons:lora-train/2016-01-19-Winter-2016-in-Berlin-17.jpg",
+    "detsubject": [
+      0.292,
+      0.4142,
+      0.5247,
+      0.8169
+    ],
+    "grownsubject": [
+      0.29,
+      0.4133,
+      0.5244,
+      0.8688
+    ]
+  },
+  "basenji-red-white1/Basenji-red-white1": {
+    "_src": "commons:lora-train/Basenji-red-white1.jpg",
+    "detsubject": [
+      0.069,
+      0.0311,
+      0.9855,
+      0.9513
+    ],
+    "grownsubject": [
+      0.0631,
+      0.0311,
+      1.0,
+      0.9549
+    ],
+    "dethead": [
+      0.6961,
+      0.0304,
+      0.9746,
+      0.2646
+    ],
+    "grownhead": [
+      0.6564,
+      0.0304,
+      1.0,
+      0.2646
+    ]
+  },
+  "australian-cattle-dog-chessie/Australian-Cattle-Dog-Chessie": {
+    "_src": "commons:lora-train/Australian-Cattle-Dog-Chessie.jpg",
+    "detsubject": [
+      0.2836,
+      0.2421,
+      0.8058,
+      0.8696
+    ],
+    "grownsubject": [
+      0.2787,
+      0.2417,
+      0.8794,
+      0.8754
+    ]
+  },
+  "dandie-dinmont-terrier-mustard-1/Dandie-Dinmont-Terrier-mustard-1": {
+    "_src": "commons:lora-train/Dandie-Dinmont-Terrier-mustard-1.jpg",
+    "detsubject": [
+      0.1072,
+      0.2607,
+      0.9464,
+      0.88
+    ],
+    "grownsubject": [
+      0.1069,
+      0.1896,
+      0.9463,
+      0.8795
+    ],
+    "dethead": [
+      0.1067,
+      0.2477,
+      0.3544,
+      0.5102
+    ],
+    "grownhead": [
+      0.1067,
+      0.2477,
+      0.3755,
+      0.5102
+    ]
+  },
+  "dandie-dinmont-terrier-mustard-3/Dandie-Dinmont-Terrier-mustard-3": {
+    "_src": "commons:lora-train/Dandie-Dinmont-Terrier-mustard-3.jpg",
+    "detsubject": [
+      0.1086,
+      0.1982,
+      0.8965,
+      0.8597
+    ],
+    "grownsubject": [
+      0.1081,
+      0.1973,
+      0.9,
+      0.8591
+    ],
+    "dethead": [
+      0.691,
+      0.1972,
+      0.9003,
+      0.5619
+    ],
+    "grownhead": [
+      0.691,
+      0.1972,
+      0.9003,
+      0.5619
+    ]
+  },
+  "chodsky3/Chodsky3": {
+    "_src": "commons:lora-train/Chodsky3.jpg",
+    "detsubject": [
+      0.0497,
+      0.0955,
+      0.9599,
+      0.9553
+    ],
+    "grownsubject": [
+      0.0494,
+      0.0,
+      0.9594,
+      0.9618
+    ],
+    "dethead": [
+      0.0481,
+      0.095,
+      0.2942,
+      0.4694
+    ],
+    "grownhead": [
+      0.0481,
+      0.0625,
+      0.2942,
+      0.4694
+    ]
+  },
+  "bassetfauve1/Bassetfauve1": {
+    "_src": "commons:lora-train/Bassetfauve1.jpg",
+    "detsubject": [
+      0.0936,
+      0.1195,
+      0.9505,
+      0.9253
+    ],
+    "grownsubject": [
+      0.0931,
+      0.1119,
+      0.9506,
+      0.9308
+    ],
+    "dethead": [
+      0.0929,
+      0.1893,
+      0.3349,
+      0.4583
+    ],
+    "grownhead": [
+      0.0929,
+      0.1744,
+      0.3349,
+      0.4583
+    ]
+  },
+  "australian-kelpie-liver-tan-4/Australian-Kelpie-liver-tan-4": {
+    "_src": "commons:lora-train/Australian-Kelpie-liver-tan-4.jpg",
+    "detsubject": [
+      0.0906,
+      0.1334,
+      0.9199,
+      0.913
+    ],
+    "grownsubject": [
+      0.0,
+      0.1329,
+      1.0,
+      1.0
+    ],
+    "dethead": [
+      0.7146,
+      0.1293,
+      0.943,
+      0.4078
+    ],
+    "grownhead": [
+      0.7146,
+      0.1293,
+      0.9552,
+      0.4078
+    ]
+  },
+  "akiki3-1-of-1/Akiki3-1-of-1": {
+    "_src": "commons:lora-train/Akiki3-1-of-1.jpg",
+    "detsubject": [
+      0.1903,
+      0.1659,
+      0.5738,
+      0.8794
+    ],
+    "grownsubject": [
+      0.1901,
+      0.1656,
+      0.6198,
+      0.9881
+    ]
+  },
+  "breed-typical-female-correct-type-proportions-colors-and-siz/Breed-typical-female-correct-type-proportions-colors-and-siz": {
+    "_src": "commons:lora-train/Breed-typical-female-correct-type-proportions-colors-and-siz.jpg",
+    "detsubject": [
+      0.1917,
+      0.1144,
+      0.9026,
+      0.7795
+    ],
+    "grownsubject": [
+      0.1125,
+      0.1136,
+      0.9906,
+      0.7793
+    ],
+    "dethead": [
+      0.2725,
+      0.3663,
+      0.3308,
+      0.4085
+    ],
+    "grownhead": [
+      0.2725,
+      0.3663,
+      0.3308,
+      0.4085
+    ]
+  },
+  "borzoi-white-brindle-2/Borzoi-white-brindle-2": {
+    "_src": "commons:lora-train/Borzoi-white-brindle-2.jpg",
+    "detsubject": [
+      0.1014,
+      0.125,
+      0.9163,
+      0.9092
+    ],
+    "grownsubject": [
+      0.0075,
+      0.0304,
+      0.92,
+      0.9969
+    ],
+    "dethead": [
+      0.0907,
+      0.1067,
+      0.3011,
+      0.2925
+    ],
+    "grownhead": [
+      0.0783,
+      0.1067,
+      0.3011,
+      0.2925
+    ]
+  },
+  "brindle-tosa/Brindle-Tosa": {
+    "_src": "commons:lora-train/Brindle-Tosa.jpg",
+    "detsubject": [
+      0.1241,
+      0.1408,
+      0.9822,
+      0.9536
+    ],
+    "grownsubject": [
+      0.12,
+      0.1406,
+      0.9819,
+      0.9582
+    ],
+    "dethead": [
+      0.1301,
+      0.1405,
+      0.5296,
+      0.9227
+    ],
+    "grownhead": [
+      0.12,
+      0.1405,
+      0.5296,
+      0.9227
+    ]
+  },
+  "dog-in-chianciano-terme/Dog-in-Chianciano-Terme": {
+    "_src": "commons:lora-train/Dog-in-Chianciano-Terme.jpg",
+    "detsubject": [
+      0.2104,
+      0.1532,
+      0.7715,
+      0.8079
+    ],
+    "grownsubject": [
+      0.1481,
+      0.1505,
+      0.8375,
+      0.807
+    ],
+    "dethead": [
+      0.2043,
+      0.152,
+      0.3928,
+      0.3479
+    ],
+    "grownhead": [
+      0.2043,
+      0.1505,
+      0.3928,
+      0.3479
+    ]
+  },
+  "2008-07-28-dog-at-frolick-field/2008-07-28-Dog-at-Frolick-Field": {
+    "_src": "commons:lora-train/2008-07-28-Dog-at-Frolick-Field.jpg",
+    "detsubject": [
+      0.21,
+      0.0926,
+      0.8165,
+      0.9784
+    ],
+    "grownsubject": [
+      0.1401,
+      0.0925,
+      0.8173,
+      0.9775
+    ],
+    "dethead": [
+      0.2131,
+      0.0925,
+      0.508,
+      0.546
+    ],
+    "grownhead": [
+      0.1856,
+      0.0925,
+      0.508,
+      0.546
+    ]
+  },
+  "basenji-red-white2/Basenji-red-white2": {
+    "_src": "commons:lora-train/Basenji-red-white2.jpg",
+    "detsubject": [
+      0.0408,
+      0.0393,
+      0.964,
+      0.9603
+    ],
+    "grownsubject": [
+      0.0402,
+      0.039,
+      0.9637,
+      0.961
+    ],
+    "dethead": [
+      0.7325,
+      0.0853,
+      0.9695,
+      0.3089
+    ],
+    "grownhead": [
+      0.6206,
+      0.0853,
+      0.9695,
+      0.3089
+    ]
+  },
+  "beagle-red-white-2/Beagle-red-white-2": {
+    "_src": "commons:lora-train/Beagle-red-white-2.jpg",
+    "detsubject": [
+      0.1034,
+      0.1461,
+      0.9237,
+      0.938
+    ],
+    "grownsubject": [
+      0.0992,
+      0.139,
+      0.9304,
+      0.9377
+    ],
+    "dethead": [
+      0.1412,
+      0.2381,
+      0.4669,
+      0.5279
+    ],
+    "grownhead": [
+      0.1412,
+      0.2381,
+      0.4669,
+      0.5279
+    ]
+  },
+  "basenji-red-white-2/Basenji-red-white-2": {
+    "_src": "commons:lora-train/Basenji-red-white-2.jpg",
+    "detsubject": [
+      0.1396,
+      0.0972,
+      0.8673,
+      0.8929
+    ],
+    "grownsubject": [
+      0.1387,
+      0.0065,
+      0.867,
+      0.8922
+    ],
+    "dethead": [
+      0.1517,
+      0.0875,
+      0.4046,
+      0.3236
+    ],
+    "grownhead": [
+      0.1387,
+      0.0739,
+      0.4046,
+      0.3236
+    ]
+  },
+  "beagle-red-white-1/Beagle-red-white-1": {
+    "_src": "commons:lora-train/Beagle-red-white-1.jpg",
+    "detsubject": [
+      0.0708,
+      0.1179,
+      0.8659,
+      0.9174
+    ],
+    "grownsubject": [
+      0.0706,
+      0.0165,
+      0.8656,
+      0.9169
+    ],
+    "dethead": [
+      0.0745,
+      0.2327,
+      0.3136,
+      0.4961
+    ],
+    "grownhead": [
+      0.0745,
+      0.2182,
+      0.3136,
+      0.4961
+    ]
+  },
+  "2-bernesemountaindogingrass/2-BerneseMountainDogInGrass": {
+    "_src": "commons:lora-train/2-BerneseMountainDogInGrass.jpg",
+    "detsubject": [
+      0.0521,
+      0.257,
+      0.8991,
+      0.908
+    ],
+    "grownsubject": [
+      0.0515,
+      0.2537,
+      0.8988,
+      0.9075
+    ],
+    "dethead": [
+      0.5072,
+      0.253,
+      0.9059,
+      0.4558
+    ],
+    "grownhead": [
+      0.4731,
+      0.253,
+      0.9059,
+      0.4558
+    ]
+  },
+  "163villages-sitios-and-puroks-of-san-isidro-minalin-pampanga/163Villages-sitios-and-puroks-of-San-Isidro-Minalin-Pampanga": {
+    "_src": "commons:lora-train/163Villages-sitios-and-puroks-of-San-Isidro-Minalin-Pampanga.jpg",
+    "detsubject": [
+      0.5283,
+      0.4451,
+      0.7173,
+      0.7198
+    ],
+    "grownsubject": [
+      0.4694,
+      0.445,
+      0.7169,
+      0.7775
+    ]
+  },
+  "bichonfrise2/Bichonfrise2": {
+    "_src": "commons:lora-train/Bichonfrise2.jpg",
+    "detsubject": [
+      0.0971,
+      0.0808,
+      0.9335,
+      0.9377
+    ],
+    "grownsubject": [
+      0.0926,
+      0.0805,
+      0.9331,
+      0.9376
+    ]
+  },
+  "cairnwheaten/Cairnwheaten": {
+    "_src": "commons:lora-train/Cairnwheaten.jpg",
+    "detsubject": [
+      0.0715,
+      0.0961,
+      0.9264,
+      0.933
+    ],
+    "grownsubject": [
+      0.0713,
+      0.096,
+      0.9257,
+      0.9338
+    ],
+    "dethead": [
+      0.0717,
+      0.0958,
+      0.3513,
+      0.4683
+    ],
+    "grownhead": [
+      0.0717,
+      0.0958,
+      0.3513,
+      0.4683
+    ]
+  },
+  "boston-terrier-ving-rdens-essi-von-richards-23995273800-2/BOSTON-TERRIER-Ving-rdens-Essi-von-Richards-23995273800-2": {
+    "_src": "commons:lora-train/BOSTON-TERRIER-Ving-rdens-Essi-von-Richards-23995273800-2.jpg",
+    "detsubject": [
+      0.0922,
+      0.0185,
+      0.9298,
+      0.9654
+    ],
+    "grownsubject": [
+      0.092,
+      0.017,
+      1.0,
+      0.9728
+    ],
+    "dethead": [
+      0.0891,
+      0.0167,
+      0.359,
+      0.3821
+    ],
+    "grownhead": [
+      0.0891,
+      0.0167,
+      0.359,
+      0.3821
+    ]
+  },
+  "beagliers-love-a-good-walk/Beagliers-love-a-good-walk": {
+    "_src": "commons:lora-train/Beagliers-love-a-good-walk.jpg",
+    "detsubject": [
+      0.3855,
+      0.4722,
+      0.5307,
+      0.9446
+    ],
+    "grownsubject": [
+      0.385,
+      0.472,
+      0.5569,
+      0.9439
+    ],
+    "dethead": [
+      0.4131,
+      0.4773,
+      0.5322,
+      0.63
+    ],
+    "grownhead": [
+      0.4016,
+      0.472,
+      0.5484,
+      0.63
+    ]
+  },
+  "franz-sische-bulldogge-in-paris-20060505-rm-100032/Franz-sische-Bulldogge-in-Paris-20060505-RM-100032": {
+    "_src": "commons:lora-train/Franz-sische-Bulldogge-in-Paris-20060505-RM-100032.jpg",
+    "detsubject": [
+      0.3176,
+      0.0831,
+      0.7034,
+      0.9427
+    ],
+    "grownsubject": [
+      0.1762,
+      0.0825,
+      0.785,
+      1.0
+    ]
+  },
+  "german-shepherd-aka-alsatian-and-alsatian-wolf-dog-deutscher/German-Shepherd-aka-Alsatian-and-Alsatian-Wolf-Dog-Deutscher": {
+    "_src": "commons:lora-train/German-Shepherd-aka-Alsatian-and-Alsatian-Wolf-Dog-Deutscher.jpg",
+    "detsubject": [
+      0.3336,
+      0.2351,
+      0.5464,
+      0.7317
+    ],
+    "grownsubject": [
+      0.3,
+      0.235,
+      0.5781,
+      0.7317
+    ],
+    "dethead": [
+      0.3366,
+      0.311,
+      0.5113,
+      0.728
+    ],
+    "grownhead": [
+      0.3125,
+      0.311,
+      0.5656,
+      0.728
+    ]
+  },
+  "bucuresti-romania-str-alexandru-philippide-sect-2-cainele-at/Bucuresti-Romania-Str-Alexandru-Philippide-sect-2-Cainele-At": {
+    "_src": "commons:lora-train/Bucuresti-Romania-Str-Alexandru-Philippide-sect-2-Cainele-At.jpg",
+    "detsubject": [
+      0.4522,
+      0.3508,
+      0.7778,
+      0.9177
+    ],
+    "grownsubject": [
+      0.3425,
+      0.3475,
+      0.8187,
+      1.0
+    ]
+  },
+  "doberman-pinscher-aka-dobermann/Doberman-Pinscher-aka-Dobermann": {
+    "_src": "commons:lora-train/Doberman-Pinscher-aka-Dobermann.jpg",
+    "detsubject": [
+      0.0668,
+      0.0618,
+      0.9558,
+      0.939
+    ],
+    "grownsubject": [
+      0.0659,
+      0.06,
+      0.9557,
+      0.9456
+    ],
+    "dethead": [
+      0.3371,
+      0.6194,
+      0.9608,
+      0.8556
+    ],
+    "grownhead": [
+      0.1859,
+      0.6194,
+      0.9608,
+      0.8556
+    ]
+  },
+  "golden-retriever-fiona-10-months/Golden-Retriever-Fiona-10-months": {
+    "_src": "commons:lora-train/Golden-Retriever-Fiona-10-months.jpg",
+    "detsubject": [
+      0.1923,
+      0.1837,
+      0.7059,
+      0.723
+    ],
+    "grownsubject": [
+      0.1917,
+      0.1831,
+      0.7058,
+      0.7262
+    ],
+    "dethead": [
+      0.3242,
+      0.199,
+      0.6885,
+      0.4032
+    ],
+    "grownhead": [
+      0.2851,
+      0.199,
+      0.7058,
+      0.4032
+    ]
+  },
+  "a-dog-sitting-outside-near-a-lake/A-dog-sitting-outside-near-a-lake": {
+    "_src": "commons:lora-train/A-dog-sitting-outside-near-a-lake.jpg",
+    "detsubject": [
+      0.1192,
+      0.201,
+      0.5946,
+      0.9508
+    ],
+    "grownsubject": [
+      0.119,
+      0.2006,
+      0.5942,
+      1.0
+    ],
+    "dethead": [
+      0.2506,
+      0.2022,
+      0.58,
+      0.3977
+    ],
+    "grownhead": [
+      0.2506,
+      0.2022,
+      0.58,
+      0.3977
+    ]
+  },
+  "australian-cattle-dog-sitting/Australian-Cattle-Dog-sitting": {
+    "_src": "commons:lora-train/Australian-Cattle-Dog-sitting.jpg",
+    "detsubject": [
+      0.0,
+      0.0345,
+      0.8979,
+      0.9501
+    ],
+    "grownsubject": [
+      0.0,
+      0.0344,
+      0.8978,
+      1.0
+    ],
+    "dethead": [
+      0.0095,
+      0.3989,
+      0.3647,
+      0.4891
+    ],
+    "grownhead": [
+      0.0095,
+      0.3989,
+      0.3647,
+      0.4891
+    ]
+  },
+  "dog-friend-2595637875/Dog-Friend-2595637875": {
+    "_src": "commons:lora-train/Dog-Friend-2595637875.jpg",
+    "detsubject": [
+      0.0608,
+      0.1498,
+      0.5819,
+      0.8711
+    ],
+    "grownsubject": [
+      0.0606,
+      0.147,
+      0.5869,
+      0.8705
+    ]
+  },
+  "chihuahua-sitting/Chihuahua-sitting": {
+    "_src": "commons:lora-train/Chihuahua-sitting.jpg",
+    "detsubject": [
+      0.0014,
+      0.1454,
+      0.878,
+      0.9061
+    ],
+    "grownsubject": [
+      0.0009,
+      0.1425,
+      0.8772,
+      0.9087
+    ]
+  },
+  "dog-sitting-on-grass-panoramio-1228/Dog-sitting-on-grass-panoramio-1228": {
+    "_src": "commons:lora-train/Dog-sitting-on-grass-panoramio-1228.jpg",
+    "detsubject": [
+      0.4338,
+      0.2738,
+      0.6368,
+      0.7724
+    ],
+    "grownsubject": [
+      0.4338,
+      0.2729,
+      0.6362,
+      0.7715
+    ],
+    "dethead": [
+      0.4515,
+      0.2796,
+      0.6154,
+      0.5311
+    ],
+    "grownhead": [
+      0.4338,
+      0.2729,
+      0.6338,
+      0.5311
+    ]
+  },
+  "franz-sische-bulldogge-gestromt/Franz-sische-Bulldogge-Gestromt": {
+    "_src": "commons:lora-train/Franz-sische-Bulldogge-Gestromt.jpg",
+    "detsubject": [
+      0.2124,
+      0.1825,
+      0.8275,
+      0.9764
+    ],
+    "grownsubject": [
+      0.2122,
+      0.1756,
+      0.8272,
+      1.0
+    ],
+    "dethead": [
+      0.2388,
+      0.6396,
+      0.8346,
+      0.9617
+    ],
+    "grownhead": [
+      0.2388,
+      0.6396,
+      0.8346,
+      0.9617
+    ]
+  },
+  "12-italy-campo-di-grano-e-cagnolino-dog-in-a-wheat-fields/12-ITALY-campo-di-grano-e-cagnolino-dog-in-a-wheat-fields": {
+    "_src": "commons:lora-train/12-ITALY-campo-di-grano-e-cagnolino-dog-in-a-wheat-fields.jpg",
+    "detsubject": [
+      0.3368,
+      0.4686,
+      0.7172,
+      0.9688
+    ],
+    "grownsubject": [
+      0.3367,
+      0.4044,
+      0.7167,
+      0.9688
+    ]
+  },
+  "australian-blue-cattle-dog-04/Australian-blue-cattle-dog-04": {
+    "_src": "commons:lora-train/Australian-blue-cattle-dog-04.jpg",
+    "detsubject": [
+      0.0795,
+      0.1134,
+      0.9536,
+      0.9163
+    ],
+    "grownsubject": [
+      0.0791,
+      0.1129,
+      0.9536,
+      0.9156
+    ]
+  },
+  "gaggenau-bad-rotenfels-2013-panoramio/Gaggenau-Bad-Rotenfels-2013-panoramio": {
+    "_src": "commons:lora-train/Gaggenau-Bad-Rotenfels-2013-panoramio.jpg",
+    "detsubject": [
+      0.483,
+      0.4567,
+      0.6827,
+      0.8602
+    ],
+    "grownsubject": [
+      0.46,
+      0.4083,
+      0.7069,
+      0.86
+    ],
+    "dethead": [
+      0.4871,
+      0.4483,
+      0.6192,
+      0.6038
+    ],
+    "grownhead": [
+      0.4728,
+      0.4483,
+      0.6192,
+      0.6038
+    ]
+  },
+  "226poblacion-baliuag-bulacan-06/226Poblacion-Baliuag-Bulacan-06": {
+    "_src": "commons:lora-train/226Poblacion-Baliuag-Bulacan-06.jpg",
+    "detsubject": [
+      0.1913,
+      0.0659,
+      0.6429,
+      0.7017
+    ],
+    "grownsubject": [
+      0.1913,
+      0.0658,
+      0.6425,
+      0.7008
+    ],
+    "dethead": [
+      0.5739,
+      0.0595,
+      0.5918,
+      0.099
+    ],
+    "grownhead": [
+      0.5739,
+      0.0595,
+      0.5918,
+      0.099
+    ]
+  },
+  "bimba-orientalpei/BIMBA-orientalpei": {
+    "_src": "commons:lora-train/BIMBA-orientalpei.jpg",
+    "detsubject": [
+      0.128,
+      0.0749,
+      0.9519,
+      0.8504
+    ],
+    "grownsubject": [
+      0.1276,
+      0.07,
+      0.9512,
+      0.85
+    ]
+  },
+  "2016-03-28-labradoodle-berlin-23/2016-03-28-Labradoodle-Berlin-23": {
+    "_src": "commons:lora-train/2016-03-28-Labradoodle-Berlin-23.jpg",
+    "detsubject": [
+      0.2456,
+      0.0,
+      0.9976,
+      1.0
+    ],
+    "grownsubject": [
+      0.1619,
+      0.0,
+      1.0,
+      1.0
+    ],
+    "dethead": [
+      0.3099,
+      0.0121,
+      0.7407,
+      0.6583
+    ],
+    "grownhead": [
+      0.3099,
+      0.0,
+      0.7407,
+      0.6583
+    ]
+  },
+  "indian-spitz-2/Indian-Spitz-2": {
+    "_src": "commons:lora-train/Indian-Spitz-2.jpeg",
+    "detsubject": [
+      0.2091,
+      0.2984,
+      1.0,
+      0.8313
+    ],
+    "grownsubject": [
+      0.2087,
+      0.2983,
+      1.0,
+      0.9058
+    ]
+  },
+  "casa-de-don-pedro-sierra-nevada-merida-3/Casa-de-Don-Pedro-Sierra-Nevada-Merida-3": {
+    "_src": "commons:lora-train/Casa-de-Don-Pedro-Sierra-Nevada-Merida-3.jpg",
+    "detsubject": [
+      0.2789,
+      0.2777,
+      0.6588,
+      0.7214
+    ],
+    "grownsubject": [
+      0.2756,
+      0.2744,
+      0.6625,
+      0.7211
+    ]
+  },
+  "botox-resting-winter-2013/Botox-resting-Winter-2013": {
+    "_src": "commons:lora-train/Botox-resting-Winter-2013.jpg",
+    "detsubject": [
+      0.3213,
+      0.1994,
+      0.7775,
+      0.6463
+    ],
+    "grownsubject": [
+      0.32,
+      0.1992,
+      0.7794,
+      0.6458
+    ],
+    "dethead": [
+      0.3201,
+      0.2023,
+      0.5115,
+      0.6177
+    ],
+    "grownhead": [
+      0.3201,
+      0.2023,
+      0.5115,
+      0.6177
+    ]
+  },
+  "daphne-reclining/Daphne-reclining": {
+    "_src": "commons:lora-train/Daphne-reclining.jpg",
+    "detsubject": [
+      0.0088,
+      0.205,
+      0.9526,
+      0.8648
+    ],
+    "grownsubject": [
+      0.0083,
+      0.205,
+      0.9525,
+      0.8669
+    ],
+    "dethead": [
+      0.5793,
+      0.2194,
+      0.9411,
+      0.5637
+    ],
+    "grownhead": [
+      0.5793,
+      0.205,
+      0.9525,
+      0.5637
+    ]
+  },
+  "2017-05-12-labradoodle/2017-05-12-Labradoodle": {
+    "_src": "commons:lora-train/2017-05-12-Labradoodle.jpg",
+    "detsubject": [
+      0.0009,
+      0.26,
+      0.9907,
+      0.9028
+    ],
+    "grownsubject": [
+      0.0,
+      0.2596,
+      1.0,
+      0.9025
+    ],
+    "dethead": [
+      0.5233,
+      0.2799,
+      0.8458,
+      0.7658
+    ],
+    "grownhead": [
+      0.5233,
+      0.2799,
+      0.9899,
+      0.7658
+    ]
+  },
+  "2016-03-28-labradoodle-berlin-16/2016-03-28-Labradoodle-Berlin-16": {
+    "_src": "commons:lora-train/2016-03-28-Labradoodle-Berlin-16.jpg",
+    "detsubject": [
+      0.0769,
+      0.1304,
+      0.9853,
+      0.9242
+    ],
+    "grownsubject": [
+      0.0769,
+      0.13,
+      0.985,
+      1.0
+    ],
+    "dethead": [
+      0.0734,
+      0.5067,
+      0.6396,
+      0.9453
+    ],
+    "grownhead": [
+      0.0734,
+      0.5067,
+      0.6396,
+      0.9453
+    ]
+  },
+  "hippy-relaxing-on-the-sand/Hippy-relaxing-on-the-sand": {
+    "_src": "commons:lora-train/Hippy-relaxing-on-the-sand.jpg",
+    "detsubject": [
+      0.1122,
+      0.2014,
+      0.928,
+      0.6932
+    ],
+    "grownsubject": [
+      0.0081,
+      0.1996,
+      0.9331,
+      0.6926
+    ],
+    "dethead": [
+      0.0979,
+      0.2003,
+      0.4776,
+      0.6877
+    ],
+    "grownhead": [
+      0.0704,
+      0.2003,
+      0.4776,
+      0.6877
+    ]
+  },
+  "princess-the-big-fat-dog/Princess-The-Big-Fat-Dog": {
+    "_src": "commons:lora-train/Princess-The-Big-Fat-Dog.jpg",
+    "detsubject": [
+      0.004,
+      0.0898,
+      0.9943,
+      0.7343
+    ],
+    "grownsubject": [
+      0.0,
+      0.0896,
+      1.0,
+      0.7337
+    ],
+    "dethead": [
+      0.4408,
+      0.1052,
+      0.9109,
+      0.7334
+    ],
+    "grownhead": [
+      0.4408,
+      0.0896,
+      1.0,
+      0.7334
+    ]
+  },
+  "9402photos-taken-2020-coronavirus-pandemic-baliuag-21/9402Photos-taken-2020-coronavirus-pandemic-Baliuag-21": {
+    "_src": "commons:lora-train/9402Photos-taken-2020-coronavirus-pandemic-Baliuag-21.jpg",
+    "detsubject": [
+      0.4159,
+      0.3355,
+      0.5687,
+      0.6395
+    ],
+    "grownsubject": [
+      0.3837,
+      0.335,
+      0.6006,
+      0.6392
+    ]
+  },
+  "3625pongpong-bail-santo-tomas-la-union-67/3625Pongpong-Bail-Santo-Tomas-La-Union-67": {
+    "_src": "commons:lora-train/3625Pongpong-Bail-Santo-Tomas-La-Union-67.jpg",
+    "detsubject": [
+      0.5014,
+      0.4726,
+      0.6984,
+      0.748
+    ],
+    "grownsubject": [
+      0.5012,
+      0.4325,
+      0.7269,
+      0.7992
+    ]
+  },
+  "kryvyi-rih-dog/Kryvyi-Rih-dog": {
+    "_src": "commons:lora-train/Kryvyi-Rih-dog.jpg",
+    "detsubject": [
+      0.0708,
+      0.1469,
+      0.8686,
+      0.8625
+    ],
+    "grownsubject": [
+      0.0,
+      0.1421,
+      0.874,
+      0.8624
+    ]
+  },
+  "7921photos-taken-during-2020-coronavirus-pandemic-baliuag-04/7921Photos-taken-during-2020-coronavirus-pandemic-Baliuag-04": {
+    "_src": "commons:lora-train/7921Photos-taken-during-2020-coronavirus-pandemic-Baliuag-04.jpg",
+    "detsubject": [
+      0.4887,
+      0.2603,
+      0.7184,
+      0.7058
+    ],
+    "grownsubject": [
+      0.4881,
+      0.2567,
+      0.7181,
+      0.7592
+    ]
+  },
+  "himalayan-sheep-dog-2/Himalayan-sheep-dog-2": {
+    "_src": "commons:lora-train/Himalayan-sheep-dog-2.jpg",
+    "detsubject": [
+      0.1973,
+      0.0348,
+      0.5717,
+      0.9685
+    ],
+    "grownsubject": [
+      0.1565,
+      0.0345,
+      0.5724,
+      1.0
+    ],
+    "dethead": [
+      0.1877,
+      0.2744,
+      0.5465,
+      0.9131
+    ],
+    "grownhead": [
+      0.1877,
+      0.2744,
+      0.5724,
+      0.9131
+    ]
+  },
+  "himalayan-sheep-dog-1/Himalayan-sheep-dog-1": {
+    "_src": "commons:lora-train/Himalayan-sheep-dog-1.jpg",
+    "detsubject": [
+      0.1661,
+      0.2019,
+      0.7361,
+      0.9459
+    ],
+    "grownsubject": [
+      0.1013,
+      0.2,
+      0.8144,
+      0.9458
+    ]
+  },
+  "8323photos-taken-during-2020-coronavirus-pandemic-baliuag-09/8323Photos-taken-during-2020-coronavirus-pandemic-Baliuag-09": {
+    "_src": "commons:lora-train/8323Photos-taken-during-2020-coronavirus-pandemic-Baliuag-09.jpg",
+    "detsubject": [
+      0.3323,
+      0.2154,
+      0.5767,
+      0.7649
+    ],
+    "grownsubject": [
+      0.2981,
+      0.215,
+      0.6075,
+      0.7642
+    ]
+  },
+  "dog-sunset/Dog-sunset": {
+    "_src": "commons:lora-train/Dog-sunset.jpg",
+    "detsubject": [
+      0.3988,
+      0.026,
+      0.5652,
+      0.5782
+    ],
+    "grownsubject": [
+      0.3987,
+      0.0253,
+      0.5844,
+      0.5773
+    ],
+    "dethead": [
+      0.4019,
+      0.0285,
+      0.5568,
+      0.2186
+    ],
+    "grownhead": [
+      0.4019,
+      0.0253,
+      0.5752,
+      0.2186
+    ]
+  },
+  "8833effects-of-tropical-depression-ofel-habagat-overcast-in/8833Effects-of-Tropical-Depression-Ofel-Habagat-Overcast-in-": {
+    "_src": "commons:lora-train/8833Effects-of-Tropical-Depression-Ofel-Habagat-Overcast-in-.jpg",
+    "detsubject": [
+      0.498,
+      0.4078,
+      0.67,
+      0.5993
+    ],
+    "grownsubject": [
+      0.4794,
+      0.4075,
+      0.6694,
+      0.6217
+    ]
+  },
+  "9566photos-taken-during-2020-coronavirus-pandemic-10/9566Photos-taken-during-2020-coronavirus-pandemic-10": {
+    "_src": "commons:lora-train/9566Photos-taken-during-2020-coronavirus-pandemic-10.jpg",
+    "detsubject": [
+      0.2261,
+      0.2006,
+      0.7299,
+      0.6571
+    ],
+    "grownsubject": [
+      0.2256,
+      0.1508,
+      0.7906,
+      0.7075
+    ],
+    "dethead": [
+      0.2318,
+      0.295,
+      0.4715,
+      0.6559
+    ],
+    "grownhead": [
+      0.2256,
+      0.242,
+      0.4715,
+      0.6559
+    ]
+  },
+  "igelball-als-beute/Igelball-als-Beute": {
+    "_src": "commons:lora-train/Igelball-als-Beute.jpg",
+    "detsubject": [
+      0.2495,
+      0.2316,
+      0.571,
+      0.713
+    ],
+    "grownsubject": [
+      0.2494,
+      0.2308,
+      0.5706,
+      0.7133
+    ]
+  },
+  "1/1": {
+    "_src": "commons:lora-train/1.jpg",
+    "detsubject": [
+      0.2645,
+      0.2204,
+      0.6765,
+      0.6693
+    ],
+    "grownsubject": [
+      0.2644,
+      0.2202,
+      0.7269,
+      0.6701
+    ]
+  },
+  "9300bustos-dam-eco-park-35/9300Bustos-Dam-Eco-Park-35": {
+    "_src": "commons:lora-train/9300Bustos-Dam-Eco-Park-35.jpg",
+    "detsubject": [
+      0.164,
+      0.4924,
+      0.501,
+      0.7096
+    ],
+    "grownsubject": [
+      0.1638,
+      0.4917,
+      0.5025,
+      0.735
+    ]
+  },
+  "1-cropped/1-cropped": {
+    "_src": "commons:lora-train/1-cropped.jpg",
+    "detsubject": [
+      0.0155,
+      0.1716,
+      0.8758,
+      0.8798
+    ],
+    "grownsubject": [
+      0.0075,
+      0.1714,
+      0.8819,
+      0.8796
+    ]
+  },
+  "6664damortis-santo-tomas-la-union-30/6664Damortis-Santo-Tomas-La-Union-30": {
+    "_src": "commons:lora-train/6664Damortis-Santo-Tomas-La-Union-30.jpg",
+    "detsubject": [
+      0.451,
+      0.5418,
+      0.6541,
+      0.8265
+    ],
+    "grownsubject": [
+      0.4144,
+      0.51,
+      0.6969,
+      0.8258
+    ]
+  },
+  "9611photos-taken-during-2020-coronavirus-pandemic-25/9611Photos-taken-during-2020-coronavirus-pandemic-25": {
+    "_src": "commons:lora-train/9611Photos-taken-during-2020-coronavirus-pandemic-25.jpg",
+    "detsubject": [
+      0.4337,
+      0.3987,
+      0.7004,
+      0.6506
+    ],
+    "grownsubject": [
+      0.4031,
+      0.3983,
+      0.7312,
+      0.65
+    ]
+  },
+  "8252streets-and-establishment-during-the-pandemic-in-baliuag/8252Streets-and-establishment-during-the-pandemic-in-Baliuag": {
+    "_src": "commons:lora-train/8252Streets-and-establishment-during-the-pandemic-in-Baliuag.jpg",
+    "detsubject": [
+      0.4461,
+      0.2641,
+      0.6357,
+      0.7436
+    ],
+    "grownsubject": [
+      0.4194,
+      0.2633,
+      0.6631,
+      0.805
+    ],
+    "dethead": [
+      0.5151,
+      0.4335,
+      0.6413,
+      0.7465
+    ],
+    "grownhead": [
+      0.5151,
+      0.3802,
+      0.6507,
+      0.7465
+    ]
+  },
+  "9611photos-taken-during-2020-coronavirus-pandemic-12/9611Photos-taken-during-2020-coronavirus-pandemic-12": {
+    "_src": "commons:lora-train/9611Photos-taken-during-2020-coronavirus-pandemic-12.jpg",
+    "detsubject": [
+      0.2523,
+      0.2164,
+      0.6406,
+      0.6461
+    ],
+    "grownsubject": [
+      0.2494,
+      0.2158,
+      0.6931,
+      0.6458
+    ],
+    "dethead": [
+      0.5465,
+      0.365,
+      0.6562,
+      0.4999
+    ],
+    "grownhead": [
+      0.5465,
+      0.3566,
+      0.6562,
+      0.4999
+    ]
+  },
+  "7921photos-taken-during-2020-coronavirus-pandemic-baliuag-05/7921Photos-taken-during-2020-coronavirus-pandemic-Baliuag-05": {
+    "_src": "commons:lora-train/7921Photos-taken-during-2020-coronavirus-pandemic-Baliuag-05.jpg",
+    "detsubject": [
+      0.5074,
+      0.3184,
+      0.7207,
+      0.6967
+    ],
+    "grownsubject": [
+      0.5069,
+      0.3183,
+      0.7206,
+      0.74
+    ]
+  },
+  "newfoundland-brown-1/Newfoundland-brown-1": {
+    "_src": "commons:lora-train/Newfoundland-brown-1.jpg",
+    "detsubject": [
+      0.0944,
+      0.2489,
+      0.9609,
+      0.9028
+    ],
+    "grownsubject": [
+      0.0938,
+      0.2482,
+      0.9606,
+      0.9797
+    ],
+    "dethead": [
+      0.0929,
+      0.3527,
+      0.2738,
+      0.6449
+    ],
+    "grownhead": [
+      0.0929,
+      0.3527,
+      0.2738,
+      0.6449
+    ]
+  },
+  "a-covent-garden-fashion-fete/A-Covent-Garden-Fashion-Fete": {
+    "_src": "commons:lora-train/A-Covent-Garden-Fashion-Fete.jpg",
+    "detsubject": [
+      0.1908,
+      0.4418,
+      0.9615,
+      0.9206
+    ],
+    "grownsubject": [
+      0.1866,
+      0.44,
+      0.9613,
+      0.9197
+    ],
+    "dethead": [
+      0.1928,
+      0.4382,
+      0.4313,
+      0.6524
+    ],
+    "grownhead": [
+      0.1866,
+      0.4382,
+      0.4313,
+      0.6524
+    ]
+  },
+  "9566photos-taken-during-2020-coronavirus-pandemic-07/9566Photos-taken-during-2020-coronavirus-pandemic-07": {
+    "_src": "commons:lora-train/9566Photos-taken-during-2020-coronavirus-pandemic-07.jpg",
+    "detsubject": [
+      0.2097,
+      0.2592,
+      0.7825,
+      0.6983
+    ],
+    "grownsubject": [
+      0.2062,
+      0.2592,
+      0.7856,
+      0.7017
+    ],
+    "dethead": [
+      0.6579,
+      0.2636,
+      0.7821,
+      0.4101
+    ],
+    "grownhead": [
+      0.6579,
+      0.2636,
+      0.7856,
+      0.4101
+    ]
+  },
+  "9611photos-taken-during-2020-coronavirus-pandemic-26/9611Photos-taken-during-2020-coronavirus-pandemic-26": {
+    "_src": "commons:lora-train/9611Photos-taken-during-2020-coronavirus-pandemic-26.jpg",
+    "detsubject": [
+      0.3255,
+      0.4374,
+      0.7243,
+      0.7077
+    ],
+    "grownsubject": [
+      0.275,
+      0.4367,
+      0.7756,
+      0.7075
+    ]
+  },
+  "bohemian-shepherd-chodsky-1/Bohemian-Shepherd-Chodsky-1": {
+    "_src": "commons:lora-train/Bohemian-Shepherd-Chodsky-1.jpg",
+    "detsubject": [
+      0.0545,
+      0.055,
+      0.9218,
+      0.9128
+    ],
+    "grownsubject": [
+      0.0478,
+      0.0546,
+      0.9215,
+      0.9127
+    ]
+  },
+  "158inmanduyan-laoac-pangasinan-40/158Inmanduyan-Laoac-Pangasinan-40": {
+    "_src": "commons:lora-train/158Inmanduyan-Laoac-Pangasinan-40.jpg",
+    "detsubject": [
+      0.2878,
+      0.3418,
+      0.5119,
+      0.6651
+    ],
+    "grownsubject": [
+      0.2625,
+      0.3417,
+      0.5119,
+      0.665
+    ]
+  },
+  "golden-retriever-am-juister-strand/Golden-Retriever-am-Juister-Strand": {
+    "_src": "commons:lora-train/Golden-Retriever-am-Juister-Strand.jpg",
+    "detsubject": [
+      0.5205,
+      0.6193,
+      0.7816,
+      0.8549
+    ],
+    "grownsubject": [
+      0.52,
+      0.6183,
+      0.7825,
+      0.8542
+    ]
+  },
+  "9566photos-taken-during-2020-coronavirus-pandemic-11/9566Photos-taken-during-2020-coronavirus-pandemic-11": {
+    "_src": "commons:lora-train/9566Photos-taken-during-2020-coronavirus-pandemic-11.jpg",
+    "detsubject": [
+      0.0733,
+      0.1723,
+      0.5347,
+      0.7305
+    ],
+    "grownsubject": [
+      0.0731,
+      0.1717,
+      0.5387,
+      0.7342
+    ],
+    "dethead": [
+      0.1613,
+      0.1591,
+      0.2494,
+      0.2364
+    ],
+    "grownhead": [
+      0.1613,
+      0.1591,
+      0.2494,
+      0.2364
+    ]
+  },
+  "teckel-39/Teckel-39": {
+    "_src": "commons:lora-holdout/Teckel-39.jpg",
+    "detsubject": [
+      0.0406,
+      0.2179,
+      0.5257,
+      0.9372
+    ],
+    "grownsubject": [
+      0.04,
+      0.2174,
+      0.5256,
+      0.9372
+    ],
+    "dethead": [
+      0.2502,
+      0.2184,
+      0.5265,
+      0.5043
+    ],
+    "grownhead": [
+      0.2502,
+      0.2184,
+      0.5265,
+      0.5043
+    ]
+  },
+  "pies-nierasowy-20201003-1644-4305/Pies-nierasowy-20201003-1644-4305": {
+    "_src": "commons:lora-holdout/Pies-nierasowy-20201003-1644-4305.jpg",
+    "detsubject": [
+      0.2183,
+      0.2573,
+      0.6935,
+      0.8593
+    ],
+    "grownsubject": [
+      0.2175,
+      0.2566,
+      0.76,
+      0.8586
+    ],
+    "dethead": [
+      0.526,
+      0.3553,
+      0.7071,
+      0.6114
+    ],
+    "grownhead": [
+      0.526,
+      0.3553,
+      0.7216,
+      0.6114
+    ]
+  },
+  "chinese-crested-dog-on-the-beach-13200/Chinese-crested-dog-on-the-beach-13200": {
+    "_src": "commons:lora-holdout/Chinese-crested-dog-on-the-beach-13200.jpg",
+    "detsubject": [
+      0.5153,
+      0.2453,
+      0.8384,
+      0.8581
+    ],
+    "grownsubject": [
+      0.515,
+      0.2447,
+      0.8756,
+      0.9273
+    ],
+    "dethead": [
+      0.5433,
+      0.2528,
+      0.7257,
+      0.5223
+    ],
+    "grownhead": [
+      0.5202,
+      0.2528,
+      0.7257,
+      0.5223
+    ]
+  },
+  "emily-maltese/Emily-Maltese": {
+    "_src": "commons:lora-holdout/Emily-Maltese.jpg",
+    "detsubject": [
+      0.162,
+      0.1139,
+      0.5707,
+      0.9934
+    ],
+    "grownsubject": [
+      0.1619,
+      0.1134,
+      0.5706,
+      0.9925
+    ],
+    "dethead": [
+      0.2352,
+      0.1134,
+      0.578,
+      0.4832
+    ],
+    "grownhead": [
+      0.2352,
+      0.1134,
+      0.578,
+      0.4832
+    ]
+  },
+  "bianca-2-meses/Bianca-2-Meses": {
+    "_src": "commons:lora-holdout/Bianca-2-Meses.jpg",
+    "detsubject": [
+      0.1793,
+      0.1899,
+      0.8126,
+      0.9899
+    ],
+    "grownsubject": [
+      0.1083,
+      0.1894,
+      0.8123,
+      1.0
+    ],
+    "dethead": [
+      0.2747,
+      0.1909,
+      0.8022,
+      0.5111
+    ],
+    "grownhead": [
+      0.2747,
+      0.1894,
+      0.8022,
+      0.5111
+    ]
+  },
+  "dog-smiling-at-the-camera-reta-buenos-aires-argentina-04-01/Dog-smiling-at-the-camera-Reta-Buenos-Aires-Argentina-04-01-": {
+    "_src": "commons:lora-holdout/Dog-smiling-at-the-camera-Reta-Buenos-Aires-Argentina-04-01-.jpg",
+    "detsubject": [
+      0.4099,
+      0.2437,
+      0.5616,
+      0.8404
+    ],
+    "grownsubject": [
+      0.4094,
+      0.2392,
+      0.5613,
+      0.84
+    ],
+    "dethead": [
+      0.4326,
+      0.2413,
+      0.5528,
+      0.3811
+    ],
+    "grownhead": [
+      0.4326,
+      0.2392,
+      0.5613,
+      0.3811
+    ]
+  },
+  "2016-03-28-labradoodle-berlin-21/2016-03-28-Labradoodle-Berlin-21": {
+    "_src": "commons:lora-train/2016-03-28-Labradoodle-Berlin-21.jpg",
+    "detsubject": [
+      0.1022,
+      0.0063,
+      0.9055,
+      0.9598
+    ],
+    "grownsubject": [
+      0.0131,
+      0.0056,
+      0.9119,
+      0.9597
+    ],
+    "dethead": [
+      0.1523,
+      0.0191,
+      0.6243,
+      0.6974
+    ],
+    "grownhead": [
+      0.0695,
+      0.0191,
+      0.8342,
+      0.6974
+    ]
+  },
+  "bronco-laying-down-lr/Bronco-laying-down-LR": {
+    "_src": "commons:lora-holdout/Bronco-laying-down-LR.jpg",
+    "detsubject": [
+      0.0204,
+      0.0803,
+      0.9482,
+      0.9545
+    ],
+    "grownsubject": [
+      0.02,
+      0.0794,
+      0.9544,
+      0.9542
+    ],
+    "dethead": [
+      0.1286,
+      0.092,
+      0.433,
+      0.5082
+    ],
+    "grownhead": [
+      0.1286,
+      0.0794,
+      0.433,
+      0.5082
+    ]
+  },
+  "290poblacion-baliuag-bulacan-13/290Poblacion-Baliuag-Bulacan-13": {
+    "_src": "commons:lora-holdout/290Poblacion-Baliuag-Bulacan-13.jpg",
+    "detsubject": [
+      0.1976,
+      0.1361,
+      0.7446,
+      0.794
+    ],
+    "grownsubject": [
+      0.1975,
+      0.1358,
+      0.8087,
+      0.7933
+    ]
+  },
+  "9934poblacion-bustos-bulacan-20/9934Poblacion-Bustos-Bulacan-20": {
+    "_src": "commons:lora-holdout/9934Poblacion-Bustos-Bulacan-20.jpg",
+    "detsubject": [
+      0.3132,
+      0.1977,
+      0.8291,
+      0.6452
+    ],
+    "grownsubject": [
+      0.3125,
+      0.1975,
+      0.8287,
+      0.645
+    ]
+  },
+  "gonzaja-yellow3/Gonzaja-yellow3": {
+    "_src": "commons:lora-holdout/Gonzaja-yellow3.jpg",
+    "detsubject": [
+      0.0418,
+      0.065,
+      0.9616,
+      0.9261
+    ],
+    "grownsubject": [
+      0.0413,
+      0.0644,
+      0.9613,
+      1.0
+    ],
+    "dethead": [
+      0.0383,
+      0.0898,
+      0.2035,
+      0.3481
+    ],
+    "grownhead": [
+      0.0383,
+      0.0738,
+      0.2035,
+      0.3481
+    ]
+  },
+  "basenji-red-white3/Basenji-red-white3": {
+    "_src": "commons:lora-train/Basenji-red-white3.jpg",
+    "detsubject": [
+      0.0534,
+      0.0486,
+      0.9636,
+      0.9715
+    ],
+    "grownsubject": [
+      0.0524,
+      0.0478,
+      0.9635,
+      0.971
+    ],
+    "dethead": [
+      0.71,
+      0.0485,
+      0.9641,
+      0.3186
+    ],
+    "grownhead": [
+      0.641,
+      0.0485,
+      0.9641,
+      0.3186
+    ]
+  },
+  "rusty-11y9m-irish-setter-uthandi-chennai-may21-r16-04758/Rusty-11y9m-Irish-Setter-Uthandi-Chennai-May21-R16-04758": {
+    "_src": "commons:lora-holdout/Rusty-11y9m-Irish-Setter-Uthandi-Chennai-May21-R16-04758.jpg",
+    "detsubject": [
+      0.3241,
+      0.2448,
+      0.7385,
+      0.9451
+    ],
+    "grownsubject": [
+      0.3237,
+      0.1642,
+      0.7906,
+      0.9483
+    ],
+    "dethead": [
+      0.5877,
+      0.2352,
+      0.7565,
+      0.4578
+    ],
+    "grownhead": [
+      0.5877,
+      0.223,
+      0.7565,
+      0.4578
+    ]
+  },
+  "pepe-a-josaphat-looking-back/Pepe-a-Josaphat-looking-back": {
+    "_src": "commons:lora-holdout/Pepe-a-Josaphat-looking-back.jpg",
+    "detsubject": [
+      0.3649,
+      0.2074,
+      0.7297,
+      0.8519
+    ],
+    "grownsubject": [
+      0.3644,
+      0.2071,
+      0.7781,
+      0.9428
+    ],
+    "dethead": [
+      0.3838,
+      0.2075,
+      0.4862,
+      0.3626
+    ],
+    "grownhead": [
+      0.3712,
+      0.2075,
+      0.4862,
+      0.3626
+    ]
+  },
+  "commons-3a3082db75/commons-3a3082db75": {
+    "_src": "commons:lora-train/commons-3a3082db75.jpg",
+    "detsubject": [
+      0.3181,
+      0.2831,
+      0.6383,
+      0.6653
+    ],
+    "grownsubject": [
+      0.3175,
+      0.283,
+      0.6863,
+      0.6645
     ]
   }
 }

@@ -86,7 +86,13 @@ def photo_path(ref: str) -> Path:
 
 def load(ref: str):
     from PIL import Image, ImageOps
-    im = ImageOps.exif_transpose(Image.open(photo_path(ref))).convert("RGB")
+    im = Image.open(photo_path(ref))
+    # A Commons JPEG can carry an EXIF block Pillow cannot parse (two of the LoRA set's, 2026-10-27); it is then read as it lies.
+    try:
+        im = ImageOps.exif_transpose(im)
+    except (SyntaxError, ValueError):
+        pass
+    im = im.convert("RGB")
     im.thumbnail((LONG_SIDE, LONG_SIDE))
     return im
 

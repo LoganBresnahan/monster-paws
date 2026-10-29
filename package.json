@@ -36,6 +36,7 @@
     "explore:groinmask": "docker compose -f comfyui/compose.yml run --rm --no-deps --entrypoint python explore /home/comfy/harness/groinmask.py",
     "explore:groinlines": "docker compose -f comfyui/compose.yml run --rm --no-deps --entrypoint python explore /home/comfy/harness/groinlines.py",
     "explore:groinink": "docker compose -f comfyui/compose.yml run --rm --no-deps --entrypoint python explore /home/comfy/harness/groinink.py",
+    "explore:pairs": "docker compose -f comfyui/compose.yml run --rm --no-deps --entrypoint python explore /home/comfy/harness/pairs.py",
     "explore:legs": "docker compose -f comfyui/compose.yml run --rm --no-deps --entrypoint python explore /home/comfy/harness/legs.py",
     "explore:signature": "docker compose -f comfyui/compose.yml run --rm --no-deps --entrypoint python explore /home/comfy/harness/signature.py",
     "explore:consensus": "docker compose -f comfyui/compose.yml run --rm --entrypoint python explore /home/comfy/harness/likeness.py consensus",

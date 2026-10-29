@@ -1,0 +1,293 @@
+{
+  "_": "Batch 13c — batch 13a's standing dogs whose head the detector did not find (46 of the 121 photos have none), subject reference only (the `reference` graph, as batch 8g; `reference2` with no head fails validation) did for Lucca and Lulu. klein-v1 exactly (BFL's fp8 klein, reference2, the grown subject from comfyui/explore/detect-lora.json, ADR-0026), the words written from the photos with no sex named, landscape canvas, two seeds — the better of the two goes to the hand step. Nothing experimental: these are the paintings the LoRA learns from. Never RescueGroups photos (ADR-0006 as amended 2026-08-25 §2).",
+  "animals": {
+    "contre-jour-photograph-of-a-standing-puppy-at-sunset-with-co": {
+      "kind": "dog",
+      "describe": "tan short-haired dog",
+      "one": [
+        "Contre-jour-photograph-of-a-standing-puppy-at-sunset-with-co.jpg"
+      ],
+      "set": "lora-train"
+    },
+    "viljo-koirarannalla-16": {
+      "kind": "dog",
+      "describe": "red-gold toller retriever",
+      "one": [
+        "Viljo-koirarannalla-16.jpg"
+      ],
+      "set": "lora-train"
+    },
+    "benasque-linsoles-galgo-01": {
+      "kind": "dog",
+      "describe": "brindle grey galgo greyhound",
+      "one": [
+        "Benasque-Linsoles-Galgo-01.jpg"
+      ],
+      "set": "lora-train"
+    },
+    "benasque-anciles-labrador-retriever": {
+      "kind": "dog",
+      "describe": "yellow labrador retriever",
+      "one": [
+        "Benasque-Anciles-Labrador-Retriever.jpg"
+      ],
+      "set": "lora-train"
+    },
+    "tapsi-miniature-poodle-galloping-contraction-harangi-coorg-a": {
+      "kind": "dog",
+      "describe": "brown miniature poodle",
+      "one": [
+        "Tapsi-Miniature-Poodle-Galloping-Contraction-Harangi-Coorg-A.jpg"
+      ],
+      "set": "lora-train"
+    },
+    "aussie-puppy-match-show": {
+      "kind": "dog",
+      "describe": "black and white australian shepherd puppy",
+      "one": [
+        "Aussie-puppy-match-show.jpg"
+      ],
+      "set": "lora-train"
+    },
+    "aht-blue2": {
+      "kind": "dog",
+      "describe": "hairless grey american hairless terrier",
+      "one": [
+        "Aht-blue2.jpg"
+      ],
+      "set": "lora-train"
+    },
+    "2016-01-19-winter-2016-in-berlin-17": {
+      "kind": "dog",
+      "describe": "black dog",
+      "one": [
+        "2016-01-19-Winter-2016-in-Berlin-17.jpg"
+      ],
+      "set": "lora-train"
+    },
+    "australian-cattle-dog-chessie": {
+      "kind": "dog",
+      "describe": "blue heeler australian cattle dog",
+      "one": [
+        "Australian-Cattle-Dog-Chessie.jpg"
+      ],
+      "set": "lora-train"
+    },
+    "akiki3-1-of-1": {
+      "kind": "dog",
+      "describe": "tan azawakh sighthound",
+      "one": [
+        "Akiki3-1-of-1.jpg"
+      ],
+      "set": "lora-train"
+    },
+    "163villages-sitios-and-puroks-of-san-isidro-minalin-pampanga": {
+      "kind": "dog",
+      "describe": "white short-haired dog",
+      "one": [
+        "163Villages-sitios-and-puroks-of-San-Isidro-Minalin-Pampanga.jpg"
+      ],
+      "set": "lora-train"
+    },
+    "bichonfrise2": {
+      "kind": "dog",
+      "describe": "white bichon frise",
+      "one": [
+        "Bichonfrise2.jpg"
+      ],
+      "set": "lora-train"
+    },
+    "9402photos-taken-2020-coronavirus-pandemic-baliuag-21": {
+      "kind": "dog",
+      "describe": "white and tan street dog",
+      "one": [
+        "9402Photos-taken-2020-coronavirus-pandemic-Baliuag-21.jpg"
+      ],
+      "set": "lora-train"
+    },
+    "3625pongpong-bail-santo-tomas-la-union-67": {
+      "kind": "dog",
+      "describe": "white street dog",
+      "one": [
+        "3625Pongpong-Bail-Santo-Tomas-La-Union-67.jpg"
+      ],
+      "set": "lora-train"
+    },
+    "kryvyi-rih-dog": {
+      "kind": "dog",
+      "describe": "tan short-haired dog",
+      "one": [
+        "Kryvyi-Rih-dog.jpg"
+      ],
+      "set": "lora-train"
+    },
+    "7921photos-taken-during-2020-coronavirus-pandemic-baliuag-04": {
+      "kind": "dog",
+      "describe": "white and brown street dog",
+      "one": [
+        "7921Photos-taken-during-2020-coronavirus-pandemic-Baliuag-04.jpg"
+      ],
+      "set": "lora-train"
+    },
+    "himalayan-sheep-dog-1": {
+      "kind": "dog",
+      "describe": "black and tan himalayan sheepdog",
+      "one": [
+        "Himalayan-sheep-dog-1.jpg"
+      ],
+      "set": "lora-train"
+    },
+    "8323photos-taken-during-2020-coronavirus-pandemic-baliuag-09": {
+      "kind": "dog",
+      "describe": "tan and white street dog",
+      "one": [
+        "8323Photos-taken-during-2020-coronavirus-pandemic-Baliuag-09.jpg"
+      ],
+      "set": "lora-train"
+    },
+    "8833effects-of-tropical-depression-ofel-habagat-overcast-in": {
+      "kind": "dog",
+      "describe": "white street dog",
+      "one": [
+        "8833Effects-of-Tropical-Depression-Ofel-Habagat-Overcast-in-.jpg"
+      ],
+      "set": "lora-train"
+    },
+    "igelball-als-beute": {
+      "kind": "dog",
+      "describe": "white and brown terrier mix",
+      "one": [
+        "Igelball-als-Beute.jpg"
+      ],
+      "set": "lora-train"
+    },
+    "1": {
+      "kind": "dog",
+      "describe": "white street dog",
+      "one": [
+        "1.jpg"
+      ],
+      "set": "lora-train"
+    },
+    "9300bustos-dam-eco-park-35": {
+      "kind": "dog",
+      "describe": "brown street dog",
+      "one": [
+        "9300Bustos-Dam-Eco-Park-35.jpg"
+      ],
+      "set": "lora-train"
+    },
+    "1-cropped": {
+      "kind": "dog",
+      "describe": "grey brindle street dog",
+      "one": [
+        "1-cropped.jpg"
+      ],
+      "set": "lora-train"
+    },
+    "6664damortis-santo-tomas-la-union-30": {
+      "kind": "dog",
+      "describe": "tan street dog",
+      "one": [
+        "6664Damortis-Santo-Tomas-La-Union-30.jpg"
+      ],
+      "set": "lora-train"
+    },
+    "9611photos-taken-during-2020-coronavirus-pandemic-25": {
+      "kind": "dog",
+      "describe": "tan street dog",
+      "one": [
+        "9611Photos-taken-during-2020-coronavirus-pandemic-25.jpg"
+      ],
+      "set": "lora-train"
+    },
+    "7921photos-taken-during-2020-coronavirus-pandemic-baliuag-05": {
+      "kind": "dog",
+      "describe": "white and brown street dog",
+      "one": [
+        "7921Photos-taken-during-2020-coronavirus-pandemic-Baliuag-05.jpg"
+      ],
+      "set": "lora-train"
+    },
+    "9611photos-taken-during-2020-coronavirus-pandemic-26": {
+      "kind": "dog",
+      "describe": "tan street dog",
+      "one": [
+        "9611Photos-taken-during-2020-coronavirus-pandemic-26.jpg"
+      ],
+      "set": "lora-train"
+    },
+    "bohemian-shepherd-chodsky-1": {
+      "kind": "dog",
+      "describe": "black and tan bohemian shepherd",
+      "one": [
+        "Bohemian-Shepherd-Chodsky-1.jpg"
+      ],
+      "set": "lora-train"
+    },
+    "158inmanduyan-laoac-pangasinan-40": {
+      "kind": "dog",
+      "describe": "tan street dog",
+      "one": [
+        "158Inmanduyan-Laoac-Pangasinan-40.jpg"
+      ],
+      "set": "lora-train"
+    },
+    "golden-retriever-am-juister-strand": {
+      "kind": "dog",
+      "describe": "golden retriever",
+      "one": [
+        "Golden-Retriever-am-Juister-Strand.jpg"
+      ],
+      "set": "lora-train"
+    },
+    "9934poblacion-bustos-bulacan-20": {
+      "kind": "dog",
+      "describe": "grey and white street dog",
+      "one": [
+        "9934Poblacion-Bustos-Bulacan-20.jpg"
+      ],
+      "set": "lora-holdout"
+    },
+    "commons-3a3082db75": {
+      "kind": "dog",
+      "describe": "brown short-haired dog",
+      "one": [
+        "commons-3a3082db75.jpg"
+      ],
+      "set": "lora-train"
+    }
+  },
+  "photos": [
+    "one"
+  ],
+  "crops": [
+    "grownsubject"
+  ],
+  "aspect": [
+    "landscape"
+  ],
+  "describe": [
+    "listing"
+  ],
+  "families": [
+    "kleinbfl8"
+  ],
+  "graphs": [
+    "reference"
+  ],
+  "denoise": [],
+  "weights": [],
+  "weight_types": [],
+  "end_at": [],
+  "loras": [
+    null
+  ],
+  "seeds": [
+    11,
+    222
+  ],
+  "prompts": [
+    "storybook_stand34"
+  ]
+}

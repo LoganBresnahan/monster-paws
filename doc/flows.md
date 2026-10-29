@@ -707,8 +707,10 @@ round. Both workers are the same binary — the droplet's never registers
 
   box asleep / down      → the job waits; no Replicate fallback by default
                            (it would re-open the §2 disclosure)
-  style LoRA training    → rented H100 hour on OUR reference set, never a
-                           shelter photo; .safetensors comes home
+  anatomy LoRA training  → a rented DigitalOcean GPU per job
+                           (scripts/gpu-rental.sh train), on pairs of
+                           Commons dogs only (comfyui/pairs.py), never a
+                           shelter photo; the .safetensors comes home
 ```
 
 ## Error reporting — the SDK is Sentry's, the service is a DSN (ADR-0010)

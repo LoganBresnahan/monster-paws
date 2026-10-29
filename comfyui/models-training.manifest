@@ -1,0 +1,23 @@
+# The weights the anatomy LoRA trains on, on the GPU rental, and nothing else
+# (doc/infra.md, GPU rental; ADR-0004 as amended 2026-10-22). Same format and
+# rules as models.manifest: this line IS the licence record, and a file with no
+# line never loads — the trainer runs with HF_HUB_OFFLINE=1, so ai-toolkit can
+# never fetch around it. Kept apart because these ~16 GB run only in training,
+# laid out as ai-toolkit reads a local model: klein-base-4b/ is its
+# name_or_path, qwen3-4b/ its text encoder.
+#
+# FLUX.2 [klein] Base 4B in bf16 (Black Forest Labs; Apache-2.0, card and LICENSE.md read 2026-10-29): the undistilled model BFL's guide says to train on, the LoRA then running on the distilled klein-v1.
+klein-base-4b/flux-2-klein-base-4b.safetensors  hf:black-forest-labs/FLUX.2-klein-base-4B/flux-2-klein-base-4b.safetensors  9c5fed22b76baea749d88fc2abe3ad53245e7b21a0d353a762665eea00043b92  Apache-2.0  2026-10-29
+# The FLUX.2 VAE (Apache-2.0): the same bytes as the home store's flux2-vae.safetensors and as ai-toolkit/flux2_vae's ae.safetensors (sha256 compared 2026-10-29), under the name ai-toolkit looks for beside the transformer.
+klein-base-4b/ae.safetensors  hf:Comfy-Org/vae-text-encorder-for-flux-klein-4b/split_files/vae/flux2-vae.safetensors  868fe7b343cc8f3a19dbcfcafbc3d5f888802be3f89bd81b65b3621a066ce8f3  Apache-2.0  2026-10-29
+# Qwen3-4B (Qwen; Apache-2.0, card and LICENSE read 2026-10-29), the transformers checkpoint ai-toolkit's klein 4B loads as its text encoder and tokenizer.
+qwen3-4b/config.json  hf:Qwen/Qwen3-4B/config.json  8ba006f74fecfaaeb392872a60f4a480e7ec9860153d2e1b769ec81f9a147f8a  Apache-2.0  2026-10-29
+qwen3-4b/generation_config.json  hf:Qwen/Qwen3-4B/generation_config.json  2325da0f15bb848e018c5ae071b7943332e9f871d6b60e2ed22ca97d4cb993d2  Apache-2.0  2026-10-29
+qwen3-4b/model-00001-of-00003.safetensors  hf:Qwen/Qwen3-4B/model-00001-of-00003.safetensors  328a91d3122359d5547f9d79521205bc0a46e1f79a792dfe650e99fc2d651223  Apache-2.0  2026-10-29
+qwen3-4b/model-00002-of-00003.safetensors  hf:Qwen/Qwen3-4B/model-00002-of-00003.safetensors  6cd087b316306a68c562436b5492edbcf6e16c6dba3a1308279caa5a58e21ca5  Apache-2.0  2026-10-29
+qwen3-4b/model-00003-of-00003.safetensors  hf:Qwen/Qwen3-4B/model-00003-of-00003.safetensors  e4bf436957184f4eeb86a80e9db394503f1f56446b2e6b7edeac5b81470f4ca1  Apache-2.0  2026-10-29
+qwen3-4b/model.safetensors.index.json  hf:Qwen/Qwen3-4B/model.safetensors.index.json  6dc0981b8829fead746441f68f38f24c5ca4a3a66351f652c26c6df0efc43ab2  Apache-2.0  2026-10-29
+qwen3-4b/merges.txt  hf:Qwen/Qwen3-4B/merges.txt  8831e4f1a044471340f7c0a83d7bd71306a5b867e95fd870f74d0c5308a904d5  Apache-2.0  2026-10-29
+qwen3-4b/tokenizer.json  hf:Qwen/Qwen3-4B/tokenizer.json  aeb13307a71acd8fe81861d94ad54ab689df773318809eed3cbe794b4492dae4  Apache-2.0  2026-10-29
+qwen3-4b/tokenizer_config.json  hf:Qwen/Qwen3-4B/tokenizer_config.json  d5d09f07b48c3086c508b30d1c9114bd1189145b74e982a265350c923acd8101  Apache-2.0  2026-10-29
+qwen3-4b/vocab.json  hf:Qwen/Qwen3-4B/vocab.json  ca10d7e9fb3ed18575dd1e277a2579c16d108e32f27439684afa0e10b1440910  Apache-2.0  2026-10-29

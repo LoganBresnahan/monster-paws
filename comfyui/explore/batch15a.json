@@ -1,0 +1,550 @@
+{
+ "_": "Batch 15a \u2014 the hand step's pilot on the anatomy LoRA's set (2026-10-28): 10 of the 80 training keeps Claude marked and Logan checked (doc/plans/base-model-candidates.md), standing and sitting, short and long coats, the faint chihuahua among them. 12g's winning recipe, unchanged: comfyui/groinlines.py erases a polygon traced round the anatomy by eye on a 0.01 grid, LaMa fills it, klein Base repaints the unlined fill at 0.85 with the anatomy words as its negative, the result composited back through the feathered hole; seeds 1 and 2. Lines the repaint lacks are inked after (groinink.py, 12h), not before.",
+ "graphs": [
+  "inpaint"
+ ],
+ "families": [
+  "kleinbase"
+ ],
+ "inpaints": [
+  "own"
+ ],
+ "negative": "genitals",
+ "fills": [
+  [
+   "sheath",
+   "lamaref",
+   0.85
+  ]
+ ],
+ "seeds": [
+  1,
+  2
+ ],
+ "animals": {
+  "australian-blue-cattle-dog-04": {
+   "kind": "dog",
+   "paintings": [
+    {
+     "file": "explore/batch13d/018-australian-blue-cattle-dog-04-one-kleinbfl8-reference-storybook_sit34-s11-grownsubject-listing-landscape_00001_.png",
+     "prompt_text": "a gentle storybook illustration of a blue australian cattle dog sitting in three-quarter view, looking toward the viewer, soft watercolor, warm pastel palette, plain background",
+     "from": "batch13d 018",
+     "sheath": [
+      [
+       0.508,
+       0.731
+      ],
+      [
+       0.522,
+       0.73
+      ],
+      [
+       0.545,
+       0.735
+      ],
+      [
+       0.552,
+       0.746
+      ],
+      [
+       0.55,
+       0.764
+      ],
+      [
+       0.543,
+       0.782
+      ],
+      [
+       0.535,
+       0.789
+      ],
+      [
+       0.522,
+       0.787
+      ],
+      [
+       0.512,
+       0.775
+      ],
+      [
+       0.508,
+       0.757
+      ]
+     ]
+    }
+   ]
+  },
+  "princess-the-big-fat-dog": {
+   "kind": "dog",
+   "paintings": [
+    {
+     "file": "explore/batch13b/055-princess-the-big-fat-dog-one-kleinbfl8-reference2-storybook_sit34-s222-grownsubject-grownhead-listing-landscape_00001_.png",
+     "prompt_text": "a gentle storybook illustration of a tan and white heavy dog sitting in three-quarter view, looking toward the viewer, soft watercolor, warm pastel palette, plain background",
+     "from": "batch13b 055",
+     "sheath": [
+      [
+       0.502,
+       0.757
+      ],
+      [
+       0.539,
+       0.757
+      ],
+      [
+       0.534,
+       0.8
+      ],
+      [
+       0.527,
+       0.83
+      ],
+      [
+       0.522,
+       0.855
+      ],
+      [
+       0.508,
+       0.855
+      ],
+      [
+       0.506,
+       0.83
+      ],
+      [
+       0.502,
+       0.8
+      ]
+     ]
+    }
+   ]
+  },
+  "226poblacion-baliuag-bulacan-06": {
+   "kind": "dog",
+   "paintings": [
+    {
+     "file": "explore/batch13b/041-226poblacion-baliuag-bulacan-06-one-kleinbfl8-reference2-storybook_sit34-s222-grownsubject-grownhead-listing-landscape_00001_.png",
+     "prompt_text": "a gentle storybook illustration of a thin tan street dog sitting in three-quarter view, looking toward the viewer, soft watercolor, warm pastel palette, plain background",
+     "from": "batch13b 041",
+     "sheath": [
+      [
+       0.541,
+       0.745
+      ],
+      [
+       0.58,
+       0.745
+      ],
+      [
+       0.592,
+       0.802
+      ],
+      [
+       0.6,
+       0.84
+      ],
+      [
+       0.59,
+       0.862
+      ],
+      [
+       0.545,
+       0.866
+      ],
+      [
+       0.531,
+       0.845
+      ],
+      [
+       0.531,
+       0.8
+      ]
+     ]
+    }
+   ]
+  },
+  "1": {
+   "kind": "dog",
+   "paintings": [
+    {
+     "file": "explore/batch13c/040-1-one-kleinbfl8-reference-storybook_stand34-s11-grownsubject-listing-landscape_00001_.png",
+     "prompt_text": "a gentle storybook illustration of a white street dog standing in three-quarter view, looking toward the viewer, soft watercolor, warm pastel palette, plain background",
+     "from": "batch13c 040",
+     "sheath": [
+      [
+       0.328,
+       0.519
+      ],
+      [
+       0.336,
+       0.494
+      ],
+      [
+       0.35,
+       0.491
+      ],
+      [
+       0.356,
+       0.505
+      ],
+      [
+       0.363,
+       0.522
+      ],
+      [
+       0.377,
+       0.528
+      ],
+      [
+       0.3825,
+       0.539
+      ],
+      [
+       0.3825,
+       0.554
+      ],
+      [
+       0.3765,
+       0.567
+      ],
+      [
+       0.366,
+       0.565
+      ],
+      [
+       0.351,
+       0.552
+      ],
+      [
+       0.3375,
+       0.539
+      ],
+      [
+       0.3285,
+       0.53
+      ]
+     ]
+    }
+   ]
+  },
+  "8252streets-and-establishment-during-the-pandemic-in-baliuag": {
+   "kind": "dog",
+   "paintings": [
+    {
+     "file": "explore/batch13a/058-8252streets-and-establishment-during-the-pandemic-in-baliuag-one-kleinbfl8-reference2-storybook_stand34-s11-grownsubject-grownhead-listing-landscape_00001_.png",
+     "prompt_text": "a gentle storybook illustration of a tan street dog standing in three-quarter view, looking toward the viewer, soft watercolor, warm pastel palette, plain background",
+     "from": "batch13a 058",
+     "sheath": [
+      [
+       0.3537,
+       0.5147
+      ],
+      [
+       0.364,
+       0.5143
+      ],
+      [
+       0.3791,
+       0.5143
+      ],
+      [
+       0.3887,
+       0.5183
+      ],
+      [
+       0.3936,
+       0.5247
+      ],
+      [
+       0.3953,
+       0.5404
+      ],
+      [
+       0.3942,
+       0.5515
+      ],
+      [
+       0.3894,
+       0.5555
+      ],
+      [
+       0.3812,
+       0.5545
+      ],
+      [
+       0.3667,
+       0.5348
+      ],
+      [
+       0.353,
+       0.5163
+      ]
+     ]
+    }
+   ]
+  },
+  "9566photos-taken-during-2020-coronavirus-pandemic-07": {
+   "kind": "dog",
+   "paintings": [
+    {
+     "file": "explore/batch13a/066-9566photos-taken-during-2020-coronavirus-pandemic-07-one-kleinbfl8-reference2-storybook_stand34-s11-grownsubject-grownhead-listing-landscape_00001_.png",
+     "prompt_text": "a gentle storybook illustration of a white and black street dog standing in three-quarter view, looking toward the viewer, soft watercolor, warm pastel palette, plain background",
+     "from": "batch13a 066",
+     "sheath": [
+      [
+       0.3396,
+       0.5383
+      ],
+      [
+       0.3499,
+       0.5232
+      ],
+      [
+       0.365,
+       0.5212
+      ],
+      [
+       0.3787,
+       0.5262
+      ],
+      [
+       0.387,
+       0.5403
+      ],
+      [
+       0.3904,
+       0.5604
+      ],
+      [
+       0.3884,
+       0.5735
+      ],
+      [
+       0.3829,
+       0.5785
+      ],
+      [
+       0.3732,
+       0.5781
+      ],
+      [
+       0.3581,
+       0.5604
+      ],
+      [
+       0.3402,
+       0.5423
+      ]
+     ]
+    }
+   ]
+  },
+  "akiki3-1-of-1": {
+   "kind": "dog",
+   "paintings": [
+    {
+     "file": "explore/batch13c/019-akiki3-1-of-1-one-kleinbfl8-reference-storybook_stand34-s222-grownsubject-listing-landscape_00001_.png",
+     "prompt_text": "a gentle storybook illustration of a tan azawakh sighthound standing in three-quarter view, looking toward the viewer, soft watercolor, warm pastel palette, plain background",
+     "from": "batch13c 019",
+     "sheath": [
+      [
+       0.3864,
+       0.4794
+      ],
+      [
+       0.394,
+       0.4639
+      ],
+      [
+       0.4077,
+       0.4599
+      ],
+      [
+       0.4201,
+       0.4683
+      ],
+      [
+       0.4222,
+       0.4864
+      ],
+      [
+       0.4174,
+       0.5015
+      ],
+      [
+       0.405,
+       0.5015
+      ],
+      [
+       0.394,
+       0.4915
+      ]
+     ]
+    }
+   ]
+  },
+  "benasque-linsoles-galgo-01": {
+   "kind": "dog",
+   "paintings": [
+    {
+     "file": "explore/batch13c/004-benasque-linsoles-galgo-01-one-kleinbfl8-reference-storybook_stand34-s11-grownsubject-listing-landscape_00001_.png",
+     "prompt_text": "a gentle storybook illustration of a brindle grey galgo greyhound standing in three-quarter view, looking toward the viewer, soft watercolor, warm pastel palette, plain background",
+     "from": "batch13c 004",
+     "sheath": [
+      [
+       0.3241,
+       0.5039
+      ],
+      [
+       0.3316,
+       0.4992
+      ],
+      [
+       0.3412,
+       0.4982
+      ],
+      [
+       0.3522,
+       0.5039
+      ],
+      [
+       0.3646,
+       0.5147
+      ],
+      [
+       0.3687,
+       0.5204
+      ],
+      [
+       0.369,
+       0.5314
+      ],
+      [
+       0.3653,
+       0.5409
+      ],
+      [
+       0.355,
+       0.5429
+      ],
+      [
+       0.3412,
+       0.5274
+      ],
+      [
+       0.3241,
+       0.5093
+      ]
+     ]
+    }
+   ]
+  },
+  "m-nster-wolbeck-wolbecker-tiergarten-hund-2014-7130": {
+   "kind": "dog",
+   "paintings": [
+    {
+     "file": "explore/batch13a/013-m-nster-wolbeck-wolbecker-tiergarten-hund-2014-7130-one-kleinbfl8-reference2-storybook_stand34-s222-grownsubject-grownhead-listing-landscape_00001_.png",
+     "prompt_text": "a gentle storybook illustration of a fawn boxer with a black mask standing in three-quarter view, looking toward the viewer, soft watercolor, warm pastel palette, plain background",
+     "from": "batch13a 013",
+     "sheath": [
+      [
+       0.5575,
+       0.5104
+      ],
+      [
+       0.5669,
+       0.4912
+      ],
+      [
+       0.58,
+       0.4721
+      ],
+      [
+       0.6006,
+       0.4551
+      ],
+      [
+       0.6213,
+       0.457
+      ],
+      [
+       0.6325,
+       0.4693
+      ],
+      [
+       0.6372,
+       0.4926
+      ],
+      [
+       0.6325,
+       0.5036
+      ],
+      [
+       0.61,
+       0.5077
+      ],
+      [
+       0.6025,
+       0.5296
+      ],
+      [
+       0.5913,
+       0.5447
+      ],
+      [
+       0.5763,
+       0.5501
+      ],
+      [
+       0.5622,
+       0.546
+      ],
+      [
+       0.5566,
+       0.5296
+      ]
+     ]
+    }
+   ]
+  },
+  "chihuahua-qui-profite-du-soleil": {
+   "kind": "dog",
+   "paintings": [
+    {
+     "file": "explore/batch13b/008-chihuahua-qui-profite-du-soleil-one-kleinbfl8-reference2-storybook_sit34-s11-grownsubject-grownhead-listing-landscape_00001_.png",
+     "prompt_text": "a gentle storybook illustration of a long-haired tan chihuahua sitting in three-quarter view, looking toward the viewer, soft watercolor, warm pastel palette, plain background",
+     "from": "batch13b 008",
+     "sheath": [
+      [
+       0.5577,
+       0.8181
+      ],
+      [
+       0.566,
+       0.8175
+      ],
+      [
+       0.5705,
+       0.8225
+      ],
+      [
+       0.5682,
+       0.8324
+      ],
+      [
+       0.563,
+       0.8346
+      ],
+      [
+       0.5592,
+       0.8313
+      ],
+      [
+       0.5577,
+       0.8247
+      ]
+     ]
+    }
+   ]
+  }
+ }
+}

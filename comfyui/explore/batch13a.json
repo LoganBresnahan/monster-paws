@@ -1,0 +1,352 @@
+{
+  "_": "Batch 13a — the anatomy LoRA's standing dogs painted as production paints (ADR-0031, 2026-10-27): every standing or walking dog in lora-train and lora-holdout whose head the detector found (`set` says which; the holdout is painted only for its before-and-after, never trained on), the three-quarter standing prompt, klein-v1 exactly (BFL's fp8 klein, reference2, the grown subject and grown head from comfyui/explore/detect-lora.json, ADR-0026), the words written from the photos with no sex named, landscape canvas, two seeds — the better of the two goes to the hand step. Nothing experimental: these are the paintings the LoRA learns from. Never RescueGroups photos (ADR-0006 as amended 2026-08-25 §2).",
+  "animals": {
+    "dalmatian-fetching-a-stick": {
+      "kind": "dog",
+      "describe": "white dalmatian with black spots",
+      "one": [
+        "Dalmatian-fetching-a-stick.jpg"
+      ],
+      "set": "lora-train"
+    },
+    "polski-owczarek-nizinny-rybnik-kamien-pl": {
+      "kind": "dog",
+      "describe": "black and white shaggy polish lowland sheepdog",
+      "one": [
+        "Polski-owczarek-nizinny-rybnik-kamien-pl.jpg"
+      ],
+      "set": "lora-train"
+    },
+    "greyhound-racing-amk": {
+      "kind": "dog",
+      "describe": "brindle greyhound running",
+      "one": [
+        "Greyhound-Racing-amk.jpg"
+      ],
+      "set": "lora-train"
+    },
+    "viljo-koirarannalla-11": {
+      "kind": "dog",
+      "describe": "red-gold toller retriever",
+      "one": [
+        "Viljo-koirarannalla-11.jpg"
+      ],
+      "set": "lora-train"
+    },
+    "cavapoo-male-90675": {
+      "kind": "dog",
+      "describe": "apricot curly-coated cavapoo",
+      "one": [
+        "Cavapoo-male-90675.jpg"
+      ],
+      "set": "lora-train"
+    },
+    "lucky-en-panzerwiese-m-nich-alemania-2014-12-24-dd-02": {
+      "kind": "dog",
+      "describe": "small shaggy tan dog",
+      "one": [
+        "Lucky-en-Panzerwiese-M-nich-Alemania-2014-12-24-DD-02.jpg"
+      ],
+      "set": "lora-train"
+    },
+    "m-nster-wolbeck-wolbecker-tiergarten-hund-2014-7130": {
+      "kind": "dog",
+      "describe": "fawn boxer with a black mask",
+      "one": [
+        "M-nster-Wolbeck-Wolbecker-Tiergarten-Hund-2014-7130.jpg"
+      ],
+      "set": "lora-train"
+    },
+    "aimg-1526-nasser-hund": {
+      "kind": "dog",
+      "describe": "white shaggy dog",
+      "one": [
+        "AIMG-1526-nasser-Hund.jpg"
+      ],
+      "set": "lora-train"
+    },
+    "deadgrass-chesapeake-bay-retriever-2": {
+      "kind": "dog",
+      "describe": "brown chesapeake bay retriever",
+      "one": [
+        "Deadgrass-Chesapeake-Bay-Retriever-2.jpg"
+      ],
+      "set": "lora-train"
+    },
+    "basenji-red-white1": {
+      "kind": "dog",
+      "describe": "red and white basenji",
+      "one": [
+        "Basenji-red-white1.jpg"
+      ],
+      "set": "lora-train"
+    },
+    "dandie-dinmont-terrier-mustard-1": {
+      "kind": "dog",
+      "describe": "cream dandie dinmont terrier",
+      "one": [
+        "Dandie-Dinmont-Terrier-mustard-1.jpg"
+      ],
+      "set": "lora-train"
+    },
+    "dandie-dinmont-terrier-mustard-3": {
+      "kind": "dog",
+      "describe": "cream dandie dinmont terrier",
+      "one": [
+        "Dandie-Dinmont-Terrier-mustard-3.jpg"
+      ],
+      "set": "lora-train"
+    },
+    "chodsky3": {
+      "kind": "dog",
+      "describe": "black and tan bohemian shepherd",
+      "one": [
+        "Chodsky3.jpg"
+      ],
+      "set": "lora-train"
+    },
+    "bassetfauve1": {
+      "kind": "dog",
+      "describe": "fawn basset fauve de bretagne",
+      "one": [
+        "Bassetfauve1.jpg"
+      ],
+      "set": "lora-train"
+    },
+    "australian-kelpie-liver-tan-4": {
+      "kind": "dog",
+      "describe": "liver and tan australian kelpie",
+      "one": [
+        "Australian-Kelpie-liver-tan-4.jpg"
+      ],
+      "set": "lora-train"
+    },
+    "breed-typical-female-correct-type-proportions-colors-and-siz": {
+      "kind": "dog",
+      "describe": "white and tan jack russell terrier",
+      "one": [
+        "Breed-typical-female-correct-type-proportions-colors-and-siz.jpg"
+      ],
+      "set": "lora-train"
+    },
+    "borzoi-white-brindle-2": {
+      "kind": "dog",
+      "describe": "white and brindle borzoi",
+      "one": [
+        "Borzoi-white-brindle-2.jpg"
+      ],
+      "set": "lora-train"
+    },
+    "brindle-tosa": {
+      "kind": "dog",
+      "describe": "brindle tosa",
+      "one": [
+        "Brindle-Tosa.jpg"
+      ],
+      "set": "lora-train"
+    },
+    "dog-in-chianciano-terme": {
+      "kind": "dog",
+      "describe": "tan short-haired dog",
+      "one": [
+        "Dog-in-Chianciano-Terme.jpg"
+      ],
+      "set": "lora-train"
+    },
+    "2008-07-28-dog-at-frolick-field": {
+      "kind": "dog",
+      "describe": "brindle french bulldog",
+      "one": [
+        "2008-07-28-Dog-at-Frolick-Field.jpg"
+      ],
+      "set": "lora-train"
+    },
+    "basenji-red-white2": {
+      "kind": "dog",
+      "describe": "red and white basenji",
+      "one": [
+        "Basenji-red-white2.jpg"
+      ],
+      "set": "lora-train"
+    },
+    "beagle-red-white-2": {
+      "kind": "dog",
+      "describe": "red and white beagle",
+      "one": [
+        "Beagle-red-white-2.jpg"
+      ],
+      "set": "lora-train"
+    },
+    "basenji-red-white-2": {
+      "kind": "dog",
+      "describe": "red and white basenji",
+      "one": [
+        "Basenji-red-white-2.jpg"
+      ],
+      "set": "lora-train"
+    },
+    "beagle-red-white-1": {
+      "kind": "dog",
+      "describe": "red and white beagle",
+      "one": [
+        "Beagle-red-white-1.jpg"
+      ],
+      "set": "lora-train"
+    },
+    "cairnwheaten": {
+      "kind": "dog",
+      "describe": "wheaten cairn terrier",
+      "one": [
+        "Cairnwheaten.jpg"
+      ],
+      "set": "lora-train"
+    },
+    "boston-terrier-ving-rdens-essi-von-richards-23995273800-2": {
+      "kind": "dog",
+      "describe": "black and white boston terrier",
+      "one": [
+        "BOSTON-TERRIER-Ving-rdens-Essi-von-Richards-23995273800-2.jpg"
+      ],
+      "set": "lora-train"
+    },
+    "himalayan-sheep-dog-2": {
+      "kind": "dog",
+      "describe": "tan and white himalayan sheepdog",
+      "one": [
+        "Himalayan-sheep-dog-2.jpg"
+      ],
+      "set": "lora-train"
+    },
+    "dog-sunset": {
+      "kind": "dog",
+      "describe": "grey shaggy dog",
+      "one": [
+        "Dog-sunset.jpg"
+      ],
+      "set": "lora-train"
+    },
+    "9566photos-taken-during-2020-coronavirus-pandemic-10": {
+      "kind": "dog",
+      "describe": "white and black street dog",
+      "one": [
+        "9566Photos-taken-during-2020-coronavirus-pandemic-10.jpg"
+      ],
+      "set": "lora-train"
+    },
+    "8252streets-and-establishment-during-the-pandemic-in-baliuag": {
+      "kind": "dog",
+      "describe": "tan street dog",
+      "one": [
+        "8252Streets-and-establishment-during-the-pandemic-in-Baliuag.jpg"
+      ],
+      "set": "lora-train"
+    },
+    "9611photos-taken-during-2020-coronavirus-pandemic-12": {
+      "kind": "dog",
+      "describe": "white street dog",
+      "one": [
+        "9611Photos-taken-during-2020-coronavirus-pandemic-12.jpg"
+      ],
+      "set": "lora-train"
+    },
+    "newfoundland-brown-1": {
+      "kind": "dog",
+      "describe": "brown newfoundland",
+      "one": [
+        "Newfoundland-brown-1.jpg"
+      ],
+      "set": "lora-train"
+    },
+    "a-covent-garden-fashion-fete": {
+      "kind": "dog",
+      "describe": "black and tan smooth dachshund",
+      "one": [
+        "A-Covent-Garden-Fashion-Fete.jpg"
+      ],
+      "set": "lora-train"
+    },
+    "9566photos-taken-during-2020-coronavirus-pandemic-07": {
+      "kind": "dog",
+      "describe": "white and black street dog",
+      "one": [
+        "9566Photos-taken-during-2020-coronavirus-pandemic-07.jpg"
+      ],
+      "set": "lora-train"
+    },
+    "9566photos-taken-during-2020-coronavirus-pandemic-11": {
+      "kind": "dog",
+      "describe": "white and black street dog",
+      "one": [
+        "9566Photos-taken-during-2020-coronavirus-pandemic-11.jpg"
+      ],
+      "set": "lora-train"
+    },
+    "gonzaja-yellow3": {
+      "kind": "dog",
+      "describe": "tan sighthound-type dog",
+      "one": [
+        "Gonzaja-yellow3.jpg"
+      ],
+      "set": "lora-holdout"
+    },
+    "basenji-red-white3": {
+      "kind": "dog",
+      "describe": "red and white basenji",
+      "one": [
+        "Basenji-red-white3.jpg"
+      ],
+      "set": "lora-train"
+    },
+    "rusty-11y9m-irish-setter-uthandi-chennai-may21-r16-04758": {
+      "kind": "dog",
+      "describe": "red irish setter",
+      "one": [
+        "Rusty-11y9m-Irish-Setter-Uthandi-Chennai-May21-R16-04758.jpg"
+      ],
+      "set": "lora-holdout"
+    },
+    "pepe-a-josaphat-looking-back": {
+      "kind": "dog",
+      "describe": "grey weimaraner",
+      "one": [
+        "Pepe-a-Josaphat-looking-back.jpg"
+      ],
+      "set": "lora-holdout"
+    }
+  },
+  "photos": [
+    "one"
+  ],
+  "crops": [
+    "grownsubject"
+  ],
+  "aspect": [
+    "landscape"
+  ],
+  "describe": [
+    "listing"
+  ],
+  "families": [
+    "kleinbfl8"
+  ],
+  "graphs": [
+    "reference2"
+  ],
+  "denoise": [],
+  "weights": [],
+  "weight_types": [],
+  "end_at": [],
+  "loras": [
+    null
+  ],
+  "seeds": [
+    11,
+    222
+  ],
+  "prompts": [
+    "storybook_stand34"
+  ],
+  "heads": [
+    "grownhead"
+  ]
+}

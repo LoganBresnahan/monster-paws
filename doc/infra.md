@@ -745,7 +745,9 @@ What was load-bearing, in the order it was found:
   [flags]` refuses to start ComfyUI below `FLOOR_GB` (10) and passes flags
   through `COMFY_ARGS` and env through `GPU_ENV`; `guard.sh watch` kills it
   the moment the shared pool passes `SHARED_MAX_GB` (4 — the leak's
-  signature, idle is ~1) or host free crosses the floor; `guard.sh drop`
+  signature, idle is ~1; `dedicated` reads 0.6 GB at idle with nothing on
+  the adapter — the driver's own baseline, 2026-10-27 — so "dedicated 0"
+  in the checks below means that) or host free crosses the floor; `guard.sh drop`
   returns the VM's file cache to Windows, and every `up` runs it first
   (2026-10-14, the memory bullet below); `guard.sh batch <batch> [chunk]` runs the
   explore harness in chunks with a fresh process each time;
@@ -940,7 +942,31 @@ on the box: Commons dogs and the crew only.
   `comfyui/workflows/qwen-edit-v1.api.json` with the one fixed instruction
   over a folder of PNGs and brings the results and the instruction home.
   `down` deletes every tagged droplet and fails loudly if one is left.
-  Training (ai-toolkit, MIT, pinned by commit) is not scripted yet.
+- **Training:** `up train` creates the droplet and ships `comfyui/` but
+  builds no ComfyUI and fetches none of its models. `train <pairs> <out>`
+  ships a pairs set (`npm run explore:pairs -- <set tsv> <name>`, written
+  once under `var/explore/pairs/<name>/`), and on the box
+  `comfyui/rental/train.sh` builds ai-toolkit (MIT) at the commit pinned in
+  `comfyui/rental/ai-toolkit.Dockerfile`, with the torch and CUDA base its
+  own Dockerfile names at that commit; fetches the weights in
+  `comfyui/models-training.manifest` (~16 GB) with `models.py`; and runs
+  `comfyui/rental/train.py`, which writes the job's config from
+  `comfyui/rental/anatomy-lora.yaml` and runs ai-toolkit with
+  `HF_HUB_OFFLINE=1`, so no weight comes from anywhere but the manifest.
+  ai-toolkit's klein 4B names its text encoder by hub id in code, not in
+  config, so `train.py` points it at the manifest's copy. The checkpoints
+  (every 250 steps), the progress samples (lora-holdout dogs only) and the
+  config come home into `<out>`, with the set's `pairs.tsv`; a rerun
+  resumes from the last checkpoint. Then `down`.
+- **Checked at home before the first run (2026-10-29, CPU, no card):** the
+  image builds (15.5 GB, about four minutes); every ai-toolkit model
+  module imports, the class its registry hands out for `flux2_klein_4b` is
+  the one `train.py` repoints, the config parses, and the loader's file
+  matching finds a subject for all 97 targets and a head for 66. Two traps:
+  ai-toolkit's own Dockerfile downgrades setuptools to 69.5.1, which torch
+  2.13 and its own requirements refuse, so ours does not; and importing
+  its model package asks CUDA for a warp size (OmniGen2's module), so a
+  check without a GPU has to stub `torch.cuda.get_device_properties`.
 - **Traps found on the first run (2026-10-23, an hour, about $4.50):**
   the droplet's Docker builds with the legacy builder, which cannot
   resolve the Dockerfile's `comfy:comfy` chown — `serve` installs
@@ -955,6 +981,8 @@ on the box: Commons dogs and the crew only.
   `MODELS_MANIFEST`, never `models.manifest`: the home store fetches every
   line of that one at each start, and Qwen-Image-Edit's ~58 GB only ever
   runs on a rented card. Same format, same hash check, same licence record.
+  Training reads `comfyui/models-training.manifest` the same way, laid out
+  as ai-toolkit reads a local model.
 
 ## Deployment architecture
 

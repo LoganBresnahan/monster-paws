@@ -1,0 +1,95 @@
+{
+ "_": "Batch 15c \u2014 the thin tan dog sitting (13b-041) again (Logan, 2026-10-28: 15a's stomach came out blurry, 15b's ink did not help): the whole mauve wedge erased out to and through its own outlines and the ground shadow beneath, so LaMa fills from the cream belly, thigh and foreleg round it instead of carrying the wedge's mauve on; then the repaint at 0.85 and at 1.0 (klein paints the hole fresh), seeds 1 and 2; any outline the hole took is inked after.",
+ "graphs": [
+  "inpaint"
+ ],
+ "families": [
+  "kleinbase"
+ ],
+ "inpaints": [
+  "own"
+ ],
+ "negative": "genitals",
+ "fills": [
+  [
+   "sheath",
+   "lamaref",
+   0.85
+  ],
+  [
+   "sheath",
+   "lamaref",
+   1.0
+  ]
+ ],
+ "seeds": [
+  1,
+  2
+ ],
+ "animals": {
+  "226poblacion-baliuag-bulacan-06": {
+   "kind": "dog",
+   "paintings": [
+    {
+     "file": "explore/batch13b/041-226poblacion-baliuag-bulacan-06-one-kleinbfl8-reference2-storybook_sit34-s222-grownsubject-grownhead-listing-landscape_00001_.png",
+     "prompt_text": "a gentle storybook illustration of a thin tan street dog sitting in three-quarter view, looking toward the viewer, soft watercolor, warm pastel palette, plain background",
+     "from": "batch13b 041",
+     "sheath": [
+      [
+       0.529,
+       0.7438
+      ],
+      [
+       0.5443,
+       0.734
+      ],
+      [
+       0.569,
+       0.7208
+      ],
+      [
+       0.5758,
+       0.7225
+      ],
+      [
+       0.5881,
+       0.7586
+      ],
+      [
+       0.5994,
+       0.8014
+      ],
+      [
+       0.6084,
+       0.8375
+      ],
+      [
+       0.605,
+       0.8572
+      ],
+      [
+       0.5825,
+       0.8622
+      ],
+      [
+       0.551,
+       0.872
+      ],
+      [
+       0.524,
+       0.8572
+      ],
+      [
+       0.5222,
+       0.8079
+      ],
+      [
+       0.5251,
+       0.7685
+      ]
+     ]
+    }
+   ]
+  }
+ }
+}

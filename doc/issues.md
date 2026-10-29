@@ -221,7 +221,12 @@ is the record, and a file of ticked boxes stops being read.
   it. The repeated
   bursts of `LiveKernelEvent` 141/124/193 in Application every few hours
   are Windows Error Reporting resending the same queued reports, not new
-  faults.
+  faults. **2026-10-27 (`/gpu-health` before the LoRA set's first batch):
+  one more — 10-25 14:45 unexpected shutdown, WHEA 1 at the 20:50 boot,
+  24 h up since 10-26 14:09; nothing ran on the card (no batch since
+  10-26's 12h). Compression 5.4 GB at idle (16 preceded the October
+  freezes); BIOS 1836, RAM 2666, driver 32.0.101.9034, `.wslconfig`
+  unchanged; smoke green twice, 0 leaked, ~77 TFLOPS warm.
 - **The WSL VM froze three times on 2026-10-10 (Windows stayed up), each
   time while the explore container loaded the ViT-H encoder into CPU
   memory for the likeness scorer.** No Windows event, no kernel message,

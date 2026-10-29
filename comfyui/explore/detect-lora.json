@@ -1,0 +1,973 @@
+{
+  "_": "The anatomy LoRA's photos (ADR-0031, 2026-10-27): every dog in lora-train and lora-holdout, run with the ADR-0026 rules unchanged so klein-v1 gets its grown subject and head crops. Colour, pose and the painter's words written by Claude from the contact sheets; `subject` says which animal the listing means. Sex is not named: the photos do not say, and the LoRA's lesson is the same either way.",
+  "listings": {
+    "dalmatian-fetching-a-stick": {
+      "species": "dog",
+      "colour": "white",
+      "subject": "the white dalmatian with black spots",
+      "photos": [
+        "commons:lora-train/Dalmatian-fetching-a-stick.jpg"
+      ]
+    },
+    "2": {
+      "species": "dog",
+      "colour": "black",
+      "subject": "the black dog with a white chest",
+      "photos": [
+        "commons:lora-train/2.jpg"
+      ]
+    },
+    "polski-owczarek-nizinny-rybnik-kamien-pl": {
+      "species": "dog",
+      "colour": "black",
+      "subject": "the black and white shaggy polish lowland sheepdog",
+      "photos": [
+        "commons:lora-train/Polski-owczarek-nizinny-rybnik-kamien-pl.jpg"
+      ]
+    },
+    "pies-nierasowy-20201225-1128-5275": {
+      "species": "dog",
+      "colour": "white",
+      "subject": "the white and tan small mixed-breed dog",
+      "photos": [
+        "commons:lora-train/Pies-nierasowy-20201225-1128-5275.jpg"
+      ]
+    },
+    "greyhound-racing-amk": {
+      "species": "dog",
+      "colour": "brown",
+      "subject": "the brindle greyhound running",
+      "photos": [
+        "commons:lora-train/Greyhound-Racing-amk.jpg"
+      ]
+    },
+    "young-mixed-breed-dog-aka": {
+      "species": "dog",
+      "colour": "tan",
+      "subject": "the tan and black young mixed-breed dog",
+      "photos": [
+        "commons:lora-train/Young-mixed-breed-dog-aka.jpg"
+      ]
+    },
+    "contre-jour-photograph-of-a-standing-puppy-at-sunset-with-co": {
+      "species": "dog",
+      "colour": "tan",
+      "subject": "the tan short-haired dog",
+      "photos": [
+        "commons:lora-train/Contre-jour-photograph-of-a-standing-puppy-at-sunset-with-co.jpg"
+      ]
+    },
+    "viljo-koirarannalla-16": {
+      "species": "dog",
+      "colour": "orange",
+      "subject": "the red-gold toller retriever",
+      "photos": [
+        "commons:lora-train/Viljo-koirarannalla-16.jpg"
+      ]
+    },
+    "viljo-koirarannalla-11": {
+      "species": "dog",
+      "colour": "orange",
+      "subject": "the red-gold toller retriever",
+      "photos": [
+        "commons:lora-train/Viljo-koirarannalla-11.jpg"
+      ]
+    },
+    "30-09-25-in-litochoro-01": {
+      "species": "dog",
+      "colour": "white",
+      "subject": "the white dog with black patches",
+      "photos": [
+        "commons:lora-train/30-09-25-in-Litochoro-01.jpg"
+      ]
+    },
+    "chihuahua-qui-profite-du-soleil": {
+      "species": "dog",
+      "colour": "tan",
+      "subject": "the long-haired tan chihuahua",
+      "photos": [
+        "commons:lora-train/Chihuahua-qui-profite-du-soleil.jpg"
+      ]
+    },
+    "3": {
+      "species": "dog",
+      "colour": "black",
+      "subject": "the black dog with a white chest",
+      "photos": [
+        "commons:lora-train/3.jpg"
+      ]
+    },
+    "viljo-koirarannalla-19": {
+      "species": "dog",
+      "colour": "orange",
+      "subject": "the red-gold toller retriever",
+      "photos": [
+        "commons:lora-train/Viljo-koirarannalla-19.jpg"
+      ]
+    },
+    "toller-en-j-rvi": {
+      "species": "dog",
+      "colour": "orange",
+      "subject": "the red-gold toller retriever",
+      "photos": [
+        "commons:lora-train/Toller-En-j-rvi.jpg"
+      ]
+    },
+    "keeshond-siberian-husky-crossbreed-puppy": {
+      "species": "dog",
+      "colour": "grey",
+      "subject": "the grey and black fluffy puppy",
+      "photos": [
+        "commons:lora-train/Keeshond-Siberian-Husky-crossbreed-puppy.jpg"
+      ]
+    },
+    "20160801-pies-bagan-6550": {
+      "species": "dog",
+      "colour": "white",
+      "subject": "the white short-haired dog",
+      "photos": [
+        "commons:lora-train/20160801-pies-Bagan-6550.jpg"
+      ]
+    },
+    "cavapoo-male-90675": {
+      "species": "dog",
+      "colour": "brown",
+      "subject": "the apricot curly-coated cavapoo",
+      "photos": [
+        "commons:lora-train/Cavapoo-male-90675.jpg"
+      ]
+    },
+    "benasque-linsoles-galgo-01": {
+      "species": "dog",
+      "colour": "grey",
+      "subject": "the brindle grey galgo greyhound",
+      "photos": [
+        "commons:lora-train/Benasque-Linsoles-Galgo-01.jpg"
+      ]
+    },
+    "wild-lebender-hund-in-bosnien": {
+      "species": "dog",
+      "colour": "brown",
+      "subject": "the brown and tan mixed-breed dog",
+      "photos": [
+        "commons:lora-train/Wild-lebender-Hund-in-Bosnien.jpg"
+      ]
+    },
+    "lucky-en-panzerwiese-m-nich-alemania-2014-12-24-dd-02": {
+      "species": "dog",
+      "colour": "tan",
+      "subject": "the small shaggy tan dog",
+      "photos": [
+        "commons:lora-train/Lucky-en-Panzerwiese-M-nich-Alemania-2014-12-24-DD-02.jpg"
+      ]
+    },
+    "m-nster-wolbeck-wolbecker-tiergarten-hund-2014-7130": {
+      "species": "dog",
+      "colour": "tan",
+      "subject": "the fawn boxer with a black mask",
+      "photos": [
+        "commons:lora-train/M-nster-Wolbeck-Wolbecker-Tiergarten-Hund-2014-7130.jpg"
+      ]
+    },
+    "benasque-anciles-labrador-retriever": {
+      "species": "dog",
+      "colour": "white",
+      "subject": "the yellow labrador retriever",
+      "photos": [
+        "commons:lora-train/Benasque-Anciles-Labrador-Retriever.jpg"
+      ]
+    },
+    "beagle-in-viroinval-dsc04556": {
+      "species": "dog",
+      "colour": "brown",
+      "subject": "the tricolour beagle",
+      "photos": [
+        "commons:lora-train/Beagle-in-Viroinval-DSC04556.jpg"
+      ]
+    },
+    "2008-07-11-white-german-shepherd-pup-chilling-at-the-coker-a": {
+      "species": "dog",
+      "colour": "white",
+      "subject": "the white german shepherd",
+      "photos": [
+        "commons:lora-train/2008-07-11-White-German-Shepherd-pup-chilling-at-the-Coker-A.jpg"
+      ]
+    },
+    "tapsi-miniature-poodle-galloping-contraction-harangi-coorg-a": {
+      "species": "dog",
+      "colour": "brown",
+      "subject": "the brown miniature poodle",
+      "photos": [
+        "commons:lora-train/Tapsi-Miniature-Poodle-Galloping-Contraction-Harangi-Coorg-A.jpg"
+      ]
+    },
+    "maltipoo-95574": {
+      "species": "dog",
+      "colour": "tan",
+      "subject": "the cream maltipoo",
+      "photos": [
+        "commons:lora-train/Maltipoo-95574.jpg"
+      ]
+    },
+    "aussie-puppy-match-show": {
+      "species": "dog",
+      "colour": "black",
+      "subject": "the black and white australian shepherd puppy",
+      "photos": [
+        "commons:lora-train/Aussie-puppy-match-show.jpg"
+      ]
+    },
+    "aimg-1526-nasser-hund": {
+      "species": "dog",
+      "colour": "white",
+      "subject": "the white shaggy dog",
+      "photos": [
+        "commons:lora-train/AIMG-1526-nasser-Hund.jpg"
+      ]
+    },
+    "aht-blue2": {
+      "species": "dog",
+      "colour": "grey",
+      "subject": "the hairless grey american hairless terrier",
+      "photos": [
+        "commons:lora-train/Aht-blue2.jpg"
+      ]
+    },
+    "deadgrass-chesapeake-bay-retriever-2": {
+      "species": "dog",
+      "colour": "brown",
+      "subject": "the brown chesapeake bay retriever",
+      "photos": [
+        "commons:lora-train/Deadgrass-Chesapeake-Bay-Retriever-2.jpg"
+      ]
+    },
+    "2016-01-19-winter-2016-in-berlin-17": {
+      "species": "dog",
+      "colour": "black",
+      "subject": "the black dog",
+      "photos": [
+        "commons:lora-train/2016-01-19-Winter-2016-in-Berlin-17.jpg"
+      ]
+    },
+    "basenji-red-white1": {
+      "species": "dog",
+      "colour": "orange",
+      "subject": "the red and white basenji",
+      "photos": [
+        "commons:lora-train/Basenji-red-white1.jpg"
+      ]
+    },
+    "australian-cattle-dog-chessie": {
+      "species": "dog",
+      "colour": "grey",
+      "subject": "the blue heeler australian cattle dog",
+      "photos": [
+        "commons:lora-train/Australian-Cattle-Dog-Chessie.jpg"
+      ]
+    },
+    "dandie-dinmont-terrier-mustard-1": {
+      "species": "dog",
+      "colour": "tan",
+      "subject": "the cream dandie dinmont terrier",
+      "photos": [
+        "commons:lora-train/Dandie-Dinmont-Terrier-mustard-1.jpg"
+      ]
+    },
+    "dandie-dinmont-terrier-mustard-3": {
+      "species": "dog",
+      "colour": "tan",
+      "subject": "the cream dandie dinmont terrier",
+      "photos": [
+        "commons:lora-train/Dandie-Dinmont-Terrier-mustard-3.jpg"
+      ]
+    },
+    "chodsky3": {
+      "species": "dog",
+      "colour": "black",
+      "subject": "the black and tan bohemian shepherd",
+      "photos": [
+        "commons:lora-train/Chodsky3.jpg"
+      ]
+    },
+    "bassetfauve1": {
+      "species": "dog",
+      "colour": "tan",
+      "subject": "the fawn basset fauve de bretagne",
+      "photos": [
+        "commons:lora-train/Bassetfauve1.jpg"
+      ]
+    },
+    "australian-kelpie-liver-tan-4": {
+      "species": "dog",
+      "colour": "brown",
+      "subject": "the liver and tan australian kelpie",
+      "photos": [
+        "commons:lora-train/Australian-Kelpie-liver-tan-4.jpg"
+      ]
+    },
+    "akiki3-1-of-1": {
+      "species": "dog",
+      "colour": "tan",
+      "subject": "the tan azawakh sighthound",
+      "photos": [
+        "commons:lora-train/Akiki3-1-of-1.jpg"
+      ]
+    },
+    "breed-typical-female-correct-type-proportions-colors-and-siz": {
+      "species": "dog",
+      "colour": "white",
+      "subject": "the white and tan jack russell terrier",
+      "photos": [
+        "commons:lora-train/Breed-typical-female-correct-type-proportions-colors-and-siz.jpg"
+      ]
+    },
+    "borzoi-white-brindle-2": {
+      "species": "dog",
+      "colour": "white",
+      "subject": "the white and brindle borzoi",
+      "photos": [
+        "commons:lora-train/Borzoi-white-brindle-2.jpg"
+      ]
+    },
+    "brindle-tosa": {
+      "species": "dog",
+      "colour": "brown",
+      "subject": "the brindle tosa",
+      "photos": [
+        "commons:lora-train/Brindle-Tosa.jpg"
+      ]
+    },
+    "dog-in-chianciano-terme": {
+      "species": "dog",
+      "colour": "tan",
+      "subject": "the tan short-haired dog",
+      "photos": [
+        "commons:lora-train/Dog-in-Chianciano-Terme.jpg"
+      ]
+    },
+    "2008-07-28-dog-at-frolick-field": {
+      "species": "dog",
+      "colour": "brown",
+      "subject": "the brindle french bulldog",
+      "photos": [
+        "commons:lora-train/2008-07-28-Dog-at-Frolick-Field.jpg"
+      ]
+    },
+    "basenji-red-white2": {
+      "species": "dog",
+      "colour": "orange",
+      "subject": "the red and white basenji",
+      "photos": [
+        "commons:lora-train/Basenji-red-white2.jpg"
+      ]
+    },
+    "beagle-red-white-2": {
+      "species": "dog",
+      "colour": "tan",
+      "subject": "the red and white beagle",
+      "photos": [
+        "commons:lora-train/Beagle-red-white-2.jpg"
+      ]
+    },
+    "basenji-red-white-2": {
+      "species": "dog",
+      "colour": "orange",
+      "subject": "the red and white basenji",
+      "photos": [
+        "commons:lora-train/Basenji-red-white-2.jpg"
+      ]
+    },
+    "beagle-red-white-1": {
+      "species": "dog",
+      "colour": "tan",
+      "subject": "the red and white beagle",
+      "photos": [
+        "commons:lora-train/Beagle-red-white-1.jpg"
+      ]
+    },
+    "2-bernesemountaindogingrass": {
+      "species": "dog",
+      "colour": "black",
+      "subject": "the bernese mountain dog",
+      "photos": [
+        "commons:lora-train/2-BerneseMountainDogInGrass.jpg"
+      ]
+    },
+    "163villages-sitios-and-puroks-of-san-isidro-minalin-pampanga": {
+      "species": "dog",
+      "colour": "white",
+      "subject": "the white short-haired dog",
+      "photos": [
+        "commons:lora-train/163Villages-sitios-and-puroks-of-San-Isidro-Minalin-Pampanga.jpg"
+      ]
+    },
+    "bichonfrise2": {
+      "species": "dog",
+      "colour": "white",
+      "subject": "the white bichon frise",
+      "photos": [
+        "commons:lora-train/Bichonfrise2.jpg"
+      ]
+    },
+    "cairnwheaten": {
+      "species": "dog",
+      "colour": "tan",
+      "subject": "the wheaten cairn terrier",
+      "photos": [
+        "commons:lora-train/Cairnwheaten.jpg"
+      ]
+    },
+    "boston-terrier-ving-rdens-essi-von-richards-23995273800-2": {
+      "species": "dog",
+      "colour": "black",
+      "subject": "the black and white boston terrier",
+      "photos": [
+        "commons:lora-train/BOSTON-TERRIER-Ving-rdens-Essi-von-Richards-23995273800-2.jpg"
+      ]
+    },
+    "beagliers-love-a-good-walk": {
+      "species": "dog",
+      "colour": "tan",
+      "subject": "the tan and white beagle",
+      "photos": [
+        "commons:lora-train/Beagliers-love-a-good-walk.jpg"
+      ]
+    },
+    "franz-sische-bulldogge-in-paris-20060505-rm-100032": {
+      "species": "dog",
+      "colour": "white",
+      "subject": "the white french bulldog",
+      "photos": [
+        "commons:lora-train/Franz-sische-Bulldogge-in-Paris-20060505-RM-100032.jpg"
+      ]
+    },
+    "german-shepherd-aka-alsatian-and-alsatian-wolf-dog-deutscher": {
+      "species": "dog",
+      "colour": "black",
+      "subject": "the black and tan german shepherd",
+      "photos": [
+        "commons:lora-train/German-Shepherd-aka-Alsatian-and-Alsatian-Wolf-Dog-Deutscher.jpg"
+      ]
+    },
+    "bucuresti-romania-str-alexandru-philippide-sect-2-cainele-at": {
+      "species": "dog",
+      "colour": "black",
+      "subject": "the black and tan german shepherd",
+      "photos": [
+        "commons:lora-train/Bucuresti-Romania-Str-Alexandru-Philippide-sect-2-Cainele-At.jpg"
+      ]
+    },
+    "doberman-pinscher-aka-dobermann": {
+      "species": "dog",
+      "colour": "black",
+      "subject": "the black and tan doberman pinscher",
+      "photos": [
+        "commons:lora-train/Doberman-Pinscher-aka-Dobermann.jpg"
+      ]
+    },
+    "golden-retriever-fiona-10-months": {
+      "species": "dog",
+      "colour": "tan",
+      "subject": "the golden retriever",
+      "photos": [
+        "commons:lora-train/Golden-Retriever-Fiona-10-months.jpg"
+      ]
+    },
+    "a-dog-sitting-outside-near-a-lake": {
+      "species": "dog",
+      "colour": "brown",
+      "subject": "the black and tan hound mix",
+      "photos": [
+        "commons:lora-train/A-dog-sitting-outside-near-a-lake.jpg"
+      ]
+    },
+    "australian-cattle-dog-sitting": {
+      "species": "dog",
+      "colour": "grey",
+      "subject": "the blue australian cattle dog",
+      "photos": [
+        "commons:lora-train/Australian-Cattle-Dog-sitting.jpg"
+      ]
+    },
+    "dog-friend-2595637875": {
+      "species": "dog",
+      "colour": "white",
+      "subject": "the white and black husky mix",
+      "photos": [
+        "commons:lora-train/Dog-Friend-2595637875.jpg"
+      ]
+    },
+    "chihuahua-sitting": {
+      "species": "dog",
+      "colour": "tan",
+      "subject": "the short-haired tan and white chihuahua",
+      "photos": [
+        "commons:lora-train/Chihuahua-sitting.jpg"
+      ]
+    },
+    "dog-sitting-on-grass-panoramio-1228": {
+      "species": "dog",
+      "colour": "orange",
+      "subject": "the blenheim cavalier king charles spaniel",
+      "photos": [
+        "commons:lora-train/Dog-sitting-on-grass-panoramio-1228.jpg"
+      ]
+    },
+    "franz-sische-bulldogge-gestromt": {
+      "species": "dog",
+      "colour": "black",
+      "subject": "the black french bulldog with a white chest",
+      "photos": [
+        "commons:lora-train/Franz-sische-Bulldogge-Gestromt.jpg"
+      ]
+    },
+    "12-italy-campo-di-grano-e-cagnolino-dog-in-a-wheat-fields": {
+      "species": "dog",
+      "colour": "brown",
+      "subject": "the brown and white mixed-breed dog",
+      "photos": [
+        "commons:lora-train/12-ITALY-campo-di-grano-e-cagnolino-dog-in-a-wheat-fields.jpg"
+      ]
+    },
+    "australian-blue-cattle-dog-04": {
+      "species": "dog",
+      "colour": "grey",
+      "subject": "the blue australian cattle dog",
+      "photos": [
+        "commons:lora-train/Australian-blue-cattle-dog-04.jpg"
+      ]
+    },
+    "gaggenau-bad-rotenfels-2013-panoramio": {
+      "species": "dog",
+      "colour": "black",
+      "subject": "the black and white small dog",
+      "photos": [
+        "commons:lora-train/Gaggenau-Bad-Rotenfels-2013-panoramio.jpg"
+      ]
+    },
+    "226poblacion-baliuag-bulacan-06": {
+      "species": "dog",
+      "colour": "tan",
+      "subject": "the thin tan street dog",
+      "photos": [
+        "commons:lora-train/226Poblacion-Baliuag-Bulacan-06.jpg"
+      ]
+    },
+    "bimba-orientalpei": {
+      "species": "dog",
+      "colour": "tan",
+      "subject": "the fawn shar pei puppy",
+      "photos": [
+        "commons:lora-train/BIMBA-orientalpei.jpg"
+      ]
+    },
+    "2016-03-28-labradoodle-berlin-23": {
+      "species": "dog",
+      "colour": "black",
+      "subject": "the black shaggy labradoodle",
+      "photos": [
+        "commons:lora-train/2016-03-28-Labradoodle-Berlin-23.jpg"
+      ]
+    },
+    "indian-spitz-2": {
+      "species": "dog",
+      "colour": "white",
+      "subject": "the white indian spitz",
+      "photos": [
+        "commons:lora-train/Indian-Spitz-2.jpeg"
+      ]
+    },
+    "casa-de-don-pedro-sierra-nevada-merida-3": {
+      "species": "dog",
+      "colour": "white",
+      "subject": "the white and tan dog",
+      "photos": [
+        "commons:lora-train/Casa-de-Don-Pedro-Sierra-Nevada-Merida-3.jpg"
+      ]
+    },
+    "botox-resting-winter-2013": {
+      "species": "dog",
+      "colour": "white",
+      "subject": "the cream shar pei",
+      "photos": [
+        "commons:lora-train/Botox-resting-Winter-2013.jpg"
+      ]
+    },
+    "daphne-reclining": {
+      "species": "dog",
+      "colour": "tan",
+      "subject": "the tan mixed-breed dog",
+      "photos": [
+        "commons:lora-train/Daphne-reclining.jpg"
+      ]
+    },
+    "2017-05-12-labradoodle": {
+      "species": "dog",
+      "colour": "black",
+      "subject": "the black shaggy labradoodle",
+      "photos": [
+        "commons:lora-train/2017-05-12-Labradoodle.jpg"
+      ]
+    },
+    "2016-03-28-labradoodle-berlin-16": {
+      "species": "dog",
+      "colour": "black",
+      "subject": "the black shaggy labradoodle",
+      "photos": [
+        "commons:lora-train/2016-03-28-Labradoodle-Berlin-16.jpg"
+      ]
+    },
+    "hippy-relaxing-on-the-sand": {
+      "species": "dog",
+      "colour": "black",
+      "subject": "the black and tan german shepherd",
+      "photos": [
+        "commons:lora-train/Hippy-relaxing-on-the-sand.jpg"
+      ]
+    },
+    "princess-the-big-fat-dog": {
+      "species": "dog",
+      "colour": "tan",
+      "subject": "the tan and white heavy dog",
+      "photos": [
+        "commons:lora-train/Princess-The-Big-Fat-Dog.jpg"
+      ]
+    },
+    "9402photos-taken-2020-coronavirus-pandemic-baliuag-21": {
+      "species": "dog",
+      "colour": "white",
+      "subject": "the white and tan street dog",
+      "photos": [
+        "commons:lora-train/9402Photos-taken-2020-coronavirus-pandemic-Baliuag-21.jpg"
+      ]
+    },
+    "3625pongpong-bail-santo-tomas-la-union-67": {
+      "species": "dog",
+      "colour": "white",
+      "subject": "the white street dog",
+      "photos": [
+        "commons:lora-train/3625Pongpong-Bail-Santo-Tomas-La-Union-67.jpg"
+      ]
+    },
+    "kryvyi-rih-dog": {
+      "species": "dog",
+      "colour": "tan",
+      "subject": "the tan short-haired dog",
+      "photos": [
+        "commons:lora-train/Kryvyi-Rih-dog.jpg"
+      ]
+    },
+    "7921photos-taken-during-2020-coronavirus-pandemic-baliuag-04": {
+      "species": "dog",
+      "colour": "white",
+      "subject": "the white and brown street dog",
+      "photos": [
+        "commons:lora-train/7921Photos-taken-during-2020-coronavirus-pandemic-Baliuag-04.jpg"
+      ]
+    },
+    "himalayan-sheep-dog-2": {
+      "species": "dog",
+      "colour": "tan",
+      "subject": "the tan and white himalayan sheepdog",
+      "photos": [
+        "commons:lora-train/Himalayan-sheep-dog-2.jpg"
+      ]
+    },
+    "himalayan-sheep-dog-1": {
+      "species": "dog",
+      "colour": "black",
+      "subject": "the black and tan himalayan sheepdog",
+      "photos": [
+        "commons:lora-train/Himalayan-sheep-dog-1.jpg"
+      ]
+    },
+    "8323photos-taken-during-2020-coronavirus-pandemic-baliuag-09": {
+      "species": "dog",
+      "colour": "tan",
+      "subject": "the tan and white street dog",
+      "photos": [
+        "commons:lora-train/8323Photos-taken-during-2020-coronavirus-pandemic-Baliuag-09.jpg"
+      ]
+    },
+    "dog-sunset": {
+      "species": "dog",
+      "colour": "grey",
+      "subject": "the grey shaggy dog",
+      "photos": [
+        "commons:lora-train/Dog-sunset.jpg"
+      ]
+    },
+    "8833effects-of-tropical-depression-ofel-habagat-overcast-in": {
+      "species": "dog",
+      "colour": "white",
+      "subject": "the white street dog",
+      "photos": [
+        "commons:lora-train/8833Effects-of-Tropical-Depression-Ofel-Habagat-Overcast-in-.jpg"
+      ]
+    },
+    "9566photos-taken-during-2020-coronavirus-pandemic-10": {
+      "species": "dog",
+      "colour": "white",
+      "subject": "the white and black street dog",
+      "photos": [
+        "commons:lora-train/9566Photos-taken-during-2020-coronavirus-pandemic-10.jpg"
+      ]
+    },
+    "igelball-als-beute": {
+      "species": "dog",
+      "colour": "white",
+      "subject": "the white and brown terrier mix",
+      "photos": [
+        "commons:lora-train/Igelball-als-Beute.jpg"
+      ]
+    },
+    "1": {
+      "species": "dog",
+      "colour": "white",
+      "subject": "the white street dog",
+      "photos": [
+        "commons:lora-train/1.jpg"
+      ]
+    },
+    "9300bustos-dam-eco-park-35": {
+      "species": "dog",
+      "colour": "brown",
+      "subject": "the brown street dog",
+      "photos": [
+        "commons:lora-train/9300Bustos-Dam-Eco-Park-35.jpg"
+      ]
+    },
+    "1-cropped": {
+      "species": "dog",
+      "colour": "grey",
+      "subject": "the grey brindle street dog",
+      "photos": [
+        "commons:lora-train/1-cropped.jpg"
+      ]
+    },
+    "6664damortis-santo-tomas-la-union-30": {
+      "species": "dog",
+      "colour": "tan",
+      "subject": "the tan street dog",
+      "photos": [
+        "commons:lora-train/6664Damortis-Santo-Tomas-La-Union-30.jpg"
+      ]
+    },
+    "9611photos-taken-during-2020-coronavirus-pandemic-25": {
+      "species": "dog",
+      "colour": "tan",
+      "subject": "the tan street dog",
+      "photos": [
+        "commons:lora-train/9611Photos-taken-during-2020-coronavirus-pandemic-25.jpg"
+      ]
+    },
+    "8252streets-and-establishment-during-the-pandemic-in-baliuag": {
+      "species": "dog",
+      "colour": "tan",
+      "subject": "the tan street dog",
+      "photos": [
+        "commons:lora-train/8252Streets-and-establishment-during-the-pandemic-in-Baliuag.jpg"
+      ]
+    },
+    "9611photos-taken-during-2020-coronavirus-pandemic-12": {
+      "species": "dog",
+      "colour": "white",
+      "subject": "the white street dog",
+      "photos": [
+        "commons:lora-train/9611Photos-taken-during-2020-coronavirus-pandemic-12.jpg"
+      ]
+    },
+    "7921photos-taken-during-2020-coronavirus-pandemic-baliuag-05": {
+      "species": "dog",
+      "colour": "white",
+      "subject": "the white and brown street dog",
+      "photos": [
+        "commons:lora-train/7921Photos-taken-during-2020-coronavirus-pandemic-Baliuag-05.jpg"
+      ]
+    },
+    "newfoundland-brown-1": {
+      "species": "dog",
+      "colour": "brown",
+      "subject": "the brown newfoundland",
+      "photos": [
+        "commons:lora-train/Newfoundland-brown-1.jpg"
+      ]
+    },
+    "a-covent-garden-fashion-fete": {
+      "species": "dog",
+      "colour": "black",
+      "subject": "the black and tan smooth dachshund",
+      "photos": [
+        "commons:lora-train/A-Covent-Garden-Fashion-Fete.jpg"
+      ]
+    },
+    "9566photos-taken-during-2020-coronavirus-pandemic-07": {
+      "species": "dog",
+      "colour": "white",
+      "subject": "the white and black street dog",
+      "photos": [
+        "commons:lora-train/9566Photos-taken-during-2020-coronavirus-pandemic-07.jpg"
+      ]
+    },
+    "9611photos-taken-during-2020-coronavirus-pandemic-26": {
+      "species": "dog",
+      "colour": "tan",
+      "subject": "the tan street dog",
+      "photos": [
+        "commons:lora-train/9611Photos-taken-during-2020-coronavirus-pandemic-26.jpg"
+      ]
+    },
+    "bohemian-shepherd-chodsky-1": {
+      "species": "dog",
+      "colour": "black",
+      "subject": "the black and tan bohemian shepherd",
+      "photos": [
+        "commons:lora-train/Bohemian-Shepherd-Chodsky-1.jpg"
+      ]
+    },
+    "158inmanduyan-laoac-pangasinan-40": {
+      "species": "dog",
+      "colour": "tan",
+      "subject": "the tan street dog",
+      "photos": [
+        "commons:lora-train/158Inmanduyan-Laoac-Pangasinan-40.jpg"
+      ]
+    },
+    "golden-retriever-am-juister-strand": {
+      "species": "dog",
+      "colour": "tan",
+      "subject": "the golden retriever",
+      "photos": [
+        "commons:lora-train/Golden-Retriever-am-Juister-Strand.jpg"
+      ]
+    },
+    "9566photos-taken-during-2020-coronavirus-pandemic-11": {
+      "species": "dog",
+      "colour": "white",
+      "subject": "the white and black street dog",
+      "photos": [
+        "commons:lora-train/9566Photos-taken-during-2020-coronavirus-pandemic-11.jpg"
+      ]
+    },
+    "teckel-39": {
+      "species": "dog",
+      "colour": "black",
+      "subject": "the black and tan wire-haired dachshund",
+      "photos": [
+        "commons:lora-holdout/Teckel-39.jpg"
+      ]
+    },
+    "pies-nierasowy-20201003-1644-4305": {
+      "species": "dog",
+      "colour": "white",
+      "subject": "the white and tan small mixed-breed dog",
+      "photos": [
+        "commons:lora-holdout/Pies-nierasowy-20201003-1644-4305.jpg"
+      ]
+    },
+    "chinese-crested-dog-on-the-beach-13200": {
+      "species": "dog",
+      "colour": "white",
+      "subject": "the white chinese crested powderpuff",
+      "photos": [
+        "commons:lora-holdout/Chinese-crested-dog-on-the-beach-13200.jpg"
+      ]
+    },
+    "emily-maltese": {
+      "species": "dog",
+      "colour": "white",
+      "subject": "the white maltese",
+      "photos": [
+        "commons:lora-holdout/Emily-Maltese.jpg"
+      ]
+    },
+    "bianca-2-meses": {
+      "species": "dog",
+      "colour": "white",
+      "subject": "the white boxer puppy",
+      "photos": [
+        "commons:lora-holdout/Bianca-2-Meses.jpg"
+      ]
+    },
+    "dog-smiling-at-the-camera-reta-buenos-aires-argentina-04-01": {
+      "species": "dog",
+      "colour": "white",
+      "subject": "the white and tan short-haired dog",
+      "photos": [
+        "commons:lora-holdout/Dog-smiling-at-the-camera-Reta-Buenos-Aires-Argentina-04-01-.jpg"
+      ]
+    },
+    "2016-03-28-labradoodle-berlin-21": {
+      "species": "dog",
+      "colour": "black",
+      "subject": "the black shaggy labradoodle",
+      "photos": [
+        "commons:lora-train/2016-03-28-Labradoodle-Berlin-21.jpg"
+      ]
+    },
+    "bronco-laying-down-lr": {
+      "species": "dog",
+      "colour": "brown",
+      "subject": "the tricolour beagle",
+      "photos": [
+        "commons:lora-holdout/Bronco-laying-down-LR.jpg"
+      ]
+    },
+    "290poblacion-baliuag-bulacan-13": {
+      "species": "dog",
+      "colour": "tan",
+      "subject": "the tan street dog",
+      "photos": [
+        "commons:lora-holdout/290Poblacion-Baliuag-Bulacan-13.jpg"
+      ]
+    },
+    "9934poblacion-bustos-bulacan-20": {
+      "species": "dog",
+      "colour": "grey",
+      "subject": "the grey and white street dog",
+      "photos": [
+        "commons:lora-holdout/9934Poblacion-Bustos-Bulacan-20.jpg"
+      ]
+    },
+    "gonzaja-yellow3": {
+      "species": "dog",
+      "colour": "tan",
+      "subject": "the tan sighthound-type dog",
+      "photos": [
+        "commons:lora-holdout/Gonzaja-yellow3.jpg"
+      ]
+    },
+    "basenji-red-white3": {
+      "species": "dog",
+      "colour": "orange",
+      "subject": "the red and white basenji",
+      "photos": [
+        "commons:lora-train/Basenji-red-white3.jpg"
+      ]
+    },
+    "rusty-11y9m-irish-setter-uthandi-chennai-may21-r16-04758": {
+      "species": "dog",
+      "colour": "orange",
+      "subject": "the red irish setter",
+      "photos": [
+        "commons:lora-holdout/Rusty-11y9m-Irish-Setter-Uthandi-Chennai-May21-R16-04758.jpg"
+      ]
+    },
+    "pepe-a-josaphat-looking-back": {
+      "species": "dog",
+      "colour": "grey",
+      "subject": "the grey weimaraner",
+      "photos": [
+        "commons:lora-holdout/Pepe-a-Josaphat-looking-back.jpg"
+      ]
+    },
+    "commons-3a3082db75": {
+      "species": "dog",
+      "colour": "brown",
+      "subject": "the brown short-haired dog",
+      "photos": [
+        "commons:lora-train/commons-3a3082db75.jpg"
+      ]
+    }
+  }
+}

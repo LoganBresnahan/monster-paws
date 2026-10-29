@@ -1,0 +1,173 @@
+{
+ "_": "Batch 15b \u2014 the lines the pilot's repaints lack, inked after (2026-10-28): Logan read 15a \u2014 the boxer 13a-013 standing needs the arched line where the belly meets the far leg, as Ducky standing did (12h); the thin tan dog 13b-041 sitting came out blurry at the stomach, as Ducky sitting did, so its lower edge above the ground is inked. comfyui/groinink.py, both seeds, no GPU.",
+ "animals": {
+  "m-nster-wolbeck-wolbecker-tiergarten-hund-2014-7130": {
+   "kind": "dog",
+   "paintings": [
+    {
+     "file": "explore/batch13a/013-m-nster-wolbeck-wolbecker-tiergarten-hund-2014-7130-one-kleinbfl8-reference2-storybook_stand34-s222-grownsubject-grownhead-listing-landscape_00001_.png",
+     "prompt_text": "a gentle storybook illustration of a fawn boxer with a black mask standing in three-quarter view, looking toward the viewer, soft watercolor, warm pastel palette, plain background",
+     "from": "batch13a 013",
+     "sheath": [
+      [
+       0.5575,
+       0.5104
+      ],
+      [
+       0.5669,
+       0.4912
+      ],
+      [
+       0.58,
+       0.4721
+      ],
+      [
+       0.6006,
+       0.4551
+      ],
+      [
+       0.6213,
+       0.457
+      ],
+      [
+       0.6325,
+       0.4693
+      ],
+      [
+       0.6372,
+       0.4926
+      ],
+      [
+       0.6325,
+       0.5036
+      ],
+      [
+       0.61,
+       0.5077
+      ],
+      [
+       0.6025,
+       0.5296
+      ],
+      [
+       0.5913,
+       0.5447
+      ],
+      [
+       0.5763,
+       0.5501
+      ],
+      [
+       0.5622,
+       0.546
+      ],
+      [
+       0.5566,
+       0.5296
+      ]
+     ],
+     "ink": [
+      [
+       [
+        0.5513,
+        0.5267
+       ],
+       [
+        0.5725,
+        0.5011
+       ],
+       [
+        0.5925,
+        0.4814
+       ],
+       [
+        0.6125,
+        0.4719
+       ],
+       [
+        0.6305,
+        0.4821
+       ]
+      ]
+     ],
+     "over": [
+      "explore/batch15a/016-m-nster-wolbeck-wolbecker-tiergarten-hund-2014-7130-p0-inpaint-own-sheath-lamaref-d0.85-s1_00001_.png",
+      "explore/batch15a/017-m-nster-wolbeck-wolbecker-tiergarten-hund-2014-7130-p0-inpaint-own-sheath-lamaref-d0.85-s2_00001_.png"
+     ]
+    }
+   ]
+  },
+  "226poblacion-baliuag-bulacan-06": {
+   "kind": "dog",
+   "paintings": [
+    {
+     "file": "explore/batch13b/041-226poblacion-baliuag-bulacan-06-one-kleinbfl8-reference2-storybook_sit34-s222-grownsubject-grownhead-listing-landscape_00001_.png",
+     "prompt_text": "a gentle storybook illustration of a thin tan street dog sitting in three-quarter view, looking toward the viewer, soft watercolor, warm pastel palette, plain background",
+     "from": "batch13b 041",
+     "sheath": [
+      [
+       0.541,
+       0.745
+      ],
+      [
+       0.58,
+       0.745
+      ],
+      [
+       0.592,
+       0.802
+      ],
+      [
+       0.6,
+       0.84
+      ],
+      [
+       0.59,
+       0.862
+      ],
+      [
+       0.545,
+       0.866
+      ],
+      [
+       0.531,
+       0.845
+      ],
+      [
+       0.531,
+       0.8
+      ]
+     ],
+     "ink": [
+      [
+       [
+        0.524,
+        0.854
+       ],
+       [
+        0.5443,
+        0.8664
+       ],
+       [
+        0.5668,
+        0.8704
+       ],
+       [
+        0.5893,
+        0.8678
+       ],
+       [
+        0.6061,
+        0.8556
+       ]
+      ]
+     ],
+     "over": [
+      "explore/batch15a/004-226poblacion-baliuag-bulacan-06-p0-inpaint-own-sheath-lamaref-d0.85-s1_00001_.png",
+      "explore/batch15a/005-226poblacion-baliuag-bulacan-06-p0-inpaint-own-sheath-lamaref-d0.85-s2_00001_.png"
+     ]
+    }
+   ]
+  }
+ }
+}

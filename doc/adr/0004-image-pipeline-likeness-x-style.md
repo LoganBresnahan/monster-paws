@@ -16,6 +16,10 @@
 > DigitalOcean GPU.
 > Self-amended 2026-10-23: the crew's cleaned paintings may appear on the
 > home section (below).
+> Self-amended 2026-10-26: the crew and the LoRA's set cleaned by a hand
+> step. Self-amended 2026-10-28: the test's before repainted as
+> production paints (batches 14a–14b), Beetle in it; no checker bake-off
+> (below).
 
 ## Context
 The collector loop needs card art that is (a) unmistakably one set — the
@@ -784,3 +788,28 @@ scored against Logan's 12c–12h verdicts) to sort candidates, and the set's
 photo licences decided in their own ADR. A horse LoRA follows the dog one
 (Logan, 2026-10-23). Nothing here enters the donation path: decision 4 of
 2026-10-15 holds, and the LoRA is how production stops painting anatomy.
+
+## Amendment (2026-10-28): the before-and-after test repainted, Beetle in it; the checker bake-off dropped
+
+Two choices by Logan, 2026-10-28:
+
+1. **Beetle stays out of training and joins Plum and Ducky in the test,
+   and the test's before is painted again as production paints.** Batch
+   9b is not that before: 72 of its 96 paintings used prompt variants
+   production never runs. The before is batch 14a's Plum and Ducky and
+   batch 14b's Beetle, sixteen each: klein-v1 exactly, both photos, the
+   listing words (Beetle's "female bloodhound", Logan), storybook_stand34
+   and storybook_sit34, seeds 11, 222, 4096, 8128, 17, 404, 1729 and
+   6174, nothing erased; decision 5 of 2026-10-22 is read on the three
+   at those seeds with the LoRA added. Beetle is a second female beside
+   Ducky, the case the ship bar is strictest on; training loses only her
+   few cleaned repaints against a hundred Commons paintings. Her cleaned
+   card painting (12g-029) stays on the home section, which is display,
+   not training.
+2. **No checker bake-off and no Claude API script.** Logan keeps the
+   Commons paintings for likeness; Claude marks genitals by eye on his
+   keeps by batch 9b's rule; the hand step of 2026-10-26 cleans every one
+   marked; Logan approves the cleaned set before it is trained on. A
+   painting misread as clean is caught at that last look, which is the
+   backstop the bake-off would have narrowed. No `@anthropic-ai/sdk`
+   dependency and no `anthropic/api-key` come in for this.

@@ -3,6 +3,7 @@
 Status: accepted (2026-10-27). Drafted the same day with two questions
 for Logan; he answered both: a shelter's own Commons release stays in the
 pool, and CC BY-SA stays in.
+Amended 2026-10-28: Claude may view Commons photos while curating (below).
 
 ## Context
 
@@ -239,3 +240,16 @@ script `explore:fetch` fronts it.
   tool follows, this ADR's decision 2 does not change.
 - The set needs a pose Commons does not have: the "own photographs"
   alternative, by amendment.
+
+## Amendment (2026-10-28): Claude may look at Commons photos while curating
+
+Decision 5's "no photo is ever uploaded to a hosted model service" was
+broken by curating itself: an image Claude reads in its Claude Code session
+goes to the Claude API, and the set was picked on 2026-10-27 from contact
+sheets of ~419 Commons thumbnails read that way. Logan, 2026-10-28: Claude
+may view Commons photos in its session while curating the set — picking,
+checking a painting against its photo. Every such photo is already one this
+ADR admits (allowlisted and recorded), so nothing new is licensed by it.
+The rule otherwise stands: no script or pipeline sends a photo to a hosted
+model service, and Claude never views a shelter's photo or the crew's this
+way — this amendment is for Commons files only.

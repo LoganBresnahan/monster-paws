@@ -86,7 +86,8 @@ def get(url: str) -> bytes:
 
 
 def strip_html(s: str) -> str:
-    return html.unescape(re.sub(r"<[^>]+>", "", s)).strip()
+    """One line: a Commons credit can carry markup and line breaks, and a newline or tab inside a cell splits the TSV row."""
+    return " ".join(html.unescape(re.sub(r"<[^>]+>", "", s)).split())
 
 
 def local_name(title: str) -> str:
@@ -94,6 +95,9 @@ def local_name(title: str) -> str:
     name = title.split(":", 1)[1]
     stem, _, ext = name.rpartition(".")
     stem = re.sub(r"[^A-Za-z0-9]+", "-", stem).strip("-")[:60]
+    # A title with no ASCII letters (Cyrillic, Greek, Chinese) would leave ".jpg" — an empty stem breaks every key built from it.
+    if not stem:
+        stem = "commons-" + hashlib.sha1(name.encode("utf-8")).hexdigest()[:10]
     return f"{stem}.{ext.lower()}"
 
 
@@ -174,9 +178,10 @@ def fetch(set_name: str, titles) -> int:
                 continue
             dest.write_bytes(data)
             author = strip_html(info.get("Attribution") or info.get("Artist") or "")
+            licence = strip_html(info["LicenseShortName"])
             row = {
                 "set": set_name, "file": rel, "sha256": sha, "source": source, "author": author,
-                "licence": info["LicenseShortName"], "licence_url": info.get("LicenseUrl", ""),
+                "licence": licence, "licence_url": strip_html(info.get("LicenseUrl", "")),
                 "size": info["size"], "fetched": date.today().isoformat(), "note": "",
             }
             rows.append(row)

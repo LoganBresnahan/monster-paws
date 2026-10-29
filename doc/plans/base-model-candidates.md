@@ -918,6 +918,101 @@ groin crops (`var/explore/batch10a/groin/`, `labels.json` beside them),
 So source 1 is out as the generator: slower per clean painting than
 filtering the distilled one, and off our look.
 
+### The set, collected (Claude, 2026-10-27; ADR-0031)
+
+How the photos were found, so the next collection follows the same path:
+the Commons API's `categorymembers` over five categories — *Quality images
+of dogs* (141 files), *Featured pictures of dogs* (16), and the first 400
+each of *Standing dogs*, *Sitting dogs* and *Lying dogs*, all 120 of
+*Walking dogs* — with `imageinfo` on every file, kept only when the licence
+is on ADR-0031's allowlist, `Restrictions` is empty, the file is JPEG or
+PNG and its shorter side is at least 800 px: 1152 of 1477. A stratified
+sample of 419 (every quality and featured image, 70 from each posture
+category) was looked at as 320 px thumbnails on contact sheets, by eye,
+against decision 4: one dog, no identifiable person, the dog large enough
+for the grown crops, and no costume, cone, muzzle, statue, mural or
+painting. 205 passed. Head-only portraits were passed over on purpose —
+the LoRA learns the underside, and a portrait has none — so most of the
+quality images were left behind.
+
+The sets, fetched through `npm run explore:fetch` and recorded in
+`comfyui/explore/commons-photos.tsv`:
+
+| Set | Photos | Chosen how | Licences |
+| --- | --- | --- | --- |
+| `lora-train` | 109 | every standing and walking dog passed (the standing side view is the rarest pose and the one the groin shows in), then 30 quality images, 16 sitting, 16 lying | 51 CC BY-SA 4.0, 21 CC BY-SA 3.0, 20 CC0, 6 CC BY 2.0, the rest CC BY and public domain |
+| `lora-holdout` | 12 | three drawn from each of those four groups before the training set was fixed, then two swapped out whose dog is also in the training set (the Berlin labradoodle, the red-and-white basenji — a series by one photographer puts one dog in several categories; those two rows moved to `lora-train` with a note) for an Irish setter and a weimaraner standing; never painted for training, the test set for the trained LoRA | 7 CC BY-SA 4.0, 3 CC0, 2 others |
+
+Twelve training rows carry the note *handler's legs in frame, no face*:
+show-ring stacks from *Standing dogs*, where a handler's legs or a hand on
+the lead stay in the frame. Read as not an identifiable person under
+decision 4 — Logan may strike them. The other 84 passed photos are not
+fetched: the sample is in the scratchpad only, and the categories above
+give it back if the set needs more. 534 MB on disk.
+
+Found while fetching: a Commons credit can carry line breaks and tabs (one
+`Artist` field is a paragraph asking not to upload edited copies), which
+split a TSV row; the tool now collapses whitespace in every text cell, the
+row was refetched, and `verify` reads 187 of 187. The author column is the
+credit as Commons gives it, paragraph included, per ADR-0031's
+consequence that it is never shortened by us.
+
+Next: paint `lora-train` with klein-v1 under the guard, in chunks, after
+`/gpu-health`; then the anatomy label sheet for Logan from those paintings
+and batches 9b–12h, for the bake-off's ground truth.
+
+### Batches 13a–13d — the LoRA set painted as production paints, first read (Claude, 2026-10-27; Logan's picks decide)
+
+Every one of the 121 dogs painted with klein-v1's recipe (BFL's fp8
+klein, the grown subject and head from `comfyui/explore/detect-lora.json`,
+the words written from the photos with no sex named, landscape, the fixed
+three-quarter pose, two seeds), nothing experimental: these are the
+paintings the hand step cleans and the LoRA learns from. The detector found
+no head in 46 of the 121 (small dogs in wide street photos, the show stacks
+seen from the side), so the set ran as four specs: 13a standing with a
+head (39 dogs, 78 images), 13b sitting and lying with a head (36, 72), 13c
+standing without (32, 64), 13d sitting and lying without (14, 28) — 242
+paintings, no guard kill, the pool flat at 1.4–1.6 GB, 10.5 s an image with
+two references and 9.0 s with one. Sheets: `var/explore/batch13{a,b,c,d}/index.html`.
+
+- **The recipe holds on strangers.** Breed, coat, collars and harnesses
+  carry from one photo as they did from the crew's two; the lying photos
+  paint as sitting dogs without a trace of the lying pose; the street dogs
+  of one Philippine series come out as distinct dogs where the photos are
+  distinct and as near-twins where the same dog was photographed twice
+  (13a 066–069). Holdout and training dogs are told apart by `set` in the
+  spec, never by the painting.
+- **The anatomy is there to clean**: a sheath or testicles are drawn on
+  most standing males (13a 000/001, 012/013, 016/017, 034–037, 058–061,
+  070/071, 076/077; 13c 000/001, 006/007, 018, 042–047) and on many
+  sitting ones (13b 040/041, 046/047; 13d 018/019, 026/027) — the
+  "before" the LoRA has to learn away from, as batch 9b's rule says, so
+  these go to the label sheet unsorted, Claude's reading in the pre-filled
+  column.
+- **Two seeds are near-duplicates** on this recipe: seed 11 and 222 differ
+  in the wash and the tail more than in the dog. One seed per dog would
+  have done; the second is a spare for the hand step when the first's
+  groin is unworkable.
+- **Subject-only reference (13c/13d) loses little**: without the head crop
+  the face is read from the body crop and holds, the poodle and the
+  bichon included. A no-head animal must run the `reference` graph:
+  `reference2` with `heads` null falls back to a `dethead` crop that does
+  not exist and every run fails validation (13c's first chunk, guard exit
+  6, fixed by the spec). Batch 8g knew this.
+- **A Commons title with no ASCII letters** (Cyrillic) fetched as
+  `lora-train/.jpg`; an empty stem made an empty listing key and 13c's
+  first two runs could not find their crops. `commons_fetch.py` now names
+  such a file `commons-<sha1 prefix>.jpg`; the file and its rows are
+  renamed with a note. The tool's two by-hand predecessors never met one.
+- **Two Commons JPEGs from one camera carry an EXIF block Pillow cannot
+  parse** (the Himalayan sheepdog pair); `detect.py` and `explore.py` now
+  read such a file as it lies instead of crashing the run.
+
+Yours to overrule; nothing of these goes to the hand step until the label
+sheet is marked. Next: the anatomy label sheet (the bake-off's ground
+truth) from these 242 plus batches 9b–12h; then the hand step on the
+training paintings Logan marks.
+
 ## Batch 11a — the whole crew as production paints it, first read (Claude, 2026-10-23; Logan's picks decide)
 
 Logan: "a fresh production-like run for the entire crew. No experimental
@@ -1348,6 +1443,383 @@ the OWLv2 baseline (nothing new to license); the Claude side once the key
 is in `pass`; the local VLMs last, since each is a manifest line and a
 download. Nothing here paints: the card is used only for the local VLM
 runs, under `guard.sh` as any batch.
+
+### The label sheet, built (Claude, 2026-10-27; Logan's marks decide)
+
+`var/explore/checker/labels-01.jpg` … `labels-16.jpg`: 128 paintings, eight
+a sheet, each as the full painting beside a groin crop (a fixed window,
+the lower middle of the canvas, x 0.28–0.72 and y 0.42–0.86 — where a
+three-quarter sitting or standing dog's groin sits; the hand step's polygon
+does not exist for most of these). The rows are
+`var/explore/anatomy-labels.tsv` (batch, id, label, who, date, file),
+Claude's reading pre-filled with `who` = claude, Logan overwriting label,
+who and date on every row he reads. The composition, from the table above:
+
+| Batch | Rows | Claude's pre-fill | From |
+| --- | --- | --- | --- |
+| 9b | 24 | all 10 clean of the 96, 14 anatomy drawn at random (seed 31) | `batch9b/marks/labels.json` |
+| 10a | 24 | 19 anatomy, 5 of them `unsure` where the labels named doubt | `batch10a/groin/labels.json` |
+| 12c | 12 | the first read per animal, pose and strength; Ducky anatomy | the read above |
+| 12d | 24 | clean (0 of 24 regrew) | the read above |
+| 12g | 36 | clean; Ducky sitting and Beetle sitting `unsure` (a shape may still read); Beetle's site card 12g-029 "perfect, nothing wrong with it" (Logan, 2026-10-28) | the read above |
+| 12h | 8 | the inked Duckys: standing clean, sitting `unsure` | the read above |
+
+36 anatomy, 71 clean, 21 unsure before Logan — fewer anatomy than the ~60
+the design hoped for, because 12d–12h are repaints. If the checkers tie on
+these, batches 13a–13d (242 paintings, mostly with anatomy) give a second
+sheet at the same cost; they are not on this one so the ground truth stays
+what Logan has already judged. The `p0`/`p1` pose of 12c's and 12d's files
+is read from batch 12g's spec (the same crew paintings in the same order);
+if 12c numbered them otherwise, those eight pre-fills swap, which Logan's
+marks correct either way.
+
+### The bake-off dropped (Logan, 2026-10-28)
+
+No checker bake-off and no Claude API script: Logan picks the LoRA set's
+paintings for likeness (`var/explore/index-all/index.html`, every Commons
+photo beside its paintings, a keep box on each), and Claude marks genitals
+by eye on the ones he keeps, by batch 9b's rule; the hand step cleans every
+one marked; Logan approves the cleaned set before anything is trained. So
+`@anthropic-ai/sdk` and `anthropic/api-key` are not needed here, and the
+crew's anatomy marks on the label sheet stop being ground truth for a
+checker. The trade, said once: a painting Claude reads as clean that is not
+reaches Logan's final look uncleaned — that look is the backstop. Beetle
+stays out of training and joins Plum and Ducky in the before-and-after
+test, whose before is batches 14a–14b (ADR-0004 as amended 2026-10-28).
+
+### Logan's keeps (2026-10-28)
+
+`var/explore/index-all/choices-2026-10-28.txt`: 131 of the 242 kept for
+likeness. 116 are training dogs (73 of the 109; both seeds kept for 43 of
+them; 44 standing, 12 sitting, 17 lying) and 15 are holdout dogs (9 of the
+12), which stay out of training and stand as the holdout's before. 36
+training dogs have no keep. The file's crew anatomy marks are not used:
+Logan wants to talk them through first. Batch 10a is off our look (klein
+Base, Logan 2026-10-28, as its first read found) and has no part in the
+set or the test; the befores are 9b and 11b, klein-v1. Next: Claude marks
+genitals by eye on the 116, then the hand step.
+
+### Batch 14a — the LoRA test's before, first read (Claude, 2026-10-28; Logan's eye decides)
+
+`comfyui/explore/batch14a.json`: Plum, Ducky and Beetle as production
+paints them (klein-v1, both photos, grown subject and grown head, the
+listing words, stand34 and sit34, landscape), eight seeds (11b's four and
+11c's four), nothing erased; 48 of 48 under the guard, ~16 s a painting
+with three references, no kill, the production poll beside it untouched.
+
+- **Plum and Ducky are the before as wanted**: on the look, and male
+  anatomy drawn on most of them — a sheath or testicle under the belly
+  standing, a pink scrotum between the legs sitting, on Ducky (female) as
+  on Plum. That rate is what the LoRA has to bring down.
+- **Beetle is not usable**: "female tan bloodhound with a black saddle"
+  painted a riding saddle or a harness vest on all 16 — 11b's finding
+  again ("black saddle" is tack; Logan then picked the `nocolour` Beetles,
+  "female bloodhound", 11b-009 and 11b-012). Claude ran the words without
+  raising it. Batch 14b painted her 16 again as "female bloodhound"
+  (Logan): no tack on any, her black saddle read from the photos as coat,
+  and the same anatomy as the others, a bulge standing and pink between
+  the legs sitting.
+- **The before is 14a's Plum and Ducky and 14b's Beetle**, 48 paintings
+  (ADR-0004 as amended 2026-10-28); the after is the same specs with the
+  LoRA added.
+
+### The crew's anatomy marks retired (Logan, 2026-10-28)
+
+Logan changed three of the 128 pre-filled crew marks (9b-012, 017 and
+024, Plum sitting: Claude's `clean`, his `anatomy` — a soft pink rounded
+patch between the hind legs with no outline) and read no further: "I
+stopped when I realized we were using outdated sets that shouldn't be part
+of this test." So the other 125 are Claude's alone, never checked, and the
+sheet is retired: 10a is off the look, 9b is not the before, 12c–12h are
+display. What carries forward is the miss: on the 116 training keeps any
+pink or rounded shape between or under the hind legs is `anatomy`, outline
+or not (a false alarm costs one repaint, a miss trains anatomy in), and
+Logan checks Claude's `clean` calls.
+
+### Claude's marks on the 116 training keeps (2026-10-28; Logan checks the clean calls)
+
+Read by eye at 800 px, by the broad rule above, into
+`var/explore/index-all/lora-marks-2026-10-28.tsv` (batch, id, seed, dog,
+pose, label, strength, note, file):
+
+- **89 anatomy** (64 clear: a sheath or testicle under a standing dog's
+  belly, a pink scrotum between a sitting dog's legs; 25 faint: a pink
+  wash or pale shape at the groin with no form) and **27 clean**.
+- **The clean ones are the coats that hide the groin**: black or dark
+  dogs (Bernese, Bohemian and Himalayan sheepdogs, a black and white
+  Aussie puppy), long or shaggy coats (bichons, cavapoos, Dandie Dinmonts,
+  Newfoundlands, a cairn) and white fluff (spitz). Nearly every
+  short-coated dog has anatomy, standing or sitting, whatever its sex —
+  klein draws it by default, as on the crew.
+- So the hand step has most of the set to clean, not a few (80 after
+  Logan's check, about 7 in 10). A clean set built only from the clean ones
+  would teach dark and fluffy coats, so the cleaned ones are the set.
+- Logan's check is `var/explore/index-all/marks-check.html`: the 27 clean
+  calls (tick a miss) and the 25 faint ones (tick any really clean, which
+  saves a repaint).
+- **Logan's check (2026-10-28, `marks-check-2026-10-28.txt`, folded into
+  the TSV's `logan` column)**: one miss among the 27 clean, the long-haired
+  chihuahua 13b-008 ("I would consider faint anatomy"), and 10 of the 25
+  faint really clean (13b-001, 003, 028, 034; 13c-020, 021, 058, 059;
+  13a-033, 073 — the pink shading on a golden's inner leg or a white dog's
+  flank is coat, not anatomy). The set to clean is **80** (64 clear, 16
+  faint) and 36 are clean. So the broad rule misses little (1 in 27, where
+  the narrow one missed 3 in 10) and over-calls a pink wash on pale coats.
+
+### Batch 15a — the hand step's pilot on the LoRA set, first read (Claude, 2026-10-28; Logan's eye decides)
+
+`comfyui/explore/batch15a.json`: 10 of the 80 marked keeps (13d-018,
+13b-055, 13b-041 sitting; 13c-040, 13a-058, 13a-066, 13c-019, 13c-004,
+13a-013 standing; the faint chihuahua 13b-008), 12g's winning recipe
+unchanged — a polygon traced by eye on gridded crops, LaMa, klein Base on
+the unlined fill at 0.85 with the anatomy words as its negative, seeds 1
+and 2. Holes 0.04–0.8% of the painting; 20 of 20 under the guard, ~85 s a
+repaint, no kill. Sheets: `var/explore/batch15a/lines/` (the holes) and
+`var/explore/batch15a/compare/` (original, LaMa, both seeds, both whole).
+
+- **The standing sheaths are clean on both seeds**: white, tan and
+  black-and-white street dogs, the azawakh, the galgo — the belly line
+  runs on into the far leg, which keeps its shading. The boxer's large
+  lobe is gone; a faint pale crescent stays where its lower edge met the
+  belly.
+- **The faint chihuahua** is clean: the spot is gone in the fluff.
+- **Sitting dogs with a ball or ring on a pink belly** (the cattle dog, the
+  heavy tan dog): the shape is gone and the pink between the legs stays
+  as skin. By the broad rule that pink alone was not the mark; Logan's to
+  judge whether it still reads.
+- **Weakest: the thin tan dog sitting (13b-041)**, whose whole pink wedge
+  was the sac: LaMa filled it with a dark hairy texture the repaint keeps,
+  a rounded patch with the sac's silhouette — 12g's Beetle-sitting
+  failure again. A wedge-shaped sac wants a different fill (its
+  surroundings are thigh and ground, not belly), or the painting is left
+  out of the set.
+- The two seeds barely differ; the repaint mostly smooths LaMa's fill.
+- Tracing took about two minutes a painting from two gridded crops (a
+  wide one to find it, a close one to place the points), no second pass.
+
+### Batch 15a — Logan's read (2026-10-28), and 15b, the boxer's line inked
+
+"The pink is fine. Most look really great." Two faults, both ones Ducky
+had in 12g: the thin tan dog sitting (13b-041) "its stomach came out a bit
+blurry", and the boxer standing (13a-013) "needs an arch line drawn to
+separate the belly from blending in with the leg".
+
+15b (`comfyui/groinink.py`, no GPU; `var/explore/batch15b/inked/`): the
+boxer's arch inked along the top of the far leg, from the painter's belly
+line to the near thigh, on both seeds at both widths — it reads as the
+painter's. The tan dog's lower edge inked the same way barely shows against
+the dark patch and does not touch the fault: the blur is LaMa's hairy fill
+of the whole wedge, which the repaint at 0.85 keeps. The next try for a
+wedge-shaped sac is a repaint at full strength inside the hole (denoise
+1.0, so klein paints the belly fresh instead of smoothing the fill), on the
+card once it is free; failing that, those paintings leave the set. So the
+full run carries a per-painting ink step for standing dogs whose belly
+meets a dark far leg.
+
+Logan's pick: the boxer at seed 2, the thin line (15b-017 w0.0018,
+`var/explore/batch15b/picks.txt`); "maybe try again with poblacion". 15c
+(`comfyui/explore/batch15c.json`): the tan dog's whole mauve wedge erased
+out through its own outlines and the ground shadow (1.1% of the painting,
+against 15a's 0.8% inset from them), so LaMa fills from the cream belly
+and thigh round it — the fill now reads as a pale belly with a soft shadow
+where it meets the ground, the hairy mauve gone; the thigh's inner edge
+went with the hole and may want inking after. Its repaint (0.85 and 1.0,
+two seeds, 4 runs) waits for the card. The 15c erase rewrote this
+painting's files in ComfyUI's input/sheath/, so 15a's hole for it is now
+15c's.
+
+15c ran (4 of 4, ~85 s each; `var/explore/batch15c/compare/`): on all four
+the sac and the hairy mauve are gone, the belly between foreleg and thigh
+is pale and smooth, and a dark shadow stays where it meets the ground
+behind the rear paw. 0.85 and 1.0 barely differ — the fill, not the
+strength, was the fault. The thigh's inner edge is soft where the hole
+took it, so the near thigh reads a little less separate from the belly;
+an inked line there is the next step if Logan wants it. Logan's eye
+decides.
+
+Logan: "I actually think the 15a is better" — the first pilot's repaint,
+the wedge erased inset from its outlines, blur and all, over 15c's
+pale belly with the thigh's edge gone. So the full run keeps 15a's way for
+wedges too: the outlines stay. (15a's files for this painting in
+input/sheath/ were rewritten by 15c; its two repaints are untouched.) His pick: 15a-004, seed 1
+(`var/explore/batch15a/picks.txt`).
+
+### Batch 16a — the hand step on the rest of the 80, first read (Claude, 2026-10-28; Logan's eye decides)
+
+63 paintings of 44 dogs (`comfyui/explore/batch16a.json`): 15a's recipe at
+one seed — the anatomy erased inside its outlines, LaMa's fill repainted by
+klein Base at 0.85 with "genitals" negative. Seven of the 70 left after the
+pilot showed pink or fur with no shape and were not erased (13d-020,
+13b-039, 13b-019, 13d-004, 13d-005, 13a-039, 13a-026); Logan judges those
+as they are. 63 of 63 ran, ~85 s each, no kill.
+
+The erase was run twice. On the first, about 20 holes, mostly standing
+sheaths, lay inside the shape's own outline, and LaMa drew the shape back
+from the outline left round the hole. Those holes were grown 1.6× and
+erased again before the repaint: **a hole must take the shape's outline
+with it**, or LaMa redraws it.
+
+Before and after, cropped round the hole, with the whole repaint below:
+`var/explore/batch16a/compare/`.
+
+- **Clean, 46.** The shape and its outline gone, the belly and leg lines
+  the painter's — the rest of the 63.
+- **Still shows, 6** — a second, wider erase:
+  13a-016 (the retriever's crescent, outline and all), 13a-034 (the
+  brindle tosa's white tip), 13a-035 (the same dog's pink shape with its
+  dark end), 13b-005 (a faint ring under the young mixed-breed dog),
+  13b-017 (the viroinval beagle's round bump at the ground), 13b-040
+  (the poblacion dog's sac). 13b-007's dot, a worry after the erase, is
+  gone in the repaint.
+- **Faint, 11** — a soft shape or mark left where the anatomy was, mine
+  to call broadly: 13a-018, 13a-029 (the kelpie's white tuft, which may
+  be fur), 13a-036, 13a-040, 13a-050 (a tan streak under the Boston
+  terrier), 13b-006, 13c-001 (a hooked line), 13c-007, 13c-013, 13c-041
+  (a dark red mark), 13c-056 (a white patch). Logan's eye decides which of
+  these go to the second erase.
+
+Not yet done: the arch line where a standing belly meets a dark far leg
+(groinink, after Logan's read).
+
+Logan approves the set on one page, a close-up and the whole painting per
+card with a tick for "acceptable, no genitalia": the pilot's picks (both
+seeds of the eight he did not pick between), the 63, and the 7 left as
+painted — 88 pictures (`var/explore/index-all/clean-check.html`).
+
+### The cleaned set — Logan's read (2026-10-29)
+
+Logan ticked 49 of the 88 pictures on `clean-check.html` as "acceptable, no
+genitalia" (`var/explore/index-all/clean-check-2026-10-29.txt`): 41 of the
+80 paintings.
+
+- **The pilot, all 10**, both seeds of each of the eight he had not picked
+  between; seed 1 goes in.
+- **16a, 27 of 63.** Of Claude's six "still shows", none; of the eleven
+  "faint", two (13a-018, 13a-036); of the 46 "clean", 25. **Claude's clean
+  call missed 21 of 46.** Read again at full size, what those 21 share is a
+  form, not an outline: on a sitting or lying dog, a pink or mauve wedge
+  between the hind legs that bulges, with the fur strokes converging on it
+  (13b-000, 13b-007, 13b-010, 13b-011, 13d-007, 13d-016); on a standing
+  dog, the far leg's top rounded and lilac under the belly line, where the
+  sheath was (13a-030, 13a-042, 13a-043, 13a-072), or a small nub left on
+  the belly (13a-041). Claude's eye at thumbnail size is not a check on
+  this; Logan's is.
+- **Left as painted, 4 of 7.** 13d-020, 13a-039 and 13a-026 fail.
+
+The approved set is 77 paintings of 56 dogs — the 36 Logan passed clean on
+2026-10-28 and these 41 — 47 standing, 17 lying, 13 sitting, listed with
+their files in `var/explore/index-all/training-set-2026-10-29.tsv`. The 39
+that failed are out unless a second pass cleans them.
+
+### Batch 16b — a second pass on the 39 (Claude, 2026-10-29; Logan's eye decides)
+
+Logan, asked whether 77 is enough: "I don't mind you trying another pass
+at the 39 if more would be helpful." It is: tens of paintings are enough
+for a LoRA, but the 39 are the hard cases, where the painter draws
+anatomy most strongly, and they thin out the poses the LoRA most needs
+(sitting 13 of 19 kept, lying 17 of 28).
+
+`comfyui/explore/batch16b.json`: the original paintings, with the hole
+taken out to the form Logan read — on a sitting or lying dog, the whole
+wedge between the hind legs, out through its outlines to the foreleg,
+thigh and ground; on a standing dog, the far leg's top under the belly,
+with the shape. The polygons were traced on gridded crops and grown 1.1×
+(sitting, lying) or 1.25× (standing). klein Base repaints LaMa's fill at
+1.0, so it paints the belly fresh instead of keeping the fill's shading
+(15c: 0.85 and 1.0 barely differed when the hole was wide), at two seeds
+for Logan to pick between: 78 runs. On the erase sheets
+(`var/explore/batch16b/lines/`), the shape and the wedge's shading are
+gone on all 39 except one: a small nub by 13b-023's right paw survives
+the second polygon.
+
+Ran 78 of 78 under the guard (2026-10-29, about two hours, no kill, the
+pool 1.6–1.8 GB between chunks). Not pre-read: Claude's clean calls
+missed 21 of 46 in 16a, so the read is Logan's alone, on one page with
+both seeds of each painting (`var/explore/index-all/clean-check-2.html`,
+78 cards; seed 1 is used where both pass).
+
+### Batch 16b — Logan's read (2026-10-29)
+
+"I've only selected images that don't have genitalia and looked
+anatomically correct. A lot of the sitting photos blended too much into
+the ground. As far as genitals go, this pass was much better." His ticks
+are `var/explore/index-all/clean-check-2-2026-10-29.txt`: 38 of 78
+cards, 20 of the 39 paintings.
+
+- **Standing, 16 of 22**: the far leg's top erased with the shape works.
+  Both seeds pass on 14; 13a-064 and 13c-007 on seed 2 only.
+- **Sitting and lying, 4 of 17** (13b-006, 13b-010, 13b-035, 13b-040):
+  the anatomy is gone, but with the hole out to the ground, a repaint at
+  1.0 loses where the haunch, the hind paw and the ground part, so the
+  dog melts into its shadow. The wide hole is right for the genitals and
+  wrong for the anatomy around them; a hole on a sitting dog should stop
+  short of the ground line.
+- **The set**: 97 paintings of 68 dogs — 63 standing, 19 lying, 15
+  sitting — in `var/explore/index-all/training-set-2026-10-29b.tsv`
+  (the 77 plus these 20, seed 1 where both pass;
+  `training-set-2026-10-29.tsv` stays as the record of the 77). 19 of the
+  80 marked paintings stay out, 13 of them sitting or lying.
+
+### Training — the pairs and the job (Claude, 2026-10-29)
+
+As ADR-0004 as amended 2026-10-22 decides it (decisions 2 and 3); nothing
+here is new policy, only how it runs.
+
+- **The pairs**: `npm run explore:pairs -- index-all/training-set-2026-10-29b.tsv
+  anatomy-2026-10-29` (`comfyui/pairs.py`, CPU) wrote 97 pairs to
+  `var/explore/pairs/anatomy-2026-10-29/`. Each is the approved painting
+  (pixels only: ComfyUI's PNGs carry the whole workflow as text), captioned
+  with the trigger word `mpclean` and the prompt the original was painted
+  from, beside the references that painting read — the grown subject crop
+  on all 97, the grown head on the 66 painted with `reference2` — scaled
+  exactly as klein-v1's ImageScale nodes scale them. A repaint keeps its
+  original's references: the LoRA learns from what production hands
+  klein-v1. The build stops on any photo that is not a `lora-train`
+  Commons file in `commons-photos.tsv`, so no shelter or crew photo, and
+  no held-out dog, can enter. `pairs.tsv` traces each pair to its run and
+  Commons file.
+- **Progress samples**: four `lora-holdout` dogs, two sitting and two
+  standing (teckel-39, gonzaja-yellow3, pies-nierasowy-20201003-1644-4305,
+  rusty-11y9m-irish-setter), painted by klein Base in the trainer every
+  250 steps. They show training's course only; the ship bar (decision 5)
+  is read at home on the distilled klein-v1, on Plum, Ducky and Beetle and
+  on unseen Commons dogs.
+- **The job**: `comfyui/rental/anatomy-lora.yaml` — klein Base 4B in bf16,
+  LoRA rank 16, lr 1e-4, AdamW 8-bit, batch 1, 2,000 steps (about 20
+  passes over the 97), a checkpoint every 250, at the painting's own
+  1216×832. Weights from `comfyui/models-training.manifest` only (klein
+  Base 4B, the FLUX.2 VAE we already run, Qwen3-4B), the trainer offline.
+  `scripts/gpu-rental.sh up train`, then `train
+  var/explore/pairs/anatomy-2026-10-29 var/explore/lora/`, then `down`
+  (`doc/infra.md`, GPU rental).
+- **Cost** (estimated, not yet measured): ~20 minutes of build and fetch,
+  then 2,000 steps with two references at about 1 MP — perhaps 1–2 hours
+  on an L40S ($1.57/h, $2–4 in all), under an hour on the H200 ($4.47/h,
+  about $5), the only size that could be created on 2026-10-23. Logan
+  confirms before the droplet is made.
+
+### Batches 14a–14b — Logan's picks (2026-10-28)
+
+"I might be picky but I know what these dogs look like." His likeness
+picks of the before, saved as `var/explore/batch14a/picks.txt` and
+`var/explore/batch14b/picks.txt`:
+
+- **Plum 10 of 16**: standing s11, s222, s4096, s17, s6174 (14a-000, 001,
+  002, 004, 007); sitting s11, s222, s4096, s404, s6174 (008, 009, 010,
+  013, 015).
+- **Ducky 8 of 16**: standing s11, s4096, s404, s6174 (14a-016, 018, 021,
+  023; 016 added by Logan after the first list);
+  sitting s222, s4096, s8128, s1729 (025, 026, 027, 030).
+- **Beetle 2 of 16**: standing s11 (14b-000) and sitting s222 (009).
+  Logan first listed five (with sitting s17, s404 and s1729), then: "I
+  really only think two look like Beetle."
+- **Likeness only, anatomy not judged**: a pick may carry anatomy (one
+  of Beetle's has a sheath she lacks, Logan noticed). The before is meant
+  to have it; anatomy is counted on all 48 as its own tally.
+- What they are for (Claude's proposal, Logan's to overrule): the ship
+  bar's "likeness no worse" (ADR-0004 decision 5), counted per dog. The
+  after is picked the same way, at the same seeds, without knowing which
+  painting is which, and keeps at least this many per dog: Plum 10, Ducky 8, Beetle 2.
 
 ## Avenues (Logan, 2026-10-11)
 

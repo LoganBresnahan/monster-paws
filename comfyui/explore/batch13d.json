@@ -1,0 +1,149 @@
+{
+  "_": "Batch 13d — batch 13b's sitting and lying dogs whose head the detector did not find, subject reference only (the `reference` graph, as batch 8g; `reference2` with no head fails validation). klein-v1 exactly (BFL's fp8 klein, reference2, the grown subject from comfyui/explore/detect-lora.json, ADR-0026), the words written from the photos with no sex named, landscape canvas, two seeds — the better of the two goes to the hand step. Nothing experimental: these are the paintings the LoRA learns from. Never RescueGroups photos (ADR-0006 as amended 2026-08-25 §2).",
+  "animals": {
+    "viljo-koirarannalla-19": {
+      "kind": "dog",
+      "describe": "red-gold toller retriever",
+      "one": [
+        "Viljo-koirarannalla-19.jpg"
+      ],
+      "set": "lora-train"
+    },
+    "toller-en-j-rvi": {
+      "kind": "dog",
+      "describe": "red-gold toller retriever",
+      "one": [
+        "Toller-En-j-rvi.jpg"
+      ],
+      "set": "lora-train"
+    },
+    "keeshond-siberian-husky-crossbreed-puppy": {
+      "kind": "dog",
+      "describe": "grey and black fluffy puppy",
+      "one": [
+        "Keeshond-Siberian-Husky-crossbreed-puppy.jpg"
+      ],
+      "set": "lora-train"
+    },
+    "2008-07-11-white-german-shepherd-pup-chilling-at-the-coker-a": {
+      "kind": "dog",
+      "describe": "white german shepherd",
+      "one": [
+        "2008-07-11-White-German-Shepherd-pup-chilling-at-the-Coker-A.jpg"
+      ],
+      "set": "lora-train"
+    },
+    "franz-sische-bulldogge-in-paris-20060505-rm-100032": {
+      "kind": "dog",
+      "describe": "white french bulldog",
+      "one": [
+        "Franz-sische-Bulldogge-in-Paris-20060505-RM-100032.jpg"
+      ],
+      "set": "lora-train"
+    },
+    "bucuresti-romania-str-alexandru-philippide-sect-2-cainele-at": {
+      "kind": "dog",
+      "describe": "black and tan german shepherd",
+      "one": [
+        "Bucuresti-Romania-Str-Alexandru-Philippide-sect-2-Cainele-At.jpg"
+      ],
+      "set": "lora-train"
+    },
+    "dog-friend-2595637875": {
+      "kind": "dog",
+      "describe": "white and black husky mix",
+      "one": [
+        "Dog-Friend-2595637875.jpg"
+      ],
+      "set": "lora-train"
+    },
+    "chihuahua-sitting": {
+      "kind": "dog",
+      "describe": "short-haired tan and white chihuahua",
+      "one": [
+        "Chihuahua-sitting.jpg"
+      ],
+      "set": "lora-train"
+    },
+    "12-italy-campo-di-grano-e-cagnolino-dog-in-a-wheat-fields": {
+      "kind": "dog",
+      "describe": "brown and white mixed-breed dog",
+      "one": [
+        "12-ITALY-campo-di-grano-e-cagnolino-dog-in-a-wheat-fields.jpg"
+      ],
+      "set": "lora-train"
+    },
+    "australian-blue-cattle-dog-04": {
+      "kind": "dog",
+      "describe": "blue australian cattle dog",
+      "one": [
+        "Australian-blue-cattle-dog-04.jpg"
+      ],
+      "set": "lora-train"
+    },
+    "bimba-orientalpei": {
+      "kind": "dog",
+      "describe": "fawn shar pei puppy",
+      "one": [
+        "BIMBA-orientalpei.jpg"
+      ],
+      "set": "lora-train"
+    },
+    "indian-spitz-2": {
+      "kind": "dog",
+      "describe": "white indian spitz",
+      "one": [
+        "Indian-Spitz-2.jpeg"
+      ],
+      "set": "lora-train"
+    },
+    "casa-de-don-pedro-sierra-nevada-merida-3": {
+      "kind": "dog",
+      "describe": "white and tan dog",
+      "one": [
+        "Casa-de-Don-Pedro-Sierra-Nevada-Merida-3.jpg"
+      ],
+      "set": "lora-train"
+    },
+    "290poblacion-baliuag-bulacan-13": {
+      "kind": "dog",
+      "describe": "tan street dog",
+      "one": [
+        "290Poblacion-Baliuag-Bulacan-13.jpg"
+      ],
+      "set": "lora-holdout"
+    }
+  },
+  "photos": [
+    "one"
+  ],
+  "crops": [
+    "grownsubject"
+  ],
+  "aspect": [
+    "landscape"
+  ],
+  "describe": [
+    "listing"
+  ],
+  "families": [
+    "kleinbfl8"
+  ],
+  "graphs": [
+    "reference"
+  ],
+  "denoise": [],
+  "weights": [],
+  "weight_types": [],
+  "end_at": [],
+  "loras": [
+    null
+  ],
+  "seeds": [
+    11,
+    222
+  ],
+  "prompts": [
+    "storybook_sit34"
+  ]
+}

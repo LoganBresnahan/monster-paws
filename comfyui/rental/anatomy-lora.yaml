@@ -1,0 +1,67 @@
+# The anatomy LoRA's training job for ai-toolkit (ADR-0004 as amended 2026-10-22, decision 2): an edit
+# LoRA on klein Base 4B from the pairs comfyui/pairs.py builds — production's references in, the
+# cleaned painting Logan approved out. train.py fills the name and the progress samples and runs it.
+# Checkpoints every 250 steps to 2000, because the ship bar reads 1000, 1500 and 2000 (decision 5),
+# chosen by their samples, never by the loss.
+job: extension
+config:
+  name: anatomy
+  process:
+    - type: diffusion_trainer
+      training_folder: /out
+      device: cuda:0
+      network:
+        type: lora
+        linear: 16
+        linear_alpha: 16
+      save:
+        dtype: float16
+        save_every: 250
+        max_step_saves_to_keep: 16
+      datasets:
+        - folder_path: /pairs/target
+          # the subject crop then the head, the order klein-v1 reads them; a painting with no head has the subject alone
+          control_path:
+            - /pairs/subject
+            - /pairs/head
+          caption_ext: txt
+          caption_dropout_rate: 0.05
+          resolution: [1024]
+          cache_latents_to_disk: true
+      train:
+        batch_size: 1
+        steps: 2000
+        gradient_accumulation: 1
+        train_unet: true
+        train_text_encoder: false
+        gradient_checkpointing: true
+        noise_scheduler: flowmatch
+        timestep_type: weighted
+        optimizer: adamw8bit
+        lr: 1e-4
+        dtype: bf16
+      model:
+        # the manifest's copy (models-training.manifest); the trainer runs offline, so a hub id here fails
+        name_or_path: /models/klein-base-4b
+        arch: flux2_klein_4b
+        quantize: false
+        quantize_te: false
+        low_vram: false
+        model_kwargs:
+          match_target_res: false
+      sample:
+        sampler: flowmatch
+        sample_every: 250
+        width: 1216
+        height: 832
+        samples: []
+        neg: ""
+        seed: 42
+        walk_seed: false
+        # klein Base as the home harness runs it (explore.py, kleinbase): these are progress views;
+        # the ship bar is read at home on the distilled klein-v1
+        guidance_scale: 4
+        sample_steps: 28
+meta:
+  name: "[name]"
+  version: "1.0"

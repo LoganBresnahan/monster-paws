@@ -1,0 +1,55 @@
+{
+  "_": "Batch 14b — Beetle's before, painted again (2026-10-28): batch 14a's spec unchanged but Beetle alone and her words \"female bloodhound\" (Logan, 2026-10-28), because 14a's \"female tan bloodhound with a black saddle\" painted a riding saddle or harness on all 16, as 11b found. The LoRA test's before is 14a's Plum and Ducky and this. None of these is ever trained on.",
+  "animals": {
+    "Beetle": {
+      "kind": "dog",
+      "describe": "female bloodhound",
+      "two": [
+        "IMG_2931.jpg",
+        "IMG_3545.jpg"
+      ]
+    }
+  },
+  "photos": [
+    "two"
+  ],
+  "crops": [
+    "grownsubject"
+  ],
+  "aspect": [
+    "landscape"
+  ],
+  "describe": [
+    "listing"
+  ],
+  "families": [
+    "kleinbfl8"
+  ],
+  "graphs": [
+    "reference2"
+  ],
+  "prompts": [
+    "storybook_stand34",
+    "storybook_sit34"
+  ],
+  "denoise": [],
+  "weights": [],
+  "weight_types": [],
+  "end_at": [],
+  "loras": [
+    null
+  ],
+  "seeds": [
+    11,
+    222,
+    4096,
+    8128,
+    17,
+    404,
+    1729,
+    6174
+  ],
+  "heads": [
+    "grownhead"
+  ]
+}

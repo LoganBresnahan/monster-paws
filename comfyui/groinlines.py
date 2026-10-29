@@ -10,8 +10,9 @@ found automatically joined the wrong strokes or punched paper into the hole
 (12f). So both are placed by eye, as fractions of the painting on a 0.01 grid,
 in each painting's spec entry:
 
-- `sheath`: a polygon round the anatomy alone. The hole is that, widened so
-  none of its own outline survives at the rim.
+- `sheath`: a polygon round the anatomy alone, or a list of them where it is
+  drawn in more than one place. The hole is that, widened so none of its own
+  outline survives at the rim.
 - `sam` (optional): `pos` and `neg` points; SAM 2.1's answer to them, kept
   within the polygon grown by GROW, is the other candidate hole, and `use`
   ("poly", the default, or "sam") picks the one that is erased.
@@ -84,7 +85,8 @@ def main() -> None:
             orig = np.asarray(im, dtype=np.float32)
             px = lambda pts: [(x * w, y * h) for x, y in pts]  # noqa: E731
             poly_img = Image.new("L", (w, h), 0)
-            ImageDraw.Draw(poly_img).polygon(px(p["sheath"]), fill=255)
+            for shape in (p["sheath"] if isinstance(p["sheath"][0][0], list) else [p["sheath"]]):
+                ImageDraw.Draw(poly_img).polygon(px(shape), fill=255)
             poly = np.asarray(poly_img) > 0
             widen = max(2, int(WIDEN * w))
             holes = {"poly": ndimage.binary_dilation(poly, iterations=widen)}

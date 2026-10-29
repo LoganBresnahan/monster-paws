@@ -3,9 +3,10 @@
 # ADR-0004 as amended 2026-10-22). Never production, never a donation's art,
 # never a shelter photo on the box: Commons dogs and the crew only.
 #
-#   scripts/gpu-rental.sh up                    create the droplet, then `serve`
+#   scripts/gpu-rental.sh up [train]            create the droplet, then `serve` (or, for `train`, only ship comfyui/)
 #   scripts/gpu-rental.sh serve                 ship comfyui/, build it for CUDA, fill the rental models, serve (resumable)
 #   scripts/gpu-rental.sh clean <in> <out>      Qwen-Image-Edit every PNG in <in>, results to <out>
+#   scripts/gpu-rental.sh train <pairs> <out>   train the anatomy LoRA on a pairs set (comfyui/pairs.py), checkpoints to <out>
 #   scripts/gpu-rental.sh down                  delete every rental droplet, then prove none is left
 #   scripts/gpu-rental.sh status                what is up, and what it costs by now
 #
@@ -61,13 +62,19 @@ up() {
   until remote true 2>/dev/null; do sleep 5; done
   remote 'nvidia-smi --query-gpu=name,driver_version,memory.total --format=csv,noheader && docker --version'
   trap - ERR
+  # Training needs no ComfyUI and none of its ~58 GB of models: `train` builds its own trainer.
+  if [ "${1:-}" = train ]; then ship; echo "up for training: $(ip) — 'train <pairs> <out>', billing until 'down'"; return; fi
   serve
 }
 
-serve() {
+ship() {
   RENTAL_IP=$(ip)
   # Untracked-but-not-ignored files ship too, so an uncommitted workflow can be tried before it is committed.
   git ls-files -co --exclude-standard comfyui | tar -cf - -T - | remote 'rm -rf /root/mp && mkdir -p /root/mp && tar -xf - -C /root/mp'
+}
+
+serve() {
+  ship
   remote "nohup setsid bash /root/mp/comfyui/rental/serve.sh $TORCH > /root/serve.log 2>&1 < /dev/null &"
   follow /root/serve.log "== SERVING" || { echo "serve failed — the droplet is still up and billing: fix and 'serve' again, or 'down'" >&2; exit 1; }
   echo "serving: $(ip) — billing until 'scripts/gpu-rental.sh down'"
@@ -84,6 +91,22 @@ clean() {
   remote 'tar -cf - -C /root/results .' | tar -xf - -C "$out"
   printf '%s\n' "$INSTRUCTION" > "$out/instruction.txt"
   echo "clean: $(ls "$out"/*.png | wc -l) images in $out"
+}
+
+train() {
+  RENTAL_IP=$(ip)
+  local pairs=${1:?usage: train <pairs dir> <out dir>} out=${2:?usage: train <pairs dir> <out dir>}
+  local name; name=$(basename "$pairs")
+  [ -f "$pairs/pairs.tsv" ] && [ -f "$pairs/samples.tsv" ] || { echo "$pairs is not a pairs set (comfyui/pairs.py)" >&2; exit 1; }
+  mkdir -p "$out"
+  ship
+  # Pairs only: Commons photos' crops and our paintings, each traced in pairs.tsv (ADR-0031); never a shelter photo.
+  tar -cf - -C "$pairs" . | remote 'rm -rf /root/pairs && mkdir -p /root/pairs && tar -xf - -C /root/pairs'
+  remote "nohup setsid bash /root/mp/comfyui/rental/train.sh $name > /root/train.log 2>&1 < /dev/null &"
+  follow /root/train.log "== DONE" || { echo "train failed — the droplet is still up and billing: fix and 'train' again (it resumes from the last checkpoint), or 'down'" >&2; exit 1; }
+  remote 'tar -cf - -C /root/train-out .' | tar -xf - -C "$out"
+  cp "$pairs/pairs.tsv" "$out/pairs.tsv"
+  echo "train: $(ls "$out/$name"/*.safetensors | wc -l) checkpoints in $out/$name — 'down' now"
 }
 
 down() {
