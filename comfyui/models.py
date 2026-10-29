@@ -8,10 +8,13 @@ Exit status is non-zero on any mismatch, and the container's entrypoint runs
 `fetch` before ComfyUI, so a store that disagrees with the manifest never
 serves. The store defaults to the models directory the compose file mounts.
 """
+import datetime
 import hashlib
+import hmac
 import os
 import re
 import sys
+import urllib.parse
 import urllib.request
 from dataclasses import dataclass
 from pathlib import Path
@@ -20,6 +23,8 @@ from pathlib import Path
 MANIFEST = Path(os.environ.get("MODELS_MANIFEST") or Path(__file__).with_name("models.manifest"))
 DEFAULT_STORE = Path("/home/comfy/ComfyUI/models")
 CHUNK = 8 * 2**20
+# Weights we make ourselves live here, private (doc/infra.md, provisioning 5c): R2 tokens scope to buckets, not prefixes.
+MODELS_BUCKET = "monsterpaws-models"
 
 
 @dataclass(frozen=True)
@@ -30,13 +35,36 @@ class Entry:
     licence: str
     checked: str
 
-    def url(self) -> str:
+    def request(self) -> urllib.request.Request:
+        headers = {"User-Agent": "monsterpaws-comfyui-models"}
         if self.source.startswith("hf:"):
             owner, repo, *rest = self.source[3:].split("/")
-            return f"https://huggingface.co/{owner}/{repo}/resolve/main/{'/'.join(rest)}"
-        # The models prefix and its read-only credential arrive with the first
-        # LoRA (roadmap item 9); until then an r2: line is a manifest error.
-        raise ValueError(f"{self.path}: r2: sources are not fetchable yet")
+            return urllib.request.Request(f"https://huggingface.co/{owner}/{repo}/resolve/main/{'/'.join(rest)}", headers=headers)
+        return r2_request(self.source[3:], headers)
+
+
+def r2_request(key: str, headers: dict) -> urllib.request.Request:
+    """A SigV4-signed GET of one object in the models bucket, with the read key the environment holds."""
+    # Prod holds the read-only models key; dev reaches the bucket with its write key, which can also read.
+    try:
+        account, key_id, secret = (os.environ[v] for v in ("R2_ACCOUNT_ID", "R2_MODELS_ACCESS_KEY_ID", "R2_MODELS_SECRET_ACCESS_KEY"))
+    except KeyError as missing:
+        raise SystemExit(f"r2:{key}: {missing.args[0]} is not set, so the models bucket cannot be read")
+    host = f"{account}.r2.cloudflarestorage.com"
+    path = "/" + urllib.parse.quote(f"{MODELS_BUCKET}/{key}", safe="/-_.~")
+    now = datetime.datetime.now(datetime.timezone.utc)
+    stamp, day = now.strftime("%Y%m%dT%H%M%SZ"), now.strftime("%Y%m%d")
+    signed = {"host": host, "x-amz-content-sha256": "UNSIGNED-PAYLOAD", "x-amz-date": stamp}
+    names = ";".join(sorted(signed))
+    canonical = "\n".join(["GET", path, "", *(f"{k}:{signed[k]}" for k in sorted(signed)), "", names, "UNSIGNED-PAYLOAD"])
+    scope = f"{day}/auto/s3/aws4_request"
+    to_sign = "\n".join(["AWS4-HMAC-SHA256", stamp, scope, hashlib.sha256(canonical.encode()).hexdigest()])
+    k = f"AWS4{secret}".encode()
+    for part in (day, "auto", "s3", "aws4_request"):
+        k = hmac.new(k, part.encode(), hashlib.sha256).digest()
+    sig = hmac.new(k, to_sign.encode(), hashlib.sha256).hexdigest()
+    auth = f"AWS4-HMAC-SHA256 Credential={key_id}/{scope}, SignedHeaders={names}, Signature={sig}"
+    return urllib.request.Request(f"https://{host}{path}", headers={**headers, **signed, "Authorization": auth})
 
 
 def parse(text: str) -> list[Entry]:
@@ -91,7 +119,7 @@ def download(entry: Entry, dest: Path) -> None:
     # verified model.
     part = dest.with_name(dest.name + ".part")
     dest.parent.mkdir(parents=True, exist_ok=True)
-    req = urllib.request.Request(entry.url(), headers={"User-Agent": "monsterpaws-comfyui-models"})
+    req = entry.request()
     h = hashlib.sha256()
     done = 0
     with urllib.request.urlopen(req) as resp, part.open("wb") as out:

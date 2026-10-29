@@ -42,6 +42,27 @@ describe("comfyui/models.manifest (ADR-0004 decision 11)", () => {
     }
   });
 
+  // The trainer's weights are laid out as ai-toolkit reads a local model, not as ComfyUI's store (infra.md, GPU rental).
+  it("models-training.manifest parses and every entry carries a licence and a date", () => {
+    const manifest = path.join(repo, "comfyui", "models-training.manifest");
+    const out = execFileSync("python3", ["-I", fetcher, "check"], {
+      encoding: "utf8",
+      env: { ...process.env, MODELS_MANIFEST: manifest },
+    });
+    expect(out).toMatch(/^ok: \d+ entries/);
+    const lines = readFileSync(manifest, "utf8")
+      .split("\n")
+      .filter((l) => l.trim() && !l.trim().startsWith("#"));
+    for (const line of lines) {
+      const [file, source, sha, licence, checked] = line.trim().split(/\s+/);
+      expect(file, line).toMatch(/^(klein-base-4b|qwen3-4b)\//);
+      expect(source, line).toMatch(/^hf:[^/]+\/[^/]+\/.+$/);
+      expect(sha, line).toMatch(/^[0-9a-f]{64}$/);
+      expect(licence, line).toMatch(/^[A-Za-z0-9.+-]+$/);
+      expect(checked, line).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    }
+  });
+
   it("refuses a hash that is not sha256", () => {
     const r = checkWith("checkpoints/x.safetensors hf:a/b/x.safetensors deadbeef MIT 2026-10-07\n");
     expect(r.status).not.toBe(0);

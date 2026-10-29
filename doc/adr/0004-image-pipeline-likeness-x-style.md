@@ -20,6 +20,8 @@
 > step. Self-amended 2026-10-28: the test's before repainted as
 > production paints (batches 14a–14b), Beetle in it; no checker bake-off
 > (below).
+> Self-amended 2026-10-29: the weights we make live in a bucket of their
+> own, `monsterpaws-models`, not a prefix (below).
 
 ## Context
 The collector loop needs card art that is (a) unmistakably one set — the
@@ -813,3 +815,63 @@ Two choices by Logan, 2026-10-28:
    painting misread as clean is caught at that last look, which is the
    backstop the bake-off would have narrowed. No `@anthropic-ai/sdk`
    dependency and no `anthropic/api-key` come in for this.
+
+## Amendment (2026-10-29): the weights we make get a bucket of their own
+
+### Context
+Decision 11 of 2026-10-05 sends the weights we make dev → R2 → prod "under
+a models prefix", read in prod "with a read-only credential of its own",
+and its consequences add "a read-only R2 credential for the models
+prefix". The first such weights exist: the anatomy LoRA's checkpoints,
+trained 2026-10-29 (`doc/plans/base-model-candidates.md`). Cloudflare's R2
+token docs (read 2026-10-29) offer Object Read, Object Read & Write and
+two Admin levels, each scoped to a list of buckets; nothing narrower than a
+bucket. A prefix in media, vault or corpus would hand prod's models key
+that whole bucket: media is built to be served publicly (card art and
+photos by public R2 URLs, `doc/infra.md`'s diagram; public access is off
+on every bucket today, Logan 2026-10-29), so a LoRA there would be
+published the day it is turned on (an ADR-0031 amendment, for CC BY-SA
+training photos); the vault holds the
+pg_dumps and the attestation mirror; the corpus is scraped HTML.
+
+### Decision
+1. **A private bucket, `monsterpaws-models`, holds the weights we make,
+   and nothing else.** Logan created it in the dashboard 2026-10-29,
+   public access off. Never public, never a custom domain.
+2. **Two keys, each scoped to that bucket alone, no expiry, no IP filter**
+   (a home IP changes, and an expired key would stop prod's store from
+   verifying): dev uploads with Object Read & Write
+   (`cloudflare/r2-models-write-*`, in `pass` 2026-10-29); prod reads with
+   Object Read (`cloudflare/r2-models-read-*`), created when the prod GPU
+   distro is provisioned, never before, never shared with dev.
+3. **An `r2:<key>` manifest source is an object in that bucket.**
+   `comfyui/models.py` signs the GET (SigV4, stdlib only) with
+   `R2_ACCOUNT_ID`, `R2_MODELS_ACCESS_KEY_ID` and
+   `R2_MODELS_SECRET_ACCESS_KEY` from the environment, and verifies the
+   hash on the stream as it does for Hugging Face.
+4. **Upload is an oplog entry** (0011 the first): the separation matrix,
+   the objects, their hashes read back. A checkpoint reaches
+   `models.manifest` only when it is chosen to run, with the hash 0011
+   recorded.
+
+### Consequences
+- `doc/infra.md`: provisioning step 5c (the bucket) and step 8 (the prod
+  GPU distro's keys, the models read key among them), the `pass` rows,
+  the R2 boxes in the deployment diagram.
+- The media write key the prod distro will hold cannot be write-only
+  either: R2 has no such level, so it is Object Read & Write on media,
+  whose contents are meant to be served publicly anyway.
+
+### Alternatives
+- **A prefix in the vault.** Rejected: prod's models key could read every
+  pg_dump.
+- **A prefix in media.** Rejected: built to be public, so it would
+  publish the LoRA when media's public access is turned on.
+- **Hugging Face, private.** A new vendor holding our weights for no gain
+  over a bucket we already pay nothing for.
+
+### Revisit triggers
+- R2 offers prefix-scoped tokens: the boundary could move inside a bucket,
+  though a bucket of its own costs nothing to keep.
+- A LoRA is published (an ADR-0031 amendment): its public copy is a
+  separate decision; this bucket stays private.

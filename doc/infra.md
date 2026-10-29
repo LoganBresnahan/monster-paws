@@ -89,6 +89,9 @@ dashboard (step 5b).
 | `cloudflare/r2-vault-endpoint` | Same URL as `r2-endpoint`, stored beside the vault pair | Nothing reads it today (`rclone_r2` and the backup script use `r2-endpoint`) | dev only |
 | `cloudflare/r2-token` | Account-owned R2 token, Object Read & Write on media + corpus | The token the worker pair was derived from — re-derive the pair from it, or roll it to revoke the pair | dev only |
 | `cloudflare/r2-vault-token` | Account-owned R2 token, Object Read & Write on the vault only | The token the vault pair was derived from | dev only |
+| `cloudflare/r2-models-write-token` | Account-owned R2 token, Object Read & Write on `monsterpaws-models` only; no expiry, no IP filter (a home IP changes) | The token the models write pair was derived from; roll it to revoke the pair | dev only |
+| `cloudflare/r2-models-write-access-key-id` | Models write pair, access key id | Uploading weights we make (the anatomy LoRA) from dev; reaches no other bucket | dev only |
+| `cloudflare/r2-models-write-secret-access-key` | Models write pair, secret | same | dev only |
 
 ```sh
 rclone_r2 worker lsf r2:monsterpaws-corpus      # the function is defined in step 5
@@ -113,10 +116,10 @@ oplog entry) and lands in the prod distro's `.env`, readable by the
 | --- | --- | --- | --- |
 | `digitalocean/pg-home-worker-url` | Connection string for a `home_worker` Postgres role: pg-boss's schema plus INSERT on `keepsake_fact`, nothing else | The home worker's `DATABASE_URL`, reached through the tunnel | home `.env` (not created yet) |
 | `digitalocean/droplet-tunnel-key` | SSH private key; its `authorized_keys` line on the droplet is `restrict,port-forwarding,permitopen="<pg-host>:25060"` | The home → droplet → Postgres tunnel, and nothing else | home prod distro (not created yet) |
-| `cloudflare/r2-media-write-token` | Account-owned R2 token, Object Write only, media bucket only | The pair below is derived from it; roll it to revoke the pair | dev only (not created yet) |
-| `cloudflare/r2-media-write-access-key-id` | Media write pair, access key id | Uploading card art from home — can neither read media nor touch corpus or vault | home `.env` (not created yet) |
+| `cloudflare/r2-media-write-token` | Account-owned R2 token, Object Read & Write, media bucket only — R2 has no write-only permission (Object Read, Object Read & Write and two Admin levels; Cloudflare's docs read 2026-10-29), and media's contents are meant to be served publicly anyway (public access is off on every bucket today, Logan 2026-10-29) | The pair below is derived from it; roll it to revoke the pair | dev only (not created yet) |
+| `cloudflare/r2-media-write-access-key-id` | Media write pair, access key id | Uploading card art from home — cannot touch corpus, vault or models | home `.env` (not created yet) |
 | `cloudflare/r2-media-write-secret-access-key` | Media write pair, secret | same | home `.env` (not created yet) |
-| `cloudflare/r2-models-read-token` | Account-owned R2 token, Object Read only, the models prefix only | The pair below is derived from it; the style LoRA and any weights we make travel dev → R2 → prod through it (ADR-0004 decision 11 as refined) | dev only (not created yet) |
+| `cloudflare/r2-models-read-token` | Account-owned R2 token, Object Read only, `monsterpaws-models` only (R2 tokens scope to buckets, not prefixes); no expiry, no IP filter | The pair below is derived from it; the style LoRA and any weights we make travel dev → R2 → prod through it (ADR-0004 decision 11 as refined) | dev only (not created yet) |
 | `cloudflare/r2-models-read-access-key-id` | Models read pair, access key id | The prod fetcher's download of manifest entries whose source is `r2:`; can write nothing | home `.env` (not created yet) |
 | `cloudflare/r2-models-read-secret-access-key` | Models read pair, secret | same | home `.env` (not created yet) |
 
@@ -293,12 +296,15 @@ curl -X PATCH "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/settings/ssl"
 #                                              corpus + media
 #   vault  key (pass cloudflare/r2-vault-access-key-id / -secret-access-key):
 #                                              vault only
-rclone_r2() { # $1 = worker|vault, rest = rclone args
+#   models key (pass cloudflare/r2-models-write-access-key-id / -secret-access-key):
+#                                              models only, dev only (5c)
+rclone_r2() { # $1 = worker|vault|models, rest = rclone args
   local id sec role=$1; shift
   case $role in
     worker) id=cloudflare/r2-access-key-id;       sec=cloudflare/r2-secret-access-key ;;
     vault)  id=cloudflare/r2-vault-access-key-id; sec=cloudflare/r2-vault-secret-access-key ;;
-    *) echo "usage: rclone_r2 worker|vault ..." >&2; return 2 ;;
+    models) id=cloudflare/r2-models-write-access-key-id; sec=cloudflare/r2-models-write-secret-access-key ;;
+    *) echo "usage: rclone_r2 worker|vault|models ..." >&2; return 2 ;;
   esac
   RCLONE_CONFIG_R2_TYPE=s3 RCLONE_CONFIG_R2_PROVIDER=Cloudflare \
   RCLONE_CONFIG_R2_ACCESS_KEY_ID=$(pass show "$id" | head -n1) \
@@ -346,6 +352,21 @@ rclone_r2() { # $1 = worker|vault, rest = rclone args
 #     Purge prints a benign 403 on GetBucketVersioning — an Object Read &
 #     Write token cannot read bucket-level config; rclone assumes unversioned
 #     and deletes correctly. Don't chase it; verified 2026-08-17.
+
+# 5c. Models bucket (ADR-0004 decision 11 as refined) — CREATED 2026-10-29
+#     by Logan in the dashboard (monsterpaws-models, private; public access
+#     off). The weights we make ourselves, the anatomy LoRA first: dev
+#     uploads, the production GPU distro downloads each manifest entry whose
+#     source is r2:. A bucket of its own, not a prefix, because R2 tokens
+#     scope to buckets only (Cloudflare's docs read 2026-10-29), and the prod
+#     read key must reach nothing else. Never public: publishing a LoRA
+#     trained on CC BY-SA photos is an ADR-0031 amendment.
+#     Dev key: cloudflare/r2-models-write-* (Object Read & Write, this bucket
+#     only, no expiry, no IP filter — a home IP changes), in pass 2026-10-29.
+#     The prod read key is created at step 8, not before.
+#     Separation to verify before the first upload, both ways: the models key
+#     lists models and 403s on media, vault and corpus; the worker and vault
+#     keys 403 on models.
 
 # 6. Managed Postgres — DONE 2026-10-27 by oplog 0001 (monsterpaws-pg, PG 16,
 #    db-s-1vcpu-1gb, nyc3; firewall: the droplet only; daily backups with
@@ -436,6 +457,24 @@ ssh root@$IP 'sed -i "s/^#\?PasswordAuthentication.*/PasswordAuthentication no/;
 ssh root@$IP 'git clone <repo-url> monsterpaws && cd monsterpaws &&
   cp .env.example .env && $EDITOR .env &&
   docker compose -f docker-compose.prod.yml up -d --build'
+
+# 8. Home worker — the production GPU distro (ADR-0004 as amended
+#    2026-10-05) — NOT YET. Its own oplog entry, written before it starts.
+#    The prod distro is a second WSL instance under the `monsterpaws`
+#    Windows account and never shares a key with dev: every credential
+#    below is new, made for it alone, and lands in its own .env only
+#    (registry: Home worker, above). Create, in the dashboard / pass:
+#    a. cloudflare/r2-models-read-token, -access-key-id, -secret-access-key:
+#       Object Read, monsterpaws-models only, no expiry, no IP filter. The
+#       fetcher downloads r2: manifest entries (the anatomy LoRA) with it;
+#       without it ComfyUI never serves on a manifest that has an r2: line.
+#    b. cloudflare/r2-media-write-token, -access-key-id, -secret-access-key:
+#       Object Read & Write (R2 has no write-only), monsterpaws-media only,
+#       no expiry, no IP filter. Uploads finished card art.
+#    c. digitalocean/pg-home-worker-url: the home_worker Postgres role.
+#    d. digitalocean/droplet-tunnel-key: the restricted tunnel key.
+#    The endpoint is not a new key: copy cloudflare/r2-endpoint into the
+#    prod .env. Then re-run the R2 separation matrix with the two new keys.
 ```
 
 ## Recurring ops
@@ -967,6 +1006,14 @@ on the box: Commons dogs and the crew only.
   2.13 and its own requirements refuse, so ours does not; and importing
   its model package asks CUDA for a warp size (OmniGen2's module), so a
   check without a GPU has to stub `torch.cuda.get_device_properties`.
+- **First training run (2026-10-29):** only the H200 in atl1 could be
+  created again (the L40S and the Ada cards listed no region); about an
+  hour up, about $4.40: ~20 minutes of build and fetch, 2,000 steps at
+  1.2 s each, four samples every 250 steps at 53 s. `TQDM_MININTERVAL` does
+  not slow ai-toolkit's bar, so the log has a line per step (~4,000 lines):
+  watch it filtered. The token was read once into the one command that ran
+  `up train`, `train` and `down`, so `down` ran even after `pass` locked
+  itself.
 - **Traps found on the first run (2026-10-23, an hour, about $4.50):**
   the droplet's Docker builds with the legacy builder, which cannot
   resolve the Dockerfile's `comfy:comfy` chown — `serve` installs
@@ -1011,6 +1058,9 @@ on the box: Commons dogs and the crew only.
         │                        │      │   │   · scraped HTML,       │
         │                        │      │   │     content-addressed   │
         │                        │      │   │     (worker-only)       │
+        │                        │      │   │  monsterpaws-models     │
+        │                        │      │   │   · weights we make     │
+        │                        │      │   │     (the LoRA), private │
         │  ┌──────────────┐      │      │   └─────────────────────────┘
         │  │    worker    │      │      │         ▲ writes (keys in DB)
         │  │   pg-boss    │      │      │         │
@@ -1024,8 +1074,8 @@ on the box: Commons dogs and the crew only.
   │  DO Managed    │ │        external APIs         │
   │  Postgres 16   │ │  RescueGroups (poll daily)   │
   │  · DO backups  │ │  Every.org   (donations)     │
-  │  · pgvector    │ │  Replicate   (LoRA training; │
-  │  · pg-boss q   │ │     image-gen escape hatch)  │
+  │  · pgvector    │ │  Replicate   (image-gen      │
+  │  · pg-boss q   │ │     escape hatch)            │
   │  · corpus+FTS  │ │  Shelterluv/Petango (tier 1) │
   └───────▲────────┘ └──────────────────────────────┘
           │ SSH tunnel: home → droplet → Postgres (the art
@@ -1052,10 +1102,12 @@ on the box: Commons dogs and the crew only.
   │   display on the iGPU         │       │ own, filled from  │  │
   │   one WSL VM per account      │       │ the manifest,     │  │
   │                               │       │ hash-verified     │  │
+  │                               │       │ r2: lines from    │  │
+  │                               │       │ the models bucket │  │
   │                               └───────┼───────────────────┘  │
   └───────────────────────────────────────┼──────────────────────┘
-                                          ▼ card art, write-only pair
-                                   R2 monsterpaws-media (keys in DB)
+                                          ▼ card art (media pair)  ▲ the LoRA (models read pair)
+                                   R2 monsterpaws-media (keys in DB) · R2 monsterpaws-models
 ```
 
 The home box is a second worker, not a second server: nothing there is in the

@@ -1798,6 +1798,59 @@ here is new policy, only how it runs.
   about $5), the only size that could be created on 2026-10-23. Logan
   confirms before the droplet is made.
 
+### Training run 1 — anatomy-2026-10-29 (2026-10-29)
+
+Logan: "pass is unlocked lets give it a go."
+
+- **Where**: one H200 in atl1. The L40S, both Ada cards and the
+  RTX 4000 again listed no region, so they could not be created. The
+  droplet ran from 18:51 to 19:50 UTC, about $4.40, and was deleted by the
+  same command that trained, whatever the outcome; `status` read nothing
+  up afterwards.
+- **How it ran**: ~20 minutes of build and fetch, all 12 weights matching
+  the manifest. Then 2,000 steps in 41 minutes (1.2 s a step), plus four
+  progress samples every 250 steps (53 s a set). No error, no retry.
+- **What came home**: `var/explore/lora/anatomy-2026-10-29/` — 8 checkpoints
+  (250 to 1750 and the final 2000, 45 MB each), the 36 progress samples,
+  ai-toolkit's config and `pairs.tsv`. The loss is noise, as BFL's guide
+  warns, so it says nothing either way.
+- **Claude's look at the samples** (Base, the four holdout dogs, step 0
+  without the LoRA through step 2000): the look holds at every checkpoint
+  — the same watercolor, ink line and pastel wash — and each dog stays
+  itself; the sighthound's coat and wash run a little paler after step
+  250. Whether the anatomy is gone is Logan's read, not mine (16a: my clean
+  calls missed 21 of 46), on `var/explore/lora/samples.html`.
+- **Next**: the ship bar's test at home (decision 5): klein-v1 with the
+  LoRA at checkpoints 1000, 1500 and 2000 and strengths 0.6, 0.8 and 1.0,
+  on Plum, Ducky and Beetle at 14a–14b's seeds and on the holdout dogs.
+  First the LoRA needs its `models.manifest` line: decision 2 gives it an
+  `r2:` source, which `models.py` cannot fetch yet.
+
+### Training run 1 — Logan's read of the samples (2026-10-29)
+
+His ticks ("clean and like the dog", one sample per dog per checkpoint)
+are `var/explore/lora/samples-2026-10-29.txt`, 15 of 36:
+
+```
+dog              0   250   500   750  1000  1250  1500  1750  2000
+teckel (sit)    yes   yes   yes    .     .    yes    .     .    yes
+gonzaja (stand)  .     .     .     .     .     .     .     .    yes
+pies (sit)      yes    .     .    yes   yes   yes    .    yes   yes
+rusty (stand)    .     .    yes    .     .     .    yes    .    yes
+per step         2     1     2     1     1     2     1     1     4
+```
+
+- **Step 2000, the last checkpoint, is the only one all four pass.**
+- Without the LoRA (step 0) the two sitting dogs already pass, since the
+  pose hides the groin, and both standing dogs fail. With it, both
+  standing dogs pass at 2000: the case the LoRA is for.
+- In between it is noisy, one sample a cell, and a sitting dog that
+  passed at step 0 fails at some checkpoints, so a pass there is not yet
+  an effect. Four dogs, one seed: a lead, not a verdict.
+- So the home test (decision 5) reads 2000 first; 1500 and 1000 are
+  still run, as the ship bar names them. A longer run is the next
+  question only if 2000 passes on the distilled klein-v1.
+
 ### Batches 14a–14b — Logan's picks (2026-10-28)
 
 "I might be picky but I know what these dogs look like." His likeness
