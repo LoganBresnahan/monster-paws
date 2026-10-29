@@ -187,7 +187,7 @@ create; a global one would only add cross-team, billing and usage access.
 | `betterstack/telemetry-token-ci` | Team telemetry token named `ci-sourcemaps`, read & write — made by hand, since Better Stack has no API for minting tokens | Uploading source maps during CI's image build, so errors show TypeScript lines. Separate from the dev token so it can be revoked alone if CI leaks it | GH Actions secret `BETTERSTACK_SOURCEMAPS_TOKEN` |
 | `betterstack/uptime-token` | Team uptime API token (premade), read & write | Creating, pausing and inspecting monitors and heartbeats by API | dev only |
 | `betterstack/errors-dsn` | DSN of the Errors application `monsterpaws` (id `2778816`, `next_js_errors`, 90-day retention, linked to the GitHub repo), assembled as `https://<token>@<ingesting_host>/<id>` | Where the app and worker send errors through the Sentry SDK. Ingest-only, and public in the browser bundle by design — CI passes it to the image build as `NEXT_PUBLIC_SENTRY_DSN` | GH Actions secret `BETTERSTACK_ERRORS_DSN`; droplet `.env` `SENTRY_DSN` at the next deploy |
-| `betterstack/heartbeat-ingest-poll` | URL of heartbeat `499765`, "ingest.poll — RescueGroups daily 07:00 UTC": period 24h, grace 3h, **created paused** | The worker pings it after each complete poll, `/fail` on failure; silence past the grace alerts. Secret, since anyone holding it can ping it and hide a real failure. Unpause it in the same deploy that turns the poller on, or it alerts every morning | droplet `.env` at the poller deploy |
+| `betterstack/heartbeat-ingest-poll` | URL of heartbeat `499765`, "ingest.poll — RescueGroups daily 07:00 UTC": period 24h, grace 3h; armed by oplog 0010 (2026-10-29) | `scripts/bridge-poll-droplet.sh` pings it after each complete nightly bridge poll, `/fail` when the CLI exits non-zero (the worker's own job is unscheduled, `INGEST_POLL_SCHEDULE=off`); silence past the grace alerts. Secret, since anyone holding it can ping it and hide a real failure — and the API returns it in every read of the heartbeat, a PATCH's response included, so filter those with `jq` | droplet `.env` |
 | `betterstack/heartbeat-db-backup` | URL of heartbeat `518590`, "db backup — nightly 08:30 UTC": period 24h, grace 2h (created 2026-10-27 by oplog 0001) | `scripts/backup-db.sh` pings it after an upload over 1 MB lands in the R2 vault; silence past the grace means a night with no off-DO copy (ADR-0003 as amended 2026-10-26). Secret for the same reason as the poll's | droplet `.env.backup`, set by oplog 0001 |
 | `betterstack/sql-host` | Host of the ClickHouse HTTP "SQL API" connection (team Monster Paws, created in the dashboard 2026-09-30 — a global token would be needed to create it by API) | Reading stored errors, stack frames and their source-map results: `scripts/betterstack-sql.sh` | dev only |
 | `betterstack/sql-username` | That connection's username (rotated 2026-09-30 after the first was pasted into a chat) | same | dev only |
@@ -210,9 +210,11 @@ the silent-worker alert (ADR-0010 as amended 2026-09-30).
 U=$(pass show betterstack/uptime-token)
 curl -s -H "Authorization: Bearer $U" https://uptime.betterstack.com/api/v2/monitors \
   | jq -c '.data[] | {id, url: .attributes.url, status: .attributes.status}'
+# a heartbeat's attributes carry its ping URL (the secret): never print them whole
 curl -s -X PATCH -H "Authorization: Bearer $U" -H "Content-Type: application/json" \
-  -d '{"paused":false}' https://uptime.betterstack.com/api/v2/heartbeats/499765   # at the poller deploy
-curl -fsS "$(pass show betterstack/heartbeat-ingest-poll)"   # a manual "it ran" ping
+  -d '{"paused":false}' https://uptime.betterstack.com/api/v2/heartbeats/499765 \
+  | jq -c '.data | {id, status: .attributes.status}'
+curl -fsS "$(pass show betterstack/heartbeat-ingest-poll)" >/dev/null   # a manual "it ran" ping, only for a run verified complete
 ```
 
 Notes: `flarectl` (Cloudflare's older Go CLI) is effectively superseded —

@@ -1,7 +1,7 @@
 # 0010: The first unattended night read; the poll heartbeat and the health monitor armed
 
-Status: planned
-Planned: 2026-10-29 · Run: —
+Status: run
+Planned: 2026-10-29 · Run: 2026-10-29 13:26 – 13:30 UTC
 Why: ADR-0033 decision 7, *Monitoring*: the poll heartbeat (499765) and the
 `/api/health` keyword monitor (4995794) are unpaused after the first
 unattended night completes; oplog 0009 step 7 deferred that reading to
@@ -126,4 +126,39 @@ These docs still describe the heartbeat as paused, so they change with Run:
 
 ## Run
 
+Run by Claude on Logan's word ("unlocked, go"), from `~/monsterpaws` at
+`cff9a81`. Each step ran as one shell call. Nothing printed a ping URL.
+
+**1.** 13:26:06 UTC.
+- Heartbeat 499765: `status "paused"`, `paused_at 2026-09-29T15:30:18Z`
+  (created paused).
+- Monitor 4995794: `status "paused"`, `paused_at 2026-10-27T01:50:35Z`
+  (oplog 0001 step 6). Its `name` reads `null`, since monitors are named
+  elsewhere in the API.
+- Health 200, `lastCompletePollAt 2026-10-29T07:26:35.966Z`, `pollStale
+  false`, sha `40cb846…`.
+
+**2.** 13:26:14 UTC. The PATCH answered `status "up"`, then `heartbeat
+pinged`. The heartbeat now expects its next ping by 2026-10-30 16:26 UTC
+(27 h). Tomorrow's nightly should send it at ~07:27.
+
+**3.** 13:26:19 UTC. The PATCH answered `status "up"`.
+
+**4.** 13:29:45 UTC, 3 min 26 s after step 3. Both read `status "up"`,
+`paused_at null`. Health unchanged.
+
+Docs, in this commit:
+- `doc/infra.md`: the registry row. The heartbeat is armed, and
+  `scripts/bridge-poll-droplet.sh` pings it. The secret comes back in every
+  read of the heartbeat.
+- `doc/infra.md`: the monitors block's PATCH, filtered through `jq`.
+- `doc/flows.md`: the heartbeat label.
+- `doc/roadmap.md`: the Launch row; item 7c's "left", where the arming
+  was still listed as to do; and the Provision + deploy item's "stays
+  paused until the allowlist".
+- `doc/oplog/README.md`: this entry's index row.
+
 ## Follow-ups
+- The first nightly after 2026-11-01 (Central time leaves daylight saving)
+  should still start at 07:00 UTC, which would prove the trigger keeps UTC
+  time (oplog 0009). Read it in that night's log.

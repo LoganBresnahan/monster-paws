@@ -735,8 +735,8 @@ and CI's e2e send nothing.
         │                                 │                          │        │
         └──────── envelope ───────────────┴──────────────────────────┘        │
                           ▼                                                   ▼
-            Better Stack Errors  app `monsterpaws`          heartbeat 499765 (paused
-            resolves frames by debug ID ◄─┐                  until oplog 0001)
+            Better Stack Errors  app `monsterpaws`          heartbeat 499765 (armed
+            resolves frames by debug ID ◄─┐                  by oplog 0010)
                                           │
   CI: images ─ Docker build stamps debug IDs offline (scripts/sourcemaps.sh inject)
       └─ --target sourcemaps export ─► sourcemaps job: upload, retry ≤ 6 until
