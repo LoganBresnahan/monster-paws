@@ -1,7 +1,7 @@
 # 0011: The models bucket's first objects: the anatomy LoRA's checkpoints to R2
 
-Status: planned
-Planned: 2026-10-29 · Run: —
+Status: run
+Planned: 2026-10-29 · Run: 2026-10-29 20:28 – 20:31 UTC
 Why: ADR-0004 as amended 2026-10-29 (the weights we make get a bucket of
 their own) and decision 11 of 2026-10-05; roadmap item 9, the anatomy LoRA.
 Commit deployed: n/a — nothing on the droplet, the database or the three
@@ -93,7 +93,45 @@ Rollback: none needed — reads into a scratch directory that is removed.
 
 ## Run
 
+Prerequisites, 20:28: `pass` unlocked; rclone v1.60.1-DEV; the three files
+re-hashed, each matching the table above at 46,223,608 bytes.
+
+1. **Private** — Logan, in the dashboard before the run: public access
+   disabled on `monsterpaws-models` (and on every bucket today), no custom
+   domain connected.
+2. **Separation**, 20:29, reads only:
+
+       models → monsterpaws-models: read
+       models → monsterpaws-media: refused
+       models → monsterpaws-vault: refused
+       models → monsterpaws-corpus: refused
+       worker → monsterpaws-models: refused
+       vault → monsterpaws-models: refused
+
+   Each refusal read again for its reason: `AccessDenied`, status 403, on all
+   five. The bucket held 0 objects before the upload.
+3. **Upload**, 20:29:41 – 20:29:51. Each `copyto`'s first attempt failed with
+   `NotImplemented`, status 501, and rclone's own retry succeeded at once
+   (`Attempt 2/3 succeeded`, exit 0, on all three). Not in the plan and not
+   chased with more writes: the cause is unknown, and step 4 is what proves
+   the objects. `lsf -R --files-only --format sp`:
+
+       46223608;loras/anatomy-2026-10-29/anatomy-2026-10-29_000001000.safetensors
+       46223608;loras/anatomy-2026-10-29/anatomy-2026-10-29_000001500.safetensors
+       46223608;loras/anatomy-2026-10-29/anatomy-2026-10-29_000002000.safetensors
+
+   Nothing else in the bucket.
+4. **Read back**, 20:30:25 – 20:30:36: `models.py fetch` signed each GET and
+   checked each hash on the stream — `ok` on all three, exit 0. The first
+   signed request this code has made worked, so the r2: path prod will use
+   is proven with the dev key standing in for the read key. Scratch store
+   and manifest removed.
+
 ## Follow-ups
+- The first-attempt 501 on every upload (rclone v1.60.1-DEV, Debian's
+  package, provider Cloudflare): read why before the next upload — a newer
+  rclone, or the header R2 refuses — and note it in `doc/infra.md`,
+  provisioning 5c, as a trap until then.
 - The chosen checkpoint's `models.manifest` line (`loras/…`, `r2:` source,
   its hash above, licence `ours`), when the home test picks one.
 - The prod read key at provisioning step 8, and the separation matrix re-run

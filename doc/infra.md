@@ -364,9 +364,14 @@ rclone_r2() { # $1 = worker|vault|models, rest = rclone args
 #     Dev key: cloudflare/r2-models-write-* (Object Read & Write, this bucket
 #     only, no expiry, no IP filter — a home IP changes), in pass 2026-10-29.
 #     The prod read key is created at step 8, not before.
-#     Separation to verify before the first upload, both ways: the models key
-#     lists models and 403s on media, vault and corpus; the worker and vault
-#     keys 403 on models.
+#     Separation verified 2026-10-29 by oplog 0011, reads only: the models
+#     key lists models and 403s on media, vault and corpus; the worker and
+#     vault keys 403 on models. First objects: the anatomy LoRA's
+#     checkpoints 1000, 1500, 2000 under loras/anatomy-2026-10-29/.
+#     TRAP (0011): every `rclone_r2 models copyto` failed its first attempt
+#     with 501 NotImplemented and passed on rclone's own retry (v1.60.1-DEV,
+#     Debian's); cause not read yet. Read every upload back through
+#     models.py's fetch against its hash — that, not rclone's exit, proves it.
 
 # 6. Managed Postgres — DONE 2026-10-27 by oplog 0001 (monsterpaws-pg, PG 16,
 #    db-s-1vcpu-1gb, nyc3; firewall: the droplet only; daily backups with
