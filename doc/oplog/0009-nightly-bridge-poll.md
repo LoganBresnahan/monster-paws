@@ -1,7 +1,7 @@
 # 0009: The nightly bridge poll — the restricted key, the droplet half, the Windows task
 
-Status: planned
-Planned: 2026-10-28 · Run: —
+Status: run
+Planned: 2026-10-28 · Run: 2026-10-28 23:14 – 23:16 UTC (steps 1–6; step 7 is read by oplog 0010)
 Why: ADR-0033 decision 7 and its amendment "as built" (2026-10-28, night);
 roadmap: Launch (3b). Health is green to 2026-10-30 00:45 UTC (oplog 0008);
 the first nightly at 2026-10-29 07:00 UTC keeps it green from then on.
@@ -95,4 +95,54 @@ log says why.
 
 ## Run
 
+Run by Claude on Logan's word. topdog pushed (`3269579..8cf206d`) at
+22:44 UTC; `pass` had relocked by then and Logan unlocked it again.
+
+**1.** 23:14:04 UTC. Checkout `3269579`, not `650caa3` as planned: oplog
+0007 pulled to `3269579` and nothing pulled since — harmless.
+`authorized_keys` 1 line, 0 `monsterpaws-bridge` lines; no
+`scripts/bridge-poll-droplet.sh`.
+
+**2.** 23:14:28 UTC. `~/.ssh/monsterpaws-bridge` mode 600 (`.pub` 644); the
+`pass` copy `digitalocean/droplet-bridge-key` byte-identical to it (header
+`-----BEGIN OPENSSH PRIVATE KEY-----`, nothing more printed);
+`ssh -G monsterpaws-bridge`: user root, the key, `IdentitiesOnly yes`, the
+droplet's address (not printed); its host key already in `known_hosts`.
+
+**3.** 23:15:12 UTC, one session: `git pull --ff-only` to `8cf206d`;
+`scripts/bridge-poll-droplet.sh` executable; `authorized_keys.before-0009`
+kept; 2 lines, 1 `monsterpaws-bridge`. Nothing restarted.
+
+**4.** 23:15:23 UTC. `BRIDGE_SSH_HOST=monsterpaws-bridge
+scripts/poll-via-bridge.sh --check` → `bridge preflight ok on the droplet —
+worker image 40cb846, .env and CA present`, exit 0: the key authenticated,
+the reverse forward on 18443 was accepted, the forced command ran the
+preflight. No poll.
+
+**5.** 23:15:35 UTC. `-R 127.0.0.1:18444` through the key → `Error: remote
+port forwarding failed for listen port 18444`, rc 255.
+
+**6.** No task existed before. `register-nightly-poll.ps1` → `Monster Paws
+nightly poll: Ready, next run 2026-10-29 07:00:00Z`. Read back: trigger
+daily, `StartBoundary 2026-10-29T02:00:00-05:00` — Windows stores the `Z`
+as an explicit offset, its synchronize-across-time-zones form; action
+`wsl.exe -d monsterpaws-dev -u oof -- /home/oof/monsterpaws/scripts/poll-nightly.sh`;
+logon `Interactive`; start when available, wake to run, 4 h limit, one
+instance.
+
+Limits, as built: the task runs only while Logan is logged on to Windows —
+after a reboot with no logon there is no run until he logs on (then
+`StartWhenAvailable` runs the missed one, never a second in a day); once
+heartbeat 499765 is unpaused it says so. The task runs from `~/monsterpaws`,
+the integration checkout, so the moderator session keeps fast-forwards and
+rebases there, and lora its guard batches, out of 06:45–07:45 UTC.
+
+**7.** Not run here: the first unattended night is read by oplog 0010,
+which unpauses heartbeat 499765 and monitor 4995794 on it.
+
 ## Follow-ups
+- Oplog 0010: read `var/nightly/2026-10-29.log` and health after 07:00 UTC;
+  on a complete run, unpause heartbeat 499765 and monitor 4995794.
+- The first run after 2026-11-01 (Central time leaves daylight saving)
+  should still start at 07:00 UTC — the proof that the offset form is
+  synchronized, not local.
