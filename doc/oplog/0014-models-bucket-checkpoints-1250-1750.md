@@ -1,7 +1,7 @@
 # 0014: Checkpoints 1250 and 1750 of the anatomy LoRA to the models bucket
 
-Status: planned
-Planned: 2026-10-30
+Status: run
+Planned: 2026-10-30 · Run: 2026-10-30 15:31 – 15:32 UTC
 Why: ADR-0004 as amended 2026-10-29 (the weights we make get a bucket of
 their own) and decision 11 of 2026-10-05; roadmap item 9, the anatomy LoRA.
 Commit deployed: n/a — nothing on the droplet, the database or the three
@@ -71,7 +71,27 @@ Rollback: none needed — a read into a scratch directory that is removed.
 
 ## Run
 
+Prerequisites, 15:31: `pass` unlocked; rclone v1.60.1-DEV; both files
+re-hashed, each matching the table above at 46,223,608 bytes.
+
+1. **Upload**, 15:31:21 – 15:31:33. Each `copyto`'s first attempt failed
+   with `NotImplemented`, as every one did in 0011, and rclone's own retry
+   succeeded (`Attempt 2/3 succeeded`, exit 0, on both).
+   `lsf -R --files-only --format sp`:
+
+       46223608;loras/anatomy-2026-10-29/anatomy-2026-10-29_000001000.safetensors
+       46223608;loras/anatomy-2026-10-29/anatomy-2026-10-29_000001250.safetensors
+       46223608;loras/anatomy-2026-10-29/anatomy-2026-10-29_000001500.safetensors
+       46223608;loras/anatomy-2026-10-29/anatomy-2026-10-29_000001750.safetensors
+       46223608;loras/anatomy-2026-10-29/anatomy-2026-10-29_000002000.safetensors
+
+   0011's three and the two new keys, nothing else.
+2. **Read back**, 15:31:42 – 15:31:47: `models.py fetch` signed each GET and
+   checked each hash on the stream — `ok` on both, exit 0. Scratch store
+   and manifest removed.
+
 ## Follow-ups
-- The 501 on first attempts stays open from 0011.
+- The 501 on first attempts stays open from 0011: five uploads out of five
+  now.
 - The chosen checkpoint's `models.manifest` line, when Logan's read of the
   grid picks one.
