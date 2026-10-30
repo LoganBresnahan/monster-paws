@@ -1,7 +1,7 @@
 # 0012: Rerun the failed nightly poll of 2026-10-30
 
-Status: planned
-Planned: 2026-10-30
+Status: run
+Planned: 2026-10-30 · Run: 2026-10-30 14:15 – 14:27 UTC (step 1; step 2 failed; step 3 not run)
 Why: ADR-0033 decision 7, ADR-0014; roadmap: Launch (3b). The 07:00 UTC
 nightly (oplog 0009) failed at 07:06:27 UTC after 131 pages with
 `terminated` (`var/nightly/2026-10-30.log`; the cause is in doc/issues.md,
@@ -80,4 +80,62 @@ resolved (the monitor checks every 3 min). Filter every heartbeat read with
 
 ## Run
 
+Run by Claude on Logan's word ("commit" and "go"), from `~/monsterpaws` at
+`233c62d`. Logan, on the key: "it doesn't change anything. its just a
+setting", so the value in the droplet's `.env` is unchanged.
+
+**1** 14:15:14–14:15:18 UTC, one root session, no guard batch running:
+
+    api.rescuegroups.org curl: (56) OpenSSL SSL_read: Connection reset by peer, errno 104 000
+    rescuegroups.org curl: (56) OpenSSL SSL_read: Connection reset by peer, errno 104 000
+    example.com 200
+
+The block stands: no HTTP answer from either RescueGroups host, and
+`example.com` 200. This was curl `(56)`, a reset while reading, where the
+plan expected launch's `(35)`, a reset mid-handshake. Under TLS 1.3 the
+client counts the handshake done once it has sent its Finished, so the
+reset may now land a step later than at launch. It is still a reset with no
+response, and a keyless one, so the key's setting is not what decides it.
+
+**2** started 14:16:29 UTC (proxy up, `var/rg-proxy-20261030T141629Z.log`).
+The droplet half printed `polling on the droplet, RescueGroups through home
+— worker image 40cb846, 2026-10-30T14:16:31Z`. At 14:21:15, after 104 pages,
+`poll-via-bridge.sh` exited **255**, ssh's own code for a lost connection,
+and printed nothing else: no summary, no heartbeat line. The last tunnel had
+closed cleanly at 14:21:13.679 (859,309 B), so no page was in flight; the
+droplet was storing page 104 when the connection went. The proxy logged no
+errors, and nothing was left on this machine or port 18443. This is not the
+night's failure. That one was a cut page with the SSH connection standing,
+which reported `/fail` itself; this time the whole connection dropped.
+
+Step 3 was not run: both incidents are still open, and health still reads
+`pollStale: true`. The plan's response to a dropped connection, after the
+five-minute wait: one root session at 14:26:29–14:26:32 UTC, which also read
+the droplet's logs. **No leftover** `monsterpaws-bridge-poll` container.
+Memory 415 MB available, 216 MB of swap in use, up 91 days. Read-only:
+- The droplet did not end it. No OOM or kill in the kernel log since 06:00,
+  and no ufw blocks 14:15–14:30. Docker logged the poll container's end at
+  14:21:16.098, a second **after** home's ssh exited, so the connection went
+  first and the poll followed when its session closed. That fits a drop on
+  the network path between here and the droplet, which nothing on either
+  end logged.
+- The night's cut page fits the proxy race in doc/issues.md. The proxy
+  logged RescueGroups' close of the last tunnel at 07:06:26.337, and docker
+  logged the container's end at 07:06:26.544, 0.2 s later.
+- apt ran 06:29–06:32 UTC, before the nightly: unattended-upgrades installed
+  a new kernel, so a reboot is pending. Nothing touched docker or ssh.
+- `journalctl -u ssh` holds only the accept lines; a session's close is
+  logged under its own scope, so the drop's own line was not read.
+
+Two failures in a row, two different ways, so per the plan this entry stops
+here. Logan's call ("ok i agree"): fix it now. The whole run is retried at home,
+because nothing inside the run survives a dropped connection, and the
+proxy's close is fixed. Then rerun under a new entry.
+
 ## Follow-ups
+- The fix: ADR-0033 as amended 2026-10-30 (`scripts/poll-nightly.sh`
+  retries the whole run; `scripts/rg-proxy.ts` ends the client instead of
+  destroying it), then its own entry to rerun with it.
+- With the next deploy: `fetchPage` retries a page, and the CLI prints
+  `err.cause` (doc/issues.md).
+- The droplet's pending kernel reboot, its own entry.
