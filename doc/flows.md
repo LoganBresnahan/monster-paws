@@ -171,8 +171,9 @@ is available one-shot as `npm run ingest -- poll [--max-pages N]`, and
        │                                                 └────────▲─────────┘
        │  until the allowlist the droplet is refused, so          │ ADR-0033
        │  scripts/poll-via-bridge.sh (nightly: poll-nightly.sh at │
-       │  07:00 UTC from home) runs this CLI on the droplet via   │
-       │  bridge-poll-droplet.sh,                                 │
+       │  07:00 UTC from home, the whole run up to 3 times,       │
+       │  ADR-0033 as amended 2026-10-30) runs this CLI on the    │
+       │  droplet via bridge-poll-droplet.sh,                     │
        │  with HTTPS_PROXY → ssh -R → scripts/rg-proxy.ts at home ┘
        │  (CONNECT api.rescuegroups.org:443 only); the database
        │  connection stays droplet → Postgres

@@ -68,6 +68,40 @@ describe("ADR-0033 the home end of the poll bridge", () => {
     expect(lines).toContain(`CONNECT ${target}`);
   });
 
+  // The night of 2026-10-30 lost a page this way: the target closed while the
+  // proxy still held the page's tail, and the old close handler threw it away
+  // (about 2% of tunnels on loopback, so 300 pages all but always catch it).
+  it("delivers every byte of every page when the target closes first", async () => {
+    const size = 774_813; // the median page of the 2026-10-30 runs
+    const page = net.createServer((s) => s.end(Buffer.alloc(size, 0x61)));
+    const target = `127.0.0.1:${await listen(page)}`;
+    const proxyPort = await listen(createRgProxy({ allow: [target], log: () => {} }));
+
+    const fetchPage = () =>
+      new Promise<number>((resolve, reject) => {
+        const sock = net.connect(proxyPort, "127.0.0.1", () =>
+          sock.write(`CONNECT ${target} HTTP/1.1\r\nHost: ${target}\r\n\r\n`),
+        );
+        let body = -1;
+        sock.on("data", (d) => {
+          if (body >= 0) body += d.length;
+          else {
+            const end = d.indexOf("\r\n\r\n");
+            if (end !== -1) body = d.length - end - 4;
+          }
+        });
+        sock.on("close", () => resolve(body));
+        sock.on("error", reject);
+      });
+
+    const short: number[] = [];
+    for (let i = 0; i < 300; i++) {
+      const got = await fetchPage();
+      if (got !== size) short.push(got);
+    }
+    expect(short).toEqual([]);
+  });
+
   // Never an open proxy: every other host, port or method is refused.
   it("refuses other hosts, other ports and lookalike hosts", async () => {
     const proxyPort = await listen(createRgProxy({ log: () => {} }));

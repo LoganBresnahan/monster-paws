@@ -57,9 +57,11 @@ export function createRgProxy({
       client.pipe(upstream).pipe(client);
       log(`CONNECT ${target}`);
     });
-    upstream.on("close", () => {
+    upstream.on("close", (hadError) => {
       log(`closed ${target} after ${((Date.now() - started) / 1000).toFixed(1)} s, ${upstream.bytesRead} B in`);
-      client.destroy();
+      // Never destroy the client on a clean close: pipe has already ended it,
+      // and destroy() drops the page's tail it has not flushed yet (ADR-0033).
+      if (hadError) client.destroy();
     });
   });
   return server;

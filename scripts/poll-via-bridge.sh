@@ -3,7 +3,8 @@
 # leaving through this machine (ADR-0033; doc/infra.md, "Poll via the
 # bridge"). The droplet's address is refused by RescueGroups (ADR-0014 as
 # amended); the database connection stays droplet → Managed Postgres, so a
-# home network blip costs a page fetch, never a connection mid-write.
+# home network blip costs the run (the nightly runs it again), never a
+# connection mid-write.
 # scripts/poll-via-home.sh is the fallback.
 #
 #   scripts/poll-via-bridge.sh                 one poll, as the 07:00 job would

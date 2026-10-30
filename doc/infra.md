@@ -524,8 +524,8 @@ scripts/poll-via-home.sh [--max-daily-disappearance R]
 # its own image, .env and CA, and only RescueGroups' requests leave through
 # this machine — scripts/rg-proxy.ts on 127.0.0.1:18443 (CONNECT to
 # api.rescuegroups.org:443 only), reached over one SSH reverse forward.
-# Minutes, not hours; a dropped home link costs a page fetch, never a
-# write. The proxy's log lands in var/rg-proxy-<stamp>.log. pass unlocked
+# Minutes, not hours; a dropped home link costs the run, never a write.
+# The proxy's log lands in var/rg-proxy-<stamp>.log. pass unlocked
 # (the DO token only):
 scripts/poll-via-bridge.sh [--max-daily-disappearance R]
 # The droplet's own schedule is off meanwhile: INGEST_POLL_SCHEDULE=off in its
@@ -538,7 +538,11 @@ scripts/poll-via-bridge.sh [--max-daily-disappearance R]
 # monsterpaws-dev — BRIDGE_SSH_HOST=monsterpaws-bridge, so no pass: the ssh
 # config host names the droplet and ~/.ssh/monsterpaws-bridge, a key whose
 # forced command is scripts/bridge-poll-droplet.sh --from-key. Logs in
-# var/nightly/<date>.log; the poll heartbeat alerts. Fires only while Windows
+# var/nightly/<date>.log; the poll heartbeat alerts. A failed run is run again,
+# up to three attempts five minutes apart inside the 3 h bound, never after
+# exit 2 (ADR-0033 as amended 2026-10-30); each failed attempt pings /fail,
+# so a night that completes on a retry opens an incident and closes it, and
+# the log's "-- attempt" lines say why. Fires only while Windows
 # is up with Logan logged on and WSL can start; a missed 07:00 runs when he
 # is back, never twice in a day. Through the key, by hand:
 BRIDGE_SSH_HOST=monsterpaws-bridge scripts/poll-via-bridge.sh --check   # preflight, no poll
@@ -1152,7 +1156,8 @@ an oplog entry when it happens.
   reaches Postgres through an ssh -L tunnel — every write a round trip, ~6 h.
   The droplet's own 07:00 schedule: off (INGEST_POLL_SCHEDULE=off,
   ADR-0033 as amended 2026-10-28). Nightly (ADR-0033 decision 7): the
-  Windows task runs scripts/poll-nightly.sh at 07:00 UTC; the ssh config host
+  Windows task runs scripts/poll-nightly.sh at 07:00 UTC, the whole run up to
+  three times (ADR-0033 as amended 2026-10-30); the ssh config host
   monsterpaws-bridge and its key, whose forced command on the droplet is
   scripts/bridge-poll-droplet.sh --from-key — permitlisten 127.0.0.1:18443
   only, no -L, no -D, no shell.

@@ -52,24 +52,19 @@ is the record, and a file of ticked boxes stops being read.
 
 ## Ops
 
-- **One cut page fails the whole nightly poll, and the log cannot say why.**
-  The 07:00 UTC bridge poll of 2026-10-30 stopped at 07:06:27 after 131 of
-  ~641 pages with the single word `terminated`, undici's message for a
-  response body that ended early; the CLI prints only `err.message`, so the
-  cause underneath is lost. The heartbeat went `/fail` at once and health 503
-  at 10:27, 27 h after the last complete run (oplog 0012). The proxy logged no
-  socket error and every tunnel closed cleanly. Two weaknesses, either one
-  enough: `fetchPage` in `src/core/ingest/rescuegroups.ts` never retries, so
-  one bad page out of ~641 loses the night (safely: stage 5 never runs); and
-  `scripts/rg-proxy.ts` calls `client.destroy()` on the upstream's `close`,
-  which throws away whatever `pipe` has handed the client socket but not yet
-  flushed into the SSH forward. That race is the likely cause, since every
-  page is its own tunnel and it runs ~641 times a night, but it is unproven.
-  The fix, in order: the proxy ends the client instead of destroying it on a
-  clean close (home-side, no deploy); `fetchPage` retries a page whose fetch
-  or body read fails (ADR-0014 still holds: the same page, not a skipped one;
-  needs a deploy); the CLI prints `err.cause` as well. Found by the moderator
-  session 2026-10-30.
+- **One bad page still costs a whole attempt, and the log cannot say why.**
+  The nightly now retries the whole run, and the proxy no longer cuts a
+  page's tail (ADR-0033 as amended 2026-10-30, after oplog 0012). Inside the
+  worker, though, `fetchPage` in `src/core/ingest/rescuegroups.ts` still
+  never retries, so one bad page costs a new 27-minute attempt rather than
+  seconds. And the CLI prints only `err.message`, so the night of 2026-10-30
+  logged the single word `terminated`. Both ship with the next deploy: a
+  page whose fetch or body read fails is fetched again (the same page,
+  never a skipped one, ADR-0014), and the CLI prints `err.cause` as well.
+  Smaller: each failed attempt pings `/fail`, so a night that completes on
+  a retry opens a Better Stack incident and closes it. Pinging only on the
+  last attempt needs a second verb in the key's forced command. Found by
+  the moderator session 2026-10-30.
 
 - **The follow-up wave cannot be built from the CLI.** The guard allows one
   follow-up seven or more days after the first message (ADR-0029 §5) and

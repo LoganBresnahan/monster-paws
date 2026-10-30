@@ -177,3 +177,37 @@ stays green to 27 h after a complete poll — 2026-10-30 00:45 UTC for 0008's.
 4. The key's master copy is in `pass` as `digitalocean/droplet-bridge-key`
    (`doc/infra.md`, registry); the working copy is `~/.ssh/monsterpaws-bridge`
    in `monsterpaws-dev`.
+
+## Amendment (2026-10-30): the nightly retries the whole run; the proxy never cuts a page's tail
+
+Logan, after oplog 0012: fix it now. The nightly of 2026-10-30 lost the
+night at page 131 to one cut page (`terminated`), and its rerun by hand
+lost its SSH connection at page 104 (ssh's exit 255). Either one loses the
+whole run: nothing inside the run outlives the connection, and `fetchPage`
+retries nothing. The repeat the Consequences call for was by hand; it is
+now the wrapper's.
+
+1. **`scripts/poll-nightly.sh` runs the bridge up to three times**, five
+   minutes apart, inside the one 3 h bound, and stops at the first
+   success. A retry completes the day's one poll and never makes a second
+   (ADR-0006: daily). The attempts before it are partial runs, which the
+   corpus dedupes and stage 5 never counts. Never after exit 2: the gate or
+   an empty feed wants a person, and the same feed is refused the same way.
+   Never after the bound stopped a run (124, or 137 after the kill), and an
+   attempt with under 30 min left never starts, since `timeout 0` means no
+   bound at all. Each failed attempt pings `/fail` from the droplet, so a
+   night that fails once and then completes opens an incident and closes
+   it. Pinging only on the last attempt would need a second verb in the
+   key's forced command, and it waits.
+2. **`scripts/rg-proxy.ts` ends the client on a clean upstream close instead
+   of destroying it.** When RescueGroups closes, `pipe` has already ended
+   the client, and `destroy()` threw away whatever the proxy had not yet
+   flushed toward the droplet: the page's tail, after which the worker's
+   `fetch` fails with `terminated`. On loopback the old handler cut about 2%
+   of 775 KB tunnels, by up to ~64 KB each; the new one cut none of 3,000
+   (2026-10-30, `tests/rg-proxy.test.ts`). The night's poll container ended
+   0.2 s after RescueGroups closed its last tunnel (oplog 0012).
+3. **Next, with a deploy:** `fetchPage` retries a page whose fetch or body
+   read fails (the same page, never a skipped one, ADR-0014), so a blip
+   costs seconds rather than the run; and the CLI prints `err.cause`, since
+   `terminated` alone hid the reason. Tracked in `doc/issues.md`.
