@@ -191,6 +191,25 @@ describe("ADR-0029 finding a shelter's address", () => {
     expect(result.pagesRead).toEqual(["https://formsonly.org/"]);
   });
 
+  it("drops a www. the host never had and reads the bare host — www.randolphhumane.rescuegroups.org (2026-10-30)", async () => {
+    const requested: string[] = [];
+    const fetcher: PageFetcher = {
+      async get(url) {
+        requested.push(url);
+        const { hostname, pathname } = new URL(url);
+        if (hostname.startsWith("www.")) throw new Error("fetch failed");
+        return pathname === "/" ? { url, status: 200, text: "<p>rchs@example.org</p>" } : { url, status: 404, text: "" };
+      },
+    };
+    const result = await findAddresses("http://WWW.RANDOLPHHUMANE.RESCUEGROUPS.ORG", fetcher);
+    expect(result.candidates).toEqual([{ email: "rchs@example.org", sourceUrl: "http://randolphhumane.rescuegroups.org/" }]);
+    expect(result.errors).toEqual([
+      "robots.txt: fetch failed",
+      "www.randolphhumane.rescuegroups.org unreachable — read randolphhumane.rescuegroups.org instead",
+    ]);
+    expect(requested.filter((u) => u.includes("//www.")).length).toBe(1);
+  });
+
   it("refuses something that is not a website without a single request", async () => {
     const fetcher = site({});
     const result = await findAddresses("n/a", fetcher);

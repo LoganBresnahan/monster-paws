@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { acronymsOf, formatEin, labelMatchesName, matchConfidence, matchEin, normalizeOrgName, parseBmfCsv, websiteLabel } from "@/core/outreach/ein-match";
+import { acronymsOf, formatEin, labelMatchesName, matchConfidence, matchEin, normalizeOrgName, normalizePlace, parseBmfCsv, websiteLabel } from "@/core/outreach/ein-match";
 
 /**
  * The EIN matcher over a hand-made BMF excerpt (tests/fixtures/README.md):
@@ -71,6 +71,27 @@ describe("ADR-0029 IRS BMF EIN matcher", () => {
     expect(noCity[0].reasons).not.toContain("same city");
   });
 
+  it("never takes initials that spell a word by chance, or a county's website, for the shelter's name — Peoria Animal Welfare Shelter (2026-10-30)", () => {
+    const row = (ein: string, name: string, city: string) => ({ ...ROWS[0], ein, name, city, ico: "" });
+    const peoria = [
+      row("263913387", "PAWS GIVING INDEPENDENCE NFP", "PEORIA"),
+      row("371341598", "PAWS", "ROCKFORD"),
+      row("261111111", "PAWS ANIMAL RESCUE", "PEORIA"),
+      row("237085445", "PEORIA COUNTY BAR ASSOCIATION FOUNDATION", "PEORIA"),
+    ];
+    const query = { name: "Peoria Animal Welfare Shelter", city: "Peoria", state: "IL", website: "http://www.peoriacounty.org/pcaps/" };
+    const byName = matchEin(query, peoria).filter((c) => c.reasons.some((r) => r.startsWith("acronym") || r.startsWith("website")));
+    // Unstated initials count only in the listing's city, ahead of generic words alone.
+    expect(byName.map((c) => c.row.name)).toEqual(["PAWS ANIMAL RESCUE"]);
+    // A town is one town however it is spaced or abbreviated.
+    expect(normalizePlace("DuQuoin")).toBe(normalizePlace("DU QUOIN"));
+    expect(normalizePlace("O'Fallon")).toBe(normalizePlace("O FALLON"));
+    expect(normalizePlace("Saint Charles")).toBe(normalizePlace("ST. CHARLES"));
+    expect(normalizePlace("Mount Prospect")).toBe(normalizePlace("MT PROSPECT"));
+    // A stated acronym needs no shared city: the listing chose that name.
+    expect(matchEin({ name: "Animal Rescue Foundation (ARF-IL)", city: "Naperville", state: "IL" }, ROWS)[0].reasons).toContain("acronym ARF");
+  });
+
   it("finds a body filed under its acronym — ARF for Animal Rescue Foundation (ARF-IL) — and says so", () => {
     const candidates = matchEin({ name: "Animal Rescue Foundation (ARF-IL)", city: "Wheaton", state: "IL" }, ROWS);
     expect(candidates[0].row.name).toBe("ARF");
@@ -114,6 +135,13 @@ describe("ADR-0029 IRS BMF EIN matcher", () => {
     expect(labelMatchesName("palsplacerescue", "PALS PLACE FOUNDATION")).toBe(false);
     // The label beginning with a short name is not a match: projecthopearf.org is not every Project Hope Inc.
     expect(labelMatchesName("projecthopearf", "PROJECT HOPE INC")).toBe(false);
+    // A label that begins a name claims it only when the rest is generic: peoriacounty.org is the county, not its bar association (2026-10-30).
+    expect(labelMatchesName("safehousepets", "SAFE HOUSE PETS ANIMAL RESCUE LEAGUE")).toBe(true);
+    expect(labelMatchesName("peoriacounty", "PEORIA COUNTY BAR ASSOCIATION FOUNDATION")).toBe(false);
+    expect(labelMatchesName("peoriacounty", "PEORIA COUNTY TRIAD")).toBe(false);
+    expect(websiteLabel("http://www.co.st-clair.il.us")).toBeNull();
+    expect(websiteLabel("http://www.sheriff-macon-il.us/Animal_Control.html")).toBeNull();
+    expect(websiteLabel("https://www.mcleancountyil.gov/940/Animal-Control")).toBeNull();
   });
 
   it("offers the animal-related bodies in the listing's own city after the named ones, marked as such, and calls the match weak", () => {

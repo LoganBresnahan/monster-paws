@@ -240,7 +240,7 @@ export function contactLinks(html: string, origin: URL, limit = 5): string[] {
 
 export async function findAddresses(website: string, fetcher: PageFetcher): Promise<AddressSearch> {
   const result: AddressSearch = { candidates: [], contactFormOnly: false, pagesRead: [], blockedByRobots: [], errors: [] };
-  const origin = siteOrigin(website);
+  let origin = siteOrigin(website);
   if (!origin) {
     result.errors.push(`'${website}' is not a website address`);
     return result;
@@ -252,6 +252,20 @@ export async function findAddresses(website: string, fetcher: PageFetcher): Prom
     if (robots.status === 200) rules = parseRobots(robots.text);
   } catch (error) {
     result.errors.push(`robots.txt: ${(error as Error).message}`);
+    // Listings carry a `www.` some hosts never had: www.randolphhumane.rescuegroups.org
+    // does not resolve, randolphhumane.rescuegroups.org does (found 2026-10-30).
+    if (origin.hostname.startsWith("www.")) {
+      const bare = new URL(origin.toString());
+      bare.hostname = origin.hostname.slice(4);
+      try {
+        const robots = await fetcher.get(new URL("/robots.txt", bare).toString());
+        if (robots.status === 200) rules = parseRobots(robots.text);
+        result.errors.push(`${origin.hostname} unreachable — read ${bare.hostname} instead`);
+        origin = bare;
+      } catch {
+        // Neither answers: the loop below records each page's failure against the listed host.
+      }
+    }
   }
 
   const seen = new Set<string>();

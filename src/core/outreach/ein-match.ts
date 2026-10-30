@@ -185,12 +185,7 @@ const STATE_CODE = /^[A-Z]{2}$/;
  * The IRS holds many bodies by acronym or a DBA alone.
  */
 export function acronymsOf(name: string, state?: string): string[] {
-  const out = new Set<string>();
-  for (const [, inside] of name.matchAll(/\(([^)]*)\)/g)) {
-    for (const part of inside.toUpperCase().split(/[^A-Z0-9]+/)) {
-      if (part.length >= 2 && part.length <= 6 && !(STATE_CODE.test(part) && part === (state ?? "").toUpperCase())) out.add(part);
-    }
-  }
+  const out = new Set<string>(statedAcronyms(name, state));
   const words = normalizeOrgName(name.replace(/\([^)]*\)/g, " "));
   if (words.length >= 2) {
     const initials = words.map((w) => w[0]).join("");
@@ -199,8 +194,25 @@ export function acronymsOf(name: string, state?: string): string[] {
   return [...out];
 }
 
-function normalizePlace(place: string): string {
-  return place.toUpperCase().replace(/[^A-Z0-9 ]+/g, " ").replace(/\s+/g, " ").trim();
+/** The acronyms a listing states in its own parentheses — a name it chose, unlike initials, which may spell a word by chance (Peoria Animal Welfare Shelter → PAWS). */
+function statedAcronyms(name: string, state?: string): string[] {
+  const out: string[] = [];
+  for (const [, inside] of name.matchAll(/\(([^)]*)\)/g)) {
+    for (const part of inside.toUpperCase().split(/[^A-Z0-9]+/)) {
+      if (part.length >= 2 && part.length <= 6 && !(STATE_CODE.test(part) && part === (state ?? "").toUpperCase())) out.push(part);
+    }
+  }
+  return out;
+}
+
+/** Squashed whole, because the IRS and a listing space a town differently: DuQuoin is DU QUOIN, O'Fallon is O FALLON (found 2026-10-30). */
+export function normalizePlace(place: string): string {
+  return place
+    .toUpperCase()
+    .replace(/\bSAINT\b/g, "ST")
+    .replace(/\bMOUNT\b/g, "MT")
+    .replace(/\bFORT\b/g, "FT")
+    .replace(/[^A-Z0-9]+/g, "");
 }
 
 export interface EinQuery {
@@ -230,6 +242,8 @@ export function websiteLabel(website: string | null | undefined, state?: string)
     return null;
   }
   if (PLATFORM_HOSTS.test(host)) return null;
+  // A .gov or .us site names a government, never a nonprofit (co.st-clair.il.us, found 2026-10-30).
+  if (/\.(gov|us)$/.test(host)) return null;
   const parts = host.replace(/^www\./, "").split(".");
   if (parts.length < 2) return null;
   let label = parts[parts.length - 2];
@@ -245,7 +259,13 @@ export function squashOrgName(name: string): string {
   return tokens.join("").toLowerCase();
 }
 
-/** Whether a site's label is the IRS name itself, or begins with it word for word (a long enough label, so "aurora" never claims Aurora Cares). */
+/** Words a name may carry after the label and still be the label's organisation: safehousepets.org for SAFE HOUSE PETS ANIMAL RESCUE LEAGUE. */
+const GENERIC_TAIL = new Set([
+  "ANIMAL", "ANIMALS", "RESCUE", "RESCUES", "SHELTER", "SANCTUARY", "LEAGUE", "SOCIETY", "HUMANE", "FOUNDATION",
+  "PET", "PETS", "ADOPTION", "ADOPTIONS", "CENTER", "NETWORK", "OF", "THE", "AND",
+]);
+
+/** Whether a site's label is the IRS name itself, or the name's first words followed only by generic ones (a long enough label, so "aurora" never claims Aurora Cares). */
 export function labelMatchesName(label: string, name: string): boolean {
   const squashed = squashOrgName(name);
   if (!squashed) return false;
@@ -254,7 +274,17 @@ export function labelMatchesName(label: string, name: string): boolean {
   if (label === squashedRaw) return true;
   // Only the name beginning with the label, never the label beginning with
   // the name: projecthopearf.org is not every "Project Hope Inc" in the state.
-  return label.length >= 10 && (squashed.startsWith(label) || squashedRaw.startsWith(label));
+  // And what follows must be generic, or peoriacounty.org claims PEORIA
+  // COUNTY BAR ASSOCIATION FOUNDATION (found 2026-10-30).
+  if (label.length < 10) return false;
+  const tokens = name.toUpperCase().split(/[^A-Z0-9]+/).filter(Boolean);
+  let head = "";
+  for (let i = 0; i < tokens.length; i++) {
+    head += tokens[i].toLowerCase();
+    if (head === label) return tokens.slice(i + 1).every((t) => GENERIC_TAIL.has(t) || LEGAL_FORMS.has(t));
+    if (!label.startsWith(head)) return false;
+  }
+  return false;
 }
 
 export interface EinCandidate {
@@ -290,10 +320,18 @@ export function scoreCandidate(query: EinQuery, row: BmfRow): EinCandidate & { n
   // words share nothing, the identity is the same (found on ARF-IL, 2026-10-27).
   // Only a BMF name that IS the acronym counts: two long names with the same
   // initials (Aurora Animal Care and Control, Asian American Culture Center) are not one body.
-  // ... and it must lead a short name: "CARE" inside "Turning Point Behavioral
-  // Health Care Center" is a word, not Community Animal Rescue Effort.
+  // ... and it must lead a name whose other words are generic: "CARE" inside
+  // "Turning Point Behavioral Health Care Center" is a word, not Community
+  // Animal Rescue Effort, and PAWS GIVING INDEPENDENCE is not Peoria Animal
+  // Welfare Shelter. Initials the listing never stated must also share its
+  // city, since a common word spelled by chance matches across the state
+  // (found 2026-10-30).
   const haveTokens = [...have];
-  const acronym = acronymsOf(query.name, query.state).find((a) => haveTokens[0] === a && haveTokens.length <= 3);
+  const stated = new Set(statedAcronyms(query.name, query.state));
+  const sameCity = !!query.city && normalizePlace(query.city) === normalizePlace(row.city);
+  const acronym = acronymsOf(query.name, query.state).find(
+    (a) => haveTokens[0] === a && haveTokens.slice(1).every((t) => GENERIC_TAIL.has(t)) && (stated.has(a) || sameCity),
+  );
   // The site the listing links is often the only bridge from the name a
   // shelter goes by to the one it filed under: touchedbyananimal.org for
   // "Cats-Are-Purrsons-Too" (found 2026-10-27).
