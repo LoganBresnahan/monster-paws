@@ -167,8 +167,9 @@ export interface LiveConsole {
 export async function confirmLiveSend(plan: { wave: string; count: number; from: string }, io: LiveConsole): Promise<void> {
   if (!io.isTTY) throw new Error("a live send needs a person at a terminal: stdin is not a TTY (ADR-0029 §4)");
   if (plan.count === 0) throw new Error(`wave '${plan.wave}' has no message to send`);
+  // Never promise an exact count: the guard still refuses some after this question (illinois-2 asked 18 and sent 16, 2026-10-30; ADR-0029).
   const answer = await io.ask(
-    `About to send ${plan.count} real message${plan.count === 1 ? "" : "s"} to shelters as ${plan.from} in wave '${plan.wave}'.\nType the wave name to confirm, anything else to stop: `,
+    `About to send up to ${plan.count} real message${plan.count === 1 ? "" : "s"} to shelters as ${plan.from} in wave '${plan.wave}' — the guard refuses the rest and says why.\nType the wave name to confirm, anything else to stop: `,
   );
   if (answer.trim() !== plan.wave) throw new Error("not confirmed — nothing sent");
 }

@@ -115,7 +115,7 @@ describe("ADR-0029 confirmLiveSend", () => {
         return "chicagoland-1";
       },
     });
-    expect(question).toContain("3 real messages");
+    expect(question).toContain("up to 3 real messages");
     expect(question).toContain("Logan <logan@example.org>");
     await expect(confirmLiveSend({ ...plan, count: 0 }, { isTTY: true, ask: async () => "chicagoland-1" })).rejects.toThrow(/no message/);
   });
