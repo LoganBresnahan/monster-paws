@@ -23,7 +23,7 @@ is an ADR; the daily numbers brief is `doc/ops/` (ADR-0010 as amended).
 | [0010](0010-arm-poll-heartbeat-and-health-monitor.md) | The first unattended night read (64,089, complete); the poll heartbeat 499765 and the health monitor 4995794 armed | run | 2026-10-29 |
 | [0011](0011-models-bucket-first-objects.md) | The models bucket's first objects: the anatomy LoRA's checkpoints 1000, 1500 and 2000 to `monsterpaws-models` (ADR-0004 as amended 2026-10-29) | run | 2026-10-29 |
 | [0012](0012-rerun-failed-nightly-2026-10-30.md) | A keyless check of whether RescueGroups still resets the droplet (the key now "public"); rerun the nightly that failed at 07:06 UTC with `terminated` after 131 pages; both Better Stack incidents resolved — the droplet still reset; the rerun's SSH connection dropped after 104 pages, so the fix comes first | run | 2026-10-30 |
-| [0013](0013-rerun-nightly-with-retry.md) | Rerun the nightly with the retry (ADR-0033 as amended 2026-10-30): `scripts/poll-nightly.sh` by hand, the whole run up to three times; both Better Stack incidents resolved | planned | 2026-10-30 |
+| [0013](0013-rerun-nightly-with-retry.md) | Rerun the nightly with the retry (ADR-0033 as amended 2026-10-30): `scripts/poll-nightly.sh` by hand, the whole run up to three times; both Better Stack incidents resolved — complete on the first attempt, 64,400 in 26 min, health green | run | 2026-10-30 |
 
 ## Entry format
 

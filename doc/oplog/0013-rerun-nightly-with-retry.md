@@ -1,7 +1,7 @@
 # 0013: Rerun the nightly with the retry — the poll that turns health green again
 
-Status: planned
-Planned: 2026-10-30
+Status: run
+Planned: 2026-10-30 · Run: 2026-10-30 14:39 – 15:10 UTC
 Why: ADR-0033 as amended 2026-10-30, ADR-0014; roadmap: Launch (3b). The
 nightly of 2026-10-30 failed (a cut page at 131), and so did its rerun by
 hand (the SSH connection dropped at page 104, oplog 0012). Health has been
@@ -60,4 +60,48 @@ every heartbeat read with `jq`, because the API returns the ping URL in it.
 
 ## Run
 
+Run by Claude on Logan's word ("go"), from `~/monsterpaws` at `8c364bf`,
+the fix committed and the tree clean. Nothing on 18443, no SSH session open
+and no guard batch, at 14:39:01 UTC.
+
+**1** started 14:39:09 UTC (proxy log `var/rg-proxy-20261030T143909Z.log`);
+the droplet half printed `polling on the droplet, RescueGroups through home
+— worker image 40cb846, 2026-10-30T14:39:11Z`. It completed on the
+**first attempt**, 15:04:48 UTC, 25 min 39 s, with no `-- attempt` line.
+It passed page 104, where 0012's rerun dropped, at about 14:43:
+
+    {"source":"rescuegroups","observed":64400,"persisted":4956,"deduped":59444,
+     "normalized":64400,"conflicted":0,"disappearanceRatePerDay":0.0234,
+     "events":{"animal.seen":2337,"animal.updated":348,"animal.reappeared":9,
+     "animal.disappeared":2044},"failures":0}
+    heartbeat pinged
+    finished 2026-10-30T15:04:48Z; the proxy's tunnels: 644 allowed, 0 refused
+    == exit 0 2026-10-30T15:04:48Z
+
+A complete run. Stage 5 measured 2.3%/day over the 31.6 h since the last
+complete run (2026-10-29 07:26), under the gate, and marked 2,044 gone. That
+is about twice a normal night's 1,037, because it covers a day and a third.
+644 tunnels, ~417 MB in, 0 proxy errors, 0 refused. A single clean run
+shows the fix does no harm, but proves nothing about the retry or the
+race: the retry never fired, and the race was proved by the test.
+
+Verify: health **200**, `{"ok":true,"db":"up","lastCompletePollAt":
+"2026-10-30T15:04:47.764Z","pollStale":false,"sha":"40cb846…"}`.
+
+**2** 15:05:00 UTC: heartbeat 499765 `up`; incident 1042503943 (the poll
+heartbeat) **Resolved** 15:04:48 by the run's own ping. Monitor 4995794
+was still `down`: it last checked at 15:03:24, before the run completed.
+Read again until it resolved: at 15:10:09 incident 1042623559 (the health
+monitor) was **Resolved** 15:09:34, monitor 4995794 `up` (checked 15:09:33).
+No new incident opened: no attempt failed, so nothing pinged `/fail`. Both
+of the day's incidents are closed.
+
 ## Follow-ups
+- Tonight's nightly, 2026-10-31 07:00 UTC, is the wrapper's first
+  unattended run: read `var/nightly/2026-10-31.log` for `-- attempt` lines
+  and the closing `== exit 0`.
+- The first nightly after 2026-11-01 should still start at 07:00 UTC
+  (oplog 0010's follow-up, still open).
+- With the next deploy: `fetchPage`'s page retry and the CLI's `err.cause`
+  (doc/issues.md, Ops).
+- The droplet's pending kernel reboot (oplog 0012), its own entry.
