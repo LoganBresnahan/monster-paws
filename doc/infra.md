@@ -689,6 +689,14 @@ container carries the GPU runtime:
    `comfy:build` before `comfy:models`: the fetcher reads the copy inside
    the container, and an unrebuilt image fetches the old list and says
    `ok` (2026-10-08, the LoRA lines).
+   Our own weights under test (the anatomy LoRA's checkpoints, oplogs 0011
+   and 0014) are listed in `comfyui/models-candidates.manifest` instead,
+   never baked, so neither ComfyUI's start nor the image needs the R2
+   models key: fetch them by hand with `MODELS_MANIFEST=` that file,
+   `python3 -I comfyui/models.py fetch var/comfyui/models`, and the
+   `R2_ACCOUNT_ID` / `R2_MODELS_*` env from `pass` in the same command.
+   `explore.py` refuses a LoRA that neither manifest lists; the one chosen
+   moves to `models.manifest`.
 
 What was load-bearing, in the order it was found:
 

@@ -1851,6 +1851,139 @@ per step         2     1     2     1     1     2     1     1     4
   still run, as the ship bar names them. A longer run is the next
   question only if 2000 passes on the distilled klein-v1.
 
+### Batch 17a — the first after (Claude, 2026-10-29; Logan's eye decides)
+
+- **The checkpoints come home through their own manifest.**
+  `comfyui/models-candidates.manifest` lists the three test checkpoints
+  with 0011's hashes and licence `ours` (ADR-0031, Context 3 and decision
+  5), and `models.py` fetched them from `monsterpaws-models` into the home
+  store, the R2 env from `pass` in that one command. They are not in
+  `models.manifest`: nothing about ComfyUI's start, or production's, depends
+  on an experiment or on R2 keys. `explore.py` refuses a LoRA with no line
+  in either file (`licensed_lora`). The one chosen moves to `models.manifest`
+  by the ADR-0004 amendment decision 5 asks for, and the others leave.
+- **On klein**, `explore.py` loads a LoRA with `LoraLoaderModelOnly` on the
+  model alone (a `loras` and `lora_strengths` axis for the klein families),
+  and the prompt begins with the trigger word the captions began with
+  (`mpclean, …`). ComfyUI logged no unmatched LoRA key, so ai-toolkit's
+  ComfyUI-prefixed keys load as they are. The before's 64 run ids are
+  unchanged.
+- **`comfyui/explore/batch17a.json`**: 14a's Plum and Ducky and 14b's Beetle
+  exactly, with step 2000 at 1.0 — 48 paintings, 48 done, no kill, 17 s
+  each warm, as the before. Not pre-read, because my clean calls missed 21
+  of 46 in 16a. Logan's page:
+  `var/explore/index-all/before-after-17a.html`, each after beside its
+  before, two ticks each ("no genitalia", "still looks like the dog").
+
+### Batches 17b–17c — the other checkpoints and strengths (Claude, 2026-10-29; Logan's eye decides)
+
+- **The rest of the ship bar's grid** (decision 5 of 2026-10-22), run
+  before Logan read 17a at his word: the same 48 befores at the same seeds,
+  checkpoints 1000 and 1500 at strengths 0.6, 0.8 and 1.0
+  (`comfyui/explore/batch17b.json`, 288 paintings) and step 2000 at 0.6 and
+  0.8 (`batch17c.json`, 96). With 17a that is nine afters per before, 432
+  in all, every one painted, no kill, 19.6 s each warm; 21:01 – 23:55 UTC
+  with the guard's restarts.
+- Not pre-read, as 17a. Logan's page:
+  `var/explore/index-all/lora-grid-17.html` — each before on the left, its
+  nine afters beside it (checkpoint down, strength across), one
+  "acceptable" tick each (no genitalia, and still the dog no worse than
+  the before), the list copied out as `17 <dog> <pose> s<seed> step<N>
+  w<strength>`. It holds 17a's afters too, so 17a's two-tick page is
+  needed only if he wants the two questions apart.
+- **The page shows the paintings themselves** (rebuilt 2026-10-30). Its
+  first build showed JPEG copies, the afters cut to 360 px wide and the
+  before to 560, so on Logan's screen the afters were stretched more and
+  looked blurrier than the before. Now every picture is the 1216×832 PNG,
+  before and after alike, and the ticks carry over (same keys).
+- **Measured, not judged (2026-10-30), after Logan saw the afters as
+  lower resolution.** Every painting, before and after, is 1216×832, and
+  the trainer trained at that size (its log: one bucket, 1216×832, 97
+  files). What drops is fine detail: the variance of the Laplacian over
+  the whole painting is 216.7 on the 48 befores and 111–173 on every
+  after group (1000: 158–162; 1500: 111–136; 2000: 151–173), lower at
+  higher strength except 1000 at 0.6 against 1.0 (all three alike). The
+  set did not teach it: the 97 targets measure 227 (40 originals 267, the
+  repaints 190–210). The trainer's own samples on Base fell less (165 at
+  step 0, 131 at 2000; four JPEGs a step, noisy). Unproven: the LoRA
+  learned on Base and runs on the distilled klein-v1, which softens more
+  under a weight change it was not distilled with. How far an after moves
+  from its before (mean absolute difference at 1/16 size, the layout and
+  the body rather than texture) climbs with both checkpoint and strength,
+  from 7.3 (1000 at 0.6) to 10.8 (2000 at 1.0), Beetle most (9.2–14.3) and
+  Ducky least (5.7–7.6). Whether a move is a fix or a lost likeness is
+  Logan's tick.
+
+### Batch 17 — Logan's first thoughts, before his list (2026-10-30)
+
+- "I can tell that sitting photos often show genital-like areas, usually
+  as small nipple bumps or sheath bump."
+- "At first I was thinking 1500 strength 1 would work but the Beetle
+  photos really help dissipate that opinion. She really starts to lose
+  likeness with 1500."
+- "1000 isn't bad but much more likely to show genitals."
+- Beside the measurements (Claude): Beetle moves furthest from her before
+  at every setting, and 1000 the least of the three checkpoints. Sitting
+  is the thinner half of the set, 34 of the 97 pairs against 63 standing,
+  because the sitting repaints blended into the ground and only 4 of 17
+  passed the second pass (16b).
+
+### Batch 17d — checkpoint 1250 (Claude, 2026-10-30; Logan's eye decides)
+
+- Logan asked for checkpoint 1250 in the grid after his first thoughts:
+  between 1000 (more anatomy left) and 1500 (Beetle losing likeness).
+  Checkpoints 1250 and 1750 went to `monsterpaws-models` by oplog 0014
+  (1750 at his word, so painting it later needs no entry), each read back
+  through `models.py`, and their lines joined
+  `comfyui/models-candidates.manifest`; only 1250 is painted.
+- **`comfyui/explore/batch17d.json`**: 17a's spec exactly, with 1250 at
+  strengths 0.6, 0.8 and 1.0 — 144 paintings. On Logan's page it is a
+  fourth row between 1000 and 1500; the ticks he already made keep their
+  keys.
+- 144 of 144 painted, no kill, 19.7 s each warm (15:32 – 16:42 UTC). The
+  page now holds 576 afters, each the full-size PNG, none missing.
+
+### Batch 17 — Logan's read of the grid (2026-10-30)
+
+His list, saved as `var/explore/index-all/lora-grid-17-picks-2026-10-30.txt`:
+78 of the 576 afters acceptable (no genitalia, and still the dog no worse
+than the before). Per setting, of 48 (16 per dog, 24 per pose):
+
+| Step @ strength | All | Plum | Ducky | Beetle | Standing | Sitting |
+| --- | --- | --- | --- | --- | --- | --- |
+| 1000 @ 0.6 | 7 | 3 | 2 | 2 | 6 | 1 |
+| 1000 @ 0.8 | 6 | 3 | 2 | 1 | 6 | 0 |
+| 1000 @ 1.0 | 9 | 3 | 4 | 2 | 8 | 1 |
+| 1250 @ 0.6 | 4 | 3 | 1 | 0 | 4 | 0 |
+| 1250 @ 0.8 | 4 | 2 | 2 | 0 | 3 | 1 |
+| 1250 @ 1.0 | 8 | 3 | 5 | 0 | 6 | 2 |
+| 1500 @ 0.6 | 6 | 3 | 3 | 0 | 6 | 0 |
+| 1500 @ 0.8 | 7 | 4 | 2 | 1 | 6 | 1 |
+| **1500 @ 1.0** | **13** | 6 | 6 | 1 | 11 | 2 |
+| 2000 @ 0.6 | 4 | 2 | 2 | 0 | 3 | 1 |
+| 2000 @ 0.8 | 4 | 4 | 0 | 0 | 2 | 2 |
+| 2000 @ 1.0 | 6 | 6 | 0 | 0 | 3 | 3 |
+
+- **Sitting fails at every setting**: 14 of 288 sitting afters against 64
+  of 288 standing. No checkpoint or strength moves it, so the dials do not
+  fix it; the sitting half of the set (34 of 97 pairs, the repaints that
+  blended into the ground) is where to look.
+- **Strength 1.0 is the best strength at every checkpoint** (36 ticks
+  against 21 at 0.6 and 21 at 0.8).
+- **Beetle** passes 7 of 192, two at most per setting, and those at 1000
+  and 1500 only: his first thought that she loses likeness with more
+  training, in numbers.
+- **Best setting, 1500 at 1.0**: 13 of 48, three in four still failing.
+  Not shippable as it stands; the ticks join anatomy and likeness in one
+  box, so they cannot say which of the two failed, and the 48 befores
+  have not been ticked on the same question.
+- 25 of the 48 befores get no acceptable after at any setting.
+- **The baseline, asked 2026-10-30**: `var/explore/index-all/befores-17.html`,
+  the 48 befores at full size with one "no genitalia" tick each. An after
+  passed on no genitalia and a likeness no worse than its before, and a
+  before is never worse than itself, so its "acceptable" is no genitalia
+  alone; his 14a–14b picks already hold the befores' likeness.
+
 ### Batches 14a–14b — Logan's picks (2026-10-28)
 
 "I might be picky but I know what these dogs look like." His likeness

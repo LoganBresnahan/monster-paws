@@ -1,0 +1,15 @@
+# Weights we made that are under test, never in the donation path (doc/plans/base-model-candidates.md,
+# the before/after test; ADR-0004 as amended 2026-10-22, decision 5). Same format and rules as
+# models.manifest — this line IS the licence record, and explore.py refuses a LoRA with no line in
+# either file — but kept apart so no ComfyUI start depends on an experiment or on the R2 keys. The
+# home store gets these with one host-side command, the R2 env from `pass show` in that command
+# only (doc/infra.md, Home GPU). The one chosen moves to models.manifest by its own ADR-0004
+# amendment; the rest are dropped from here.
+#
+# The anatomy LoRA, run 1 (2026-10-29): checkpoints 1000, 1500, 2000, in monsterpaws-models by oplog
+# 0011 with these hashes. Licence "ours": ADR-0031 — trained on our paintings of Commons dogs, private.
+loras/anatomy-2026-10-29_000001000.safetensors  r2:loras/anatomy-2026-10-29/anatomy-2026-10-29_000001000.safetensors  ed0e95c853331c958ce970287875b434c6040982f6568ee0c613cf2a67d182d8  ours  2026-10-29
+loras/anatomy-2026-10-29_000001250.safetensors  r2:loras/anatomy-2026-10-29/anatomy-2026-10-29_000001250.safetensors  5031536d2b0e685ee1812096fff70ea0350b9137752fa429f5ecc2a6b0709a99  ours  2026-10-29
+loras/anatomy-2026-10-29_000001500.safetensors  r2:loras/anatomy-2026-10-29/anatomy-2026-10-29_000001500.safetensors  522a5def9e58e45117bf7933105b13928314a2edbfe45a12ebb623efb601867e  ours  2026-10-29
+loras/anatomy-2026-10-29_000001750.safetensors  r2:loras/anatomy-2026-10-29/anatomy-2026-10-29_000001750.safetensors  293995cb800b3e7e1081b5b6326e51342318b095c9fca26b876bf7704bbc08ad  ours  2026-10-29
+loras/anatomy-2026-10-29_000002000.safetensors  r2:loras/anatomy-2026-10-29/anatomy-2026-10-29_000002000.safetensors  fffc88210c272055830a22cde6a54434cd4fbe1ef8a0097983bdae784c1bcb93  ours  2026-10-29

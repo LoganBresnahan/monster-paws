@@ -42,6 +42,18 @@ NEGATIVES = {"standard": None, "anatomy": NEGATIVE_STYLED + ", genitals, testicl
 NAGS = {"default": (5.0, 0.5, 1.5), "strong": (10.0, 0.5, 2.5), "hard": (20.0, 0.8, 5.0), "max": (40.0, 1.0, 10.0)}
 # style LoRAs beside the adapter — stand-ins for our own (roadmap item 9), licensed in models.manifest
 LORAS = {"watercolor": "watercolor_v1_sdxl.safetensors", "tinies": "Little_Tinies.safetensors"}
+# The anatomy LoRA's checkpoints under test on klein: the file under models/loras/, and the trigger word its
+# training captions began with (comfyui/pairs.py), which the prompt then begins with too.
+KLEIN_LORAS = {f"anatomy-{s}": (f"anatomy-2026-10-29_{s:09d}.safetensors", "mpclean") for s in (1000, 1250, 1500, 1750, 2000)}
+
+
+def licensed_lora(name: str) -> str:
+    """The LoRA's file, once a manifest carries its line; a weight with no line never runs (ADR-0004 decision 11)."""
+    from models import parse
+    listed = {e.path for m in ("models.manifest", "models-candidates.manifest") for e in parse((HERE / m).read_text())}
+    if name not in KLEIN_LORAS or f"loras/{KLEIN_LORAS[name][0]}" not in listed:
+        raise SystemExit(f"LoRA {name!r} has no line in models.manifest or models-candidates.manifest — it never runs")
+    return KLEIN_LORAS[name][0]
 CONTROLNET = "xinsir-canny-sdxl-1.0-v2.safetensors"
 # SDXL's native buckets near the box aspects we meet (batch 1d): render a tall box tall, never pad it
 BUCKETS = [(1024, 1024), (896, 1152), (832, 1216), (1152, 896), (1216, 832)]
@@ -187,6 +199,9 @@ def build_family_graph(run: dict, prefix: str) -> dict:
         "save": {"class_type": "SaveImage", "inputs": {"images": ["decode", 0], "filename_prefix": prefix}},
     }
     model = ["unet", 0]
+    if run.get("lora"):
+        g["lora"] = {"class_type": "LoraLoaderModelOnly", "inputs": {"model": model, "lora_name": licensed_lora(run["lora"]), "strength_model": run["lora_strength"]}}
+        model = ["lora", 0]
     if "shift" in f:
         g["shift"] = {"class_type": "ModelSamplingAuraFlow", "inputs": {"model": model, "shift": f["shift"]}}
         model = ["shift", 0]
@@ -434,8 +449,14 @@ def expand(spec: dict) -> list[dict]:
                     fam_controls = controls if family == "zimage" else [(0, None)]
                     # a detector head only beside a detector-cut subject, so a batch never mixes hand and detector boxes (ADR-0026)
                     heads = [h for h in spec.get("heads", [None]) if h is None or crop in ("detsubject", "grownsubject")] if graph == "reference2" else [None]
-                    for denoise, dtype, steps, (cs, ce), head, nag in itertools.product(spec["denoise"] if graph == "img2img" else [None], spec.get("dtypes", [None]), spec.get("steps", [None]), fam_controls, heads, spec.get("nags", [None])):
-                        runs.append({**base, "lora": None, "dtype": dtype, "steps": steps, "control_strength": cs, "control_end": ce, "denoise": denoise, "weight": None, "weight_type": None, "end_at": None, "head": head, "nag": nag})
+                    fam_loras = [(None, None)]
+                    if family.startswith("klein"):
+                        fam_loras = [(l, w) for l in spec.get("loras", [None]) for w in ([None] if l is None else spec.get("lora_strengths", [1.0]))]
+                    for denoise, dtype, steps, (cs, ce), head, nag, (lora, lw) in itertools.product(spec["denoise"] if graph == "img2img" else [None], spec.get("dtypes", [None]), spec.get("steps", [None]), fam_controls, heads, spec.get("nags", [None]), fam_loras):
+                        if lora is not None:
+                            licensed_lora(lora)
+                        text = base["prompt_text"] if lora is None else f"{KLEIN_LORAS[lora][1]}, {base['prompt_text']}"
+                        runs.append({**base, "prompt_text": text, "lora": lora, "lora_strength": lw, "dtype": dtype, "steps": steps, "control_strength": cs, "control_end": ce, "denoise": denoise, "weight": None, "weight_type": None, "end_at": None, "head": head, "nag": nag})
                     continue
                 if graph in ("txt2img", "reference", "reference2"):
                     continue
@@ -455,7 +476,7 @@ def expand(spec: dict) -> list[dict]:
         if r.get("family", "sdxl") != "sdxl":
             bits.insert(2, r["family"])
             bits += [b for b in ({"fp8_e4m3fn": "fp8", "default": "bf16"}.get(r.get("dtype") or "", ""), f"st{r['steps']}" if r.get("steps") else "") if b]
-        bits += [b for b in (r["crop"], r.get("head"), r["describe"], r["lora"], r.get("aspect"), r.get("neg"), r.get("nag") and f"nag{r['nag']}") if b and b not in ("full", "generic", "square", "standard")]
+        bits += [b for b in (r["crop"], r.get("head"), r["describe"], r["lora"], r.get("lora_strength") and f"lw{r['lora_strength']}", r.get("aspect"), r.get("neg"), r.get("nag") and f"nag{r['nag']}") if b and b not in ("full", "generic", "square", "standard")]
         if r.get("control_strength"):
             bits.append(f"cn{r['control_strength']}e{r['control_end']}")
         if r["weight"] is not None:
@@ -558,7 +579,7 @@ def run_batch(batch: str, limit: int | None, dry: bool, only: str | None = None)
 
 # ---------------------------------------------------------------- sheet
 
-AXES = ["animal", "photo", "family", "dtype", "steps", "graph", "prompt", "neg", "nag", "crop", "describe", "aspect", "lora", "control_strength", "control_end", "weight", "weight_type", "end_at", "denoise", "seed", "multi", "combine"]
+AXES = ["animal", "photo", "family", "dtype", "steps", "graph", "prompt", "neg", "nag", "crop", "describe", "aspect", "lora", "lora_strength", "control_strength", "control_end", "weight", "weight_type", "end_at", "denoise", "seed", "multi", "combine"]
 
 
 def sheet(batch: str) -> None:

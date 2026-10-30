@@ -1,0 +1,77 @@
+{
+  "_": "Batch 17b — the rest of the ship bar's grid, part 1 (ADR-0004 as amended 2026-10-22, decision 5): 17a's spec exactly, with run 1's checkpoints 1000 and 1500 at strengths 0.6, 0.8 and 1.0. Logan asked for both the other checkpoints and the lower strengths (2026-10-29) before his read of 17a. None of these is ever trained on.",
+  "animals": {
+    "Plum": {
+      "kind": "dog",
+      "describe": "male grey cane corso puppy",
+      "two": [
+        "PXL_20250423_185424061.PORTRAIT.jpg",
+        "downloadfile.jpg"
+      ]
+    },
+    "Ducky": {
+      "kind": "dog",
+      "describe": "female tan pit bull mix",
+      "two": [
+        "PXL_20241229_195311064.RAW-01.COVER.jpg",
+        "PXL_20250621_160612271.PORTRAIT.jpg"
+      ]
+    },
+    "Beetle": {
+      "kind": "dog",
+      "describe": "female bloodhound",
+      "two": [
+        "IMG_2931.jpg",
+        "IMG_3545.jpg"
+      ]
+    }
+  },
+  "photos": [
+    "two"
+  ],
+  "crops": [
+    "grownsubject"
+  ],
+  "aspect": [
+    "landscape"
+  ],
+  "describe": [
+    "listing"
+  ],
+  "families": [
+    "kleinbfl8"
+  ],
+  "graphs": [
+    "reference2"
+  ],
+  "prompts": [
+    "storybook_stand34",
+    "storybook_sit34"
+  ],
+  "denoise": [],
+  "weights": [],
+  "weight_types": [],
+  "end_at": [],
+  "loras": [
+    "anatomy-1000",
+    "anatomy-1500"
+  ],
+  "lora_strengths": [
+    0.6,
+    0.8,
+    1.0
+  ],
+  "seeds": [
+    11,
+    222,
+    4096,
+    8128,
+    17,
+    404,
+    1729,
+    6174
+  ],
+  "heads": [
+    "grownhead"
+  ]
+}
