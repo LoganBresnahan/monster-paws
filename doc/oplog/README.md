@@ -22,6 +22,7 @@ is an ADR; the daily numbers brief is `doc/ops/` (ADR-0010 as amended).
 | [0009](0009-nightly-bridge-poll.md) | The nightly bridge poll: the restricted key, the droplet half, the Windows task (ADR-0033 decision 7) | run | 2026-10-28 |
 | [0010](0010-arm-poll-heartbeat-and-health-monitor.md) | The first unattended night read (64,089, complete); the poll heartbeat 499765 and the health monitor 4995794 armed | run | 2026-10-29 |
 | [0011](0011-models-bucket-first-objects.md) | The models bucket's first objects: the anatomy LoRA's checkpoints 1000, 1500 and 2000 to `monsterpaws-models` (ADR-0004 as amended 2026-10-29) | run | 2026-10-29 |
+| [0012](0012-rerun-failed-nightly-2026-10-30.md) | A keyless check of whether RescueGroups still resets the droplet (the key now "public"); rerun the nightly that failed at 07:06 UTC with `terminated` after 131 pages; both Better Stack incidents resolved | planned | 2026-10-30 |
 
 ## Entry format
 
