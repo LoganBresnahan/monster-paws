@@ -10,6 +10,21 @@ is the record, and a file of ticked boxes stops being read.
 
 ## Data quality
 
+- **The EIN matcher ranks a government shelter against unrelated bodies that
+  share its generic words.** Preparing `illinois-2` (2026-10-30), McLean County
+  Animal Control Center's first candidate was the Islamic Center of McLean
+  County (0.68), and Kane County Animal Control's were Friends-of charities of
+  other counties' animal control (Christian, Sangamon, DuPage) — "County",
+  "Animal", "Control" and "Center" count as much as the one word that tells two
+  bodies apart. Nothing wrong was written: every such list came back WEAK and
+  Logan answered `n`, and the six government shelters are held out of the send
+  with `--skip`. The cost is reading time. Fixes wait until after the wave
+  (roadmap, Shelter consent carry-in): weight rare words, and a line in
+  `prepare` naming a likely government shelter by its name before its domain,
+  since listed sites are often years old (Kane's `kanecountypets.com`). Never a
+  hard filter on NTEE D: 4 of the 35 confirmed matches file under T20, W30,
+  P20 or P99 (ADR-0029).
+
 - **Some listings are not animals; some animals have names that are not
   names.** Four of the top six rows of the browse sort are administrative
   records, and the two problems must not share a fix — see **ADR-0021** for the
