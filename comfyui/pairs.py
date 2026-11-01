@@ -33,7 +33,8 @@ from explore import BUCKETS, EXPLORE, INPUT, OUTPUT, bucket, input_name  # noqa:
 
 # The made-up word the LoRA's captions carry (decision 2); production's prompt gains it when the LoRA ships.
 TRIGGER = "mpclean"
-REPAINTS = ("batch15a", "batch16a", "batch16b")
+ORIGINALS = ("batch13a", "batch13b", "batch13c", "batch13d", "batch18a", "batch18b", "batch19a", "batch19b")
+REPAINTS = ("batch15a", "batch16a", "batch16b", "batch20a")
 SAMPLES = 4  # holdout dogs in the trainer's progress samples, half sitting and half standing where the holdout allows
 
 
@@ -101,13 +102,14 @@ def main() -> None:
         shutil.rmtree(out)
 
     runs = {}
-    for b in sorted(p.parent.name for p in EXPLORE.glob("batch13*/runs.jsonl")) + list(REPAINTS):
+    for b in ORIGINALS + REPAINTS:
         runs[b] = [json.loads(l) for l in (EXPLORE / b / "runs.jsonl").open()]
     boxes = json.loads((HERE / "explore" / "boxes-detected.json").read_text())
     sets = {r["file"]: r["set"] for r in csv.DictReader((l for l in (HERE / "explore" / "commons-photos.tsv").open() if not l.startswith("#")), delimiter="\t")}
 
     def original(tag: str) -> dict:
-        batch, n = re.fullmatch(r"(13[a-d])-(\d{3})", tag).groups()
+        batch, n = re.fullmatch(r"(1[389][a-d])-(\d{3})", tag).groups()
+        assert f"batch{batch}" in ORIGINALS, tag
         found = [r for r in runs[f"batch{batch}"] if r["id"].startswith(f"{n}-")]
         assert len(found) == 1, tag
         return found[0]

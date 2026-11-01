@@ -990,7 +990,11 @@ on the box: Commons dogs and the crew only.
 - **The job:** `scripts/gpu-rental.sh up | clean <in> <out> | down |
   status`. `up` creates the droplet from DigitalOcean's "NVIDIA AI/ML Ready"
   image (`gpu-h100x1-base`) with the `monsterpaws-wsl` key, tagged
-  `monsterpaws-rental`, ships `comfyui/` (tracked and untracked files),
+  `monsterpaws-rental`, with DigitalOcean's monitoring agent
+  (`--enable-monitoring`: without it the control panel showed no GPU
+  metrics while `nvidia-smi` on the box read 100%, 2026-11-01; whether the
+  agent graphs the GPU is read on the next rental), ships `comfyui/` (tracked
+  and untracked files),
   builds our ComfyUI image there with `TORCH=cu130` — PyTorch publishes
   torch 2.14.1, the Arc's pin, for CUDA 13.0 and not 12.8 (index read
   2026-10-23) — runs the smoke, and serves ComfyUI on the droplet's
@@ -1031,6 +1035,11 @@ on the box: Commons dogs and the crew only.
   watch it filtered. The token was read once into the one command that ran
   `up train`, `train` and `down`, so `down` ran even after `pass` locked
   itself.
+- **Second training run (2026-11-01):** the H200 in atl1 again, 1.41 h
+  up, about $6.30: ~10 minutes of build and fetch, 3,000 steps at 1.24 s
+  each over 168 pairs. `train` now copies the set's `pairs.tsv` into the
+  run's own folder, `<out>/<name>/`, so a second run into the same `<out>`
+  keeps the first one's record.
 - **Traps found on the first run (2026-10-23, an hour, about $4.50):**
   the droplet's Docker builds with the legacy builder, which cannot
   resolve the Dockerfile's `comfy:comfy` chown — `serve` installs

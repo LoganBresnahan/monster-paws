@@ -58,7 +58,7 @@ up() {
   fi
   trap 'echo "up failed — deleting the droplet so it stops billing" >&2; down' ERR
   doctl compute droplet create "mp-rental-$(date +%Y%m%d-%H%M)" --size "$SIZE" --region "$REGION" \
-    --image "$IMAGE" --ssh-keys "$SSH_KEY" --tag-name "$TAG" --wait --format ID,Name,PublicIPv4
+    --image "$IMAGE" --ssh-keys "$SSH_KEY" --tag-name "$TAG" --enable-monitoring --wait --format ID,Name,PublicIPv4
   until remote true 2>/dev/null; do sleep 5; done
   remote 'nvidia-smi --query-gpu=name,driver_version,memory.total --format=csv,noheader && docker --version'
   trap - ERR
@@ -105,7 +105,8 @@ train() {
   remote "nohup setsid bash /root/mp/comfyui/rental/train.sh $name > /root/train.log 2>&1 < /dev/null &"
   follow /root/train.log "== DONE" || { echo "train failed — the droplet is still up and billing: fix and 'train' again (it resumes from the last checkpoint), or 'down'" >&2; exit 1; }
   remote 'tar -cf - -C /root/train-out .' | tar -xf - -C "$out"
-  cp "$pairs/pairs.tsv" "$out/pairs.tsv"
+  # beside its own checkpoints, so a second run into the same <out> keeps the first one's record
+  cp "$pairs/pairs.tsv" "$out/$name/pairs.tsv"
   echo "train: $(ls "$out/$name"/*.safetensors | wc -l) checkpoints in $out/$name — 'down' now"
 }
 

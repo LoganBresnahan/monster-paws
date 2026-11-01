@@ -1983,6 +1983,200 @@ than the before). Per setting, of 48 (16 per dog, 24 per pose):
   passed on no genitalia and a likeness no worse than its before, and a
   before is never worse than itself, so its "acceptable" is no genitalia
   alone; his 14a–14b picks already hold the befores' likeness.
+- **The baseline, Logan's read (2026-10-30)**: 1 of the 48 befores has no
+  genitalia (Plum standing s404; `var/explore/index-all/befores-17-picks-2026-10-30.txt`),
+  0 of 24 sitting. So every setting beats no LoRA, even with likeness asked
+  of the afters too: 4 to 13 of 48 against 1, and at 1500 at 1.0 standing
+  goes from 1 of 24 to 11 and sitting from 0 to 2. The LoRA works where the
+  set is strong and barely moves sitting, where it is thin. Decision 5's
+  bar, nearly none on any dog and zero male anatomy on a female, is far
+  off: 35 of 48 still fail at the best setting.
+
+### Run 2's sitting half — painted clean, never erased (Claude, 2026-10-30; Logan's eye decides)
+
+- **Logan chose to paint more and keep only what klein-v1 paints clean on
+  its own** (2026-10-30), over another erasing pass. The hand step passed
+  4 of 17 sitting paintings in 16b and leans on Claude's traces, which
+  missed 21 of 46 in 16a; a painting kept as painted also keeps its
+  brushwork (the set's 40 originals measure 267 on the Laplacian, the
+  repaints 190–210).
+- **The yield to expect**: by Logan's 2026-10-28 marks, 10 of the 100
+  sitting paintings in 13b and 13d came out clean as painted. Of the 42
+  lora-train dogs painted sitting, he kept a painting of 29 (25 are in the
+  set; 4 failed cleaning); their 58 paintings gave all 10 clean, about 1 in
+  6. The 13 dogs with no keep are left out.
+- **`comfyui/explore/batch18a.json`** (19 dogs, 13b's recipe with the grown
+  head) and **`batch18b.json`** (10 dogs, 13d's, subject only): those 29
+  dogs at six new seeds (4096, 8128, 17, 404, 1729, 6174), klein-v1
+  exactly — 174 paintings, about 30 clean if the rate holds. New Commons
+  sitting dogs only if it falls short.
+- Logan's page: `var/explore/index-all/sitting-18.html`, each dog's Commons
+  photo beside its six, one "keep" tick each (a good painting of the dog
+  with nothing genital-like). Kept paintings join the set as more pairs of
+  the same dogs; then a second training run, read at strength 1.0 only on
+  a few checkpoints around 1500.
+- **Batches 18a–18b ran** 2026-10-30, 20:41–21:40 UTC: 114/114 and 60/60,
+  no kill, the pool back at 1.7 GB after each. Warm paintings took 11.2 s
+  (18a) and 9.0 s (18b), the median. The page is built: 29 dogs, 174
+  paintings at full size (1216×832), each dog's photo, 0 missing; checked
+  headless, with no horizontal scroll at desktop or phone width.
+- **Logan, looking through it (2026-10-31): short-coated dogs rarely come
+  out clean; long hair hides the belly and short hair leaves it bare.** So
+  the clean sitting paintings the set lacks are of short-coated dogs, and
+  he asked for a run of those alone, about ten paintings each.
+- **`batch19a.json`** (13 dogs, 13b's recipe with the grown head) and
+  **`batch19b.json`** (6 dogs, 13d's, subject only): the short- and
+  smooth-coated dogs among the 42 lora-train dogs painted sitting in
+  13b–13d, coat read by Claude from the Commons photos, whether Logan kept
+  one of their paintings before or not — six of the 19 had no keep, which
+  fits his read. Left out as not short: the long, shaggy and double coats
+  (labradoodles, tollers, spitz, golden, Bernese, cavalier, long-haired
+  chihuahua, maltipoo, the keeshond-husky puppy, the fluffy white and tan
+  `pies-nierasowy`), the medium ones (the
+  three German shepherds, the white shepherd pup, the husky mix, the
+  Bosnian street dog, the Gaggenau dog) and the black dog with a white
+  chest (`2`, `3`). Ten new seeds (7, 99, 256, 777, 1001, 2718, 3141,
+  5040, 7919, 9973), klein-v1 exactly: 190 paintings. Logan's page:
+  `var/explore/index-all/sitting-19.html`, the same as 18's.
+- **Batches 19a–19b ran** 2026-10-31, 15:01–16:00 UTC: 130/130 and 60/60,
+  no kill, the pool back at 1.7 GB. Warm paintings took 10.5 s (19a) and
+  9.0 s (19b), the median. The page is built: 19 dogs, 190 paintings at
+  full size, 0 missing; checked headless, with no horizontal scroll at
+  desktop or phone width.
+- **Logan, after a quick look at 19 (2026-10-31): painting clean will not
+  work for the short-coated dogs; back to the hand step** ("the flow where
+  you look and we erase"), on those dogs only. As in 15a–16b: Logan picks
+  the paintings worth cleaning, anatomy aside, on
+  `var/explore/index-all/erase-19.html` (up to three a dog); Claude traces
+  the anatomy on each pick, it is erased and repainted, and Logan reads the
+  result on one page. What 15a–16b taught carries in: the hole takes the
+  shape's outline with it, or LaMa draws the shape back (16a); on a sitting
+  dog it takes the whole wedge between the hind legs but stops short of the
+  ground line, or the dog melts into its shadow (16b, 4 of 17); Claude's
+  clean calls are no check (21 of 46 missed in 16a), so nothing is pre-read
+  as clean.
+- **Logan's picks to erase (2026-11-01,
+  `var/explore/index-all/erase-19-picks-2026-11-01.txt`)**: 115 of the 190,
+  of 17 dogs — none of the doberman or the Paris French bulldog, two to ten
+  of the rest (the chihuahua and the Bagan dog all ten).
+- **`comfyui/explore/batch20a.json`**: those 115, 16b's recipe with the
+  sitting lesson in it. Claude traced each wedge by eye on gridded close
+  crops (the dog's lower body found from its ink against the paper, two
+  crops a sheet) and checked every trace drawn back on its crop: the pink
+  or mauve wedge between the hind legs with the shape in it, out through
+  its outlines to the foreleg and the thigh, but stopping short of the
+  ground line and of the hind paw. Seven paintings carry a second, smaller
+  hole where a second shape sits on the other side of the foreleg. Grown
+  1.1 as in 16b, LaMa's fill repainted by klein Base at 1.0 with the
+  anatomy words as its negative, one seed (the picks already give two to
+  ten paintings a dog): 115 runs.
+- **The erase** (`npm run explore:groinlines -- batch20a`, CPU): holes
+  0.4–1.8% of the painting, larger than 16b's because the wedge here is
+  the whole lower belly between the forelegs on a dog painted from the
+  front. Every erase sheet (`var/explore/batch20a/lines/`) read before the
+  card: the shape gone on 114, and on the chihuahua 19b-014 LaMa drew back
+  a second lobe below the hole, where the wedge met the haunch — that trace
+  was extended to take it and the painting erased again, clean.
+- **The repaint ran** 2026-11-01, 15:58–18:57 UTC under the guard:
+  115/115, no kill, the pool back at 1.7 GB. Warm repaints took 84.1 s,
+  the median (114–117 s for the first after each restart). Logan's page,
+  `var/explore/index-all/check-20.html`: 17 dogs, 115 cards, each with a
+  close-up of the hole's box at the painting's own resolution beside the
+  whole repaint at full size, one "acceptable, no genitalia" tick each, 0
+  missing; checked headless, with the tick surviving a reload and no
+  horizontal scroll at desktop or phone width. Not pre-read by Claude.
+
+### Batch 20a — Logan's read (2026-11-01)
+
+His ticks are `var/explore/index-all/check-20-acceptable-2026-11-01.txt`:
+44 of the 115 acceptable, with no genitalia. Per dog: the Italian
+wheat-field dog 7 of 9; the beaglier and Bimba 5 of 8; the Litochoro dog
+4 of 8, the Australian cattle dog 4 of 9, Daphne 4 of 6 and Princess 4 of
+7; Botox 2 of 7, the lakeside dog 2 of 5 and the young mixed-breed 2 of 9;
+the Bagan dog and the chihuahua 1 of 10 each, the Baliuag dog 1 of 4, the
+Mérida dog 1 of 2 and the brindle French bulldog 1 of 5; the blue cattle
+dog (6) and the Viroinval beagle (2) none. The hand step with the hole
+stopping short of the ground passed 38% of these sitting paintings,
+against 4 of 17 in 16b.
+
+- **The set**: 141 paintings of 74 dogs, 63 standing and 78 painted
+  sitting (run 1's 34 and these 44), in
+  `var/explore/index-all/training-set-2026-11-01.tsv` (run 1's 97 rows
+  unchanged, then the 44, each under its original's tag with the 20a
+  repaint as its file). The wheat-field dog brings 7, the most of any dog.
+- **The pairs**: `npm run explore:pairs --
+  index-all/training-set-2026-11-01.tsv anatomy-2026-11-01` wrote 141
+  pairs (96 with a head: 19b's six dogs were painted with `reference`) and
+  the same four holdout samples as run 1. `comfyui/pairs.py` now names the
+  batches a set row may come from (13a–13d, 18a–18b, 19a–19b) and takes
+  20a as a repaint. Run 1's 97 pairs come out byte for byte as they did on
+  2026-10-29, and the first 97 rows of `pairs.tsv` match.
+
+### Batches 18a–18b — Logan's keeps (2026-11-01)
+
+His keeps from `sitting-18.html`, the sitting paintings as painted, never
+erased: `var/explore/index-all/sitting-18-keeps-2026-11-01.txt`, 27 of
+the 174, of 18 of the 29 dogs — the chihuahua in the sun 4 of 6; the
+Bernese in the grass and the Indian spitz 3; Fiona the golden retriever and
+the Järvi toller 2; one each of dogs 2 and 3, the white shepherd pup, the
+Litochoro dog, the Bucharest dog, Daphne, the panoramio dog on grass, the
+Gaggenau dog, the keeshond-husky pup, the maltipoo, the Polish mixed-breed
+(pies-nierasowy-20201225), Princess and the Bosnian dog. The other
+eleven have none: ten of the short-coated dogs that 19 and 20a took on,
+and Viljo.
+
+- **The set**: 168 paintings of 75 dogs, 63 standing and 105 painted
+  sitting, in `var/explore/index-all/training-set-2026-11-01b.tsv`: the
+  141 above unchanged, then these 27 as painted (`training-set-2026-11-01.tsv`
+  stays as the record of the 141).
+- **The pairs**: `anatomy-2026-11-01b`, 168 pairs (115 with a head), the
+  same four holdout samples; the 141 come out byte for byte as in
+  `anatomy-2026-11-01`, and the first 141 rows of `pairs.tsv` match.
+- **Standing's share (Logan asked, 2026-11-01, whether to even it out with
+  standing paintings)**: the standing pairs are run 1's 63 unchanged, but
+  at run 1's 2,000 steps each would be seen about 12 times instead of 21,
+  because the steps are now spread over 168. Run 1's standing gain came
+  with exposure (6–8 of 24 at 1000 steps, 11 at 1500, at 1.0), so the same
+  job would likely train standing less than run 1 did. Claude's
+  recommendation: no new standing paintings before run 2, so its read
+  answers one question (does a full sitting half move sitting?), but a
+  longer job, about 3,000 steps with a checkpoint every 250, so standing
+  reaches run 1's best exposure (1500 × 63/97 pairs ≈ 2,600 steps here) and
+  2000 is still there to compare with run 1. Rough cost at run 1's rate:
+  about $7. If standing still stalls near half after run 2, more standing
+  paintings are run 3's lever. Logan: "go with 3000 steps" (2026-11-01).
+
+### Training run 2 — anatomy-2026-11-01b (2026-11-01)
+
+Logan: "go with 3000 steps, pass is unlocked."
+
+- **The job**: run 1's (`comfyui/rental/anatomy-lora.yaml`) with `steps:
+  3000`, on the pairs `anatomy-2026-11-01b` (168: run 1's 97, the 44 20a
+  repaints, the 27 18a–18b keeps). Checkpoints every 250 as before, so
+  2000 is there to compare with run 1.
+- **Where**: one H200 in atl1 again, 22:17–23:42 UTC, up 1.41 h, about
+  $6.30, deleted by the same command that trained; `status` read nothing
+  up afterwards. ~10 minutes of build and fetch, then 3,000 steps (the bar
+  read 1:01:53, 1.24 s a step), the trainer finding all 168 targets at
+  1216×832. No error, no retry. The control panel graphed no GPU while
+  `nvidia-smi` on the box read 100% at 644 W, which is why `up` now asks
+  for the monitoring agent (infra.md, GPU rental).
+- **What came home**: `var/explore/lora/anatomy-2026-11-01b/` — 12
+  checkpoints (250 to 2750 and the final 3000, 45 MB each), the 52
+  progress samples (the same four holdout dogs, step 0 to 3000), the
+  config and the set's `pairs.tsv`, now kept inside the run's own folder
+  (`gpu-rental.sh train` wrote it to the shared `lora/` folder, where run
+  2's would have replaced run 1's; run 1's copy moved into
+  `anatomy-2026-10-29/`).
+- **Logan's page**: `var/explore/lora/samples-2.html`, the 52 samples at
+  full size by dog, each beside its photo, one "clean and like the dog"
+  tick each, as run 1's; checked headless (all 52 at 1216×832, the tick
+  survives a reload, no horizontal scroll at desktop or phone width). Not
+  pre-read by Claude.
+- **Next**: the home test on Plum, Ducky and Beetle (decision 5), as
+  17a–17d did for run 1, at the checkpoints Logan's read of the samples
+  points to. Each needs its R2 upload and `models-candidates.manifest`
+  line first (oplogs 0011 and 0014's shape).
 
 ### Batches 14a–14b — Logan's picks (2026-10-28)
 

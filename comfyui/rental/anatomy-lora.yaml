@@ -1,8 +1,8 @@
 # The anatomy LoRA's training job for ai-toolkit (ADR-0004 as amended 2026-10-22, decision 2): an edit
 # LoRA on klein Base 4B from the pairs comfyui/pairs.py builds — production's references in, the
 # cleaned painting Logan approved out. train.py fills the name and the progress samples and runs it.
-# Checkpoints every 250 steps to 2000, because the ship bar reads 1000, 1500 and 2000 (decision 5),
-# chosen by their samples, never by the loss.
+# Checkpoints every 250 steps to 3000: the ship bar reads 1000, 1500 and 2000 (decision 5), and run 2's 168 pairs
+# need about 2,600 steps to give the standing pairs run 1's exposure at 1500; chosen by their samples, never by the loss.
 job: extension
 config:
   name: anatomy
@@ -30,7 +30,7 @@ config:
           cache_latents_to_disk: true
       train:
         batch_size: 1
-        steps: 2000
+        steps: 3000
         gradient_accumulation: 1
         train_unet: true
         train_text_encoder: false
