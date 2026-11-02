@@ -120,9 +120,10 @@ Check items off as they ship.
      and removes the address from Resend's list. The Playwright donor-flow e2e lands
      here. Built ahead of it: `/thanks` with the address and its fix, `/privacy`, the
      30-day erasure of an unfinished gift's address. Carry-in before any real gift: a
-     by-hand deletion tool, `/test-gift` and its rows gone (oplog 0021, and before
-     `snapshotKeepsake` or `art.generate` ship, or a worker could pick up a gift with no
-     animal), and the go-live commit removing the footer's "Donations
+     by-hand deletion tool, `/test-gift` and its rows gone (oplog 0021, selected only on
+     `animal_external_id = 'test-gift'`, never on slug or EIN, which Spencer's real gifts will
+     share; before Spencer's button opens, and before `snapshotKeepsake` or `art.generate`
+     ship, or a worker could pick up a gift with no animal), and the go-live commit removing the footer's "Donations
      coming soon!" and `/animals/[id]`'s "When sponsoring opens" sentence, each with no
      replacement (Logan, 2026-11-02). Carry-in for the art path: a gift already recorded
      is painted after a withdrawal, reading the grant as of the gift's date and a photo

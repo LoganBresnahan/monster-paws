@@ -97,7 +97,7 @@ describe.skipIf(SKIP_DB_TESTS)("the hidden test gift page", () => {
   it("gives to the one named nonprofit on www.every.org, and the secret never goes with it", async () => {
     const url = new URL(await urlFrom(startTestGift(form({ ...good, slug: "other", nonprofit: "other" }))));
     expect(url.origin).toBe("https://www.every.org");
-    expect(url.pathname).toBe("/rainbow-bridge-hospice-rescue");
+    expect(url.pathname).toBe("/spencer-pet-rescue");
     expect(url.toString()).not.toContain(SECRET);
     expect(url.searchParams.get("exit_url")).toBe("https://monsterpaws.org/");
 
@@ -105,22 +105,22 @@ describe.skipIf(SKIP_DB_TESTS)("the hidden test gift page", () => {
     expect(intent).toMatchObject({
       animalSource: TEST_GIFT.source,
       animalExternalId: "test-gift",
-      nonprofitSlug: "rainbow-bridge-hospice-rescue",
-      nonprofitEin: "88-1794651",
+      nonprofitSlug: "spencer-pet-rescue",
+      nonprofitEin: "86-1172833",
       donorEmail: "pat@example.org",
     });
     expect(setCookie).toHaveBeenCalledOnce();
   });
 
-  it("opens no Sponsor button: the nonprofit is unknown to the permission gate", async () => {
+  it("opens no Sponsor button: its nonprofit being claimed is no permission to paint", async () => {
     await db.insert(shelterNonprofits).values({
-      shelterExternalId: "rescuegroups:org:rainbow",
+      shelterExternalId: "rescuegroups:org:test-gift-nonprofit",
       everyorgSlug: TEST_GIFT.nonprofit.slug,
       ein: TEST_GIFT.nonprofit.ein,
       source: "test",
       fetchedAt: new Date(),
       everyorgClaim: "claimed",
     });
-    expect(await sponsorNonprofit(db, "rescuegroups:org:rainbow", { everyorgEnv: "production" })).toBeNull();
+    expect(await sponsorNonprofit(db, "rescuegroups:org:test-gift-nonprofit", { everyorgEnv: "production" })).toBeNull();
   });
 });

@@ -29,8 +29,8 @@ export default async function TestGiftPage({
       <SiteLogo />
       <h1 className="mt-8 text-3xl font-bold">Test gift</h1>
       <p className="mt-3 text-muted">
-        This page isn&apos;t linked anywhere. It gives real money to Rainbow Bridge Hospice Rescue through Every.org, to
-        test our webhook. No painting comes of it.
+        This page isn&apos;t linked anywhere. It gives real money to Spencer Pet Rescue through Every.org, to test our
+        webhook. No painting comes of it.
       </p>
       {problem === "form" && (
         <p role="alert" className="mt-4 font-semibold">

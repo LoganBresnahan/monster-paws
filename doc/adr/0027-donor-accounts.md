@@ -425,12 +425,15 @@ painting depends on.
     receipt shows is unknown, and the privacy page asks for one.
 13. **Those gifts go through a hidden page, the one exception to "no permission, no button"**
     (ADR-0002 as amended 2026-11-02). Logan, 2026-11-02: "a one off page that isn't marked
-    anywhere, i can just type in the url", giving to Rainbow Bridge Hospice Rescue, "real tests
-    with my money". The repo is public, so `/test-gift/<EVERYORG_TEST_PAGE_SECRET>` is hidden by
+    anywhere, i can just type in the url", "real tests with my money". It gives to Spencer Pet
+    Rescue, first named as Rainbow Bridge Hospice Rescue: "because spencer rescue can take
+    donations we want to test with that on the secret prod page". A test gift to Spencer is not
+    a yes from Spencer: its permission to paint is a separate grant. The repo is public, so `/test-gift/<EVERYORG_TEST_PAGE_SECRET>` is hidden by
     a secret, answers 404 without it, and is linked from nothing. No animal, so no painting. It
     runs the real form through Cloudflare in a real browser, the real webhook and the real
-    `/thanks`. Afterwards its rows go, found by `animal_external_id = 'test-gift'`, in their own
-    oplog entry (0021), planned from what the gifts produced, since a bank gift can take days to
+    `/thanks`. Afterwards its rows go, found by `animal_external_id = 'test-gift'` and never by
+    slug or EIN, which Spencer's real gifts will share, before Spencer's button opens, in their
+    own oplog entry (0021), planned from what the gifts produced, since a bank gift can take days to
     settle. The page's code goes with the next deploy. Its `donation_stats` rows go too, the one
     sanctioned exception to §6's permanent totals, since a gift with no animal doesn't belong in
     them (Logan, 2026-11-02: "yes delete the test stats rows").
