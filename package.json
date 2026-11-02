@@ -11,7 +11,7 @@
     "lint": "eslint",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
-    "e2e": "next build && playwright test",
+    "e2e": "DATABASE_URL= next build && playwright test",
     "e2e:prod": "PW_BASE_URL=${PW_BASE_URL:-http://localhost:3000} playwright test",
     "worker": "tsx --env-file-if-exists=.env src/worker/index.ts",
     "ingest": "tsx --env-file-if-exists=.env src/worker/ingest-cli.ts",

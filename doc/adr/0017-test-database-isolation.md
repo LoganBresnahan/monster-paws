@@ -237,3 +237,13 @@ the tracker, from the intercepted request, not that it loaded.
   gains a registry fixture, and the registry becomes injectable at render.
 - The production build makes the e2e loop too slow to run per commit — a
   build cache in CI, not a return to dev mode.
+
+## Amendment (2026-11-02): `npm run e2e` builds with no database, as CI and the image do
+
+`/thanks` called `getDb()` before reading its cookie. Next prerenders at build, so with no database
+the call threw before Next learned the page was dynamic. CI's `verify` failed on it (run 41541299510),
+and the image's build would have too, since `.dockerignore` excludes `.env*`. Every local run passed,
+because Next loads `DATABASE_URL` from `.env`, and the page then bailed out of the prerender at
+`cookies()`. So `npm run e2e` now runs `DATABASE_URL= next build`: Next's env loader doesn't override
+a variable already set, even empty, so a worktree fails what CI fails. Playwright's server sets its
+own `DATABASE_URL`, so the run itself isn't affected.

@@ -29,9 +29,12 @@ export default async function ThanksPage({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
+  // Before getDb(), always: reading the cookie is what tells Next this page is dynamic, and a
+  // build has no database, so the other order fails CI and the image while passing locally.
+  const intentIds = intentIdsOf((await cookies()).get(INTENT_COOKIE)?.value);
   const db = getDb();
   const asOf = new Date();
-  const subject = await thankYouIntent(db, intentIdsOf((await cookies()).get(INTENT_COOKIE)?.value), asOf);
+  const subject = await thankYouIntent(db, intentIds, asOf);
 
   if (!subject) {
     return (
