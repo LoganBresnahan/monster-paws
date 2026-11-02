@@ -26,6 +26,7 @@ is an ADR; the daily numbers brief is `doc/ops/` (ADR-0010 as amended).
 | [0013](0013-rerun-nightly-with-retry.md) | Rerun the nightly with the retry (ADR-0033 as amended 2026-10-30): `scripts/poll-nightly.sh` by hand, the whole run up to three times; both Better Stack incidents resolved — complete on the first attempt, 64,400 in 26 min, health green | run | 2026-10-30 |
 | [0014](0014-models-bucket-checkpoints-1250-1750.md) | Checkpoints 1250 and 1750 of the anatomy LoRA to `monsterpaws-models` (ADR-0004 as amended 2026-10-29) | run | 2026-10-30 |
 | [0015](0015-models-bucket-run-2-checkpoints.md) | Checkpoints 1500, 2000, 2500 and 3000 of the anatomy LoRA's run 2 to `monsterpaws-models` (ADR-0004 as amended 2026-10-29) | run | 2026-11-01 |
+| [0016](0016-bridge-ssh-drops-droplet-side.md) | Why the bridge's SSH connection drops: the droplet's sshd, docker and kernel lines for both drops (2026-10-30 14:21, 2026-11-02 07:09), and Better Stack's 11-02 incident; reads only (ADR-0033 as amended 2026-10-30) | planned | |
 
 ## Entry format
 

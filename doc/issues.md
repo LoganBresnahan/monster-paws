@@ -67,6 +67,20 @@ is the record, and a file of ticked boxes stops being read.
 
 ## Ops
 
+- **The bridge's SSH connection drops mid-run, and nothing at home says
+  why.** Twice in four days: oplog 0012's rerun (2026-10-30 14:21:15 UTC,
+  page 104) and the nightly of 2026-11-02 (07:09:39 UTC, page 204), each
+  `ssh` exiting 255 with the proxy healthy to the end. On 11-02 the
+  droplet's CONNECTs reached home until 07:09:36, so the link was alive
+  three seconds before it went, and the keepalive (`ServerAliveInterval=15`,
+  45 s to give up) did not end it. Windows logged no network event (System,
+  NetworkProfile, WLAN, DHCP) and WSL's journal nothing between 07:05 and
+  07:16 UTC. The retry absorbs a drop at about 15 minutes each (ADR-0033 as
+  amended 2026-10-30), but drops on all three attempts fail the night.
+  0012 read only `journalctl -u ssh`, which holds the accept lines and not
+  how a session ended. Oplog 0016 reads sshd by its own identifier on the
+  droplet. Found by the moderator session 2026-11-02.
+
 - **One bad page still costs a whole attempt, and the log cannot say why.**
   The nightly now retries the whole run, and the proxy no longer cuts a
   page's tail (ADR-0033 as amended 2026-10-30, after oplog 0012). Inside the
@@ -77,7 +91,8 @@ is the record, and a file of ticked boxes stops being read.
   page whose fetch or body read fails is fetched again (the same page,
   never a skipped one, ADR-0014), and the CLI prints `err.cause` as well.
   Smaller: each failed attempt pings `/fail`, so a night that completes on
-  a retry opens a Better Stack incident and closes it. Pinging only on the
+  a retry opens a Better Stack incident and closes it, as 2026-11-02 did
+  (read in oplog 0016). Pinging only on the
   last attempt needs a second verb in the key's forced command. Found by
   the moderator session 2026-10-30.
 
