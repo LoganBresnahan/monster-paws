@@ -1,7 +1,7 @@
 # 0017: The staging webhook's tunnel: staging-hooks.monsterpaws.org to the dev server
 
-Status: planned
-Planned: 2026-11-02 · Run: —
+Status: run
+Planned: 2026-11-02 · Run: 2026-11-02 16:29 – 16:33 UTC
 Why: ADR-0027 as amended 2026-11-02; roadmap: Accounts and donating (item 4);
 `doc/plans/adr-0027-accounts-build-plan.md`, `everyorg-webhook-endpoint`.
 Every.org's staging webhook (made 2026-10-22, `doc/infra.md`) posts to a
@@ -174,7 +174,94 @@ In order: `npm run hooks -- down`; step 2's rollback; step 1's rollback. Then
 keeps its URL, which goes back to resolving nowhere.
 
 ## Run
-<added on the day>
+From `~/monsterpaws-donate` at `68a56ef`, level with topdog. Logan made the
+token `Tunnel`: `Cloudflare One Connector: cloudflared Write` and `… Read`, the
+entire account, no expiry, no IP filter (the dashboard offered these, not the
+prerequisite's `Cloudflare Tunnel · Edit`). The steps' results match the Verify lines except
+where marked **Differed**.
+
+Prerequisites, 16:29: tunnel token `active`; no record at the host; no tunnel of
+that name; the path secret fits the rule; `tests/staging-hooks.test.ts` 4 of 4.
+The pinned cloudflared's `ingress rule`:
+
+    /api/webhooks/everyorg/oplog0017probe: Matched rule #0
+    /: Matched rule #1
+    /api/health: Matched rule #1
+    /design: Matched rule #1
+    /api/webhooks/everyorg/../../../design: Matched rule #1
+    /api/webhooks/everyorg/%2e%2e/%2e%2e/%2e%2e/design: Matched rule #1
+    /api/webhooks/everyorg/x/../../../../api/health: Matched rule #1
+
+**1. The tunnel, 16:29:29.**
+
+    {"success":true,"errors":[],"name":"staging-hooks","config_src":"local"}
+    {"a":32,"id":36,"s":44,"name":"staging-hooks"}
+
+**2. The CNAME, 16:29:42.**
+
+    {"success":true,"errors":[],"name":"staging-hooks.monsterpaws.org","type":"CNAME","proxied":true,"tunnel":true}
+    A monsterpaws.org proxied=true
+    A www.monsterpaws.org proxied=true
+    CNAME links.monsterpaws.org proxied=false
+    CNAME staging-hooks.monsterpaws.org proxied=true
+
+**3. No connector, 16:29:53.** `HTTP/2 530`, `server: cloudflare`, and `not the
+droplet's address`.
+**Differed:** the step's plain `curl` printed nothing at 16:29:47. It exits 6,
+`Could not resolve host`: this machine's resolver answers nothing for the name,
+and still answered nothing at 16:32. `dig @1.1.1.1` resolves it, so the check and
+every later one ran with `curl --resolve "$HOST:443:$A"`, where `$A` is
+1.1.1.1's answer. Only this machine is affected.
+
+**4. The connector, 16:30:10.** `status`: four `Registered tunnel connection`
+lines (ord07, ord15, protocol quic). Metrics on `127.0.0.1:20241` only; restart
+policy `no`, network `host`.
+
+    GET / 404
+    GET /api/health 404
+    GET /design 404
+    GET /api/webhooks/everyorg/../../../design 404
+    GET /api/webhooks/everyorg/%2e%2e/%2e%2e/%2e%2e/design 404
+    GET /api/webhooks/everyorg/x/../../../../api/health 404
+
+**Differed:** the POST answered nothing, not `502`: `curl` gave up after 30 s
+(exit 28), and the connector logged `context canceled` on `ingressRule=0`. So the
+rule matched and the origin hung. A direct `curl http://127.0.0.1:3027/` from the
+distro timed out the same way with nothing listening, so the tunnel was not the
+cause. The distro runs mirrored networking (`wslinfo --networking-mode`), where a
+closed port that has not been bound times out, as 3028 and 3029 did. Once bound
+and closed again, 3027 refuses at once.
+
+An unplanned local check, since the step's proof had not come back: a throwaway
+Node stub on `127.0.0.1:3027` that answers 418 and logs the method, the path's
+shape, the Host and the body's size.
+
+    POST via tunnel code=418 t=0.202223
+    stub saw: POST shape=true host=staging-hooks.monsterpaws.org bodyBytes=2
+
+With the stub stopped, the step's checks again, 16:32: the same six `404`s, and
+the POST as planned, with no `cf-mitigated` line:
+
+    HTTP/2 502
+    server: cloudflare
+
+So a POST from home passes the edge and reaches the origin with its Host and
+body. That says nothing about Every.org's servers (see "The unproven part").
+
+**5. Down, 16:32:25.** No container, nothing on 3027 or 20241.
+**Differed:** the host still answered `502` for about a minute, because Cloudflare
+keeps a killed connector's connections until they time out, then `530`:
+
+    16:32:43 GET / 502 · tunnel healthy connections=4
+    16:33:04 GET / 502 · tunnel healthy connections=3
+    16:33:25 GET / 530 · tunnel down connections=0
+
+The tunnel, the CNAME and both `pass` entries stay: this is the standing way in
+for staging sessions (`doc/infra.md`, Every.org).
 
 ## Follow-ups
-<added on the day>
+- Bot Fight Mode: unproven when this entry ran. Logan's staging gift that evening
+  proved it blocks Every.org's POST (16:53:41 UTC). See oplog 0018.
+- A delivery made before the dev server has bound :3027 hangs about 30 s rather
+  than answering 502, and is lost either way. `npm run hooks -- status` already
+  says when no dev server is up (`doc/infra.md`, Every.org).

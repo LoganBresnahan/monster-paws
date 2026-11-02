@@ -59,7 +59,7 @@ Never `doctl auth init` — it writes the token to a plaintext config file.
 | Entry | What it is | What it's for | Lands in |
 | --- | --- | --- | --- |
 | `cloudflare/dns-token` | API token: Zone · DNS · Edit, Zone Settings, Cache Purge | DNS records (step 3), SSL mode (step 4), other zone settings, cache purges after a deploy. Read 2026-11-02: 403 on `bot_management` and on GraphQL's firewall events, so Bot Fight Mode's state and its events are read in the dashboard; lists tunnels, 403 creating one | dev only |
-| `cloudflare/tunnel-token` | Account-owned API token: Account · Cloudflare Tunnel · Edit (oplog 0017). Verifies only at the account endpoint, like the R2 tokens | Creating and deleting the staging webhook's tunnel | dev only |
+| `cloudflare/tunnel-token` | Account-owned API token named `Tunnel`: Cloudflare One Connector: cloudflared Write and Read, the entire account, no expiry, no IP filter (oplog 0017). Verifies only at the account endpoint, like the R2 tokens | Creating and deleting the staging webhook's tunnel | dev only |
 | `cloudflare/staging-hooks-tunnel-credentials` | The tunnel's credentials JSON (`AccountTag`, `TunnelID`, `TunnelName`, `TunnelSecret`), secret generated at creation (oplog 0017) | What `scripts/staging-hooks.sh up` runs the connector with: by environment, never in a process's argv. Docker keeps the value in the container's config (under `/var/lib/docker`, and in `docker inspect`) until `down` removes the container | dev only |
 | `cloudflare/email-token` | API token: Email Routing rules (zone) + destination addresses (account) | The routing that forwards hello@ / security@ / logan@monsterpaws.org to Gmail — change a rule or add an address | dev only |
 
@@ -156,9 +156,9 @@ The **staging** partner webhook, created 2026-10-22 from Logan's account at
 staging.every.org/developer: partner name `Monster Paws`, domain
 `monsterpaws.org`, URL
 `https://staging-hooks.monsterpaws.org/api/webhooks/everyorg/$(pass show everyorg/staging-webhook-secret)`.
-That hostname is a proxied CNAME to a Cloudflare Tunnel (oplog 0017; planned,
-**no DNS record until that entry runs**), which reaches the dev server in
-`monsterpaws-dev` and never the droplet (ADR-0027 as amended 2026-11-02). It
+That hostname is a proxied CNAME to a Cloudflare Tunnel (oplog 0017, run
+2026-11-02), which reaches the dev server in `monsterpaws-dev` and never the
+droplet (ADR-0027 as amended 2026-11-02). It
 forwards one path, `^/api/webhooks/everyorg/[A-Za-z0-9]+$`, and answers 404 to the rest
 (`scripts/staging-hooks.yml`, `tests/staging-hooks.test.ts`). For a staging
 session:
@@ -168,8 +168,13 @@ npm run dev -- -p 3027      # its own port: another worktree's server on :3000 w
 npm run hooks -- up         # the connector, a pinned container; then status, down
 ```
 
-Leave it down between sessions: a delivery with no connector or no dev server
-fails at Cloudflare (530 or 502), and Every.org's docs state no retry. Bot Fight
+Leave it down between sessions. A delivery is lost if nothing is there to take
+it, since Every.org's docs state no retry. With no connector the host answers 530;
+for about a minute after `down` it still answers 502, until Cloudflare drops the
+connections; with no dev server it answers 502, or hangs about 30 s if :3027 has
+not been bound since the distro started, because a closed port under mirrored
+networking times out at first. This machine's resolver doesn't answer for the
+name, so from here use `curl --resolve` with `dig @1.1.1.1`'s answer. Bot Fight
 Mode covers this host like the rest of the zone (provisioning's rules, below),
 and only a real delivery shows whether it lets Every.org through.
 
@@ -1163,7 +1168,7 @@ Provisioning it — the Windows user, the distro on the M.2, the Task Scheduler
 start, and the scoped credentials in the registry above — is a step here and
 an oplog entry when it happens.
 
-### The staging webhook's tunnel (ADR-0027 as amended 2026-11-02; planned, oplog 0017)
+### The staging webhook's tunnel (ADR-0027 as amended 2026-11-02, oplog 0017)
 
 ```
   staging.every.org
