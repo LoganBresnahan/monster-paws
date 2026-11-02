@@ -175,8 +175,8 @@ connections; with no dev server it answers 502, or hangs about 30 s if :3027 has
 not been bound since the distro started, because a closed port under mirrored
 networking times out at first. This machine's resolver doesn't answer for the
 name, so from here use `curl --resolve` with `dig @1.1.1.1`'s answer. Bot Fight
-Mode covers this host like the rest of the zone (provisioning's rules, below),
-and only a real delivery shows whether it lets Every.org through.
+Mode is off for the whole zone because it challenged this POST (oplog 0018), and
+turning it back on stops every delivery, here and in production.
 
 The production webhook is a separate setup with its own three entries
 (`everyorg/webhook-token`, `auth-token`, `webhook-secret`), made before launch.
@@ -469,8 +469,10 @@ ssh root@$IP 'sed -i "s/^#\?PasswordAuthentication.*/PasswordAuthentication no/;
 #   be addressed directly.
 # - Secrets live in pass (dev) / droplet .env (prod) / GH Actions secrets
 #   (CI). Architecture is public; keys are the perimeter.
-# - Cloudflare bot settings (2026-07-30): Bot Fight Mode ON (retest the
-#   Every.org flow when it lands). AI crawlers deliberately ALLOWED — being
+# - Cloudflare bot settings: Bot Fight Mode OFF since 2026-11-02 (Logan, oplog
+#   0018). It challenged Every.org's webhook and can't be skipped for one path on
+#   the free plan, so no delivery could land; the managed ruleset is separate and
+#   stays on. AI crawlers deliberately ALLOWED — being
 #   in AI assistants' answers is donor acquisition, and we aggregate public
 #   listings ourselves; do not flip in a settings cleanup. AI Labyrinth off
 #   (moot without blocks). security.txt served from public/.well-known/.
@@ -1177,7 +1179,7 @@ an oplog entry when it happens.
         ▼
   Cloudflare edge                 staging-hooks.monsterpaws.org
   · proxied CNAME → <tunnel id>.cfargotunnel.com, no address behind it
-  · Bot Fight Mode, as for the whole zone
+  · Bot Fight Mode off for the whole zone: it challenged this POST (oplog 0018)
   · no connector: 530
         ▲
         │ outbound only; the house opens no port

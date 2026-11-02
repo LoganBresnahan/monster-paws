@@ -279,3 +279,36 @@ production's do.
 - Every.org's staging POST is blocked at the edge (see Consequences).
 - A staging delivery is lost while the tunnel was down often enough to justify
   leaving it up.
+
+## Amendment (2026-11-02): Bot Fight Mode off for the zone
+
+### Context
+The tunnel's amendment left it unproven whether Bot Fight Mode would let Every.org's POST
+through. Logan's staging gift proved it does not: Cloudflare's firewall export shows the
+POST, to the webhook's real path at 16:53:41 UTC, answered `managed_challenge` by
+`bot_fight_mode`, from Amazon's AS16509, user agent `node`. A server can't solve a
+challenge, and the setting covers the zone, so production's hook host would fail the same
+way. Cloudflare's docs say it can't be skipped by WAF custom rules or Page Rules; only Super
+Bot Fight Mode, on a paid plan, can. In that export's 24 hours it challenged 57 other
+requests, 53 from Microsoft's network and the commonest paths probes, while the 277 blocked
+exploit attempts came from the managed ruleset, a separate setting.
+
+### Decision
+**Bot Fight Mode is off for the whole zone** (Logan, 2026-11-02; oplog 0018). The managed
+ruleset stays on, and AI crawlers stay allowed.
+
+### Consequences
+- Requests it would have challenged now reach the origin. Read the firewall events and the
+  droplet's load about a week on.
+- Anyone turning it back on stops every webhook delivery, with no error on our side:
+  nothing reaches the tunnel, the droplet or `everyorg_webhook_payloads`.
+
+### Alternatives
+- **A paid plan with Super Bot Fight Mode and a skip rule:** keeps the protection, at a
+  monthly bill the numbers above don't justify yet.
+- **A Worker outside the zone in front of the hook:** more moving parts, unproven.
+- **A DNS-only hook host:** exposes the droplet's address, against `doc/infra.md`'s rules.
+
+### Revisit triggers
+- Probing that loads the droplet, or heavier than that one day's 57 challenges.
+- Moving to a paid plan for any other reason: then skip the hook's path and turn it back on.
