@@ -789,3 +789,32 @@ ADR decides it; until then it sits here so it is not lost and not built.
   pressure. The image pipeline itself is indifferent — a consented owner photo
   is the easiest identity input there is. Decide at DIRECTION level once
   item 4's donation flow and its accounts ADR exist.
+- **Monster Paws as the charity that regrants** (Logan, 2026-11-02). Donors
+  give to Monster Paws itself, and it grants each gift on to the shelter the
+  donor chose, by check or bank transfer. A shelter would then need no
+  claimed Every.org profile (none of Chicagoland's 31 had one, 2026-10-27),
+  and Every.org's webhook would fire for every gift, since every gift goes
+  to our own profile, so a keepsake could open for any shelter (ADR-0027).
+  Two ways to get there: **our own 501(c)(3)** (a state nonprofit corporation
+  with a board, IRS Form 1023 or the 1023-EZ under $50k a year, Illinois
+  Attorney General registration, a Form 990 every year; weeks to months), or
+  **fiscal sponsorship**, where an existing 501(c)(3) takes Monster Paws on as
+  a project (days to weeks). Sponsors found 2026-11-02, fees as their pages
+  stated them and unconfirmed: Chappy & Friends (animal-welfare projects
+  nationwide, $120 a year plus 7%), Fiscal Sponsorship Allies (general, $75 a
+  month plus 3.89% and a setup fee), Hack Club's HCB (7%, but mainly for
+  teen-led projects), Players Philanthropy Fund and community foundations;
+  the Fiscal Sponsor Directory lists more, and Every.org sends a sponsored
+  project's gifts to its sponsor. Why it is parked: it reverses DIRECTION's
+  "we never process payments or take a cut"; the charity must keep final
+  control of every grant, so the donor's shelter becomes a recommendation
+  and "100% to this shelter" needs new wording; the keepsake may be a benefit
+  returned for the gift (a disclosure over $75, and perhaps a smaller
+  deductible amount); and some sponsors refuse a project that mostly passes
+  money through. Questions for a sponsor or counsel: will you regrant to the
+  shelter the donor chose, and how is that worded to donors; does a painted
+  keepsake count as a benefit; how do your donation records meet ours, since
+  a keepsake opens only on a confirmed payment; what happens if you stop
+  sponsoring us. Decide at DIRECTION level after counsel. Not to be confused
+  with a donor's own Every.org donor-advised fund, which already grants to
+  unclaimed shelters with Monster Paws holding nothing.
