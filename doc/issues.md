@@ -67,20 +67,6 @@ is the record, and a file of ticked boxes stops being read.
 
 ## Ops
 
-- **Bot Fight Mode blocks Every.org's webhook, so no delivery can reach us with it
-  on.** Logan's staging gift, 2026-11-02: Cloudflare's firewall export shows one
-  `POST` to the webhook's real path at 16:53:41 UTC, 34 seconds after the intent was
-  minted, answered `managed_challenge` by `bot_fight_mode` (`ruleId`), from Amazon's
-  AS16509, user agent `node`, HTTP/1.1, unsampled. Nothing reached the tunnel or
-  `everyorg_webhook_payloads`. No second attempt in the export, which ends at
-  17:02:10, and none had reached us by 17:06. The same holds for production's hook
-  host, since the setting covers the zone. Cloudflare's docs say Bot Fight Mode can't
-  be skipped by WAF custom rules or Page Rules; only Super Bot Fight Mode, on a paid
-  plan, can. In the same 24 hours it challenged 57 other requests, 53 of them from
-  Microsoft's network and the commonest paths probes like `/admin.php/m1.php`, while
-  the 277 blocked exploit attempts came from the managed ruleset, a separate setting.
-  Logan turned it off 2026-11-02 (ADR-0027 as amended, oplog 0018); this entry goes when
-  a real delivery lands.
 - **The sponsor form is the first Server Action behind Cloudflare, and the managed
   ruleset is blocking React exploit POSTs on this zone.** 277 blocks in the 24 hours
   to 2026-11-02 17:02 under CVE-2025-55182's rules, on `/`, `/login`, `/signin` and
