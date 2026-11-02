@@ -1,0 +1,15 @@
+# Ingress of the staging webhook's tunnel (ADR-0027 as amended 2026-11-02).
+# Never add a rule or widen the path: the dev server behind it serves /design,
+# /demo and its own dev endpoints, and only this catch-all keeps them private.
+# Anchored at both ends and alphanumeric only, because an open end forwards
+# /api/webhooks/everyorg/../../../design, which collapses to /design behind it.
+# The secret in the path is the route handler's to check, never written here
+# (the repo is public).
+ingress:
+  - hostname: staging-hooks.monsterpaws.org
+    path: ^/api/webhooks/everyorg/[A-Za-z0-9]+$
+    service: http://127.0.0.1:3027
+  - service: http_status:404
+# Never cloudflared's default, 0.0.0.0: under --network host it would listen on
+# every interface of the distro.
+metrics: 127.0.0.1:20241

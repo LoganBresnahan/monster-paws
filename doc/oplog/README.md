@@ -27,6 +27,7 @@ is an ADR; the daily numbers brief is `doc/ops/` (ADR-0010 as amended).
 | [0014](0014-models-bucket-checkpoints-1250-1750.md) | Checkpoints 1250 and 1750 of the anatomy LoRA to `monsterpaws-models` (ADR-0004 as amended 2026-10-29) | run | 2026-10-30 |
 | [0015](0015-models-bucket-run-2-checkpoints.md) | Checkpoints 1500, 2000, 2500 and 3000 of the anatomy LoRA's run 2 to `monsterpaws-models` (ADR-0004 as amended 2026-10-29) | run | 2026-11-01 |
 | [0016](0016-bridge-ssh-drops-droplet-side.md) | Why the bridge's SSH connection drops: the droplet's sshd, docker and kernel lines for both drops (2026-10-30 14:21, 2026-11-02 07:09), and Better Stack's 11-02 incident; reads only (ADR-0033 as amended 2026-10-30) | run | 2026-11-02 |
+| [0017](0017-staging-hooks-tunnel.md) | The staging webhook's tunnel: `staging-hooks.monsterpaws.org` to the dev server in `monsterpaws-dev`, one path, never the droplet (ADR-0027 as amended 2026-11-02) | planned | — |
 
 ## Entry format
 

@@ -58,7 +58,9 @@ Never `doctl auth init` — it writes the token to a plaintext config file.
 
 | Entry | What it is | What it's for | Lands in |
 | --- | --- | --- | --- |
-| `cloudflare/dns-token` | API token: Zone · DNS · Edit, Zone Settings, Cache Purge | DNS records (step 3), SSL mode (step 4), zone settings such as Bot Fight Mode, cache purges after a deploy | dev only |
+| `cloudflare/dns-token` | API token: Zone · DNS · Edit, Zone Settings, Cache Purge | DNS records (step 3), SSL mode (step 4), other zone settings, cache purges after a deploy. Read 2026-11-02: 403 on `bot_management` and on GraphQL's firewall events, so Bot Fight Mode's state and its events are read in the dashboard; lists tunnels, 403 creating one | dev only |
+| `cloudflare/tunnel-token` | Account-owned API token: Account · Cloudflare Tunnel · Edit (oplog 0017). Verifies only at the account endpoint, like the R2 tokens | Creating and deleting the staging webhook's tunnel | dev only |
+| `cloudflare/staging-hooks-tunnel-credentials` | The tunnel's credentials JSON (`AccountTag`, `TunnelID`, `TunnelName`, `TunnelSecret`), secret generated at creation (oplog 0017) | What `scripts/staging-hooks.sh up` runs the connector with: by environment, never in a process's argv. Docker keeps the value in the container's config (under `/var/lib/docker`, and in `docker inspect`) until `down` removes the container | dev only |
 | `cloudflare/email-token` | API token: Email Routing rules (zone) + destination addresses (account) | The routing that forwards hello@ / security@ / logan@monsterpaws.org to Gmail — change a rule or add an address | dev only |
 
 ```sh
@@ -154,10 +156,24 @@ The **staging** partner webhook, created 2026-10-22 from Logan's account at
 staging.every.org/developer: partner name `Monster Paws`, domain
 `monsterpaws.org`, URL
 `https://staging-hooks.monsterpaws.org/api/webhooks/everyorg/$(pass show everyorg/staging-webhook-secret)`.
-That hostname has **no DNS record** until phase 4 of
-`doc/plans/adr-0027-accounts-build-plan.md` routes it to `monsterpaws-dev`
-through a tunnel, so staging donations never reach the droplet. The
-production webhook is a separate setup with its own three entries
+That hostname is a proxied CNAME to a Cloudflare Tunnel (oplog 0017; planned,
+**no DNS record until that entry runs**), which reaches the dev server in
+`monsterpaws-dev` and never the droplet (ADR-0027 as amended 2026-11-02). It
+forwards one path, `^/api/webhooks/everyorg/[A-Za-z0-9]+$`, and answers 404 to the rest
+(`scripts/staging-hooks.yml`, `tests/staging-hooks.test.ts`). For a staging
+session:
+
+```sh
+npm run dev -- -p 3027      # its own port: another worktree's server on :3000 would 404 the delivery
+npm run hooks -- up         # the connector, a pinned container; then status, down
+```
+
+Leave it down between sessions: a delivery with no connector or no dev server
+fails at Cloudflare (530 or 502), and Every.org's docs state no retry. Bot Fight
+Mode covers this host like the rest of the zone (provisioning's rules, below),
+and only a real delivery shows whether it lets Every.org through.
+
+The production webhook is a separate setup with its own three entries
 (`everyorg/webhook-token`, `auth-token`, `webhook-secret`), made before launch.
 
 | Entry | What it is | What it's for | Lands in |
@@ -221,8 +237,10 @@ curl -fsS "$(pass show betterstack/heartbeat-ingest-poll)" >/dev/null   # a manu
 ```
 
 Notes: `flarectl` (Cloudflare's older Go CLI) is effectively superseded —
-the two API curls below are all the DNS we need. `cloudflared` (tunnels) is
-not needed; the droplet has a public IP behind the proxy.
+the two API curls below are all the DNS we need. `cloudflared` (tunnels) runs
+for one thing, the staging webhook's way into the dev server (Every.org, above),
+as a pinned container with no install; production needs none, since the droplet
+has a public IP behind the proxy.
 
 ### Social accounts (ADR-0032)
 
@@ -1144,6 +1162,33 @@ machine itself. Development never happens on the `monsterpaws` account.
 Provisioning it — the Windows user, the distro on the M.2, the Task Scheduler
 start, and the scoped credentials in the registry above — is a step here and
 an oplog entry when it happens.
+
+### The staging webhook's tunnel (ADR-0027 as amended 2026-11-02; planned, oplog 0017)
+
+```
+  staging.every.org
+        │ POST /api/webhooks/everyorg/<secret>, for a donation made
+        │ through a staging donate link
+        ▼
+  Cloudflare edge                 staging-hooks.monsterpaws.org
+  · proxied CNAME → <tunnel id>.cfargotunnel.com, no address behind it
+  · Bot Fight Mode, as for the whole zone
+  · no connector: 530
+        ▲
+        │ outbound only; the house opens no port
+  ┌─────┴───────────────────────────────────────────────┐
+  │ monsterpaws-dev                                     │
+  │  cloudflared (scripts/staging-hooks.sh, a pinned    │
+  │  container, --network host, up only for a session)  │
+  │   ├ ^/api/webhooks/everyorg/[A-Za-z0-9]+$           │
+  │   │     └─► 127.0.0.1:3027, npm run dev -p 3027,    │
+  │   │         dev Postgres                            │
+  │   └ everything else ──────────► 404                 │
+  └─────────────────────────────────────────────────────┘
+
+  DigitalOcean droplet: not on this path. No record points this host at it,
+  and Caddy has no site for it.
+```
 
 ### The poll bridge, until RescueGroups allowlists the droplet (ADR-0033)
 

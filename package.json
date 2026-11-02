@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "hooks": "scripts/staging-hooks.sh",
     "up": "scripts/dev-up.sh",
     "build": "next build",
     "start": "next start",

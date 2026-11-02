@@ -574,7 +574,8 @@ the gift: the account comes after it, if at all.
        │  ── Every.org boundary: the money and the receipt are theirs ──
        ▼
   POST /api/webhooks/everyorg/<secret>   (planned, phase 4) unsigned
-       │  staging: staging-hooks.monsterpaws.org → tunnel → monsterpaws-dev
+       │  staging: staging-hooks.monsterpaws.org → tunnel → :3027 in
+       │  monsterpaws-dev, this path only (scripts/staging-hooks.yml)
        ▼
   everyorg_webhook_payloads         body as text + headers, stored before
        │                            anything is believed (append-only)

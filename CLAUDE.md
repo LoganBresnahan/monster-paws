@@ -184,6 +184,9 @@ the monthly check in infra.md's Recurring ops.
   `db:migrate` → poll+dump in the background if the corpus is older than the
   visibility window → `dev`. Run this after any time away
 - `npm run dev` — Next.js dev server (port 3000)
+- `npm run hooks -- up | down | status` — the tunnel from Every.org's staging
+  webhook to a dev server on :3027 (`npm run dev -- -p 3027`): one path, never
+  the droplet, down between sessions (ADR-0027 as amended 2026-11-02, oplog 0017)
 - `npm test` — vitest units in `tests/` (run twice for the ship bar). Creates
   and migrates `monsterpaws_test` itself (ADR-0017); it never touches the dev
   database, and it FAILS rather than skips when Postgres is unreachable —

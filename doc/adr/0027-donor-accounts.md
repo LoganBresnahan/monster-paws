@@ -224,3 +224,58 @@ things the design must already respect:
   link to their card ("See {name} in your collection"), and the card shows
   the painting under way until it lands. No separate "save" step: the card is
   already in the donor's collection (Logan, 2026-10-26).
+
+## Amendment (2026-11-02): the staging webhook's tunnel
+
+### Context
+Every.org's staging webhook posts to `staging-hooks.monsterpaws.org`, which has
+no DNS record, and the plan's only requirement is a tunnel to `monsterpaws-dev`
+that never reaches the droplet. The tunnel exposes a dev server to the internet.
+That server serves pages production doesn't, and its error pages show more than
+production's do.
+
+### Decision
+1. **A Cloudflare Tunnel, locally managed, on the zone we already run** (oplog
+   0017). The connector is outbound only and runs as a pinned `cloudflared`
+   container. A proxied CNAME to the tunnel has no address behind it, so the
+   host cannot fall through to the droplet.
+2. **It forwards one path.** `^/api/webhooks/everyorg/[A-Za-z0-9]+$` on that host
+   goes to the dev server and everything else answers 404, from a config file in
+   this repo with a test on its text, never a dashboard setting
+   (`scripts/staging-hooks.yml`, `tests/staging-hooks.test.ts`). The pattern is
+   closed at both ends because a bare prefix also forwards
+   `/api/webhooks/everyorg/../../../design`, which collapses to `/design` behind
+   it. Our path secret stays alphanumeric to match (`pass generate -n`).
+3. **The dev server behind it has its own port, 3027,** because another
+   worktree's server on :3000 would answer 404 to a delivery, and Every.org's
+   docs state no retry.
+4. **It runs only for a staging session,** by `npm run hooks -- up`, and comes
+   down after. Nothing restarts it.
+
+### Consequences
+- New tool, no new runtime dependency: `cloudflared` runs only as that container,
+  never in the image or on the droplet. Its version is bumped by hand.
+- Two `pass` entries, `cloudflare/tunnel-token` and
+  `cloudflare/staging-hooks-tunnel-credentials` (`doc/infra.md`).
+- Bot Fight Mode covers this host, and the production hook host after it. Whether
+  it lets Every.org's POST through is unproven until a real delivery. If it
+  blocks, turning it off is a zone-wide choice for Logan, with its own oplog
+  entry.
+- Production's hook host is not this tunnel: it is the droplet through Caddy, on
+  its own hostname, with its own three secrets and its own oplog entry.
+
+### Alternatives
+- **`cloudflared` quick tunnel (`trycloudflare.com`):** no token and no zone
+  change, but a random hostname on each run, and the Every.org webhook's URL
+  would have to change each time.
+- **A dashboard-managed tunnel:** one fewer file, but its reach would be a setting
+  nobody reviews or tests.
+- **ngrok or similar:** another vendor seeing every staging payload, when
+  Cloudflare already sees this zone's traffic.
+- **Port-forwarding at home:** opens a port, and ADR-0033's rule is that the house
+  opens none.
+
+### Revisit triggers
+- Every.org's staging POST is blocked at the edge (see Consequences).
+- A staging delivery is lost while the tunnel was down often enough to justify
+  leaving it up.
