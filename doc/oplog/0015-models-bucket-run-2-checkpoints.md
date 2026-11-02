@@ -1,14 +1,14 @@
 # 0015: Checkpoints 1500, 2000, 2500 and 3000 of the anatomy LoRA's run 2 to the models bucket
 
-Status: planned
-Planned: 2026-11-01 · Run: —
+Status: run
+Planned: 2026-11-01 · Run: 2026-11-01 23:59 UTC
 Why: ADR-0004 as amended 2026-10-29 (the weights we make get a bucket of
 their own) and decision 11 of 2026-10-05; roadmap item 9, the anatomy LoRA.
 Commit deployed: n/a — nothing on the droplet, the database or the three
 other buckets changes
 
 The anatomy LoRA's second training run (`anatomy-2026-11-01b`: 168 pairs,
-3,000 steps, on a rented H200 on 2026-11-01, from commit aa6d9ff;
+3,000 steps, on a rented H200 on 2026-11-01, from commit 161c602;
 `doc/plans/base-model-candidates.md`, Training run 2) is to be tested at home the way run 1 was (batches
 17a–17d): Plum, Ducky and Beetle's 48 befores painted again at checkpoints
 1500, 2000, 2500 and 3000, strength 1.0 (Logan, 2026-11-01). A checkpoint
@@ -81,4 +81,31 @@ Rollback: none needed — a read into a scratch directory that is removed.
 
 ## Run
 
+Prerequisites, 23:59: `pass` unlocked; rclone v1.60.1-DEV; all four files
+re-hashed, each matching the table above at 46,223,608 bytes.
+
+1. **Upload**, 23:59:20 – 23:59:35. Each `copyto`'s first attempt failed
+   with `NotImplemented` (501), as every one did in 0011 and 0014, and
+   rclone's own retry succeeded (`Attempt 2/3 succeeded`, exit 0, on all
+   four). `lsf -R --files-only --format sp`:
+
+       46223608;loras/anatomy-2026-10-29/anatomy-2026-10-29_000001000.safetensors
+       46223608;loras/anatomy-2026-10-29/anatomy-2026-10-29_000001250.safetensors
+       46223608;loras/anatomy-2026-10-29/anatomy-2026-10-29_000001500.safetensors
+       46223608;loras/anatomy-2026-10-29/anatomy-2026-10-29_000001750.safetensors
+       46223608;loras/anatomy-2026-10-29/anatomy-2026-10-29_000002000.safetensors
+       46223608;loras/anatomy-2026-11-01b/anatomy-2026-11-01b_000001500.safetensors
+       46223608;loras/anatomy-2026-11-01b/anatomy-2026-11-01b_000002000.safetensors
+       46223608;loras/anatomy-2026-11-01b/anatomy-2026-11-01b_000002500.safetensors
+       46223608;loras/anatomy-2026-11-01b/anatomy-2026-11-01b_000003000.safetensors
+
+   Run 1's five and the four new keys, nothing else.
+2. **Read back**, 23:59:46 – 23:59:53: `models.py fetch` signed each GET
+   and checked each hash on the stream — `ok` on all four, exit 0. Scratch
+   store and manifest removed.
+
 ## Follow-ups
+- The 501 on first attempts stays open from 0011: nine uploads out of
+  nine now.
+- The four checkpoints' `models-candidates.manifest` lines, with the home
+  test (batch 21a) that paints them.
