@@ -164,9 +164,20 @@ forwards one path, `^/api/webhooks/everyorg/[A-Za-z0-9]+$`, and answers 404 to t
 session:
 
 ```sh
-npm run dev -- -p 3027      # its own port: another worktree's server on :3000 would 404 the delivery
+npm run dev -- -p 3027 -H 127.0.0.1   # its own port: another worktree's server on :3000 would 404 the delivery;
+                                      # loopback: under mirrored networking every interface could let the LAN around the one-path rule
 npm run hooks -- up         # the connector, a pinned container; then status, down
 ```
+
+Every.org ignores `http://localhost` as `success_url`, and the donor lands on another
+charity's page (measured 2026-11-02; https on our domain worked, and which of the two it
+needs is unproven). So leave `SITE_ORIGIN` unset in dev: a staging gift returns to
+production's `/thanks`, and the local page is opened by hand at
+http://localhost:3027/thanks, where the cookie is.
+
+Staging proves only the card. Its bank option goes to Plaid with no sandbox visible, and its
+PayPal asks for a PayPal sandbox account, so bank and PayPal are tested with real gifts on
+production. Neither staging gift sent a receipt (ADR-0027 as amended 2026-11-02).
 
 Leave it down between sessions. A delivery is lost if nothing is there to take
 it, since Every.org's docs state no retry. With no connector the host answers 530;
@@ -179,13 +190,16 @@ Mode is off for the whole zone because it challenged this POST (oplog 0018), and
 turning it back on stops every delivery, here and in production.
 
 The production webhook is a separate setup with its own three entries
-(`everyorg/webhook-token`, `auth-token`, `webhook-secret`), made before launch.
+(`everyorg/webhook-token`, `auth-token`, `webhook-secret`), made before launch, on the main
+domain: `https://monsterpaws.org/api/webhooks/everyorg/$(pass show everyorg/webhook-secret)`,
+through the same edge, Caddy and app as the site (ADR-0027 as amended 2026-11-02).
 
 | Entry | What it is | What it's for | Lands in |
 | --- | --- | --- | --- |
 | `everyorg/staging-webhook-token` | The staging webhook's token, shown at creation | The donate link's `webhook_token` parameter, which makes Every.org POST that donation to our webhook. Rides in a URL every donor sees — an identifier, not a secret | local `.env` `EVERYORG_WEBHOOK_TOKEN` via `npm run env:dev` |
 | `everyorg/staging-auth-token` | The staging webhook's auth token, shown at creation | Undocumented (docs.every.org, Partner Webhook, read 2026-10-22): asked of partners@every.org whether it rides on each webhook POST | local `.env` `EVERYORG_AUTH_TOKEN` via `npm run env:dev` |
 | `everyorg/staging-webhook-secret` | 32 random characters (`pass generate -n`) | The last path segment of the webhook URL above — our own secret beside Every.org's token (ADR-0027 §4) | local `.env` `EVERYORG_WEBHOOK_SECRET` via `npm run env:dev` |
+| `everyorg/test-page-secret` | 32 random characters (`pass generate -n`), made by oplog 0019 | The last path segment of Logan's hidden `/test-gift` page, set as `EVERYORG_TEST_PAGE_SECRET`; unset, the page answers 404. Goes when its gifts are done (ADR-0027 as amended 2026-11-02) |
 | `everyorg/api-key` | Every.org **production** public API key, created by Logan 2026-10-27 at every.org/developer | Nonprofit lookups by EIN for the shelter-to-nonprofit match (ADR-0029 §2, ADR-0027's `shelter_nonprofits`) | local `.env` via `npm run env:dev`; read by `npm run outreach -- match` |
 | `everyorg/api-secret` | The secret issued with that key | Not needed for public lookups; kept for any authenticated partner call | dev only |
 
@@ -1188,7 +1202,7 @@ an oplog entry when it happens.
   │  cloudflared (scripts/staging-hooks.sh, a pinned    │
   │  container, --network host, up only for a session)  │
   │   ├ ^/api/webhooks/everyorg/[A-Za-z0-9]+$           │
-  │   │     └─► 127.0.0.1:3027, npm run dev -p 3027,    │
+  │   │     └─► 127.0.0.1:3027, dev server, loopback    │
   │   │         dev Postgres                            │
   │   └ everything else ──────────► 404                 │
   └─────────────────────────────────────────────────────┘

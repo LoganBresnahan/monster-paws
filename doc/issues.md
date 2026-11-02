@@ -67,6 +67,25 @@ is the record, and a file of ticked boxes stops being read.
 
 ## Ops
 
+- **A delivery stored but not decided has no way back in.** `receiveWebhook` keeps the row and
+  reports `decision_failed` with its id, and the row holds every field a decision needs, but
+  nothing re-runs one. Every.org didn't retry the one failed delivery we saw (oplog 0018), so
+  today a transient database failure leaves a real gift unrecorded until someone writes the rows
+  by hand. Comes with the by-hand deletion tool, before any real gift.
+
+- **Only the newest of two paid gifts can have its address fixed.** `/thanks` shows one gift, so
+  a donor with two in one browser can't reach the older one's address from there. They write to
+  hello@. Found by the 2026-11-02 review.
+
+- **Nothing limits how fast intents can be minted.** `startSponsorship` writes a row with an
+  address per POST, and rows last 30 days. Found by the 2026-11-02 review; Cloudflare's rules were
+  not read for it. Matters once a real Sponsor button is open.
+
+- **Whether Every.org keeps our link's parameters in its URL is unread.** The link carries the
+  intent id and the email. If its page sends the full URL as a `Referer` to `/thanks`, they arrive
+  in our request. The scrub and `dataCollection` keep them out of reports, and the production gift
+  is the time to look, since staging's checkout blocks a script.
+
 - **The sponsor form is the first Server Action behind Cloudflare, and the managed
   ruleset is blocking React exploit POSTs on this zone.** 277 blocks in the 24 hours
   to 2026-11-02 17:02 under CVE-2025-55182's rules, on `/`, `/login`, `/signin` and

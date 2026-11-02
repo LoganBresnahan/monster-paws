@@ -110,3 +110,60 @@ found otherwise on the live site, 2026-10-26:
 - Every.org lets unclaimed nonprofits take card or bank donations again.
 - The first measured donation shows a minimum or fee different from the
   figures above.
+
+## Amendment (2026-11-02): the minimum is $2, measured on staging
+
+Logan's test gift through our donate link, on staging.every.org: Every.org's
+checkout refuses less than $2, whatever our link asks for. So the sponsor page
+starts at $2 and sends `min_value=2`, and its "Any amount from" line follows
+(ADR-0027 as amended 2026-10-26 said the amount follows the measured minimum).
+This replaces the $1 the 2026-10-26 amendment hoped for, and the $10 one nonprofit
+reported. It also settles what a $1 card gift would have cost: there is no $1 gift.
+
+Measured on staging only. The production test gift confirms it, or the constant
+(`MIN_AMOUNT`, `src/core/donate/link.ts`) moves to whatever production enforces.
+
+The same gift's webhook reported `amount` 2 and `netAmount` 1.66 for a card, which fits
+the 2.2% + $0.30 a third party reported above (2026-10-26) and which is 17% of a gift at
+the minimum. A $5 card gift with a $0.75 tip to Every.org reported `amount` 5 and `netAmount`
+4.62, where that rate alone would give 4.59, so treat it as approximate once a tip is in the
+charge. The tip never appears in the webhook. All staging only.
+
+## Amendment (2026-11-02, later): no permission to paint, no Sponsor button
+
+### Context
+The 2026-10-26 amendment asks only for a claimed profile, and DIRECTION and roadmap item 4
+gave a shelter with no consent a card with its framed photo. ADR-0022 as amended has since
+made the keepsake the painting, never the photo. Logan, 2026-11-02: "if the shelter does not
+give permission we don't donate", and "no permission no button otherwise we will confuse
+people", "thats how we will start to keep it easy on us".
+
+### Decision
+1. **A Sponsor button needs the claimed profile and an active `digify` grant** (ADR-0006 as
+   amended). `sponsorNonprofit` is the one test, on the animal page, the sponsor page and the
+   action. Default-deny: no entry, a revoked grant or an unlinked entry all show no button.
+2. **A grant reaches a listing only through `ShelterEntry.shelterExternalIds`,** a key a
+   person checked, never a name match, which could hand one shelter's consent to another.
+3. **Staging skips the grant,** because it moves no real money, and we can't commit a made-up
+   consent record to test with. It never skips the claim. On production the one exception is
+   Logan's hidden test page, which offers no animal and no painting and goes once its gifts are
+   done (ADR-0027 as amended 2026-11-02).
+4. **The fee is named as coming out of the gift, never on top of it.** Logan, 2026-11-02: "as
+   long as its understood that is not an amount ontop of what they say they are donating."
+   The sponsor page says: "With a card, the processor's fee comes out of your gift, not on
+   top of it: about 30¢ plus 2%, so about 40¢ of a $5 gift." Staging figures, to be confirmed
+   by the production test gift. Every.org's own tip is separate, and appears at its checkout.
+
+### Consequences
+- A claimed shelter that hasn't said yes to painting is browse-only, like an unclaimed one, and
+  Logan's shelter needs both before it can take a gift.
+- There is no card without art for a shelter with no consent, so that branch of DIRECTION and
+  roadmap item 4 is gone.
+- The go-live commit removes `/animals/[id]`'s "When sponsoring opens" sentence along with the
+  footer's "Donations coming soon!", with no replacement (Logan, 2026-11-02): after go-live it
+  would imply that a shelter with no permission is about to open.
+- For a shelter with a claimed profile, the yes to painting is what opens the button.
+
+### Revisit triggers
+- Shelters claim their profile but don't answer the painting question, and donors ask to give
+  anyway. Reopening this means deciding what such a donor gets.

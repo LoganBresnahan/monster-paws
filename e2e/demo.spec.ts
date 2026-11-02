@@ -42,25 +42,25 @@ test("the demo walks a crew pet from browse to adoption day", async ({ page }) =
   await page.getByRole("link", { name: "Sponsor Beetle" }).click();
   await page.waitForURL(/\/demo\/beetle\/sponsor/);
   const other = page.getByLabel("Another amount, in dollars");
-  await other.fill("0");
-  await expect(page.getByRole("link", { name: /Continue to checkout/ })).toHaveCount(0);
   await other.fill("1");
-  await page.getByRole("link", { name: "Continue to checkout · $1" }).click();
+  await expect(page.getByRole("link", { name: /Continue to checkout/ })).toHaveCount(0);
+  await other.fill("2");
+  await page.getByRole("link", { name: "Continue to checkout · $2" }).click();
 
-  await page.waitForURL(/\/demo\/beetle\/checkout\?amount=1/);
+  await page.waitForURL(/\/demo\/beetle\/checkout\?amount=2/);
   await expect(page.getByText("Checkout placeholder")).toBeVisible();
   await page.getByRole("link", { name: "Complete the demo donation" }).click();
 
-  await page.waitForURL(/\/demo\/beetle\/thanks\?amount=1/);
-  await expect(page.getByText("Your $1 is on its way to Beetle's shelter.")).toBeVisible();
+  await page.waitForURL(/\/demo\/beetle\/thanks\?amount=2/);
+  await expect(page.getByText("Your $2 is on its way to Beetle's shelter.")).toBeVisible();
   await expect(page.getByRole("img", { name: "A photo of Beetle" })).toBeVisible();
   await page.getByRole("link", { name: "See Beetle in your collection" }).click();
 
-  await page.waitForURL(/\/demo\/collection\/beetle\?amount=1/);
+  await page.waitForURL(/\/demo\/collection\/beetle\?amount=2/);
   // The keepsake is being painted when the card first shows, never there at once.
   await expect(page.getByText("Painting Beetle's keepsake")).toBeVisible();
   await expect(page.getByRole("button", { name: "See Beetle's keepsake larger" })).toBeVisible({ timeout: 10_000 });
-  await expect(page.getByText("$1 to her shelter")).toBeVisible();
+  await expect(page.getByText("$2 to her shelter")).toBeVisible();
 
   await expect(page.getByText("✓ Confirmed by the shelter")).toHaveCount(1);
   await page.getByRole("button", { name: "Next update" }).click();

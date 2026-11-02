@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { PAINTING, pronoun, type CrewPet } from "@/ui/crew";
+import { AmountFields } from "@/ui/amount-picker";
 import { Lightbox } from "@/ui/lightbox";
 
 /**
@@ -12,57 +13,17 @@ import { Lightbox } from "@/ui/lightbox";
  * amended): nothing here is stored, and the pet and amount live in the URL.
  */
 
-const AMOUNTS = [5, 10, 25];
 const PAINTING_MS = 3000;
 
 const button =
   "inline-block rounded-cuddly bg-leaf px-6 py-3 font-bold text-white shadow-md transition-colors hover:bg-leaf-deep";
 
-/** The amount on the sponsor page: three suggestions or any whole dollar from $1 (ADR-0027 as amended 2026-10-26). */
+/** The amount on the demo's sponsor page, leading to the demo's checkout. */
 export function AmountPicker({ pet, initial }: { pet: CrewPet; initial: number }) {
-  const [amount, setAmount] = useState<number>(AMOUNTS.includes(initial) ? initial : 0);
-  const [custom, setCustom] = useState(AMOUNTS.includes(initial) ? "" : String(initial));
-  const chosen = custom ? Number(custom) : amount;
-  const valid = Number.isInteger(chosen) && chosen >= 1;
-
   return (
-    <div>
-      <fieldset>
-        <legend className="font-bold">Choose an amount</legend>
-        <div className="mt-3 flex flex-wrap gap-3">
-          {AMOUNTS.map((a) => (
-            <button
-              key={a}
-              type="button"
-              aria-pressed={!custom && amount === a}
-              onClick={() => {
-                setAmount(a);
-                setCustom("");
-              }}
-              className={`rounded-cuddly border-2 px-5 py-2 font-bold transition-colors ${
-                !custom && amount === a ? "border-leaf bg-leaf text-white" : "border-paw/30 bg-background hover:border-paw"
-              }`}
-            >
-              ${a}
-            </button>
-          ))}
-          <label className="flex items-center gap-1 rounded-cuddly border-2 border-paw/30 bg-background px-3 focus-within:border-leaf">
-            <span className="font-bold text-muted">$</span>
-            <input
-              inputMode="numeric"
-              value={custom}
-              onChange={(e) => setCustom(e.target.value.replace(/[^0-9]/g, "").slice(0, 5))}
-              placeholder="Other"
-              aria-label="Another amount, in dollars"
-              className="w-20 bg-transparent py-2 font-bold outline-none placeholder:font-normal"
-            />
-          </label>
-        </div>
-        <p className="mt-2 text-sm text-muted">Any amount from $1.</p>
-      </fieldset>
-
-      <div className="mt-8">
-        {valid ? (
+    <AmountFields initial={initial}>
+      {(chosen, valid) =>
+        valid ? (
           <Link href={`/demo/${pet.slug}/checkout?amount=${chosen}`} className={button}>
             Continue to checkout · ${chosen}
           </Link>
@@ -70,9 +31,9 @@ export function AmountPicker({ pet, initial }: { pet: CrewPet; initial: number }
           <span aria-disabled className={`${button} cursor-not-allowed opacity-50`}>
             Continue to checkout
           </span>
-        )}
-      </div>
-    </div>
+        )
+      }
+    </AmountFields>
   );
 }
 

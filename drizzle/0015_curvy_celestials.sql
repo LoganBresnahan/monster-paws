@@ -1,0 +1,1 @@
+ALTER TABLE "donation_intents" ADD COLUMN "donor_email" text;

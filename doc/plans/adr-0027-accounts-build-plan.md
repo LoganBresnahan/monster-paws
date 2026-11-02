@@ -55,7 +55,12 @@ Check items off as they ship.
      suppression is an HMAC of the lowercased address under a key in `pass`,
      never the address; the check runs before every send, beside Resend's
      own list. The webhook signing secret goes in `pass` and infra.md
-     here, and the SDK, if used, gets its own ADR line.
+     here, and the SDK, if used, gets its own ADR line. Carry-in (ADR-0027 as
+     amended 2026-11-02): the same webhook erases a no-account donor's address on
+     `email.delivered`, never `email.sent`, and dedupes on `svix-id`, which retries
+     keep; it computes a complaint's suppression from the event's own recipient, since
+     `email.complained` can arrive after the erase. The sponsor page refuses a
+     suppressed address with the amendment's wording.
 
 3. **the sign-in link, the intent, the export** (parallel; disjoint files)
    - [ ] `email-link-sign-in` — medium, moderate ⚠ verify. Consume the
@@ -84,7 +89,8 @@ Check items off as they ship.
      leaves email recovery in place; the RP ID holds across :3000, :3100 and
      production.
    - [ ] `everyorg-webhook-endpoint` — high, moderate ⚠ verify. Store the
-     body verbatim before parsing anything; match on `partnerDonationId`
+     body's named fields before believing anything (`storableBody`, never the
+     body: ADR-0027 as amended 2026-11-02); match on `partnerDonationId`
      alone, against an open intent, with an exact slug and EIN check; a
      unique `chargeId` makes it idempotent; closing the intent, inserting the
      donation and enqueuing the art happen in one transaction; the path
@@ -100,13 +106,25 @@ Check items off as they ship.
      count reads only `donation_stats`. "Sponsors" counts gifts, not
      distinct donors (the row has no donor in it), and the comment says so
      with `(ADR-0027)`.
-   - [ ] `thank-you-and-claim` — medium, moderate ⚠ verify. The intent
-     cookie holds the keepsake for this browser; keeping it means an email
-     and then a passkey; the claim email goes to the webhook's address only
-     when the donor shared one; the no-email warning is shown before the
-     donor leaves. Verify: a claim binds to the right account, a claim link
-     can't be replayed after a passkey claim, the webhook email is only a
-     hint. The Playwright donor-flow e2e lands here.
+   - [ ] `thank-you-and-claim` — medium, moderate ⚠ verify. **Changed by ADR-0027 as
+     amended 2026-11-02:** the email is asked on the sponsor page, the art goes by
+     email with a link to make an account, and a no-account donor's address is erased
+     once the painting is sent, so the claim email to the webhook's address and the
+     no-email warning are gone. Waits on `resend-transactional-email`, which comes
+     before the art email. Verify: a claim binds to the right account, an account
+     link signs nobody in and can't be replayed, erasure leaves suppressions alone
+     and removes the address from Resend's list. The Playwright donor-flow e2e lands
+     here. Built ahead of it: `/thanks` with the address and its fix, `/privacy`, the
+     30-day erasure of an unfinished gift's address. Carry-in before any real gift: a
+     by-hand deletion tool, `/test-gift` and its rows gone (oplog 0021, and before
+     `snapshotKeepsake` or `art.generate` ship, or a worker could pick up a gift with no
+     animal), and the go-live commit removing the footer's "Donations
+     coming soon!" and `/animals/[id]`'s "When sponsoring opens" sentence, each with no
+     replacement (Logan, 2026-11-02). Carry-in for the art path: a gift already recorded
+     is painted after a withdrawal, reading the grant as of the gift's date and a photo
+     held from the gift (ADR-0022 as amended 2026-11-02). Carry-in for the art email: a
+     bounced gift's thank-you page says so and takes a new address, which
+     `correctDonorEmail` refuses today because the old one is erased.
 
 6. **deletion, and closing the docs**
    - [ ] `account-deletion` — high, moderate ⚠ verify. Carry-in: suppressions
@@ -142,9 +160,9 @@ Check items off as they ship.
 3. **The webhook setup is Logan's errand.** If it slips, the intent slice
    builds against a placeholder and the webhook units run on fixtures; only
    the end-to-end staging check waits.
-4. **The production roll.** Nothing lets a real donor give or make an
-   account until export, deletion and the privacy page naming Resend have
-   shipped. Passkeys can be dogfooded in production (the cross-device QR
+4. **The production roll.** Nothing lets a real donor give until `/privacy` and
+   deletion by hand have shipped (ADR-0027 as amended 2026-11-02), or make an
+   account until export and account deletion have. Passkeys can be dogfooded in production (the cross-device QR
    needs a real domain) with donating hidden, or the roll waits for phase 6.
    That is still item 3b's call: no production database until the loop works.
 5. **Resend's free-tier daily cap** is checked against expected sign-in and

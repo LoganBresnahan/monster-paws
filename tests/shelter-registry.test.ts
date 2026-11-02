@@ -5,6 +5,7 @@ import {
   exclusionProblems,
   hasGrant,
   registryProblems,
+  shelterByExternalId,
   shelterBySlug,
   sheltersWithGrant,
   sourceOf,
@@ -37,6 +38,24 @@ describe("shelter registry (ADR-0006 as amended)", () => {
   it("holds no grants yet — outreach is roadmap item 5", () => {
     expect(SHELTERS).toHaveLength(0);
     expect(registryProblems()).toEqual([]);
+  });
+
+  it("reaches a listing only through a key a person linked, never by name (ADR-0002 as amended 2026-11-02)", () => {
+    const linked = shelter({ shelterExternalIds: ["rescuegroups:org:3077"] });
+    expect(shelterByExternalId("rescuegroups:org:3077", [linked])).toBe(linked);
+    expect(shelterByExternalId("rescuegroups:org:9", [linked])).toBeUndefined();
+    expect(shelterByExternalId("rescuegroups:org:3077", [shelter()])).toBeUndefined();
+    expect(shelterByExternalId("Happy Tails Rescue", [linked])).toBeUndefined();
+  });
+
+  it("refuses a malformed listing key, and one key on two shelters", () => {
+    expect(registryProblems([shelter({ shelterExternalIds: ["3077"] })])).toEqual([
+      "happy-tails-rescue: '3077' is not a '<source>:org:<id>' shelter key",
+    ]);
+    const key = ["rescuegroups:org:3077"];
+    expect(registryProblems([shelter({ shelterExternalIds: key }), shelter({ slug: "other", shelterExternalIds: key })])).toEqual([
+      "other: 'rescuegroups:org:3077' belongs to two shelters",
+    ]);
   });
 
   it("derives the scrape source identity from the slug", () => {

@@ -171,3 +171,43 @@ photo is the thing we paint from.
 - Logan reads the amended sentence in Mailpit before the first wave; there is
   no lawyer's read (ADR-0029 as amended 2026-10-27, later).
 
+## Amendment (2026-11-02): a gift already made still gets its painting
+
+### Context
+The 2026-10-27 amendment says that on a withdrawal we stop painting. A painting arrives well
+after its gift (ADR-0004 as amended 2026-10-05), so a shelter can withdraw after a donor has
+paid and before their painting exists. Logan, 2026-11-02: "we need to still send the painting
+even if the shelter asks us to take it down. we can take down the listing but we still need
+to make the painting."
+
+### Decision
+- **A withdrawal or a takedown closes the Sponsor button at once,** so no new gift can start
+  (ADR-0002 as amended 2026-11-02, ADR-0029 §5).
+- **A gift recorded before it still gets its painting.** The painter reads the grant as of the
+  gift's date, never today's: `hasGrant` takes `asOf` for this. Consent was on record when the
+  gift was made.
+- **The photos we hold for painting are deleted when the last painting owed is done,** not on
+  the day of the withdrawal.
+- **Nothing is taken down, because there are no public paintings** (Logan, 2026-11-02). This
+  replaces that clause of the 2026-10-27 amendment. What a donor has stays with that donor.
+- **A rights objection doesn't stop the painting either.** Logan, 2026-11-02: "still make the
+  painting", and "if there is only one photo which is most common we have to use it."
+
+### Consequences
+- The art path must hold the photo it will paint from the moment of the gift, because a
+  takedown can remove the listing it came from. No such path exists yet.
+- **The ask contradicts this.** `renderAsk` says "we stop painting", and that sentence went to
+  46 shelters (30 on 2026-10-28 and 29, 16 on 2026-10-30, roadmap). No grant is recorded, so
+  no shelter's end terms rest on it yet (§5), though that says only what is recorded, not that
+  nobody has answered. The ask's words change before the next send, follow-ups included. A
+  shelter answering an email already sent isn't told separately (Logan, 2026-11-02: "no its
+  fine. privacy page should be the 'official'"), so `/privacy` states the term. A grant recorded
+  from such a reply still has that email as its evidence (§5), and its record has to say which
+  term we hold it to. The term becomes: "if you withdraw permission, we stop offering gifts for your animals. A gift
+  already made still gets its painting, and we delete the photos once those are done. Keepsakes
+  already given to donors — the animal's name, breed, age and painting — stay with those
+  donors." The ask's earlier line becomes "You can withdraw at any time." (Logan, 2026-11-02).
+- **`onEnd` has no term for this.** ADR-0006 as amended 2026-09-28 has every grant's end carry
+  recorded `onEnd` terms, and the ask requests `keepsakes: "retain"`. A painting still owed after
+  the end is a new end term `onEnd` doesn't describe, so the contract gains one before the first grant
+  is recorded, or a revocation record can't express what we promised.

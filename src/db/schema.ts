@@ -363,6 +363,12 @@ export const donationIntents = pgTable(
     animalExternalId: text("animal_external_id").notNull(),
     nonprofitSlug: text("nonprofit_slug").notNull(),
     nonprofitEin: text("nonprofit_ein").notNull(),
+    /**
+     * Where the art is sent, asked on our page because Every.org shares it only
+     * if the donor chooses (ADR-0027 as amended 2026-11-02). Null once erased, so
+     * never treat it as the matching key or as proof of who gave.
+     */
+    donorEmail: text("donor_email"),
     accountId: integer("account_id").references(() => accounts.id),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     closedAt: timestamp("closed_at", { withTimezone: true }),
@@ -393,14 +399,18 @@ export const signInLinks = pgTable(
 
 /**
  * Every Every.org webhook call, stored before anything is believed (ADR-0027
- * §4). Append-only like `raw_payloads`, but donor-owned: account deletion
- * removes the rows that name the donor, which `raw_payloads` never allows.
+ * §4). Append-only like `raw_payloads`, but donor-owned: a donor's deletion
+ * removes the rows under their intents, which `raw_payloads` never allows.
  */
 export const everyorgWebhookPayloads = pgTable(
   "everyorg_webhook_payloads",
   {
     id: bigserial("id", { mode: "number" }).primaryKey(),
-    /** the request body as text, never jsonb: an unparsable or forged body is kept too (ADR-0027 §4) */
+    /**
+     * Named fields of the request body, never the body: no name, email or street
+     * address ever lands here, and an unreadable body keeps only its hash and size
+     * (`storableBody`, ADR-0027 as amended 2026-11-02).
+     */
     body: text("body").notNull(),
     /** request headers, with any carrying our auth token redacted before insert — a secret never lands in a row */
     headers: jsonb("headers").$type<Record<string, string>>().notNull(),

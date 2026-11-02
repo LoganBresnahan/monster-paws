@@ -5,9 +5,11 @@
 #
 #   scripts/staging-hooks.sh up | down | status
 #
-# The dev server it reaches is `npm run dev -- -p 3027`, its own port because
-# another worktree's server on :3000 would answer 404 and the delivery would
-# be lost: Every.org's docs state no retry.
+# The dev server it reaches is `npm run dev -- -p 3027 -H 127.0.0.1`. Its own
+# port, because another worktree's server on :3000 would answer 404 and the
+# delivery would be lost: Every.org's docs state no retry. Loopback only, because
+# under mirrored networking `next dev`'s default of every interface could let the
+# LAN reach the whole server around the tunnel's one-path rule.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
@@ -43,10 +45,12 @@ case "${1:-}" in
   status)
     docker ps --filter "name=^${NAME}$" --format '{{.Names}}: {{.Status}}' | grep . || echo "tunnel down"
     docker logs --tail 40 "$NAME" 2>&1 | grep -E 'Registered tunnel connection| ERR ' | scrub || true
-    if ss -ltn | grep -q ":$PORT "; then
-      echo "dev server on :$PORT"
+    if ss -ltn | grep -q "127.0.0.1:$PORT "; then
+      echo "dev server on 127.0.0.1:$PORT"
+    elif ss -ltn | grep -q ":$PORT "; then
+      echo "dev server on :$PORT is on every interface: restart it with -H 127.0.0.1"
     else
-      echo "no dev server on :$PORT (npm run dev -- -p $PORT): deliveries answer 502 and are lost"
+      echo "no dev server on :$PORT (npm run dev -- -p $PORT -H 127.0.0.1): deliveries answer 502 and are lost"
     fi
     ;;
   *)

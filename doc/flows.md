@@ -329,7 +329,9 @@ displaying verbatim are different permissions.
   revoke "display" → pages fall back to facts + our words; purgeDisplay
                      (src/core/purge.ts) deletes that source's animal_display
                      rows once the revocation is committed; corpus untouched
-  revoke "digify"  → no new art; existing cards keep their credit line
+  revoke "digify"  → no new gifts, so no new art; a gift already recorded still gets its
+                     painting (ADR-0022 as amended 2026-11-02); existing cards keep
+                     their credit line
 ```
 
 Revocation terms — the part of this flow not yet built:
@@ -559,42 +561,72 @@ happened to an animal. The ledger was right; it was only ever wrong as a feed.
 
 ## Donate → webhook → keepsake — tied back by our own id (ADR-0027)
 
-Planned: roadmap item 4, `doc/plans/adr-0027-accounts-build-plan.md`. The
-tables are built (`drizzle/0011`); every stage is not. No wall stands before
-the gift: the account comes after it, if at all.
+Roadmap item 4, `doc/plans/adr-0027-accounts-build-plan.md`. Built to `/thanks` on
+staging, unproven against a real delivery; the rest is marked. No account stands
+before the gift, only the email (ADR-0027 as amended 2026-11-02): the account comes
+after it, if at all.
 
 ```
-  animal page, donate click         (planned, phase 3)
-       │  mints donation_intents row: 128-bit id, (source, external_id),
-       │  nonprofit slug + EIN from shelter_nonprofits — no row, no button
+  /animals/[id]/sponsor, startSponsorship()   POST, never a link; re-reads the
+       │  claim, the grant and the listing live; the email is required (as amended 2026-11-02)
+       │  sponsorNonprofit(): a claimed shelter_nonprofits row and an active digify
+       │  grant in SHELTERS, or no button (ADR-0002 as amended 2026-11-02; staging
+       │  skips the grant, never the claim)
+       │  mints donation_intents row: 128-bit id, (source, external_id), donor_email,
+       │  nonprofit slug + EIN
        │  intent id → httpOnly cookie on this browser
        ▼
-  every.org donate link             partner_donation_id = intent id,
+  /test-gift/<secret>, startTestGift()   Logan's real-money tests, one named nonprofit, no
+       │                            animal, no painting; goes once they're done
+       ▼
+  every.org donate link             partner_donation_id = intent id, email prefilled,
+       │                            method=card,bank,paypal,
        │                            webhook_token (EVERYORG_WEBHOOK_TOKEN)
        │  ── Every.org boundary: the money and the receipt are theirs ──
        ▼
-  POST /api/webhooks/everyorg/<secret>   (planned, phase 4) unsigned
+  POST /api/webhooks/everyorg/<secret>   unsigned; a wrong secret stores nothing
        │  staging: staging-hooks.monsterpaws.org → tunnel → :3027 in
        │  monsterpaws-dev, this path only (scripts/staging-hooks.yml)
        ▼
-  everyorg_webhook_payloads         body as text + headers, stored before
-       │                            anything is believed (append-only)
+  receiveWebhook()
+  everyorg_webhook_payloads         storableBody(): named fields + headers, stored
+       │                            before anything is believed (append-only); no
+       │                            name, email or street address ever lands here
        │  match partnerDonationId → open intent, slug + EIN exact;
        │  anything else kept and logged, never acted on
        ▼
-  one transaction                   (planned, phases 4–5)
+  one transaction
        │  donations row (charge_id unique: a replay inserts nothing)
        │  donation_stats row, only when the insert happened — no donor in it
        │  donation_intents.closed_at
-       │  snapshotKeepsake() → keepsake + keepsake_fact   (§ Keepsake snapshot)
-       │  boss.send('art.generate')   when the shelter granted digify
+       │  snapshotKeepsake() → keepsake + keepsake_fact   (planned; § Keepsake snapshot)
+       │  boss.send('art.generate')   (planned: when the LoRA ships; nothing queued
+       │                              until then)
        ▼
-  thank-you page                    (planned, phase 5) the cookie holds the
-       │                            keepsake for this browser; keep it in an
-       │                            account: email → sign_in_links → passkey
+  /thanks                           says money moved only when the donation row
+       │                            exists under this browser's cookie; shows
+       │                            donor_email, and fixDonorEmail() corrects the gift
+       │                            it showed, if it is in the cookie, in place of a
+       │                            second email
        ▼
-  claim                             donation_intents.account_id set; from
-                                    here the account owns it all
+  art email                         (planned) to donor_email: all four paintings,
+       │                            one-click unsubscribe, a link to make an account
+       │                            that signs nobody in; the gift's only email
+       ▼
+  donor_email erased                (planned) no account: on Resend's email.delivered
+       │                            or email.bounced, never email.sent: null on the
+       │                            intent, and the address off Resend's list; a
+       │                            suppression stays
+       ▼
+  claim                             (planned) email → sign_in_links → passkey;
+                                    donation_intents.account_id set; from here the
+                                    account owns it all
+
+  gift nobody finished → eraseAbandonedAddresses(), worker job donate.erase-abandoned,
+                     daily: donor_email null after 30 days; the row stays for a late webhook
+
+  deletion asked by email, no account → (planned) by hand: the intent, its donations,
+                     its payloads; donation_stats and email_suppressions stay
 
   account deleted  → export offered first; then keepsake art in R2, facts,
                      keepsake, donations, payloads naming the donor, intents,

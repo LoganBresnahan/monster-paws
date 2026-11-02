@@ -26,6 +26,9 @@ export function SiteFooter() {
               </a>
             ))}
           </span>
+          <Link href="/privacy" className="underline hover:text-foreground">
+            Privacy
+          </Link>
           <a
             href={SOURCE_URL}
             target="_blank"

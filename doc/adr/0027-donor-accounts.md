@@ -246,9 +246,11 @@ production's do.
    closed at both ends because a bare prefix also forwards
    `/api/webhooks/everyorg/../../../design`, which collapses to `/design` behind
    it. Our path secret stays alphanumeric to match (`pass generate -n`).
-3. **The dev server behind it has its own port, 3027,** because another
-   worktree's server on :3000 would answer 404 to a delivery, and Every.org's
-   docs state no retry.
+3. **The dev server behind it has its own port, 3027, on loopback only.** Its own
+   port because another worktree's server on :3000 would answer 404 to a delivery,
+   and Every.org's docs state no retry. Loopback because `next dev` listens on
+   every interface by default, and under this machine's mirrored networking that
+   could let the LAN reach the whole server around decision 2.
 4. **It runs only for a staging session,** by `npm run hooks -- up`, and comes
    down after. Nothing restarts it.
 
@@ -312,3 +314,150 @@ ruleset stays on, and AI crawlers stay allowed.
 ### Revisit triggers
 - Probing that loads the droplet, or heavier than that one day's 57 challenges.
 - Moving to a paid plan for any other reason: then skip the hook's path and turn it back on.
+
+## Amendment (2026-11-02, later): the email is asked on our page, and the art goes by email
+
+### Context
+Decision 5 stood no wall before the gift and sent a claim link to the webhook's
+email only if the donor shared it; a donor who shared none and left kept nothing.
+That was written when the keepsake waited in a browser. Art arrives late (ADR-0004
+as amended 2026-10-05), and the first donors' art has no date at all: nothing until
+the anatomy LoRA ships (Logan, 2026-11-02). Every.org's docs also say a partner
+webhook can be configured to carry no donor info, so its address can't be what a
+painting depends on.
+
+### Decision
+1. **The email is required on our sponsor page, before the hand-off to Every.org.**
+   Logan, 2026-11-02: "we need to send the art via email so they have to give it to
+   us. we don't want to rely on every.org giving us their email." This amends §5's
+   "no wall": there is still no account, password or sign-up before the gift, but
+   there is one field. The intent holds the address (`donation_intents.donor_email`);
+   it is still never the key a webhook matches on (§3).
+2. **The art goes to the donor by email.** The cookie no longer has to hold the
+   keepsake. It stays only so the thank-you page can name this browser's gift.
+3. **The art email links to making an account.** Coming back to view the art, frames
+   and the animal's story are account features.
+4. **A donor with no account has their address erased from our rows once the
+   painting is delivered,** under the email rules above (Logan: "make sure we adhere
+   to those when we 'delete'"; "we only delete the email after we get the 'okay' from
+   resend"):
+   - The okay is Resend's `email.delivered`, "successfully delivered the email to the
+     recipient's mail server", never `email.sent`, which fires when the API call
+     succeeds, before any delivery is tried
+     ([event types](https://resend.com/docs/dashboard/webhooks/event-types), read
+     2026-11-02). A lost event keeps the address, the safe direction. It proves the
+     mail server took it, not that it reached the inbox.
+   - `email.delivery_delayed` and `email.failed` keep the address and wait or retry.
+   - `email.bounced` writes the suppression and erases the address, which we can no
+     longer use (Logan, 2026-11-02: "i think so"). The thank-you page then says the
+     painting couldn't be delivered and takes a new address. A donor without that browser
+     writes to hello@ with their Every.org receipt, and it is resent by hand. Both land
+     with the art email.
+   - A gift nobody finished has its address erased after 30 days (Logan, 2026-11-02),
+     by the daily `donate.erase-abandoned` job. The intent row stays, because a late
+     bank webhook still has to find it. Until a webhook records the gift, nothing is
+     sent to that address. Closing a tab erases nothing: a donor can pay and close it,
+     and browsers don't reliably say a tab closed.
+   - Erasing never touches a suppression, which holds no address and outlives
+     deletion (as amended 2026-10-22). One is written only on a bounce or complaint,
+     never for every donor.
+   - Erasing also removes the plain address from Resend's list by API, as account
+     deletion does.
+5. **The art email keeps the sending rules.** Sign-in links share an email with
+   nothing else, so its account link signs nobody in: it opens a page where the donor
+   enters an address and gets a separate sign-in mail. It carries a one-click
+   unsubscribe and all four paintings, and never says "choose one" (ADR-0004 as
+   amended 2026-10-14).
+6. **One email per gift: the painting.** Logan, 2026-11-02: "just the 1 email would be
+   good". There is no confirmation email. Every.org's receipt says the gift arrived
+   (unproven: neither staging gift sent one, and if production's doesn't come either this
+   decision goes back to Logan), and the thank-you page shows the address with a way to fix it, which costs no email
+   and catches a typo. It asks the donor to check the address and to bookmark the page
+   until the painting arrives (Logan, 2026-11-02). The URL carries no id, so a bookmark
+   works only in that browser and for the cookie's 30 days after the gift, and the page
+   says so (Logan: "make sure we say that on the page too"). The page means the gift just
+   started, or else the newest paid one, so an attempt left unfinished can't hide a paid gift.
+   Fixing it changes the gift the page showed, and only one in this browser's cookie, and an
+   erased address never comes back. Resend's free plan allows 100 a day and 3,000 a month, and
+   Pro 50,000 a month with no daily limit, so the backlog when the painter ships is
+   queued and spread out, or waits for Pro.
+7. **A suppressed address is refused on the sponsor page, and told why.** We can't mail
+   it, so taking the gift would take money for a painting that can't arrive. The words
+   (Logan, 2026-11-02): "We can't send email to that address, so {name}'s painting
+   wouldn't reach you. This can happen when an earlier message bounced or was marked as
+   spam. Please use another address, or write to hello@monsterpaws.org and we'll sort it
+   out." It lands with `resend-transactional-email`, since nothing writes a suppression
+   before then.
+8. **A raw webhook row holds no donor.** This is a sanctioned departure from §4's
+   "stored verbatim". Logan, 2026-11-02: "we don't need to store any of that info".
+   `storableBody` keeps a named list (`event`, `chargeId`, `partnerDonationId`, `amount`,
+   `netAmount`, `currency`, `frequency`, `donationDate`, `paymentMethod`, and
+   `toNonprofit`'s `slug`, `ein`, `name`), each to a shape, so neither a field Every.org adds
+   later nor a person's name in a kept field can put a donor in a row. It records the names of
+   what it dropped, without their values, so a new field gets noticed. A body we can't read
+   keeps only its size and a hash keyed by our secret. The row is
+   still written first and never UPDATEd. A hash of a whole readable body was rejected:
+   everything else in it sits beside the hash, so a reader of the table could test
+   guesses at a donor's address, the reason a suppression refuses a bare hash (as
+   amended 2026-10-22).
+9. **Requiring the auth token waits for the real bank and PayPal gifts.** It came in
+   `Authorization` on both card gifts, undocumented. The row marks it on every delivery.
+   If it arrives on every method, it becomes a further check; made one before then, a
+   real gift by a method that omits it would not count until someone noticed.
+10. **A privacy page, and deletion by hand, come before any real gift.** `/privacy` says
+    all of the above in plain words and names its processors. A donor with no account
+    has no account to export or delete, so deletion is a request by email, done by hand:
+    the intent, its donations and its raw rows go, and `donation_stats` and any
+    suppression stay, as in §6. This replaces the build plan's bar of account export and
+    deletion for the account-less loop; both still come with accounts.
+
+11. **A gift already made still gets its painting, whatever the shelter says later.**
+    Logan, 2026-11-02: "we need to still send the painting even if the shelter asks us to
+    take it down. we can take down the listing but we still need to make the painting." A
+    withdrawal or a takedown closes the Sponsor button at once, so no new gift can start,
+    and a gift already recorded is painted and emailed as normal (ADR-0022 as amended
+    2026-11-02).
+12. **Bank and PayPal are tested with real gifts on production.** Logan, 2026-11-02: "we can
+    test paybal and the bank with real transactions once we get it in prod. bank uses plaid
+    and it doesn't look like a sandbox version on the staging page." Staging's PayPal also
+    asked for a PayPal sandbox account. Only the card is measured on staging. The same gifts
+    answer what staging couldn't: Logan got no receipt from either staging gift, so what a
+    receipt shows is unknown, and the privacy page asks for one.
+13. **Those gifts go through a hidden page, the one exception to "no permission, no button"**
+    (ADR-0002 as amended 2026-11-02). Logan, 2026-11-02: "a one off page that isn't marked
+    anywhere, i can just type in the url", giving to Rainbow Bridge Hospice Rescue, "real tests
+    with my money". The repo is public, so `/test-gift/<EVERYORG_TEST_PAGE_SECRET>` is hidden by
+    a secret, answers 404 without it, and is linked from nothing. No animal, so no painting. It
+    runs the real form through Cloudflare in a real browser, the real webhook and the real
+    `/thanks`. Afterwards its rows go, found by `animal_external_id = 'test-gift'`, in their own
+    oplog entry (0021), planned from what the gifts produced, since a bank gift can take days to
+    settle. The page's code goes with the next deploy. Its `donation_stats` rows go too, the one
+    sanctioned exception to §6's permanent totals, since a gift with no animal doesn't belong in
+    them (Logan, 2026-11-02: "yes delete the test stats rows").
+14. **The production webhook is on the main domain:**
+    `https://monsterpaws.org/api/webhooks/everyorg/<secret>` (Logan, 2026-11-02: "main domain").
+    It needs no new hostname, DNS record or Caddy block, and Bot Fight Mode is off for the whole
+    zone, so a separate host would buy nothing. The staging tunnel's host stays as it is.
+
+### Consequences
+- `donation_intents.donor_email`, nullable, additive.
+- §5's claim link to the webhook's email and its no-email warning are gone, along
+  with the need for the webhook's address.
+- `resend-transactional-email` and the suppression HMAC key now come before the art
+  email.
+- While there is no painter the address is held with no end date, and the sponsor
+  page says the painting has none. The privacy page must say so too, and that after
+  erasure we can't look a donor up by email.
+- The sponsor and thank-you pages say the painting comes by email, with no date. Neither
+  says "if the shelter gives permission": without it there is no Sponsor button (ADR-0002
+  as amended 2026-11-02, later).
+- The thank-you page shows the address to whoever holds the cookie, a shared browser
+  included, so the cookie lasts 30 days (Logan, 2026-11-02). After that the page can't name
+  the gift, and the donor still has Every.org's receipt.
+- An address erased at 30 days means a gift that settles after that has nowhere to send
+  its painting. The production bank gift says whether that can happen.
+- Production can carry `EVERYORG_ENV=production` before any shelter opens: with no grant there
+  is no Sponsor button, and only the hidden page reaches www.every.org.
+- The test gift's rows must be gone before `snapshotKeepsake` or `art.generate` ship, or a real
+  worker could pick up a gift with no animal.
+

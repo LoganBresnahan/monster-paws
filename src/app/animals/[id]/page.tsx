@@ -4,6 +4,8 @@ import { notFound } from "next/navigation";
 import { cache } from "react";
 import { lastSeenOf, loadAnimalDetail, type AnimalDetail } from "@/core/animals";
 import { loadShelter } from "@/core/browse";
+import { sponsorNonprofit } from "@/core/donate/intent";
+import { donateConfigFromEnv } from "@/core/donate/link";
 import { isDisplayLicensed, pickLicensedDisplay } from "@/core/display";
 import { getDb } from "@/db/client";
 import { speciesEmoji, TrackerPixel } from "@/ui/animal";
@@ -103,6 +105,14 @@ export default async function AnimalPage({ params }: { params: Promise<{ id: str
   // The shelter view (ADR-0015 as amended 2026-10-26): offered only when it
   // holds more than this animal, or the link would lead back to one card.
   const shelter = animal.shelterExternalId ? await loadShelter(getDb(), animal.shelterExternalId, asOf) : null;
+  // No button without a confirmed claim and the shelter's permission to paint
+  // (ADR-0002 as amended 2026-11-02). Cached an hour like the rest of this page: the
+  // sponsor page re-reads it before any money moves.
+  const donateConfig = donateConfigFromEnv();
+  const canSponsor =
+    donateConfig !== null &&
+    animal.shelterExternalId !== null &&
+    (await sponsorNonprofit(getDb(), animal.shelterExternalId, donateConfig)) !== null;
   const facts = [
     animal.breed ?? animal.species,
     animal.sex,
@@ -170,16 +180,29 @@ export default async function AnimalPage({ params }: { params: Promise<{ id: str
         </p>
       )}
 
+      {canSponsor && (
+        <div className="mt-10 rounded-cuddly border-2 border-paw/30 bg-card p-6">
+          <h2 className="text-xl font-bold">Sponsor {animal.name}</h2>
+          <p className="mt-2 text-muted">
+            A donation for {animal.name} goes to {org ?? "their shelter"}, and we keep $0.
+          </p>
+          <Link
+            href={`/animals/${animal.id}/sponsor`}
+            className="mt-5 inline-block rounded-cuddly bg-leaf px-8 py-3 text-lg font-bold text-white shadow-md transition-colors hover:bg-leaf-deep"
+          >
+            Sponsor {animal.name}
+          </Link>
+        </div>
+      )}
+
       <div className="mt-10 rounded-cuddly border-2 border-paw/30 bg-card p-6">
         <h2 className="text-xl font-bold">Where {animal.name} is</h2>
         <p className="mt-2 text-muted">
           Listed by {orgLink}
-          {place ? ` in ${place}` : ""}. When sponsoring opens, a donation for {animal.name} will go
-          to {org ?? "their shelter"}, and we keep $0 — we never hold the money.
+          {place ? ` in ${place}` : ""}.
+          {!canSponsor &&
+            ` When sponsoring opens, a donation for ${animal.name} will go to ${org ?? "their shelter"}, and we keep $0 — we never hold the money.`}
         </p>
-        {/* No sponsor button here: item 4 owns the Every.org flow, and a page
-            with a dead button is worse than a page without one (ADR-0015
-            decision 6). */}
         <p className="mt-4 text-sm text-muted">
           {org ?? "This shelter"} has not partnered with us yet, so we can&apos;t promise updates
           on {animal.name} — only that the donation reaches them.

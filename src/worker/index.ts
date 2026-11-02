@@ -10,9 +10,10 @@ import { getDb } from "@/db/client";
 import { createPgStages } from "@/core/ingest/pg";
 import { runIngest } from "@/core/ingest/pipeline";
 import { createRescueGroupsAdapter, rescueGroupsNormalizer } from "@/core/ingest/rescuegroups";
+import { eraseAbandonedAddresses } from "@/core/donate/intent";
 import { gateAlert, INGEST_POLL, planIngestPoll } from "@/worker/ingest-poll";
 import { heartbeatPing, INGEST_POLL_RETRY } from "@/worker/heartbeat";
-import { reportingOptions } from "@/core/observability";
+import { failureCode, reportingOptions } from "@/core/observability";
 
 // First, before any job can throw. Context lines stay ON here, unlike the app
 // server: the worker runs TypeScript through tsx, so its lines are real source
@@ -71,6 +72,25 @@ async function registerIngestPoll(boss: PgBoss) {
   console.log(`[worker] ${INGEST_POLL} registered (${plan.cron})`);
 }
 
+const ERASE_ABANDONED = "donate.erase-abandoned";
+
+/** Daily, because the privacy page promises a date: a missed run is reported, and the next one catches up. */
+async function registerAddressErasure(boss: PgBoss) {
+  await boss.createQueue(ERASE_ABANDONED);
+  await boss.work(ERASE_ABANDONED, async () => {
+    try {
+      const erased = await eraseAbandonedAddresses(getDb(DATABASE_URL));
+      console.log(JSON.stringify({ event: "donate.erase_abandoned", erased }));
+    } catch (err) {
+      // The code alone: a failed query's message can carry its parameters (ADR-0010).
+      const code = failureCode(err);
+      Sentry.captureMessage(`abandoned addresses not erased: ${code}`, { level: "error", tags: { job: ERASE_ABANDONED } });
+      throw new Error(`abandoned addresses not erased: ${code}`);
+    }
+  });
+  await boss.schedule(ERASE_ABANDONED, "0 6 * * *");
+}
+
 async function main() {
   if (!DATABASE_URL) {
     // Pre-database deploys (landing only): idle instead of crash-looping so
@@ -90,6 +110,7 @@ async function main() {
   await boss.start();
 
   await registerIngestPoll(boss);
+  await registerAddressErasure(boss);
 
   // Job registrations land with their features:
   //   art.generate       — keepsake card generation (roadmap item 4); never

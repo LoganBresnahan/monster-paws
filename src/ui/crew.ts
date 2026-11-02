@@ -1,3 +1,5 @@
+import { MAX_AMOUNT, MIN_AMOUNT } from "@/core/donate/link";
+
 // The founders' own pets, never listings: files under public/brand/crew/ are
 // re-encoded from pixels alone, so no EXIF, GPS or generator metadata ships
 // (tests/crew-assets.test.ts; consent in doc/consent/0001-the-crew.md).
@@ -37,5 +39,5 @@ export function pronoun(pet: CrewPet, form: "they" | "them" | "their"): string {
 /** A demo amount: whole dollars from 1; anything else is the default. */
 export function parseAmount(raw: string | string[] | undefined): number {
   const n = Number(typeof raw === "string" ? raw : NaN);
-  return Number.isInteger(n) && n >= 1 && n <= 99999 ? n : 5;
+  return Number.isInteger(n) && n >= MIN_AMOUNT && n <= MAX_AMOUNT ? n : 5;
 }

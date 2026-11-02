@@ -71,7 +71,9 @@ private, verifiable even if the app dies.
    and disbursement to any US 501(c)(3) shelter **that has claimed its
    Every.org profile** (an unclaimed one takes no direct donation, so its
    animals are browse-only until it claims; the shelter ask includes it —
-   ADR-0002 as amended 2026-10-26). No operations cut, ever:
+   ADR-0002 as amended 2026-10-26). **A Sponsor button also needs the
+   shelter's permission to paint**: no permission, no button (ADR-0002 as
+   amended 2026-11-02). No operations cut, ever:
    it's the cleanest trust story on a site about proving where money goes,
    and it defuses the aggregator consent problem (hard to be mad at someone
    sending you free money and keeping none). Operations are funded by an
@@ -317,9 +319,10 @@ photo; Replicate stays behind the same interface as the escape hatch
    **Art-rights gate (ADR-0006):** generation uses only photos we hold
    rights to. Photo **consent** (one email of written permission) unlocks
    AI art — separate from, and cheaper than, **verification** (attestation
-   signing). No-consent cards show the real photo in the Monster Paws
-   frame; monster art unlocks at consent, and the card credits it:
-   *"Permission to digify <pet> given by <shelter>."* The AI pipeline is
+   signing). A shelter with no consent takes no gift through us, so there
+   is no card without art (ADR-0002 as amended 2026-11-02), and the card
+   credits it: *"Permission to digify <pet> given by <shelter>."* The AI
+   pipeline is
    built and run internally from day one, but **no generated art ships in
    production without consent on record**.
 2. **Four candidates, all the donor's; the judge runs silent** (ADR-0004

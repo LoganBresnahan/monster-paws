@@ -41,6 +41,12 @@ export interface ShelterEntry {
   tier: Tier;
   /** hand-checked expected output for this site, or `null` until onboarding writes one */
   goldenFixture: string | null;
+  /**
+   * The organisation's keys as `animals.shelter_external_id` carries them, each checked
+   * by a person. The only way a grant reaches a listing: never matched by name, which
+   * would hand one shelter's consent to another with a similar one.
+   */
+  shelterExternalIds?: readonly string[];
   grants: Grant[];
 }
 
@@ -60,6 +66,13 @@ export function shelterBySlug(
   registry: readonly ShelterEntry[] = SHELTERS,
 ): ShelterEntry | undefined {
   return registry.find((s) => s.slug === slug);
+}
+
+export function shelterByExternalId(
+  shelterExternalId: string,
+  registry: readonly ShelterEntry[] = SHELTERS,
+): ShelterEntry | undefined {
+  return registry.find((s) => s.shelterExternalIds?.includes(shelterExternalId));
 }
 
 export function sourceOf(shelter: ShelterEntry): ScrapeSource {
@@ -195,6 +208,7 @@ export function exclusionProblems(
 export function registryProblems(registry: readonly ShelterEntry[] = SHELTERS): string[] {
   const problems: string[] = [];
   const seen = new Set<string>();
+  const seenKeys = new Set<string>();
 
   for (const shelter of registry) {
     if (!isValidSlug(shelter.slug)) {
@@ -202,6 +216,12 @@ export function registryProblems(registry: readonly ShelterEntry[] = SHELTERS): 
     }
     if (seen.has(shelter.slug)) problems.push(`duplicate slug '${shelter.slug}'`);
     seen.add(shelter.slug);
+
+    for (const key of shelter.shelterExternalIds ?? []) {
+      if (!SHELTER_KEY.test(key)) problems.push(`${shelter.slug}: '${key}' is not a '<source>:org:<id>' shelter key`);
+      if (seenKeys.has(key)) problems.push(`${shelter.slug}: '${key}' belongs to two shelters`);
+      seenKeys.add(key);
+    }
 
     for (const grant of shelter.grants) {
       const where = `${shelter.slug}/${grant.permission}`;
