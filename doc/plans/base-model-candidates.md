@@ -2178,6 +2178,102 @@ Logan: "go with 3000 steps, pass is unlocked."
   points to. Each needs its R2 upload and `models-candidates.manifest`
   line first (oplogs 0011 and 0014's shape).
 
+### Training run 2 — Logan's read of the samples (2026-11-02)
+
+His ticks ("clean and like the dog", one sample per dog per checkpoint)
+are `var/explore/lora/samples-2-2026-11-02.txt`, 30 of 52:
+
+```
+dog              0   250   500   750  1000  1250  1500  1750  2000  2250  2500  2750  3000
+teckel (sit)    yes   yes    .     .   yes   yes   yes    .     .     .    yes   yes    .
+gonzaja (stand)  .    yes   yes   yes    .     .     .    yes    .     .     .     .    yes
+pies (sit)      yes   yes   yes    .   yes    .    yes    .    yes    .    yes   yes   yes
+rusty (stand)   yes   yes   yes   yes   yes    .     .     .    yes    .    yes   yes   yes
+per step         3     4     3     2     3     1     2     1     2     0     3     3     3
+```
+
+- **No checkpoint stands out.** Step 250 is the only one all four pass.
+  2000, the one all four passed in run 1, passes two (pies, rusty), and
+  2250 none. Of the four in the home test, 1500 passes two (the sitting
+  pair), 2000 two, 2500 and 3000 three each.
+- **The standing gonzaja**, which fails without the LoRA in both runs,
+  passes at five checkpoints (250, 500, 750, 1750, 3000), against one
+  (2000) in run 1.
+- **The step-0 samples are run 1's files, byte for byte** (the same Base,
+  prompt, references and seed 42, no LoRA yet). Three got the same tick
+  both times; rusty's failed on 2026-10-29 and passes now. Run 1's page
+  showed the samples as 420-pixel-wide thumbnails and this one at the full
+  1216×832, which may be the difference. Either way a single tick per cell
+  moves with the reading as well as with the checkpoint, so the 52 are a
+  lead, and the home grid (batch 21a: 48 befores at four checkpoints)
+  decides.
+
+### Batch 21a — run 2 at home (Claude, 2026-11-02; Logan's eye decides)
+
+- **The checkpoints**: 1500, 2000, 2500 and the final 3000, sent to
+  `monsterpaws-models` by oplog 0015 and read back there with their
+  hashes, then listed in `comfyui/models-candidates.manifest` (licence
+  `ours`, ADR-0031) and fetched into the home store with the R2 env from
+  `pass`, as 17a's were. `explore.py` names them `anatomy2-<step>` beside
+  run 1's `anatomy-<step>`.
+- **`comfyui/explore/batch21a.json`**: 17a–17d's 48 befores exactly (14a's
+  Plum and Ducky, 14b's Beetle, the same prompts and seeds), each painted
+  at the four checkpoints at strength 1.0, the strength run 1's grid read
+  best (1500 at 1.0, 13 of 48). Painted before Logan read
+  `samples-2.html`, at his word ("test the new training lora?" — "yes"),
+  so the samples and the home test can be read together. 192 paintings,
+  192 done, no kill, 16.5 s each warm (63 s the first, cold); 00:02–01:22
+  UTC with the guard's restarts, the pool between 1.6 and 2.1 GB at each
+  chunk's end and 1.8 GB idle after.
+- Not pre-read. Logan's page: `var/explore/index-all/lora-grid-21.html` —
+  each before on the left, its four afters beside it (1500 and 2000, then
+  2500 and 3000), every picture the 1216×832 painting itself, one
+  "acceptable" tick each (no genitalia, and still the dog no worse than
+  the before — run 1's question), the list copied out as `21 <dog> <pose>
+  s<seed> step<N>`. Checked headless: 48 befores and 192 afters at
+  1216×832, 192 distinct keys, a tick and its untick both survive a
+  reload, no horizontal scroll at desktop or phone width.
+- **What decides**: the count against run 1's best (1500 at 1.0: 13 of
+  48, 11 of 24 standing and 2 of 24 sitting), the sitting rows above all,
+  since the sitting half is what run 2 rebuilt.
+
+### Batch 21a — Logan's read of the grid (2026-11-02)
+
+His list, saved as `var/explore/index-all/lora-grid-21-picks-2026-11-02.txt`:
+67 of the 192 afters acceptable (no genitalia, and still the dog no worse
+than the before), against 36 of run 1's 192 at strength 1.0. Per
+checkpoint, of 48 (16 per dog, 24 per pose), with run 1 at the same
+strength where it had the checkpoint:
+
+| Step @ 1.0 | All | Plum | Ducky | Beetle | Standing | Sitting | Run 1 |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 1500 | 14 | 9 | 5 | 0 | 5 | 9 | 13 (11 standing, 2 sitting) |
+| 2000 | 15 | 8 | 6 | 1 | 11 | 4 | 6 (3, 3) |
+| 2500 | 16 | 6 | 4 | 6 | 7 | 9 | — |
+| **3000** | **22** | 7 | 7 | 8 | 15 | 7 | — |
+
+- **Best setting, 3000 at 1.0**: 22 of 48, against run 1's best of 13
+  (1500 at 1.0), standing 11 → 15 and sitting 2 → 7. Against the befores'
+  1 of 48 with no genitalia, more than half still fail, so no checkpoint
+  ships yet (decision 5's bar).
+- **Sitting moved**: 29 of 96 sitting afters across the four checkpoints,
+  against 8 of 96 in run 1 at 1.0 — the 71 sitting paintings added to the
+  set did what they were for. Ducky and Beetle sitting stay weakest: 7 and
+  4 of 32, and half of each one's eight sitting befores get no acceptable
+  after at any checkpoint.
+- **Standing came back with the steps**, as the exposure count said (the
+  standing-share bullet under Batches 18a–18b): 5 at 1500, where each
+  pair has been seen 1500/168 times against run 1's 1500/97, and 15 at
+  3000, past the ~2,600 steps that match run 1's 1500.
+- **Beetle turned around**: 0, 1, 6 and 8 from 1500 to 3000 (12 of 64),
+  where run 1 gave her 3 of 64 at 1.0 and lost her with more training.
+  Her count and standing's are still rising at the last checkpoint.
+- **39 of the 48 befores get at least one acceptable after** (run 1: 23),
+  every one of Plum's 16 among them; the 9 without are Ducky's and
+  Beetle's sitting, and one Beetle standing.
+- As before, one tick joins anatomy and likeness, so a fail does not say
+  which of the two failed.
+
 ### Batches 14a–14b — Logan's picks (2026-10-28)
 
 "I might be picky but I know what these dogs look like." His likeness

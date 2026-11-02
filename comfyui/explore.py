@@ -45,6 +45,7 @@ LORAS = {"watercolor": "watercolor_v1_sdxl.safetensors", "tinies": "Little_Tinie
 # The anatomy LoRA's checkpoints under test on klein: the file under models/loras/, and the trigger word its
 # training captions began with (comfyui/pairs.py), which the prompt then begins with too.
 KLEIN_LORAS = {f"anatomy-{s}": (f"anatomy-2026-10-29_{s:09d}.safetensors", "mpclean") for s in (1000, 1250, 1500, 1750, 2000)}
+KLEIN_LORAS |= {f"anatomy2-{s}": (f"anatomy-2026-11-01b_{s:09d}.safetensors", "mpclean") for s in (1500, 2000, 2500, 3000)}
 
 
 def licensed_lora(name: str) -> str:

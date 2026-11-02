@@ -1,0 +1,77 @@
+{
+  "_": "Batch 21a — the anatomy LoRA's run 2 at home (ADR-0004 as amended 2026-10-22, decision 5; Logan 2026-11-01): batches 14a (Plum, Ducky) and 14b (Beetle, 'female bloodhound') exactly as 17a–17d painted them — klein-v1, both photos' grown subject and the grown head, the listing words, storybook_stand34 and storybook_sit34, landscape, the same eight seeds — with run 2's checkpoints 1500, 2000, 2500 and 3000 (anatomy-2026-11-01b: 168 pairs, 105 sitting) at strength 1.0, the best strength at every checkpoint of run 1, and its trigger word leading the prompt. 1500 and 2000 meet run 1's 17 on the same footing; 2500 and 3000 are where the standing pairs reach run 1's exposure at 1500. None of these is ever trained on.",
+  "animals": {
+    "Plum": {
+      "kind": "dog",
+      "describe": "male grey cane corso puppy",
+      "two": [
+        "PXL_20250423_185424061.PORTRAIT.jpg",
+        "downloadfile.jpg"
+      ]
+    },
+    "Ducky": {
+      "kind": "dog",
+      "describe": "female tan pit bull mix",
+      "two": [
+        "PXL_20241229_195311064.RAW-01.COVER.jpg",
+        "PXL_20250621_160612271.PORTRAIT.jpg"
+      ]
+    },
+    "Beetle": {
+      "kind": "dog",
+      "describe": "female bloodhound",
+      "two": [
+        "IMG_2931.jpg",
+        "IMG_3545.jpg"
+      ]
+    }
+  },
+  "photos": [
+    "two"
+  ],
+  "crops": [
+    "grownsubject"
+  ],
+  "aspect": [
+    "landscape"
+  ],
+  "describe": [
+    "listing"
+  ],
+  "families": [
+    "kleinbfl8"
+  ],
+  "graphs": [
+    "reference2"
+  ],
+  "prompts": [
+    "storybook_stand34",
+    "storybook_sit34"
+  ],
+  "denoise": [],
+  "weights": [],
+  "weight_types": [],
+  "end_at": [],
+  "loras": [
+    "anatomy2-1500",
+    "anatomy2-2000",
+    "anatomy2-2500",
+    "anatomy2-3000"
+  ],
+  "lora_strengths": [
+    1.0
+  ],
+  "seeds": [
+    11,
+    222,
+    4096,
+    8128,
+    17,
+    404,
+    1729,
+    6174
+  ],
+  "heads": [
+    "grownhead"
+  ]
+}
