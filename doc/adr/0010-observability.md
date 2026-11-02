@@ -347,3 +347,38 @@ fixed four things that sentence left open.
 - Not built: pg-boss's failed-job state in the endpoint (2026-09-28 §4). The
   heartbeat's `/fail` on the last attempt, plus staleness here, covers the poll;
   the next job that matters gets it with `ops.daily`.
+
+## Amendment (2026-11-02): `sendDefaultPii` does nothing; `dataCollection` is the switch
+
+### Context
+The 2026-09-29 amendment set `sendDefaultPii: false`. SDK 11, which we run, has no such option:
+the string appears nowhere in `@sentry/core`, and an unset `dataCollection` means user info,
+cookies, headers, query strings and bodies are all on. An independent review of the donate slice
+measured it with the real SDK and a stub transport on 2026-11-02: an error report carried
+`user.ip_address` from `CF-Connecting-IP`, and the intent-id cookie, which opens a donor's address
+on `/thanks`. `tests/observability.test.ts` only asserted our own option, so it stayed green.
+
+The same review found `scrubEvent` scrubbing the JSON text, where the email pattern ate the `n` of
+an escaped newline. The parse then threw, and the SDK silently dropped the report. A Server
+Action's multipart body always has that shape.
+
+### Decision
+1. **`reportingOptions` sets `dataCollection`:** no user info, cookies, bodies, query strings,
+   database query data or frame variables, and only `user-agent` and `content-type` of the request
+   headers.
+2. **`scrubEvent` walks values, never JSON text.** It also removes a failed query's `params:`,
+   which Drizzle puts in the message, an address written `%40`, and the event's `user`, and the
+   request's cookies, body and query string, whatever the SDK did.
+3. **This is tested against the real SDK with a stub transport** (`tests/observability-sdk.test.ts`),
+   including a control showing the SDK's defaults do leak, so a future SDK can't quietly break it.
+
+### Consequences
+- By the SDK's behaviour, production's reports have carried visitors' IP addresses since error
+  reporting shipped on 2026-09-30, until this deploys. No stored report has been read to confirm
+  it. The reports from before the roll are purged after it, once one has been read, keys only, to
+  settle that (Logan, 2026-11-02: "yeah we can purge. prod visits have been nothing but that and
+  there is no interactivity yet"). Better Stack's docs offer no way to delete reports short of
+  deleting the application, whose DSN is built into the browser bundle, so the route is lowering
+  `errors_retention` to 1 day and restoring it once they are gone (Logan: "yeah change retention
+  to 1 day"). Its own oplog entry says how long to wait and what follows if they stay.
+- Not yet measured on a running Next server, only in process. The roll's smoke can do that.
