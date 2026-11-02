@@ -67,6 +67,19 @@ is the record, and a file of ticked boxes stops being read.
 
 ## Ops
 
+- **Worktrees' test runs truncate each other, because `.env`'s `TEST_DATABASE_URL`
+  has no effect.** `npm test` is bare `vitest run`, which doesn't load `.env`, so
+  `tests/support/db.ts` falls back to `monsterpaws_test` in every worktree, whatever
+  its `.env` names. On 2026-11-02, from about 20:07 to 20:16 UTC, the donate stream's
+  runs truncated that database while outreach had a run going at about 20:14. Donate's
+  gate test failed now and then with a duplicate key on `animal_identities`, which is
+  how it was found. Only test databases are touched, so nothing real is lost, but a
+  failure or a pass during an overlap proves nothing. Until it's fixed, a worktree sets
+  the variable on the command itself, `monsterpaws_<stream>_test`, and only the main
+  checkout uses the default. The likely fix is `vitest.config.ts` reading that one key
+  from `.env`, never the whole file, which would bring `DATABASE_URL` and the secrets
+  into the suites, and an amendment to ADR-0017. Found by the donate stream.
+
 - **A delivery stored but not decided has no way back in.** `receiveWebhook` keeps the row and
   reports `decision_failed` with its id, and the row holds every field a decision needs, but
   nothing re-runs one. Every.org didn't retry the one failed delivery we saw (oplog 0018), so
