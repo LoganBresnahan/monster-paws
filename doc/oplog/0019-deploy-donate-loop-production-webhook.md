@@ -1,4 +1,4 @@
-# 0019: Deploy `7335343` — the donate loop, the production webhook, and the error-report fix
+# 0019: Deploy `cc8ca32` — the donate loop, the production webhook, and the error-report fix
 
 Status: planned
 Planned: 2026-11-02 · Run: —
@@ -6,7 +6,9 @@ Why: ADR-0027 as amended 2026-11-02 (the account-less donate loop, the productio
 main domain, the hidden test page); ADR-0002 as amended 2026-11-02 (no permission to paint, no
 Sponsor button); ADR-0010 as amended 2026-11-02 (error reports stop carrying visitors' data);
 roadmap: Accounts and donating (item 4)
-Commit deployed: `7335343`, this entry following in its own push so the image tag is the code commit
+Commit deployed: `cc8ca32` (`verify`, `images` and `sourcemaps` green, CI run 41544267324), this entry following in its own push so the image tag is the code commit
+
+First planned on `7335343`, which failed `verify` at the build (run 41541299510: `/thanks` opened the database before reading its cookie, so a build with no database threw), so no image of it exists. The fix is `cc8ca32` (ADR-0017 as amended 2026-11-02). Nothing had run on production, so this entry moved with it.
 
 What changes on the droplet: the app and worker images; one additive migration, `0015`
 (`donation_intents.donor_email`, nullable, no row touched); five new `.env` lines; a new pg-boss
@@ -32,10 +34,11 @@ Who does what: production steps run in one SSH session per step (the droplet's u
 Logan gives the word for step 1, and makes the gifts in step 8.
 
 ## Prerequisites
-- [ ] `7335343` pushed on its own, then this entry; CI green on `7335343`: `verify`, `images`,
-      `sourcemaps`. Both `images` and `sourcemaps` before rolling (ADR-0010 as amended 2026-09-30).
-- [ ] Ship bar on `7335343`: vitest twice with `TEST_DATABASE_URL` set to a database of its own (bare
-      vitest lands on the shared `monsterpaws_test`, `doc/issues.md`), typecheck clean.
+- [x] `cc8ca32` pushed on its own, then this entry; CI green on `cc8ca32`: `verify`, `images`,
+      `sourcemaps`, run 41544267324. Both `images` and `sourcemaps` before rolling (ADR-0010 as amended
+      2026-09-30).
+- [x] Ship bar on `cc8ca32`: the moderator's run from the main checkout, finished 23:19 UTC on 2026-11-02,
+      vitest 556/556 once, typecheck clean, e2e 39/39; the suite's second run is CI's `verify`, in the run above.
 - [ ] e2e against the published app image, with Every.org configured as production, or
       `e2e/donate.spec.ts`'s button test proves nothing:
 
@@ -43,7 +46,7 @@ Logan gives the word for step 1, and makes the gifts in step 8.
         -e DATABASE_URL=postgres://monsterpaws:monsterpaws@localhost:5432/monsterpaws_e2e \
         -e PORT=3200 -e HOSTNAME=127.0.0.1 \
         -e EVERYORG_ENV=production -e EVERYORG_WEBHOOK_TOKEN=e2e-token \
-        ghcr.io/loganbresnahan/monster-paws-app:7335343a58f79f9fd8d4a49c38ad33d6aed45c30
+        ghcr.io/loganbresnahan/monster-paws-app:cc8ca3289890b10d99f99dbbbc004d0999af3c20
       PW_BASE_URL=http://127.0.0.1:3200 npm run e2e:prod
       docker stop mp-e2e
 - [ ] Migration `0015` rehearsed: `drizzle-kit migrate` on a scratch database restored from the newest
@@ -86,10 +89,10 @@ Rollback: `ssh root@$IP "sed -i '/^EVERYORG_/d' monsterpaws/.env"`.
 
 ### 3. Pull the release, one SSH session; nothing restarts
     ssh root@$IP 'cd monsterpaws && git pull --ff-only &&
-      sed -i "s/^IMAGE_TAG=.*/IMAGE_TAG=7335343a58f79f9fd8d4a49c38ad33d6aed45c30/" .env &&
+      sed -i "s/^IMAGE_TAG=.*/IMAGE_TAG=cc8ca3289890b10d99f99dbbbc004d0999af3c20/" .env &&
       docker compose -f docker-compose.prod.yml pull app worker &&
       docker compose -f docker-compose.prod.yml config --images'
-Verify: checkout at this entry's commit; both images resolve to `7335343a58f79f9fd8d4a49c38ad33d6aed45c30` and are pulled; app and worker
+Verify: checkout at this entry's commit; both images resolve to `cc8ca3289890b10d99f99dbbbc004d0999af3c20` and are pulled; app and worker
 still run the old sha.
 Rollback: `IMAGE_TAG` back to step 1's sha, `git checkout` it. Nothing runs from the new images yet.
 
@@ -107,8 +110,8 @@ Rollback: forward only. Nothing depends on undoing it, and the old image runs wi
       docker compose -f docker-compose.prod.yml exec -T app printenv EVERYORG_ENV'
     curl -fsS https://monsterpaws.org/api/health
 Record the UTC time this finished, for step 7's read.
-Verify: app and worker run `7335343a58f79f9fd8d4a49c38ad33d6aed45c30`; the worker logs no error, and `ingest.poll unscheduled`, since
-`INGEST_POLL_SCHEDULE=off`; `printenv` says `production`; health 200 with `7335343a58f79f9fd8d4a49c38ad33d6aed45c30`, `lastCompletePollAt`
+Verify: app and worker run `cc8ca3289890b10d99f99dbbbc004d0999af3c20`; the worker logs no error, and `ingest.poll unscheduled`, since
+`INGEST_POLL_SCHEDULE=off`; `printenv` says `production`; health 200 with `cc8ca3289890b10d99f99dbbbc004d0999af3c20`, `lastCompletePollAt`
 under 27 h; caddy untouched.
 Rollback: `IMAGE_TAG` back to step 1's sha, `up -d app worker`, and step 2's rollback.
 
