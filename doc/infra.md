@@ -199,7 +199,10 @@ through the same edge, Caddy and app as the site (ADR-0027 as amended 2026-11-02
 | `everyorg/staging-webhook-token` | The staging webhook's token, shown at creation | The donate link's `webhook_token` parameter, which makes Every.org POST that donation to our webhook. Rides in a URL every donor sees — an identifier, not a secret | local `.env` `EVERYORG_WEBHOOK_TOKEN` via `npm run env:dev` |
 | `everyorg/staging-auth-token` | The staging webhook's auth token, shown at creation | Undocumented (docs.every.org, Partner Webhook, read 2026-10-22): asked of partners@every.org whether it rides on each webhook POST | local `.env` `EVERYORG_AUTH_TOKEN` via `npm run env:dev` |
 | `everyorg/staging-webhook-secret` | 32 random characters (`pass generate -n`) | The last path segment of the webhook URL above — our own secret beside Every.org's token (ADR-0027 §4) | local `.env` `EVERYORG_WEBHOOK_SECRET` via `npm run env:dev` |
-| `everyorg/test-page-secret` | 32 random characters (`pass generate -n`), made by oplog 0019 | The last path segment of Logan's hidden `/test-gift` page, set as `EVERYORG_TEST_PAGE_SECRET`; unset, the page answers 404. Goes when its gifts are done (ADR-0027 as amended 2026-11-02) |
+| `everyorg/webhook-token` | The production webhook's token, shown at creation, saved by Logan 2026-11-02 | The donate link's `webhook_token` on production. Rides in a URL every donor sees | droplet `.env` `EVERYORG_WEBHOOK_TOKEN`, by oplog 0019 |
+| `everyorg/auth-token` | The production webhook's auth token, shown at creation, saved by Logan 2026-11-02 | Marks a delivery's `Authorization` in the raw row; whether to require it waits for the real gifts (ADR-0027 as amended 2026-11-02) | droplet `.env` `EVERYORG_AUTH_TOKEN`, by oplog 0019 |
+| `everyorg/webhook-secret` | 32 random characters (`pass generate -n`), made 2026-11-02 | The last path segment of the production webhook URL | droplet `.env` `EVERYORG_WEBHOOK_SECRET`, by oplog 0019 |
+| `everyorg/test-page-secret` | 32 random characters (`pass generate -n`), made by oplog 0019 | The last path segment of Logan's hidden `/test-gift` page; unset, the page answers 404. Goes when its gifts are done (ADR-0027 as amended 2026-11-02) | droplet `.env` `EVERYORG_TEST_PAGE_SECRET`, by oplog 0019 |
 | `everyorg/api-key` | Every.org **production** public API key, created by Logan 2026-10-27 at every.org/developer | Nonprofit lookups by EIN for the shelter-to-nonprofit match (ADR-0029 §2, ADR-0027's `shelter_nonprofits`) | local `.env` via `npm run env:dev`; read by `npm run outreach -- match` |
 | `everyorg/api-secret` | The secret issued with that key | Not needed for public lookups; kept for any authenticated partner call | dev only |
 
@@ -230,6 +233,11 @@ create; a global one would only add cross-team, billing and usage access.
 | `betterstack/sql-host` | Host of the ClickHouse HTTP "SQL API" connection (team Monster Paws, created in the dashboard 2026-09-30 — a global token would be needed to create it by API) | Reading stored errors, stack frames and their source-map results: `scripts/betterstack-sql.sh` | dev only |
 | `betterstack/sql-username` | That connection's username (rotated 2026-09-30 after the first was pasted into a chat) | same | dev only |
 | `betterstack/sql-password` | That connection's password — shown once at creation, never retrievable. Read-only, IP-allowlisted to the dev machine's public address | same; if queries start failing, the home IP changed — update the allowlist | dev only |
+
+To read what production's reports hold, use `scripts/error-report-counts.mjs`: counts and key
+checks only, grouped by environment, component, platform and kind of address, never a value
+(ADR-0010 as amended 2026-11-02). `betterstack/telemetry-token` is accepted at
+`https://mcp.betterstack.com`.
 
 Not secrets, so GitHub Actions *variables*: `BETTERSTACK_TEAM_ID` (`606375`),
 `BETTERSTACK_ERRORS_APP_ID` (`2778816`), `BETTERSTACK_SOURCEMAPS_URL`
@@ -1099,7 +1107,8 @@ on the box: Commons dogs and the crew only.
 ## Deployment architecture
 
 ```
-                                donors · shelters
+             donors · shelters · Every.org's webhook, POST
+             /api/webhooks/everyorg/<secret>, unsigned (ADR-0027)
                                        │
                                        ▼
                         ┌─────────────────────────────┐
