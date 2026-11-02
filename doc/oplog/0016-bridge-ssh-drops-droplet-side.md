@@ -1,7 +1,7 @@
 # 0016: Why the bridge's SSH connection drops — the droplet's side, reads only
 
-Status: planned
-Planned: 2026-11-02
+Status: run
+Planned: 2026-11-02 · Run: 2026-11-02 15:45 – 15:46 UTC
 Why: ADR-0033 as amended 2026-10-30; roadmap: Launch (3b); doc/issues.md,
 Ops. The nightly of 2026-11-02 completed on its second attempt. Attempt 1's
 `ssh` exited 255 at 07:09:39 UTC after 204 pages
@@ -94,4 +94,68 @@ Rollback: none needed — reads only.
 
 ## Run
 
+Run by Claude on Logan's word ("pass is unlocked lets see what happened",
+after "commit"), from `~/monsterpaws` at `109df8e`: `pass` unlocked, no
+other session to the droplet, outside the quiet window (the night's
+`== exit 0` at 07:40:44).
+
+**1** 15:45:44–15:45:49 UTC, one root session, every address redacted. Both
+drops end on the same line, logged by the session's own sshd:
+
+    2026-10-30T14:21:15.821123+0000 sshd[922794]: ssh_dispatch_run_fatal: Connection from user root <ip> port 18272: message authentication code incorrect
+    2026-11-02T07:09:39.245531+0000 sshd[941047]: ssh_dispatch_run_fatal: Connection from user root <ip> port 20274: message authentication code incorrect
+
+Neither answer on the plan's list. The droplet's sshd received a packet from
+home whose MAC, SSH's integrity check on every packet, did not verify, and
+it ends the connection on that by design. Bytes changed somewhere between
+home's ssh and the droplet's sshd, in a way TCP's 16-bit checksum let
+through. So the drop is corruption on the home → droplet direction, which
+carries nearly all the traffic (every page, about 0.5 GB a night), not a
+reset or a timeout. As a rough rate, that is two corrupted packets in about
+3 GB sent since the first full poll on 2026-10-28.
+- Docker logged the poll container's end 0.28 s after the first
+  (14:21:16.098) and 0.32 s after the second (07:09:39.561): the session
+  closed, and the poll went with it. Attempt 2's session was accepted at
+  07:14:39.863. The 10-30 session (sshd[922794]) was 0012's rerun, accepted
+  at 14:16:30.
+- No kernel line in either window: no OOM, NIC reset, conntrack or ufw
+  `LIMIT` block. eth0 since boot (94 days): 0 errors and 0 dropped on RX
+  (21.7M packets) and TX (19.4M).
+- No leftover `monsterpaws-bridge-poll` container.
+- Everything else in the windows is scanners on 22/tcp ("Connection reset
+  by", "Connection closed by" from other addresses), and 0012's own keyless
+  session at 14:15, which closed cleanly.
+- Now: up 94 days, load 0.32, 467 MB available, 232 MB of swap in use;
+  `/var/run/reboot-required` is still present (0012's follow-up).
+
+**2** 15:46:16–15:46:17 UTC:
+
+    1044965319  ingest.poll — RescueGroups daily 07:00 UTC  Reported failure  2026-11-02T07:09:39.951Z  2026-11-02T07:40:44.535Z
+    up
+
+Attempt 1's `/fail` arrived 0.7 s after the MAC error, and attempt 2's ping
+resolved the incident at 07:40:44. No incident for monitor 4995794.
+
+Read at home afterwards (not production, read-only, kept here because it
+bears on the answer): Windows' WHEA-Logger has one event since 10-26, the
+fatal machine check of the crash at 10-26 01:50 UTC (Kernel-Power 41), and
+none at either drop. Hyper-V VmSwitch's errors (id 15) are port-restore
+failures at each boot (10-20, 10-21, 10-26), none at either drop. Memory
+without ECC logs nothing on a flipped bit, so silence here clears nothing.
+
+What it means: the kind of fault is known, and the place is not. Candidates
+on the home → droplet path: the home box's memory, the WSL2 virtual network
+between the distro and Windows, the router, the ISP. The droplet's receive
+path is the least likely, with zero NIC errors in 94 days. The retry absorbs
+a drop; three in one night would fail it.
+
+Logan's call: "sounds like its doing its job then. i'm okay with some
+failures because we recover". The retry is the answer, and the place is not
+hunted.
+
 ## Follow-ups
+- Only if a night fails on three drops: find the place by sending a few GB
+  of random bytes to the droplet through ssh, once from WSL and once from
+  Windows' own `ssh.exe`, which skips WSL's virtual network. That gets its
+  own entry. A memory test on the home box is in the same case.
+- The droplet's pending kernel reboot (0012's follow-up), still open.
