@@ -70,7 +70,8 @@ Check items off as they ship.
      verification must not race an existing account for the same email. Carry-in:
      weigh refusing the link for an account whose address has hard-bounced
      — a reissued Outlook or Yahoo address (ADR-0027 as amended 2026-10-22).
-   - [ ] `donation-intent-donate-link` — medium, moderate. A CSPRNG id, the
+   - [x] `donation-intent-donate-link` — medium, moderate. Built 2026-11-02, live with
+     oplog 0019. A CSPRNG id, the
      cookie flags, the redirect host fixed to Every.org,
      `partner_donation_id` set to the id. Needs the shelter-to-nonprofit
      mapping (see risk 2). Builds against a placeholder token if the webhook
@@ -88,7 +89,8 @@ Check items off as they ship.
      count of 0 from synced passkeys is accepted; removing the last passkey
      leaves email recovery in place; the RP ID holds across :3000, :3100 and
      production.
-   - [ ] `everyorg-webhook-endpoint` — high, moderate ⚠ verify. Store the
+   - [x] `everyorg-webhook-endpoint` — high, moderate ⚠ verify. Built and verified
+     2026-11-02, live with oplog 0019. Store the
      body's named fields before believing anything (`storableBody`, never the
      body: ADR-0027 as amended 2026-11-02); match on `partnerDonationId`
      alone, against an open intent, with an exact slug and EIN check; a
@@ -100,13 +102,15 @@ Check items off as they ship.
      and logged, never acted on.
 
 5. **stats, and the thank-you page and claim**
-   - [ ] `anonymous-donation-stats` — medium, moderate. The stats row is
+   - [x] `anonymous-donation-stats` — medium, moderate. Built 2026-11-02, live with
+     oplog 0019; no page reads a count yet. The stats row is
      written in the webhook's donation-insert transaction, only when the
      insert actually happened (`ON CONFLICT DO NOTHING RETURNING`). Every
      count reads only `donation_stats`. "Sponsors" counts gifts, not
      distinct donors (the row has no donor in it), and the comment says so
      with `(ADR-0027)`.
-   - [ ] `thank-you-and-claim` — medium, moderate ⚠ verify. **Changed by ADR-0027 as
+   - [ ] `thank-you-and-claim` — medium, moderate ⚠ verify. Partly built: left are the art
+     email, the account link and the donor-flow e2e. **Changed by ADR-0027 as
      amended 2026-11-02:** the email is asked on the sponsor page, the art goes by
      email with a link to make an account, and a no-account donor's address is erased
      once the painting is sent, so the claim email to the webhook's address and the
@@ -122,7 +126,9 @@ Check items off as they ship.
      coming soon!" and `/animals/[id]`'s "When sponsoring opens" sentence, each with no
      replacement (Logan, 2026-11-02). Carry-in for the art path: a gift already recorded
      is painted after a withdrawal, reading the grant as of the gift's date and a photo
-     held from the gift (ADR-0022 as amended 2026-11-02). Carry-in for the art email: a
+     held from the gift (ADR-0022 as amended 2026-11-02). Holding the photo ships with the
+     first real Sponsor button, not with the painter: a dog adopted before the painter runs
+     would otherwise leave a painting owed with no photo. Carry-in for the art email: a
      bounced gift's thank-you page says so and takes a new address, which
      `correctDonorEmail` refuses today because the old one is erased.
 

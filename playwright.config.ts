@@ -32,6 +32,14 @@ export default defineConfig({
         // was started with, and the seed would be invisible to it.
         reuseExistingServer: false,
         timeout: 60_000,
-        env: { DATABASE_URL: E2E_DATABASE_URL, PORT: String(E2E_PORT), HOSTNAME: "127.0.0.1" },
+        // Every.org as production has it, so only the missing grant keeps a Sponsor button
+        // off a claimed shelter's page (ADR-0002 as amended 2026-11-02). The token is a stand-in.
+        env: {
+          DATABASE_URL: E2E_DATABASE_URL,
+          PORT: String(E2E_PORT),
+          HOSTNAME: "127.0.0.1",
+          EVERYORG_ENV: "production",
+          EVERYORG_WEBHOOK_TOKEN: "e2e-token",
+        },
       },
 });

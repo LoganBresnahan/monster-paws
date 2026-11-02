@@ -28,14 +28,15 @@ return the donor gets, for **the remainder of that animal's stay**:
   was adopted today. You were part of that."* The stay is a story with an
   ending; the adoption "graduation" is the most shareable, retention-driving
   moment the product has.
-- **AI keepsake art** — one generated image after donating (the thank-you
-  dopamine hit and the viral share loop; the framed real photo is the card
-  until the art lands, since it is generated on a GPU in Logan's home that
-  may be asleep — ADR-0004 as amended 2026-10-05), and a second "gotcha day"
-  portrait at adoption. Both live permanently in the donor's account — for
-  shelters that consented. A keepsake is held on the basis each field came
-  from (ADR-0022): an aggregator-only sponsorship keeps its donation forever
-  but its name and photo only as long as the aggregator license holds.
+- **AI keepsake art** — paintings after donating (the thank-you dopamine hit
+  and the viral share loop). The keepsake is the painting, never the photo
+  (ADR-0022 as amended 2026-10-27). It goes to the donor by email when it is
+  ready, since it is generated on a GPU in Logan's home that may be asleep
+  (ADR-0004 as amended 2026-10-05, ADR-0027 as amended 2026-11-02), and a
+  second "gotcha day" portrait follows at adoption. A donor who makes an
+  account keeps them there for as long as the account lasts. A keepsake is held
+  on the basis each field came from (ADR-0022), and every gift is to a shelter
+  that consented: no permission, no button (ADR-0002 as amended 2026-11-02).
 
 The shelter's pitch-facing value is **donor retention**: donors who see what
 they funded come back.
@@ -312,18 +313,16 @@ photo; Replicate stays behind the same interface as the escape hatch
 1. **Generate only on donation, never per listing.** At aggregator scale,
    pre-generating art for hundreds of thousands of animals is real money for
    zero value — and the card being created *for you* at sponsorship is the
-   pack-opening moment. The art **arrives when it is ready**, not instantly:
-   the card is a two-stage reveal, framed photo first, art announced by its
-   own message, because the home GPU may be asleep (ADR-0004 as amended
-   2026-10-05).
+   pack-opening moment. The art **arrives when it is ready**, not instantly,
+   by email, because the home GPU may be asleep (ADR-0004 as amended
+   2026-10-05, ADR-0027 as amended 2026-11-02).
    **Art-rights gate (ADR-0006):** generation uses only photos we hold
    rights to. Photo **consent** (one email of written permission) unlocks
    AI art — separate from, and cheaper than, **verification** (attestation
    signing). A shelter with no consent takes no gift through us, so there
    is no card without art (ADR-0002 as amended 2026-11-02), and the card
    credits it: *"Permission to digify <pet> given by <shelter>."* The AI
-   pipeline is
-   built and run internally from day one, but **no generated art ships in
+   pipeline is built and run internally from day one, but **no generated art ships in
    production without consent on record**.
 2. **Four candidates, all the donor's; the judge runs silent** (ADR-0004
    as amended 2026-10-14). Every keepsake gets four paintings; the donor

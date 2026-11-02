@@ -561,8 +561,8 @@ happened to an animal. The ledger was right; it was only ever wrong as a feed.
 
 ## Donate → webhook → keepsake — tied back by our own id (ADR-0027)
 
-Roadmap item 4, `doc/plans/adr-0027-accounts-build-plan.md`. Built to `/thanks` on
-staging, unproven against a real delivery; the rest is marked. No account stands
+Roadmap item 4, `doc/plans/adr-0027-accounts-build-plan.md`. Built to `/thanks`, and
+proven on staging by two real card deliveries (oplog 0018); the rest is marked. No account stands
 before the gift, only the email (ADR-0027 as amended 2026-11-02): the account comes
 after it, if at all.
 
@@ -576,15 +576,17 @@ after it, if at all.
        │  nonprofit slug + EIN
        │  intent id → httpOnly cookie on this browser
        ▼
-  /test-gift/<secret>, startTestGift()   Logan's real-money tests, one named nonprofit, no
-       │                            animal, no painting; goes once they're done
-       ▼
   every.org donate link             partner_donation_id = intent id, email prefilled,
        │                            method=card,bank,paypal,
        │                            webhook_token (EVERYORG_WEBHOOK_TOKEN)
+       │                            a separate way in: /test-gift/<secret>, startTestGift(),
+       │                            Logan's real-money tests, one named nonprofit, no
+       │                            animal, no painting, gone once they're done
        │  ── Every.org boundary: the money and the receipt are theirs ──
        ▼
   POST /api/webhooks/everyorg/<secret>   unsigned; a wrong secret stores nothing
+       │  production: monsterpaws.org, the site's own edge, Caddy and app
+       │  (planned, oplog 0019; ADR-0027 as amended 2026-11-02)
        │  staging: staging-hooks.monsterpaws.org → tunnel → :3027 in
        │  monsterpaws-dev, this path only (scripts/staging-hooks.yml)
        ▼
@@ -599,9 +601,8 @@ after it, if at all.
        │  donations row (charge_id unique: a replay inserts nothing)
        │  donation_stats row, only when the insert happened — no donor in it
        │  donation_intents.closed_at
-       │  snapshotKeepsake() → keepsake + keepsake_fact   (planned; § Keepsake snapshot)
-       │  boss.send('art.generate')   (planned: when the LoRA ships; nothing queued
-       │                              until then)
+       │  (planned) the keepsake snapshot → keepsake + keepsake_fact; § Keepsake snapshot
+       │  (planned) the art job, queued when the LoRA ships; nothing queued until then
        ▼
   /thanks                           says money moved only when the donation row
        │                            exists under this browser's cookie; shows

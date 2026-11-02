@@ -1,3 +1,4 @@
+import { eq } from "drizzle-orm";
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { contentHashOf } from "@/core/ingest/hash";
@@ -10,7 +11,7 @@ import {
   type RescueGroupsAnimal,
 } from "@/core/ingest/rescuegroups";
 import type { Db } from "@/db/client";
-import { animalIdentities } from "@/db/schema";
+import { animalIdentities, animals, shelterNonprofits } from "@/db/schema";
 
 /**
  * The e2e corpus (ADR-0017 as amended 2026-09-28): the golden RescueGroups
@@ -162,5 +163,25 @@ export async function seedE2eCorpus(db: Db, now: Date = new Date()): Promise<See
     if (id === undefined) throw new Error(`seed: ${externalId} produced no identity`);
     manifest[key] = id;
   }
+
+  // Claimed, so only the missing grant keeps a Sponsor button off this page (ADR-0002 as amended
+  // 2026-11-02). Upserted: the corpus truncate doesn't reach this table.
+  const [stowawayRow] = await db
+    .select({ shelter: animals.shelterExternalId })
+    .from(animals)
+    .where(eq(animals.id, manifest.stowaway));
+  if (!stowawayRow?.shelter) throw new Error("seed: Stowaway has no shelter");
+  const claimed = {
+    everyorgSlug: "e2e-claimed-shelter",
+    ein: "36-4219778",
+    source: "e2e seed",
+    fetchedAt: now,
+    everyorgClaim: "claimed" as const,
+    claimCheckedAt: now,
+  };
+  await db
+    .insert(shelterNonprofits)
+    .values({ shelterExternalId: stowawayRow.shelter, ...claimed })
+    .onConflictDoUpdate({ target: shelterNonprofits.shelterExternalId, set: claimed });
   return manifest;
 }

@@ -74,7 +74,7 @@ async function registerIngestPoll(boss: PgBoss) {
 
 const ERASE_ABANDONED = "donate.erase-abandoned";
 
-/** Daily, because the privacy page promises a date: a missed run is reported, and the next one catches up. */
+/** Daily, because the privacy page promises a date. A failed run is reported; a run that never fires reports nothing, and the next one catches up. */
 async function registerAddressErasure(boss: PgBoss) {
   await boss.createQueue(ERASE_ABANDONED);
   await boss.work(ERASE_ABANDONED, async () => {
