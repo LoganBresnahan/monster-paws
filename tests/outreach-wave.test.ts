@@ -63,7 +63,8 @@ describe.skipIf(SKIP_DB_TESTS)("ADR-0029 assembling a wave", () => {
     expect(messages.map((m) => m.shelterExternalId)).toEqual([quiet.shelterExternalId, paws.shelterExternalId]);
     expect(messages[0].mail.text).toContain("Could you claim your free Every.org profile?");
     expect(messages[0].mail.text).toContain("https://www.every.org/nonprofits");
-    expect(messages[1].mail.text).toContain("your Every.org profile is already claimed");
+    expect(messages[1].mail.text).toContain("One thing I'd like to ask:");
+    expect(messages[1].mail.text).not.toContain("Every.org");
     expect(messages[1].mail.text).not.toMatch(/hackathon/i);
     expect(messages[0].mail.from).toBe("Logan Bresnahan <logan@example.org>");
     // No address rides on a message: the guard reads it (ADR-0029 §2).

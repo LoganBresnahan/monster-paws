@@ -1,3 +1,4 @@
+import { existsSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { mailpitMessageBody, mailpitMessages } from "@/core/outreach/mailpit";
 import { renderAsk, type AskInput } from "@/core/outreach/template";
@@ -64,12 +65,17 @@ describe("ADR-0029 the ask", () => {
     expect(unknown.text).toContain("https://www.every.org/nonprofits");
 
     const claimed = renderAsk({ ...base, claim: "claimed" });
-    expect(claimed.text).not.toContain("Could you claim");
-    expect(claimed.text).toContain("your Every.org profile is already claimed");
+    expect(claimed.text).not.toContain("Every.org");
+    expect(claimed.text).toContain("One thing I'd like to ask:");
+    expect(claimed.text).toContain("\n\nMay we paint your animals from the photos in your listings?");
+    expect(claimed.text).not.toContain("Two things");
+    expect(ask.text).toContain("Two things I'd like to ask:");
+    expect(ask.text).toContain("1. May we paint your animals");
   });
 
   it("names the hackathon as timing and never as endorsement, and only while it is on (ADR-0028)", () => {
     expect(ask.text).toContain("our entry in the Meta Global AI Developer Hackathon, which runs until 4 November 2026");
+    expect(ask.text).not.toContain("Chicago-area");
     expect(ask.text).toContain("not anyone's endorsement of us");
     const after = renderAsk({ ...base, timing: null });
     expect(after.text).not.toMatch(/hackathon/i);
@@ -106,8 +112,17 @@ describe("ADR-0029 the ask", () => {
 
   it("loads images only from monsterpaws.org, and never a listing's photo", () => {
     const sources = [...ask.html.matchAll(/src="([^"]+)"/g)].map((m) => m[1]);
-    expect(sources).toEqual(["https://monsterpaws.org/brand/crew/beetle-painting.jpg"]);
+    expect(sources).toEqual(["https://monsterpaws.org/opengraph-image.jpg"]);
     expect(ask.html).not.toMatch(/rescuegroups\.org|cloudfront|cloudinary/);
+    expect(existsSync("src/app/opengraph-image.jpg")).toBe(true);
+  });
+
+  it("calls a shelter what a person would, whatever its listing's legal wrapper", () => {
+    const named = (name: string) => renderAsk({ ...base, shelter: { ...base.shelter, name } });
+    expect(named("Ruff Redemption Rescue, Inc ").text).toMatch(/^Hi Ruff Redemption Rescue team,/);
+    expect(named("Rainbow Bridge Hospice Rescue inc").subject).toMatch(/^Rainbow Bridge Hospice Rescue on Monster Paws/);
+    expect(named("Dallas Cat Rescue dba Cat Matchers").text).toMatch(/^Hi Cat Matchers team,/);
+    expect(named("Animal House Project dba SafeHaven Animal Rescue Team").text).toMatch(/^Hi SafeHaven Animal Rescue Team,/);
   });
 
   it("escapes a shelter's name in HTML, and reads one animal in the singular", () => {
@@ -130,7 +145,7 @@ describe("ADR-0029 the ask", () => {
     expect(landed?.Subject).toBe(rendered.subject);
     const body = await mailpitMessageBody(landed!.ID);
     expect(body.Text).toContain("We keep $0.");
-    expect(body.HTML).toContain("https://monsterpaws.org/brand/crew/beetle-painting.jpg");
+    expect(body.HTML).toContain("https://monsterpaws.org/opengraph-image.jpg");
   });
 
   it("writes to a shelter whose name nobody published without inventing one", () => {

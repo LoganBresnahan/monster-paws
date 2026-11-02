@@ -40,8 +40,8 @@ export interface RenderedAsk {
 
 export const DEFAULT_ORIGIN = "https://monsterpaws.org";
 
-/** Our own painting, hosted by us — never a stored copy of a shelter's listing photo (ADR-0029 §3). */
-export const ASK_IMAGE = { path: "/brand/crew/beetle-painting.jpg", alt: "A watercolour keepsake of Beetle, one of our own dogs — the face of Monster Paws" };
+/** Our own painting, hosted by us — never a stored copy of a shelter's listing photo (ADR-0029 §3); never move `src/app/opengraph-image.jpg`, since mail already sent keeps loading this URL. */
+export const ASK_IMAGE = { path: "/opengraph-image.jpg", alt: "Beetle, a bloodhound, painted in watercolour: a Monster Paws keepsake." };
 
 /** Every URL in the prose is a link in the HTML, so a reader taps it; the text part keeps the bare URL. Runs on escaped text. */
 function linkify(escaped: string): string {
@@ -52,6 +52,12 @@ function escapeHtml(text: string): string {
   return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
 
+/** What a person would call the shelter: a listing's own name can carry a legal wrapper and stray spaces ("Ruff Redemption Rescue, Inc ", "Animal House Project dba SafeHaven Animal Rescue Team", found 2026-11-02). */
+function spokenName(name: string): string {
+  const dba = name.split(/\s+d\/?b\/?a\s+/i);
+  return dba[dba.length - 1].trim().replace(/[,\s]+(inc|nfp|llc)\.?$/i, "").trim();
+}
+
 function animals(count: number): string {
   return count === 1 ? "1 adoptable animal" : `${count} adoptable animals`;
 }
@@ -59,13 +65,15 @@ function animals(count: number): string {
 export function renderAsk(input: AskInput): RenderedAsk {
   const origin = input.origin ?? DEFAULT_ORIGIN;
   const { shelter, sender } = input;
-  const name = shelter.name ?? "your shelter";
+  const name = spokenName(shelter.name ?? "your shelter");
   const where = [shelter.city, shelter.state].filter(Boolean).join(", ");
 
   const subject = `${name} on Monster Paws — ${animals(shelter.visibleCount)}, and a question`;
 
+  const paint = `May we paint your animals from the photos in your listings? The paintings are made with AI image tools, which means the photos are sent to third-party services to be processed. You can stop this at any time, and we take the paintings down. If you say yes, I'd also ask you to confirm the photos are yours to license — shelter photos often come from volunteers, fosters and adopters.`;
+
   const paragraphs: { text: string; link?: string }[] = [
-    { text: `Hi ${name} team,` },
+    { text: /\bteam$/i.test(name) ? `Hi ${name},` : `Hi ${name} team,` },
     {
       text: `I'm ${sender.name}, ${sender.role} of Monster Paws (${origin}), a small project in Chicago that helps people sponsor shelter animals. Every donation goes to the shelter. We keep $0.`,
     },
@@ -76,21 +84,20 @@ export function renderAsk(input: AskInput): RenderedAsk {
     {
       text: `The idea: a donor picks one of your animals, gives what they like, and gets a small painted keepsake of that animal. You can see it with our own pets at ${origin}/#crew, and walk through the whole thing at ${origin}/demo.`,
     },
-    { text: "Two things I'd like to ask:" },
-    {
-      text: `1. May we paint your animals from the photos in your listings? The paintings are made with AI image tools, which means the photos are sent to third-party services to be processed. You can stop this at any time, and we take the paintings down. If you say yes, I'd also ask you to confirm the photos are yours to license — shelter photos often come from volunteers, fosters and adopters.`,
-    },
   ];
 
-  if (input.claim !== "claimed") {
-    paragraphs.push({
-      text: `2. Could you claim your free Every.org profile? Every.org is how a donation reaches you, and it takes card donations only for a nonprofit that has claimed its profile. It takes a few minutes, and it gives you donate buttons and payouts for every donor, not only ours:`,
-      link: input.everyorgProfileUrl ?? "https://www.every.org/nonprofits",
-    });
+  // Never mention Every.org to a shelter that has claimed its profile: there is nothing to ask of it (ADR-0029 §3; Logan, 2026-11-02).
+  if (input.claim === "claimed") {
+    paragraphs.push({ text: "One thing I'd like to ask:" }, { text: paint });
   } else {
-    paragraphs.push({
-      text: `2. Nothing — your Every.org profile is already claimed, so donations can reach you today. Thank you for that.`,
-    });
+    paragraphs.push(
+      { text: "Two things I'd like to ask:" },
+      { text: `1. ${paint}` },
+      {
+        text: `2. Could you claim your free Every.org profile? Every.org is how a donation reaches you, and it takes card donations only for a nonprofit that has claimed its profile. It takes a few minutes, and it gives you donate buttons and payouts for every donor, not only ours:`,
+        link: input.everyorgProfileUrl ?? "https://www.every.org/nonprofits",
+      },
+    );
   }
 
   paragraphs.push({
@@ -99,7 +106,7 @@ export function renderAsk(input: AskInput): RenderedAsk {
 
   if (input.timing) {
     paragraphs.push({
-      text: `Why this week: we are building this as our entry in ${input.timing.event}, which runs until ${input.timing.until}, so I'm writing to Chicago-area shelters now. That is our deadline, not anyone's endorsement of us.`,
+      text: `Why this week: we are building this as our entry in ${input.timing.event}, which runs until ${input.timing.until}, so I'm writing to shelters now. That is our deadline, not anyone's endorsement of us.`,
     });
   }
 
