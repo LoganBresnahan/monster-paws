@@ -70,7 +70,7 @@ export function renderAsk(input: AskInput): RenderedAsk {
 
   const subject = `${name} on Monster Paws — ${animals(shelter.visibleCount)}, and a question`;
 
-  const paint = `May we paint your animals from the photos in your listings? The paintings are made with AI image tools, which means the photos are sent to third-party services to be processed. You can stop this at any time, and we take the paintings down. If you say yes, I'd also ask you to confirm the photos are yours to license — shelter photos often come from volunteers, fosters and adopters.`;
+  const paint = `May we paint your animals from the photos in your listings? The paintings are made with AI image tools, which means the photos are sent to third-party services to be processed. You can withdraw at any time. If you say yes, I'd also ask you to confirm the photos are yours to license — shelter photos often come from volunteers, fosters and adopters.`;
 
   const paragraphs: { text: string; link?: string }[] = [
     { text: /\bteam$/i.test(name) ? `Hi ${name},` : `Hi ${name} team,` },
@@ -101,7 +101,7 @@ export function renderAsk(input: AskInput): RenderedAsk {
   }
 
   paragraphs.push({
-    text: `One plain term, so there is no surprise later: if you withdraw permission, we stop painting, take the paintings down and delete the photos we painted from, but keepsakes already given to donors — the animal's name, breed, age and painting — stay with those donors.`,
+    text: `One plain term, so there is no surprise later: if you withdraw permission, we stop offering gifts for your animals. A gift already made still gets its painting, and we delete the photos once those are done. Keepsakes already given to donors — the animal's name, breed, age and painting — stay with those donors.`,
   });
 
   if (input.timing) {

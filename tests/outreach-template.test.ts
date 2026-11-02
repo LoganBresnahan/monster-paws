@@ -44,14 +44,15 @@ describe("ADR-0029 the ask", () => {
   it("asks to paint from the listing photos, says they go to third-party AI services, stoppable, and asks about the rights (ADR-0004 §2)", () => {
     expect(ask.text).toContain("May we paint your animals from the photos in your listings?");
     expect(ask.text).toContain("sent to third-party services to be processed");
-    expect(ask.text).toContain("You can stop this at any time");
+    expect(ask.text).toContain("You can withdraw at any time.");
     expect(ask.text).toContain("confirm the photos are yours to license");
   });
 
-  it("states the retention term up front: the painting stays with the donor, the photo is deleted (ADR-0022 §5 as amended 2026-10-27)", () => {
-    expect(ask.text).toContain("delete the photos we painted from");
+  it("states the withdrawal term up front: a gift already made still gets its painting, and the photos are deleted once those are done (ADR-0022 as amended 2026-11-02)", () => {
+    expect(ask.text).toContain("A gift already made still gets its painting, and we delete the photos once those are done.");
+    expect(ask.text).not.toContain("paintings down");
     expect(ask.text).toContain(
-      "keepsakes already given to donors — the animal's name, breed, age and painting — stay with those donors",
+      "Keepsakes already given to donors — the animal's name, breed, age and painting — stay with those donors.",
     );
     expect(ask.text).not.toMatch(/photo and artwork/);
   });
