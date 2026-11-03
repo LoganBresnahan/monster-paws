@@ -493,17 +493,20 @@ export const donationStats = pgTable(
 );
 
 /**
- * A donor's keepsake, written once at donation (ADR-0022 §1). Never UPDATEd;
- * the card renders from this row, its donation and its facts alone — never
- * through `animals` or `animal_display`. Donor-owned: deleted with its
+ * A donor's keepsake, written once per intent (ADR-0022 §1, ADR-0035 decision 9).
+ * Never UPDATEd; the card renders from this row, its donation and its facts alone
+ * — never through `animals` or `animal_display`. Donor-owned: deleted with its
  * account after its R2 art (ADR-0027 §6).
  */
 export const keepsake = pgTable("keepsake", {
   id: bigserial("id", { mode: "number" }).primaryKey(),
-  donationId: integer("donation_id")
+  /** its donation is reached through this, and may arrive later: never add an UPDATE for a late webhook (ADR-0035 decision 9) */
+  intentId: text("intent_id")
     .notNull()
-    .unique("keepsake_donation_uq")
-    .references(() => donations.id),
+    .unique("keepsake_intent_uq")
+    .references(() => donationIntents.id),
+  /** 128 CSPRNG bits of its own, never the intent id or `/thanks`'s token: a shared link must open nothing but this card (ADR-0036) */
+  shareToken: text("share_token").notNull().unique("keepsake_share_token_uq"),
   snapshottedAt: timestamp("snapshotted_at", { withTimezone: true }).notNull(),
 });
 

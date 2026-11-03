@@ -41,6 +41,13 @@ export const AGGREGATOR_LICENSES: readonly AggregatorLicense[] = [
       'API terms grant "temporary use and display in your services"; our granted key application declared display of "name, photos, breed, age, description, status, and organization info" on public pages linking back to the listing organization',
     evidence: "doc/adr/0006-rescuegroups-backbone.md §1 (amended 2026-08-25); doc/rescuegroups-api-terms.md",
   },
+  {
+    // Never a registry entry: the crew are no shelter's (doc/consent/0001-the-crew.md), and `manual` rows exist only in the demo's own database.
+    source: "manual",
+    grantedAt: "2026-10-26",
+    basis: "The founder's own pets and his own photos, displayed as the founders' pets and not up for adoption.",
+    evidence: "doc/consent/0001-the-crew.md",
+  },
 ];
 
 /**

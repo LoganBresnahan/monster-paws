@@ -54,7 +54,7 @@ bounces thats fine, if they actually went through the process their intentions w
      within decision 7's limits, and inserts the keepsake on conflict do nothing. The photo isn't tied to that insert
      (decision 11).
    - Owed means a keepsake with no `art` fact. Whoever ships the handler ships the send, with a
-     singleton key on the keepsake id, and a handler that exits if art facts exist. pg-boss 12.26.3
+     singleton key on the keepsake id and `singletonSeconds`, because on a standard queue a key alone dedupes nothing (measured, `tests/keepsake.test.ts`), and a handler that exits if art facts exist. pg-boss 12.26.3
      deletes a job left unclaimed for 14 days, and a failed one 7 days after its attempts run out, so a
      lost job must be re-sendable. "Queue on the insert that wrote" would lose a paid painting.
 7. **Confirmed gifts are never counted and go first; unconfirmed ones are limited, and over a limit they wait** (question 1).
@@ -189,7 +189,7 @@ bounces thats fine, if they actually went through the process their intentions w
   real failure rate and a list to fix by hand.
 - `thankYouIntent` keeps a returned gift current instead of falling back after an hour, and `/thanks`'s waiting
   copy changes, and can't say a painting has started, since it may be waiting for a place.
-- `keepsake` needs a migration (0018), and `donation_intents` a token and a return time (0017). Oplog 0021 runs
+- `keepsake` needs a migration (0017), and `donation_intents` a token and a return time (0018). Oplog 0021 runs
   before D: a worker must never pick up a gift with no animal.
 - Comments that go false with C: `link.ts` ("never from this URL") and the two cookie comments in `/thanks`, with
   the page's bookmark copy and `/privacy`'s cookie line.

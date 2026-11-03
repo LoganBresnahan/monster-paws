@@ -120,7 +120,12 @@ describe("aggregator-display is the key's license, never a shelter permission (A
     // to show nothing. Trust rank must never be read as permission.
     expect(isDisplayLicensed("shelterluv", ASOF, [])).toBe(false);
     expect(isDisplayLicensed("petango", ASOF, [])).toBe(false);
-    expect(isDisplayLicensed("manual", ASOF, [])).toBe(false);
+  });
+
+  it("licenses `manual` for the crew alone, on the founder's consent record (ADR-0028 §6)", () => {
+    expect(isDisplayLicensed("manual", new Date("2026-11-04"), [])).toBe(true);
+    expect(isDisplayLicensed("manual", new Date("2026-10-25"), [])).toBe(false);
+    expect(AGGREGATOR_LICENSES.find((license) => license.source === "manual")?.evidence).toBe("doc/consent/0001-the-crew.md");
   });
 });
 

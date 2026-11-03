@@ -84,7 +84,7 @@ describe.skipIf(SKIP_DB_TESTS)("ADR-0027 donor schema", () => {
       "donation_intents.account_id -> accounts (no action)",
       "donations.intent_id -> donation_intents (no action)",
       "donations.webhook_payload_id -> everyorg_webhook_payloads (no action)",
-      "keepsake.donation_id -> donations (no action)",
+      "keepsake.intent_id -> donation_intents (no action)",
       "keepsake_fact.keepsake_id -> keepsake (no action)",
     ]);
   });

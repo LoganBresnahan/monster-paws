@@ -11,6 +11,7 @@ import { createPgStages } from "@/core/ingest/pg";
 import { runIngest } from "@/core/ingest/pipeline";
 import { createRescueGroupsAdapter, rescueGroupsNormalizer } from "@/core/ingest/rescuegroups";
 import { eraseAbandonedAddresses } from "@/core/donate/intent";
+import { ART_GENERATE, ART_QUEUE_OPTIONS, sweepKeepsakes } from "@/core/keepsake";
 import { sweepWebhookSpool } from "@/core/donate/webhook-replay";
 import { webhookSweepAlerts } from "@/worker/webhook-sweep";
 import { gateAlert, INGEST_POLL, planIngestPoll } from "@/worker/ingest-poll";
@@ -130,6 +131,31 @@ function startWebhookSweep(): () => void {
   return () => clearInterval(timer);
 }
 
+const KEEPSAKE_SWEEP_MS = 60_000;
+
+/**
+ * Only with `ART_SWEEP=on`, which the droplet's compose must never set: production has no crew row
+ * and no migration 0017, and its sweep is ADR-0035's limited one, not this crew-only one (ADR-0028 §6).
+ */
+async function startKeepsakeSweep(boss: PgBoss): Promise<() => void> {
+  if (process.env.ART_SWEEP !== "on") return () => {};
+  await boss.createQueue(ART_GENERATE, ART_QUEUE_OPTIONS);
+  let running = false;
+  const timer = setInterval(async () => {
+    if (running) return;
+    running = true;
+    try {
+      const report = await sweepKeepsakes(getDb(DATABASE_URL), (name, data, options) => boss.send(name, { ...data }, options));
+      if (report.written > 0 || report.sent > 0) console.log(JSON.stringify({ event: "keepsake.sweep", ...report }));
+    } catch (err) {
+      Sentry.captureMessage(`keepsake sweep failed: ${failureCode(err)}`, { level: "error", tags: { job: "keepsake.sweep" } });
+    } finally {
+      running = false;
+    }
+  }, KEEPSAKE_SWEEP_MS);
+  return () => clearInterval(timer);
+}
+
 async function main() {
   if (!DATABASE_URL) {
     // Pre-database deploys (landing only): idle instead of crash-looping so
@@ -151,6 +177,7 @@ async function main() {
   await registerIngestPoll(boss);
   await registerAddressErasure(boss);
   const stopWebhookSweep = startWebhookSweep();
+  const stopKeepsakeSweep = await startKeepsakeSweep(boss);
 
   // Job registrations land with their features:
   //   art.generate       — keepsake card generation (roadmap item 4); never
@@ -160,6 +187,7 @@ async function main() {
 
   const shutdown = async () => {
     stopWebhookSweep();
+    stopKeepsakeSweep();
     await boss.stop();
     await Sentry.close(2000);
     process.exit(0);
