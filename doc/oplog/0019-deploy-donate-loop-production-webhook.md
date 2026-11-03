@@ -1,7 +1,7 @@
 # 0019: Deploy `cc8ca32` — the donate loop, the production webhook, and the error-report fix
 
-Status: planned
-Planned: 2026-11-02 · Run: —
+Status: run
+Planned: 2026-11-02 · Run: 2026-11-02 23:49 UTC – 2026-11-03 00:09 UTC
 Why: ADR-0027 as amended 2026-11-02 (the account-less donate loop, the production webhook on the
 main domain, the hidden test page); ADR-0002 as amended 2026-11-02 (no permission to paint, no
 Sponsor button); ADR-0010 as amended 2026-11-02 (error reports stop carrying visitors' data);
@@ -39,7 +39,7 @@ Logan gives the word for step 1, and makes the gifts in step 8.
       2026-09-30).
 - [x] Ship bar on `cc8ca32`: the moderator's run from the main checkout, finished 23:19 UTC on 2026-11-02,
       vitest 556/556 once, typecheck clean, e2e 39/39; the suite's second run is CI's `verify`, in the run above.
-- [ ] e2e against the published app image, with Every.org configured as production, or
+- [x] e2e against the published app image, with Every.org configured as production, or
       `e2e/donate.spec.ts`'s button test proves nothing:
 
       docker run --rm -d --name mp-e2e --network host \
@@ -49,15 +49,15 @@ Logan gives the word for step 1, and makes the gifts in step 8.
         ghcr.io/loganbresnahan/monster-paws-app:cc8ca3289890b10d99f99dbbbc004d0999af3c20
       PW_BASE_URL=http://127.0.0.1:3200 npm run e2e:prod
       docker stop mp-e2e
-- [ ] Migration `0015` rehearsed: `drizzle-kit migrate` on a scratch database restored from the newest
+- [x] Migration `0015` rehearsed: `drizzle-kit migrate` on a scratch database restored from the newest
       dump in the main checkout's `var/dumps/`, then dropped.
-- [ ] `pass` unlocked by Logan (the DO token, the new entries).
-- [ ] Not within an hour of 06:00, 07:00 or 08:30 UTC, and nothing in the main checkout from 06:45 UTC
+- [x] `pass` unlocked by Logan (the DO token, the new entries).
+- [x] Not within an hour of 06:00, 07:00 or 08:30 UTC, and nothing in the main checkout from 06:45 UTC
       until that night's log shows `== exit`.
-- [ ] Oplog 0020, the purge, committed as `planned` before step 1, since the fix goes live at step 5.
+- [x] Oplog 0020, the purge, committed as `planned` before step 1, since the fix goes live at step 5.
       It runs straight after this entry's step 7, never before: the proof's report must be read before
       retention drops, or the drop could delete it.
-- [ ] The dev box free: nobody on `:3100`/`:3200` or `monsterpaws_e2e`, no batch on the card.
+- [x] The dev box free: nobody on `:3100`/`:3200` or `monsterpaws_e2e`, no batch on the card.
 
 ## Steps
 
@@ -224,9 +224,66 @@ oplog 0021's context.
 Rollback: removing `EVERYORG_ENV` and `up -d app` closes the page. The money is real and stays given.
 
 ## Run
+Logan gave the word ("go!") at about 23:49 UTC on 2026-11-02, having been told what would run.
+
+**Prerequisites.** `e2e:prod` on the published `cc8ca32` image, 39 of 39, 23:47, its `/api/health` naming `cc8ca32` and
+`EVERYORG_ENV` reading `production` inside the container. Rehearsal: the newest dump, 2026-10-26, restored with 0 errors,
+12 to 16 migrations, the column present, 112,123 animals before and after, the scratch database dropped. `paintings` was
+held off the card through step 7. CI on `fcbc5a6`, this entry's commit, also green.
+
+**1.** 23:49:47. `IMAGE_TAG` `40cb846…` and checkout `8cf206d`, the rollback. 0 `EVERYORG_` or `SITE_ORIGIN` lines. Health 200
+on `40cb846`, `lastCompletePollAt` 2026-11-02 07:40:43.
+
+**2.** 23:50:13. `everyorg/test-page-secret` generated. Entries read lengths 12, 113, 32 and 32. Five names once each, and the
+value count `5`.
+
+**3.** 23:50:33. Checkout `fcbc5a6`, both images `cc8ca32…` pulled, app and worker still on `40cb846`.
+
+**4.** 23:51:48. `drizzle-kit migrate` through the worker image. **Differed:** the npm notices hid the success line, so it was
+read back before switching: 16 migrations, the column there. Health 200 on `40cb846` throughout.
+
+**5.** Finished 23:53:20, `<roll>`. Both on `cc8ca32…`, the worker logged `ingest.poll unscheduled`, `printenv` said `production`,
+health 200 on `cc8ca32`, caddy untouched.
+
+**6.** 23:53:55. 16 migrations, the column, `donate.erase-abandoned 0 6 * * *`, 0 intents. **Differed:** production holds **0
+claimed rows**, so there was no animal to check, and this step's button check proved nothing, as the step anticipated;
+`e2e:prod` above is what proves it. `/`, `/animals`, `/privacy`, `/thanks`, `/demo` 200; wrong test page 404; wrong webhook 404
+and 0 bytes; test page 200, `noindex, nofollow`.
+
+**7.** 23:54:06. `proof 200`. Payload 1: `1 t [redacted]`, no partner id, kept. The report arrived on the first read, 23:54:32:
+
+| env | component | platform | address_kind | reports | with_user | webhook_path_scrubbed |
+| --- | --- | --- | --- | --- | --- | --- |
+| production | app | node | droplet | 1 | 1 | 1 |
+
+`with_a_cookie`, `with_query_string`, `with_body`, `naming_cf_ip`, `naming_xff`, `naming_intent_cookie`, `naming_proof_address`,
+`naming_proof_query` and `holding_a_secret_path` all 0. So the fix holds on a running Next server, and a report with no address
+gets the sender's at ingest, here the droplet's. Payload 1 keeps Logan's home address in its headers, as this step said.
+
+**8.** Logan's card gift, from the same network as step 7, through `/test-gift/<secret>`, at about 00:08 UTC: **$2 to Spencer Pet
+Rescue, with $0.30 to Every.org**, and the options to share his email and his support publicly on.
+
+- Payload 2, received 00:08:07, 3 s after `donationDate` 00:08:04: `donation.completed`, `STRIPE`, amount 2, net 1.69, `ONCE`,
+  `droppedKeys` address, email, firstName, lastName, `Authorization` `[our auth token]`, the donation written, the address held,
+  the intent closed. `donations`: 2.00 and 1.69 USD, `spencer-pet-rescue`, `861172833`. One `donation_stats` row. `chargeId` is 36
+  characters and fits its shape. No error report since 00:05.
+- The comparison read `t f`: the proof row has `cf-connecting-ip`, and no value on the gift's row matches it, so the row doesn't
+  hold the donor's address. Address-shaped header names: `cf-connecting-ip`, `content-length`, `x-forwarded-for`,
+  `x-forwarded-port`, all expected. IPv6 at Every.org could still give `f`, but those names are the ones it would land in.
+- The Server Action passed Cloudflare from a real browser, on the test page's path.
+- `/thanks` read "Your $2 is on its way to Spencer Pet Rescue, for your animal", with his address, and the bookmark line. "Your
+  animal" is the test page's, since it has none. Firefox offered to save the card, in the address bar on `/thanks`. That is
+  Firefox's own prompt after a card form, and `/thanks` has no card field.
+- **The receipt arrived**, and shows donor name, date 2026-11-02, donation $2.00, "Support for Every.org" $0.30, "You paid" $2.30.
+  So ADR-0027's decision 6 stands. It shows **no charge or donation id**, and its date isn't UTC's: `donated_at` is 2026-11-03.
+- 31¢ came out of $2, against the page's "about 30¢ plus 2%". One gift, so the wording stays until bank and PayPal.
+
+Not answered: whether `email=` stays in the address bar at Every.org's checkout, which Logan will read on the PayPal gift. The entry
+freezes here. Bank and PayPal go in oplog 0021's context.
 
 ## Follow-ups
-- Oplog 0020: the old reports purged, by lowering `errors_retention` and restoring it.
+- Oplog 0020, then 0022: the purge. Both stopped at a scratch application, because `errors_retention` must be 90 on this plan. Logan
+  chose to wait: the old reports age out by about 2027-01-27, with no line on the privacy page.
 - Oplog 0021: the test gifts' rows deleted on `animal_external_id = 'test-gift'` only, never slug or EIN,
   before Spencer's button opens; `EVERYORG_TEST_PAGE_SECRET` unset; the page's code gone in the next
   deploy.

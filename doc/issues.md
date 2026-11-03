@@ -99,14 +99,6 @@ is the record, and a file of ticked boxes stops being read.
   in our request. The scrub and `dataCollection` keep them out of reports, and the production gift
   is the time to look, since staging's checkout blocks a script.
 
-- **The sponsor form is the first Server Action behind Cloudflare, and the managed
-  ruleset is blocking React exploit POSTs on this zone.** 277 blocks in the 24 hours
-  to 2026-11-02 17:02 under CVE-2025-55182's rules, on `/`, `/login`, `/signin` and
-  others. Those rules look for exploit payloads, and whether a real Server Action
-  passes is unproven: the staging tunnel serves only the webhook, so the sponsor page
-  has never been through the edge. The production roll's smoke must submit the form
-  for real; if it is blocked, the fallback is a plain form POST to a route handler.
-
 - **Bytes are corrupted between home and the droplet, and the bridge's SSH
   connection drops on them.** Twice in four days: oplog 0012's rerun
   (2026-10-30 14:21:15 UTC, page 104) and the nightly of 2026-11-02

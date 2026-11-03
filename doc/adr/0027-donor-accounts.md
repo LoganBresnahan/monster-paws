@@ -370,8 +370,7 @@ painting depends on.
    amended 2026-10-14).
 6. **One email per gift: the painting.** Logan, 2026-11-02: "just the 1 email would be
    good". There is no confirmation email. Every.org's receipt says the gift arrived
-   (unproven: neither staging gift sent one, and if production's doesn't come either this
-   decision goes back to Logan), and the thank-you page shows the address with a way to fix it, which costs no email
+   (production's did on 2026-11-03, oplog 0019; neither staging gift sent one), and the thank-you page shows the address with a way to fix it, which costs no email
    and catches a typo. It asks the donor to check the address and to bookmark the page
    until the painting arrives (Logan, 2026-11-02). The URL carries no id, so a bookmark
    works only in that browser and for the cookie's 30 days after the gift, and the page
@@ -421,8 +420,9 @@ painting depends on.
     test paybal and the bank with real transactions once we get it in prod. bank uses plaid
     and it doesn't look like a sandbox version on the staging page." Staging's PayPal also
     asked for a PayPal sandbox account. Only the card is measured on staging. The same gifts
-    answer what staging couldn't: Logan got no receipt from either staging gift, so what a
-    receipt shows is unknown, and the privacy page asks for one.
+    answer what staging couldn't. A production receipt shows name, date, amount and tip, and **no
+    charge or donation id**, and its date isn't UTC's, so a donor is found by nonprofit, amount and date
+    within a day, not by id (oplog 0019).
 13. **Those gifts go through a hidden page, the one exception to "no permission, no button"**
     (ADR-0002 as amended 2026-11-02). Logan, 2026-11-02: "a one off page that isn't marked
     anywhere, i can just type in the url", "real tests with my money". It gives to Spencer Pet

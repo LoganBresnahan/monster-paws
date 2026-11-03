@@ -562,7 +562,7 @@ happened to an animal. The ledger was right; it was only ever wrong as a feed.
 ## Donate → webhook → keepsake — tied back by our own id (ADR-0027)
 
 Roadmap item 4, `doc/plans/adr-0027-accounts-build-plan.md`. Built to `/thanks`, and
-proven on staging by two real card deliveries (oplog 0018); the rest is marked. No account stands
+proven by two real card deliveries on staging (oplog 0018) and one on production (oplog 0019); the rest is marked. No account stands
 before the gift, only the email (ADR-0027 as amended 2026-11-02): the account comes
 after it, if at all.
 
@@ -586,7 +586,7 @@ after it, if at all.
        ▼
   POST /api/webhooks/everyorg/<secret>   unsigned; a wrong secret stores nothing
        │  production: monsterpaws.org, the site's own edge, Caddy and app
-       │  (planned, oplog 0019; ADR-0027 as amended 2026-11-02)
+       │  (oplog 0019; ADR-0027 as amended 2026-11-02)
        │  staging: staging-hooks.monsterpaws.org → tunnel → :3027 in
        │  monsterpaws-dev, this path only (scripts/staging-hooks.yml)
        ▼
