@@ -1,10 +1,11 @@
 # ADR-0035: A painting starts at the first signal — the webhook or the donor's return
 
-Status: proposed (2026-11-03). The first-signal rule, the token page and the cookie's role are
-Logan's decisions, and all seven questions below are answered, 6 and 1's lack of an IP limit as the moderator read them and
-told him. Accepting this ADR is his, with CLAUDE.md's line, the sponsor page's copy of the approved line, and "What shelters
-were told" in Consequences, all before slice C or D of the plan is built. Answers marked "to the moderator" were said in that session. Amends ADR-0004, ADR-0022, ADR-0027 and `doc/DIRECTION.md`. The webhook
-hardening that ships ahead of this is ADR-0027 as amended 2026-11-03.
+Status: accepted (2026-11-03). Logan, directly: "you can accept adr0035". The first-signal rule, the token page and the cookie's
+role are his decisions, and all seven questions below are answered, 6 and 1's lack of an IP limit as the moderator read them and
+told him. Named here before he accepted it and not settled by those words, so still his: CLAUDE.md's line, the sponsor page's copy
+of the approved line, and "What shelters were told" in Consequences. Answers marked "to the moderator" were said in that session.
+Amends ADR-0004, ADR-0022, ADR-0027 and `doc/DIRECTION.md`. The webhook hardening that ships ahead of this is ADR-0027 as amended
+2026-11-03.
 
 ## Context
 A painting starts from a recorded donation: `snapshotKeepsake` runs when a donation completes, and

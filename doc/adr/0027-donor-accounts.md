@@ -569,7 +569,7 @@ up. The clock keeps deliveries safe meanwhile and the 10-minute report fires, bu
 - Every.org documents a retry, or says how long it waits: the hold and the clock are set against it.
 - A file outlives the report's 10 minutes on production.
 
-## Amendment (2026-11-03): a painting at the first signal (proposed, ADR-0035)
+## Amendment (2026-11-03): a painting at the first signal (ADR-0035)
 
 ADR-0035 starts a painting at the webhook or the donor's return, so decision 4's "Until a webhook records the gift, nothing is
 sent to that address" goes with it, and decision 11's "still gets its painting" becomes "can still get" in what we tell people

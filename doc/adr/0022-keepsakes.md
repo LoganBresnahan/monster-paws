@@ -212,7 +212,7 @@ to make the painting."
   the end is a new end term `onEnd` doesn't describe, so the contract gains one before the first grant
   is recorded, or a revocation record can't express what we promised.
 
-## Amendment (2026-11-03): a keepsake can come before its donation (proposed, ADR-0035)
+## Amendment (2026-11-03): a keepsake can come before its donation (ADR-0035)
 
 ADR-0035 starts a painting at the first signal, the webhook or the donor's return, so a keepsake keys on the intent and
 reaches its donation through it, and may have none. The token page never shows a painting (its question 2), so this ADR's §1 and "there are no public

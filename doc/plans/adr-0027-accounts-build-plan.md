@@ -143,12 +143,12 @@ Check items off as they ship.
      published image with compose's real volume against a private Postgres (never the shared dev one), a listener
      that never answers for the hang, and `nonprofit_mismatch` and `charge_on_other_intent` never re-run. Before migrating,
      oplog 0023 reads every row with a completed event and no donation, and accounts for each: the backfill marks them decided.
-   - [ ] `first-signal-return` (slice C; ADR-0035, proposed) — medium, moderate ⚠ verify. Waits on Logan accepting ADR-0035. Migration 0018. `success_url` = `/thanks/<token>`; one conditional UPDATE of the return time; the no-cookie
+   - [ ] `first-signal-return` (slice C; ADR-0035) — medium, moderate ⚠ verify. Migration 0018. `success_url` = `/thanks/<token>`; one conditional UPDATE of the return time; the no-cookie
      view, with the listing's photo under `/thanks`'s existing rule and never the painting (ADR-0035 question 2); plain `/thanks` listing only gifts with a return or a donation; `thankYouIntent`; the eraser unchanged, returned or not (question 5);
      `/privacy`, with the line on kept paintings; the
      daily check; the comments and copy ADR-0035 names. Verify: the staging
      proof in ADR-0035 (abandon, no GET; pay, one GET), and reports scrubbed of the token.
-   - [ ] `keepsake-on-intent` (slice D; ADR-0035, proposed) — medium, moderate ⚠ verify. Waits on oplog 0021 and Logan accepting ADR-0035. Migration 0017; the crew-only start is `doc/plans/demo-chain-contract.md`. `keepsake.intent_id`; `snapshotKeepsake`; the droplet sweep with decision 7's limits, its guard by normalised address and its bounded read; the photo hold per listing, after
+   - [ ] `keepsake-on-intent` (slice D; ADR-0035) — medium, moderate ⚠ verify. The rest waits on oplog 0021. Migration 0017; the crew-only start is `doc/plans/demo-chain-contract.md`. `keepsake.intent_id`; `snapshotKeepsake`; the droplet sweep with decision 7's limits, its guard by normalised address and its bounded read; the photo hold per listing, after
      oplog 0023's HEAD and `paintings`' answer on which photos it needs. Stops at "owed": the `art.generate` handler has
      no owner yet. Verify: simultaneous hits, a webhook and two sweeps give one keepsake.
    - [ ] Slice E: the deploy of C and D with `/test-gift` removed, oplog 0024. The bank webhook doesn't hold it for safety:
