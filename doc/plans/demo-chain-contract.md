@@ -6,9 +6,13 @@ compose never sets, and it reaches only the crew. Deadline: 2026-11-04 21:00 UTC
 
 ## Database
 
-`monsterpaws_demo` on the dev Postgres, holding only the crew (ADR-0028 §4 and §6). `npm run demo:seed`
-creates, migrates and fills it. Never the shared `monsterpaws`: the staging gate skips the grant, and that
-database holds listings.
+`monsterpaws_demo` on the dev Postgres, holding only the crew (ADR-0028 §4 and §6). `npm run demo -- seed` creates,
+migrates and fills it, and refuses any other database. Never the shared `monsterpaws`: the staging gate skips the grant,
+and that database holds listings. A real staging gift needs Logan's pick of nonprofit, by
+`npm run demo -- seed --slug <s> --ein <e> --name <n>`.
+
+`npm run demo -- gift <pet> <email>` records a gift through the real decision with no Every.org in it, for rehearsals,
+since only Logan can run a staging one. Use an address of ours: it gets real mail once the mail runs.
 
 ## Keepsake
 
@@ -59,7 +63,7 @@ through `keepsake.intent_id`. No amount goes in the mail, and it doesn't say mon
 ## Running it
 
     DATABASE_URL=<dev postgres>/monsterpaws_demo
-    ART_STORE_DIR=/home/oof/monsterpaws-demo/var/keepsakes
+    ART_STORE_DIR=$HOME/monsterpaws/var/keepsakes   # the main checkout's var/, which every worktree can reach
     ART_SWEEP=on                  # the sweep's worker only
 
 Leave `RESCUEGROUPS_API_KEY` unset in any worker pointed here, or `npm run worker` registers `ingest.poll`.

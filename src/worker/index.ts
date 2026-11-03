@@ -134,8 +134,7 @@ function startWebhookSweep(): () => void {
 const KEEPSAKE_SWEEP_MS = 60_000;
 
 /**
- * Only with `ART_SWEEP=on`, which the droplet's compose must never set: production has no crew row
- * and no migration 0017, and its sweep is ADR-0035's limited one, not this crew-only one (ADR-0028 §6).
+ * Only with `ART_SWEEP=on`, which the droplet's compose must never set: production's sweep is ADR-0035's limited one, not this crew-only one (ADR-0028 §6).
  */
 async function startKeepsakeSweep(boss: PgBoss): Promise<() => void> {
   if (process.env.ART_SWEEP !== "on") return () => {};
