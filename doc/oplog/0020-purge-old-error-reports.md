@@ -1,7 +1,7 @@
 # 0020: Old error reports purged, by lowering `errors_retention` to 1 day and restoring it
 
-Status: planned
-Planned: 2026-11-02 · Run: —
+Status: abandoned
+Planned: 2026-11-02 · Run: 2026-11-02 23:54 – 23:55 UTC, stopped at step 2
 Why: ADR-0010 as amended 2026-11-02. Logan, 2026-11-02: "yeah we can purge. prod visits have been
 nothing but that and there is no interactivity yet", and "yeah change retention to 1 day".
 Commit deployed: n/a — the droplet, the database and the buckets do not change
@@ -110,5 +110,32 @@ application in the dashboard before anything else.
 Rollback: none needed.
 
 ## Run
+**Prerequisites.** Oplog 0019 through step 7 at 23:54:32 UTC, its proof's report read, with no stop. `<roll>` is
+2026-11-02T23:53:20Z. Run on Logan's "go!", which followed being told the purge runs if the proof is clean.
+
+**1.** 23:54:55. Reports before `<roll>`, counts only:
+
+| env | component | platform | address_kind | reports | distinct_addresses | days |
+| --- | --- | --- | --- | --- | --- | --- |
+| production | app | javascript | public | 4 | 2 | 2026-10-28 to 29 |
+| production | app | node | public | 6 | 2 | 2026-10-27 |
+| production | worker | node | droplet | 6 | 1 | 2026-10-27 to 28 |
+| spike | app | javascript | public | 2 | 1 | 2026-09-29 to 30 |
+| spike | app | node | loopback | 18 | 1 | 2026-09-29 to 30 |
+
+No report holds a cookie. The 6 worker reports read `droplet`, so ADR-0010's "most likely the droplet's own" is now
+measured. `errors_retention` 90, `ingesting_paused` false.
+
+**2.** 23:55:06. **Stopped.** The scratch application was created, `PATCH 1` answered **422**, `PATCH 90` answered
+200, it read back 90, delete 204, and the names list held only `monsterpaws`. The command's `-o /dev/null` threw away
+the 422's body, so the minimum is still unknown. As the step says, 1 being refused stops the entry, and a higher
+value is a new decision.
+
+**3–6.** Not run. At 23:55:34 the live application read `errors_retention` 90, `ingesting_paused` false, and health
+was 200 on `cc8ca32`. No report was removed, and the old reports stay until a new entry or their 90 days.
 
 ## Follow-ups
+- Oplog 0022: 7 days instead, on Logan's word. N days clears the 16 production reports about N days after 2026-10-29,
+  so 30 wouldn't be done until late November.
+- Logan's "don't add anything to the privacy page about previous reports" rested on a purge happening, so it comes back
+  to him if 0022 fails.

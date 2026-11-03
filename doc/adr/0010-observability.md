@@ -377,13 +377,14 @@ Action's multipart body always has that shape.
   in 90 days; the other 20 are the `spike` environment of 2026-09-29 and 30, 18 of them on loopback.
   Of the 16: 6 from the server route, 2 addresses, all on 2026-10-27, each with `cf-connecting-ip`
   in its headers; 4 from a browser, 2 addresses, 2026-10-28 and 29; and 6 from the worker, 1
-  address, with no request, so most likely the droplet's own, filled in at ingest; oplog 0020's
-  first read measures that. Those first two groups can be visitors, and
+  address, with no request, the droplet's own, measured by oplog 0020's first read, so Better Stack
+  most likely fills an address in at ingest. Those first two groups can be visitors, and
   whether any are Logan's own visits can't be told from counts. No cookie was in any report. The
   reports from before the roll are purged after it (Logan,
   2026-11-02: "yeah we can purge. prod visits have been nothing but that and there is no
   interactivity yet"). Better Stack's docs offer no way to delete reports short of
-  deleting the application, whose DSN is built into the browser bundle, so the route is lowering
-  `errors_retention` to 1 day and restoring it once they are gone (Logan: "yeah change retention
-  to 1 day"). Its own oplog entry says how long to wait and what follows if they stay.
+  deleting the application, whose DSN is built into the browser bundle, so the route was lowering
+  `errors_retention` to 1 day and restoring it once they were gone (Logan: "yeah change retention
+  to 1 day"). Better Stack refused 1 day on a scratch application, so oplog 0020 stopped there and
+  removed nothing. Oplog 0022 uses 7 days instead (Logan: "7 is fine to get rid of what we collected").
 - Not yet measured on a running Next server, only in process. The roll's smoke can do that.
