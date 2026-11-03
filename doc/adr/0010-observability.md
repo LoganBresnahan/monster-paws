@@ -380,11 +380,14 @@ Action's multipart body always has that shape.
   address, with no request, the droplet's own, measured by oplog 0020's first read, so Better Stack
   most likely fills an address in at ingest. Those first two groups can be visitors, and
   whether any are Logan's own visits can't be told from counts. No cookie was in any report. The
-  reports from before the roll are purged after it (Logan,
+  reports from before the roll were to be purged after it (Logan,
   2026-11-02: "yeah we can purge. prod visits have been nothing but that and there is no
   interactivity yet"). Better Stack's docs offer no way to delete reports short of
   deleting the application, whose DSN is built into the browser bundle, so the route was lowering
   `errors_retention` to 1 day and restoring it once they were gone (Logan: "yeah change retention
   to 1 day"). Better Stack refused 1 day on a scratch application, so oplog 0020 stopped there and
-  removed nothing. Oplog 0022 uses 7 days instead (Logan: "7 is fine to get rid of what we collected").
-- Not yet measured on a running Next server, only in process. The roll's smoke can do that.
+  removed nothing. Oplog 0022 tried 7 days (Logan: "7 is fine to get rid of what we collected"), and
+  got `errors_retention must be 90`: this plan doesn't allow changing it, so that route is closed.
+  So the stored reports age out, by about 2027-01-27 (Logan, 2026-11-03: "we will just wait it out").
+- Measured on production by oplog 0019's step 7: a real delivery through the running Next server reported no
+  visitor's address, cookie, body or query string, and only the droplet's own address.

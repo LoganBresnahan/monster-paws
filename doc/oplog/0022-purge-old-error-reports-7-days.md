@@ -1,7 +1,7 @@
 # 0022: Old error reports purged, by lowering `errors_retention` to 7 days and restoring it
 
-Status: planned
-Planned: 2026-11-03 · Run: —
+Status: abandoned
+Planned: 2026-11-03 · Run: 2026-11-03 00:03 UTC, stopped at step 2
 Why: ADR-0010 as amended 2026-11-02; oplog 0020, which stopped because Better Stack refused 1 day. Logan,
 2026-11-03: "7 is fine to get rid of what we collected".
 Commit deployed: n/a — the droplet, the database and the buckets do not change
@@ -118,5 +118,14 @@ application in the dashboard before anything else.
 Rollback: none needed.
 
 ## Run
+**1.** 00:03:40 UTC. The same table as 0020's step 1. `errors_retention` 90, `ingesting_paused` false.
+
+**2.** **Stopped.** The scratch application was created, then `7 422 ["errors_retention must be 90"]`,
+`90 200 "accepted"`, it read back 90, delete 204, and the names list held only `monsterpaws`. So the setting can't be
+changed at all on this plan: 7 wasn't too low, every value but 90 is refused, and 1 failed for the same reason in 0020.
+
+**3–7.** Not run. The live application was never changed, no report was removed, and nothing is waiting to be restored.
 
 ## Follow-ups
+- `errors_retention` can't purge anything here. The choices left were support, recreating the application or waiting out
+  the 90 days. Logan, 2026-11-03: "we will just wait it out", so the reports age out by about 2027-01-27.
