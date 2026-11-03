@@ -589,7 +589,7 @@ after it, if at all.
   POST /api/webhooks/everyorg/<secret>   unsigned; a wrong secret stores nothing
        │  production: monsterpaws.org, the site's own edge, Caddy and app
        │  (oplog 0019; ADR-0027 as amended 2026-11-02)
-       │  (planned, ADR-0027 as amended 2026-11-03) Caddy holds requests during a roll
+       │  Caddy holds a request up to 30 s during a roll (ADR-0027 as amended 2026-11-03)
        │  staging: staging-hooks.monsterpaws.org → tunnel → :3027 in
        │  monsterpaws-dev, this path only (scripts/staging-hooks.yml)
        ▼
@@ -597,10 +597,11 @@ after it, if at all.
   everyorg_webhook_payloads         storableBody(): named fields + headers, stored
        │                            before anything is believed (append-only); no
        │                            name, email or street address ever lands here
-       │  (planned, ADR-0027 as amended 2026-11-03) the store has its own clock; on failure
-       │  or a hang, one file on the spool volume holding what the row would hold, and 200.
-       │  A droplet worker job replays the folder and re-runs undecided rows each minute;
-       │  a decisions row per payload says what was decided
+       │  the store has its own 5 s clock (ADR-0027 as amended 2026-11-03); on failure or a
+       │  hang, spoolDelivery(): one file on the spool volume holding what the row would
+       │  hold, and 200. sweepWebhookSpool(), a plain timer in the droplet worker, replays
+       │  the folder and re-runs undecided rows each minute;
+       │  everyorg_webhook_decisions: a row per payload says what was decided
        │  match partnerDonationId → open intent, slug + EIN exact;
        │  anything else kept and logged, never acted on
        ▼

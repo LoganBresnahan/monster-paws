@@ -2,7 +2,11 @@
 # Cloudflare sits in front (orange cloud); set Cloudflare SSL mode to
 # "Full (strict)" once the origin cert is issued.
 monsterpaws.org {
-	reverse_proxy app:3000
+	reverse_proxy app:3000 {
+		# Holds a request while a roll replaces the app, so a webhook isn't lost:
+		# Every.org states no retry (ADR-0027 as amended 2026-11-03).
+		lb_try_duration 30s
+	}
 }
 
 www.monsterpaws.org {

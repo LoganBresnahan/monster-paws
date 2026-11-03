@@ -80,20 +80,14 @@ is the record, and a file of ticked boxes stops being read.
   from `.env`, never the whole file, which would bring `DATABASE_URL` and the secrets
   into the suites, and an amendment to ADR-0017. Found by the donate stream.
 
-- **A delivery stored but not decided has no way back in.** `receiveWebhook` keeps the row and
-  reports `decision_failed` with its id, and the row holds every field a decision needs, but
-  nothing re-runs one. Every.org didn't retry the one failed delivery we saw (oplog 0018), so
-  today a transient database failure leaves a real gift unrecorded until someone writes the rows
-  by hand. Comes with the by-hand deletion tool, before any real gift.
-
-- **A gift arriving during a deploy or a database failover may go unrecorded.** Caddy's
-  `reverse_proxy app:3000` holds nothing while a roll replaces the app. DigitalOcean's maintenance
-  window is Tuesday 00:15 UTC. On 2026-11-03 it started at 00:16:44 and promoted a new primary at
-  00:23:13, and the window still reads pending. No gift arrived during it, and neither gap's length
-  has been measured. A delivery that can't be stored leaves no row for a re-run to use, only
-  a `not stored` report that names no gift, and Every.org didn't retry the one failed delivery we
-  saw (oplog 0018). Found by the donate stream, from payload ids jumping from 2 to 35, which is the
-  failover and not lost gifts: all three sequences moved by the same 33.
+- **A gift arriving while the droplet is down, or lost with its disk, goes unrecorded.** Caddy's hold and the spool
+  cover a deploy and a database failover (ADR-0027 as amended 2026-11-03), and production has neither until oplog 0023
+  runs. A spool file still dies with the droplet's disk, a delivery while the droplet is down reaches nothing, and
+  Every.org didn't retry the one failed delivery we saw (oplog 0018). ADR-0035's return signal and daily check partly
+  cover a painting, not the money record. `createPool` still sets no connection timeout, so a vanished database host can
+  hold pool slots until TCP gives up, and all ten slots exhausted is untested. Found by the donate stream, from payload
+  ids jumping from 2 to 35, which was DigitalOcean's failover of 2026-11-03 and not lost gifts: all three sequences moved
+  by the same 33.
 
 - **Nobody has read whether a painting sent after a gift affects Every.org's tax receipt.** Both of Logan's
   production receipts say "No goods or services are provided to you in exchange for your gift. Therefore, the full amount

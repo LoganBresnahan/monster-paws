@@ -421,6 +421,21 @@ export const everyorgWebhookPayloads = pgTable(
   (t) => [index("everyorg_webhook_payloads_partner_idx").on(t.partnerDonationId)],
 );
 
+/**
+ * What a stored delivery was found to mean, one row per payload, written with the decision
+ * itself. No row means undecided, which is all the replay job selects: never select by intent
+ * or donation, since `nonprofit_mismatch` and `charge_on_other_intent` leave the intent open
+ * and would re-run forever (ADR-0027 as amended 2026-11-03). Append-only, and donor-owned like
+ * its payload: deleted before it.
+ */
+export const everyorgWebhookDecisions = pgTable("everyorg_webhook_decisions", {
+  payloadId: bigint("payload_id", { mode: "number" })
+    .primaryKey()
+    .references(() => everyorgWebhookPayloads.id),
+  outcome: text("outcome").notNull(),
+  decidedAt: timestamp("decided_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
 /** Derived from a matched webhook (ADR-0027 §4). Append-only, donor-owned. */
 export const donations = pgTable(
   "donations",

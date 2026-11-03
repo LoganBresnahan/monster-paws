@@ -3,7 +3,8 @@ import { eq, inArray, sql } from "drizzle-orm";
 import { INTENT_ID } from "@/core/donate/intent";
 import { failureCode, scrubAddresses } from "@/core/observability";
 import type { Db } from "@/db/client";
-import { donationIntents, donations, donationStats, everyorgWebhookPayloads } from "@/db/schema";
+import { donationIntents, donations, donationStats, everyorgWebhookDecisions, everyorgWebhookPayloads } from "@/db/schema";
+import { spoolDelivery, type StoredDelivery } from "./webhook-spool";
 
 /**
  * The Every.org webhook (ADR-0027 §4). It is unsigned, so it is believed no
@@ -166,20 +167,88 @@ export type WebhookOutcome =
   | "charge_on_other_intent"
   | "nonprofit_mismatch"
   | "bad_fields"
-  | "decision_failed";
+  | "decision_failed"
+  | "spooled";
 
 export interface WebhookResult {
-  payloadId: number;
+  /** `null` only on `spooled`: the delivery is a file, and has no row yet */
+  payloadId: number | null;
   outcome: WebhookOutcome;
-  /** the failed query's code, only on `decision_failed` */
+  /** the failed query's code, on `decision_failed` and `spooled` */
   code?: string;
   /** the raw row's id and an outcome, never a name, address or amount: this is what reaches the logs (ADR-0010) */
 }
 
+/** Everything a stored delivery keeps, worked out with no database. The raw body goes no further than this. */
+export function prepareDelivery(delivery: {
+  body: string;
+  headers: Iterable<[string, string]>;
+  secrets: { authToken?: string; pathSecret?: string };
+}): StoredDelivery {
+  const parsed = parseBody(delivery.body);
+  // A donor can edit this in the link: anything that isn't our id's shape is no id at all.
+  const partnerDonationId = nonEmpty(parsed?.partnerDonationId) && INTENT_ID.test(parsed.partnerDonationId) ? parsed.partnerDonationId : null;
+  return {
+    body: storableBody(delivery.body, parsed, delivery.secrets.pathSecret),
+    headers: redactHeaders(delivery.headers, delivery.secrets),
+    partnerDonationId,
+    receivedAt: new Date(),
+  };
+}
+
+/** Commits on its own, outside any decision, so a failure deciding never loses a body. */
+export async function storeDelivery(db: Db, row: StoredDelivery): Promise<number> {
+  const [payload] = await db.insert(everyorgWebhookPayloads).values(row).returning({ id: everyorgWebhookPayloads.id });
+  return payload.id;
+}
+
 /**
- * Stores the delivery, then decides what it means. The insert commits on its own,
- * outside the transaction below, so a failure deciding never loses a body.
- * Throws only when the body could not be stored.
+ * Decides from the stored row alone, never the raw body: a replay has only the row, and
+ * `donationFields` reads through the same shapes, so both ways reach one answer.
+ */
+export async function decideStored(
+  db: Db,
+  row: { id: number; body: string; partnerDonationId: string | null },
+): Promise<WebhookResult> {
+  const stored = parseBody(row.body);
+  try {
+    let outcome: WebhookOutcome | null = null;
+    let fields: DonationFields | null = null;
+    if (!stored || "unreadable" in stored) outcome = "unparsable";
+    else if (!row.partnerDonationId) outcome = "no_partner_id";
+    // Only a completed gift opens anything. The docs don't list `event`; the real body
+    // carries it, and a bank gift that hasn't settled must not count (ADR-0027).
+    else if (stored.event !== COMPLETED) outcome = "other_event";
+    else if (!(fields = donationFields(stored))) outcome = "bad_fields";
+
+    if (outcome) {
+      await db.insert(everyorgWebhookDecisions).values({ payloadId: row.id, outcome }).onConflictDoNothing();
+      return { payloadId: row.id, outcome };
+    }
+    return { payloadId: row.id, outcome: await decide(db, row.id, row.partnerDonationId!, fields!) };
+  } catch (err) {
+    return { payloadId: row.id, outcome: "decision_failed", code: failureCode(err) };
+  }
+}
+
+/**
+ * How long a delivery waits on the database. `createPool` sets no timeout, so during a failover an
+ * insert can hang until Cloudflare gives up at about 100 s, and the sender has a failure by then.
+ */
+export const STORE_CLOCK_MS = 5_000;
+
+export function withClock<T>(work: Promise<T>, ms: number = STORE_CLOCK_MS): Promise<T> {
+  let timer: NodeJS.Timeout;
+  const clock = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => reject(Object.assign(new Error("database clock expired"), { code: "clock_expired" })), ms);
+  });
+  return Promise.race([work, clock]).finally(() => clearTimeout(timer));
+}
+
+/**
+ * Throws only when the delivery could neither be stored nor spooled. A store that runs out its
+ * clock may still land: with the replay that makes two raw rows, which decide to one donation
+ * (ADR-0027 as amended 2026-11-03).
  */
 export async function receiveWebhook(
   db: Db,
@@ -188,95 +257,90 @@ export async function receiveWebhook(
     headers: Iterable<[string, string]>;
     secrets: { authToken?: string; pathSecret?: string };
   },
+  options: { spoolDir?: string; clockMs?: number } = {},
 ): Promise<WebhookResult> {
-  const parsed = parseBody(delivery.body);
-  // A donor can edit this in the link: anything that isn't our id's shape is no id at all.
-  const partnerDonationId = nonEmpty(parsed?.partnerDonationId) && INTENT_ID.test(parsed.partnerDonationId) ? parsed.partnerDonationId : null;
-  const [payload] = await db
-    .insert(everyorgWebhookPayloads)
-    .values({
-      body: storableBody(delivery.body, parsed, delivery.secrets.pathSecret),
-      headers: redactHeaders(delivery.headers, delivery.secrets),
-      partnerDonationId,
-    })
-    .returning({ id: everyorgWebhookPayloads.id });
-  const payloadId = payload.id;
-
-  if (!parsed) return { payloadId, outcome: "unparsable" };
-  if (!partnerDonationId) return { payloadId, outcome: "no_partner_id" };
-  // Only a completed gift opens anything. The docs don't list `event`; the real body
-  // carries it, and a bank gift that hasn't settled must not count (ADR-0027).
-  if (parsed.event !== COMPLETED) return { payloadId, outcome: "other_event" };
-  const fields = donationFields(parsed);
-  if (!fields) return { payloadId, outcome: "bad_fields" };
-
-  let outcome: WebhookOutcome;
+  const row = prepareDelivery(delivery);
+  let id: number;
   try {
-    outcome = await decide(db, payloadId, partnerDonationId, fields);
+    id = await withClock(storeDelivery(db, row), options.clockMs);
   } catch (err) {
-    return { payloadId, outcome: "decision_failed", code: failureCode(err) };
+    if (!options.spoolDir) throw err;
+    await spoolDelivery(options.spoolDir, row);
+    return { payloadId: null, outcome: "spooled", code: failureCode(err) };
   }
-  return { payloadId, outcome };
+  try {
+    return await withClock(decideStored(db, { ...row, id }), options.clockMs);
+  } catch (err) {
+    return { payloadId: id, outcome: "decision_failed", code: failureCode(err) };
+  }
 }
 
-/** One transaction: a donation never lands without its stat and its closed intent. */
+/** One transaction: a donation never lands without its stat, its closed intent and its decision. */
 async function decide(db: Db, payloadId: number, partnerDonationId: string, fields: DonationFields): Promise<WebhookOutcome> {
   return db.transaction(async (tx): Promise<WebhookOutcome> => {
-    const [intent] = await tx
-      .select()
-      .from(donationIntents)
-      .where(eq(donationIntents.id, partnerDonationId))
-      .for("update");
-    if (!intent) return "no_intent";
+    const outcome = await decideLocked(tx, payloadId, partnerDonationId, fields);
+    await tx.insert(everyorgWebhookDecisions).values({ payloadId, outcome }).onConflictDoNothing();
+    return outcome;
+  });
+}
 
-    if (intent.nonprofitSlug !== fields.nonprofit.slug || einDigits(intent.nonprofitEin) !== einDigits(fields.nonprofit.ein)) {
-      return "nonprofit_mismatch";
-    }
+type DbTransaction = Parameters<Parameters<Db["transaction"]>[0]>[0];
 
-    if (intent.closedAt) {
-      const [known] = await tx
-        .select({ intentId: donations.intentId })
-        .from(donations)
-        .where(eq(donations.chargeId, fields.chargeId))
-        .limit(1);
-      return known?.intentId === intent.id ? "replay" : "closed_intent";
-    }
+async function decideLocked(tx: DbTransaction, payloadId: number, partnerDonationId: string, fields: DonationFields): Promise<WebhookOutcome> {
+  const [intent] = await tx
+    .select()
+    .from(donationIntents)
+    .where(eq(donationIntents.id, partnerDonationId))
+    .for("update");
+  if (!intent) return "no_intent";
 
-    const inserted = await tx
-      .insert(donations)
-      .values({
-        intentId: intent.id,
-        webhookPayloadId: payloadId,
-        chargeId: fields.chargeId,
-        amount: fields.amount,
-        netAmount: fields.netAmount,
-        currency: fields.currency,
-        frequency: fields.frequency,
-        nonprofitSlug: fields.nonprofit.slug,
-        nonprofitEin: fields.nonprofit.ein,
-        nonprofitName: fields.nonprofit.name,
-        donatedAt: fields.donatedAt,
-      })
-      .onConflictDoNothing({ target: donations.chargeId })
-      .returning({ id: donations.id });
-    // Not a replay: the row lock above sends those to the closed-intent branch, so
-    // this charge belongs to another intent. Suspicious, and this intent stays open.
-    if (inserted.length === 0) return "charge_on_other_intent";
+  if (intent.nonprofitSlug !== fields.nonprofit.slug || einDigits(intent.nonprofitEin) !== einDigits(fields.nonprofit.ein)) {
+    return "nonprofit_mismatch";
+  }
 
-    // Only when the donation was really inserted, or a replay counts a gift twice.
-    // No account, intent, charge, name or email, ever (ADR-0027 §6).
-    await tx.insert(donationStats).values({
-      animalSource: intent.animalSource,
-      animalExternalId: intent.animalExternalId,
-      nonprofitSlug: fields.nonprofit.slug,
+  if (intent.closedAt) {
+    const [known] = await tx
+      .select({ intentId: donations.intentId })
+      .from(donations)
+      .where(eq(donations.chargeId, fields.chargeId))
+      .limit(1);
+    return known?.intentId === intent.id ? "replay" : "closed_intent";
+  }
+
+  const inserted = await tx
+    .insert(donations)
+    .values({
+      intentId: intent.id,
+      webhookPayloadId: payloadId,
+      chargeId: fields.chargeId,
       amount: fields.amount,
+      netAmount: fields.netAmount,
       currency: fields.currency,
       frequency: fields.frequency,
-      donatedOn: fields.donatedAt.toISOString().slice(0, 10),
-    });
-    await tx.update(donationIntents).set({ closedAt: sql`now()` }).where(eq(donationIntents.id, intent.id));
-    return "recorded";
+      nonprofitSlug: fields.nonprofit.slug,
+      nonprofitEin: fields.nonprofit.ein,
+      nonprofitName: fields.nonprofit.name,
+      donatedAt: fields.donatedAt,
+    })
+    .onConflictDoNothing({ target: donations.chargeId })
+    .returning({ id: donations.id });
+  // Not a replay: the row lock above sends those to the closed-intent branch, so
+  // this charge belongs to another intent. Suspicious, and this intent stays open.
+  if (inserted.length === 0) return "charge_on_other_intent";
+
+  // Only when the donation was really inserted, or a replay counts a gift twice.
+  // No account, intent, charge, name or email, ever (ADR-0027 §6).
+  await tx.insert(donationStats).values({
+    animalSource: intent.animalSource,
+    animalExternalId: intent.animalExternalId,
+    nonprofitSlug: fields.nonprofit.slug,
+    amount: fields.amount,
+    currency: fields.currency,
+    frequency: fields.frequency,
+    donatedOn: fields.donatedAt.toISOString().slice(0, 10),
   });
+  await tx.update(donationIntents).set({ closedAt: sql`now()` }).where(eq(donationIntents.id, intent.id));
+  return "recorded";
 }
 
 /** The donations recorded under these intents: what a thank-you page may say arrived. */

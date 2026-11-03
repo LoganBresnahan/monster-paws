@@ -11,6 +11,8 @@ import { createPgStages } from "@/core/ingest/pg";
 import { runIngest } from "@/core/ingest/pipeline";
 import { createRescueGroupsAdapter, rescueGroupsNormalizer } from "@/core/ingest/rescuegroups";
 import { eraseAbandonedAddresses } from "@/core/donate/intent";
+import { sweepWebhookSpool } from "@/core/donate/webhook-replay";
+import { webhookSweepAlerts } from "@/worker/webhook-sweep";
 import { gateAlert, INGEST_POLL, planIngestPoll } from "@/worker/ingest-poll";
 import { heartbeatPing, INGEST_POLL_RETRY } from "@/worker/heartbeat";
 import { failureCode, reportingOptions } from "@/core/observability";
@@ -91,6 +93,43 @@ async function registerAddressErasure(boss: PgBoss) {
   await boss.schedule(ERASE_ABANDONED, "0 6 * * *");
 }
 
+const WEBHOOK_SWEEP_MS = 60_000;
+const WEBHOOK_REPEAT_ALERT_MS = 60 * 60 * 1000;
+
+/**
+ * A plain timer, never pg-boss: once this worker is up it must keep running and reporting through
+ * a database outage, and a 1,440-a-day queue would only add rows. A worker booting into an outage
+ * exits at `boss.start()` and restarts until it ends; the files wait (ADR-0027 as amended 2026-11-03).
+ * Only the droplet's compose sets the directory: the home worker registers nothing else.
+ */
+function startWebhookSweep(): () => void {
+  const dir = process.env.WEBHOOK_SPOOL_DIR;
+  if (!dir) return () => {};
+  let running = false;
+  let lastRepeatAlert = 0;
+  const timer = setInterval(async () => {
+    if (running) return;
+    running = true;
+    try {
+      const report = await sweepWebhookSpool(getDb(DATABASE_URL), dir);
+      if (report.replayed > 0 || Object.keys(report.decided).length > 0 || report.staleFiles > 0 || report.failure) {
+        console.log(JSON.stringify({ event: "donate.webhook_sweep", ...report }));
+      }
+      const now = Date.now();
+      for (const alert of webhookSweepAlerts(report)) {
+        if (alert.repeats && now - lastRepeatAlert < WEBHOOK_REPEAT_ALERT_MS) continue;
+        if (alert.repeats) lastRepeatAlert = now;
+        Sentry.captureMessage(alert.message, { level: alert.level, tags: { job: "donate.webhook-sweep" } });
+      }
+    } catch (err) {
+      Sentry.captureMessage(`webhook sweep failed: ${failureCode(err)}`, { level: "error", tags: { job: "donate.webhook-sweep" } });
+    } finally {
+      running = false;
+    }
+  }, WEBHOOK_SWEEP_MS);
+  return () => clearInterval(timer);
+}
+
 async function main() {
   if (!DATABASE_URL) {
     // Pre-database deploys (landing only): idle instead of crash-looping so
@@ -111,6 +150,7 @@ async function main() {
 
   await registerIngestPoll(boss);
   await registerAddressErasure(boss);
+  const stopWebhookSweep = startWebhookSweep();
 
   // Job registrations land with their features:
   //   art.generate       — keepsake card generation (roadmap item 4); never
@@ -119,6 +159,7 @@ async function main() {
   //   attestation.publish — sign + R2 mirror (roadmap item 7)
 
   const shutdown = async () => {
+    stopWebhookSweep();
     await boss.stop();
     await Sentry.close(2000);
     process.exit(0);

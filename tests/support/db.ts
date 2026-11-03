@@ -46,7 +46,7 @@ export async function truncateCorpus(db: Db): Promise<void> {
 export async function truncateDonor(db: Db): Promise<void> {
   await assertTestDatabase(db);
   await db.execute(
-    sql`truncate table accounts, passkey_credentials, sessions, sign_in_links, donation_intents, everyorg_webhook_payloads, donations, donation_stats, keepsake, keepsake_fact, email_suppressions, shelter_nonprofits restart identity`,
+    sql`truncate table accounts, passkey_credentials, sessions, sign_in_links, donation_intents, everyorg_webhook_payloads, everyorg_webhook_decisions, donations, donation_stats, keepsake, keepsake_fact, email_suppressions, shelter_nonprofits restart identity`,
   );
 }
 

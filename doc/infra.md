@@ -192,9 +192,9 @@ turning it back on stops every delivery, here and in production.
 The production webhook is a separate setup with its own three entries
 (`everyorg/webhook-token`, `auth-token`, `webhook-secret`), made before launch, on the main
 domain: `https://monsterpaws.org/api/webhooks/everyorg/$(pass show everyorg/webhook-secret)`,
-through the same edge, Caddy and app as the site (ADR-0027 as amended 2026-11-02). Planned (ADR-0027 as amended
-2026-11-03, oplog 0023): Caddy holds requests during a roll, and a spool volume shared by app and worker takes
-deliveries the database can't; the deployment diagrams change in that slice's commit.
+through the same edge, Caddy and app as the site (ADR-0027 as amended 2026-11-02). Caddy holds a request up to 30 s
+during a roll, and the `webhook_spool` volume, shared by app and worker, takes deliveries the database can't, for the
+worker to replay each minute (ADR-0027 as amended 2026-11-03; live with oplog 0023).
 
 | Entry | What it is | What it's for | Lands in |
 | --- | --- | --- | --- |
@@ -1130,10 +1130,10 @@ on the box: Commons dogs and the crew only.
         │  │ HTTPS │         │ Next  │  │   │   · attestation mirror  │
         │  └───────┘         │  SSR  │  │   │     (flat files)        │
         │                    └───┬───┘  │   │   · nightly pg_dumps    │
-        │                        │      │   │  monsterpaws-corpus     │
-        │                        │      │   │   · scraped HTML,       │
-        │                        │      │   │     content-addressed   │
-        │                        │      │   │     (worker-only)       │
+        │  roll: Caddy holds 30 s│      │   │  monsterpaws-corpus     │
+        │  webhook_spool volume  │      │   │   · scraped HTML,       │
+        │  (app writes, worker   │      │   │     content-addressed   │
+        │  replays each minute)  │      │   │     (worker-only)       │
         │                        │      │   │  monsterpaws-models     │
         │                        │      │   │   · weights we make     │
         │                        │      │   │     (the LoRA), private │

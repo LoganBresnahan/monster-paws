@@ -26,10 +26,10 @@ async function readBounded(request: Request): Promise<string | null> {
 }
 
 /**
- * Every.org's POST (ADR-0027 §4). A stored delivery answers 200 whatever it meant,
- * since anything unmatched is kept and logged, not retried. 500 means it was not stored,
- * or stored and not decided, and the report says which. A wrong secret answers as if
- * nothing lived here, and stores nothing.
+ * Every.org's POST (ADR-0027 §4). A kept delivery answers 200 whatever it meant, since anything
+ * unmatched is logged, not retried, and one in the spool is safe (as amended 2026-11-03). 500 means
+ * it was not kept at all, or kept and not decided, and the report says which. A wrong secret answers
+ * as if nothing lived here, and stores nothing.
  */
 export async function POST(request: Request, ctx: { params: Promise<{ secret: string }> }) {
   try {
@@ -46,11 +46,20 @@ export async function POST(request: Request, ctx: { params: Promise<{ secret: st
     const body = await readBounded(request);
     if (body === null) return bare(413);
 
-    const { payloadId, outcome, code } = await receiveWebhook(getDb(), {
-      body,
-      headers: request.headers.entries(),
-      secrets: { authToken: process.env.EVERYORG_AUTH_TOKEN, pathSecret },
-    });
+    const { payloadId, outcome, code } = await receiveWebhook(
+      getDb(),
+      {
+        body,
+        headers: request.headers.entries(),
+        secrets: { authToken: process.env.EVERYORG_AUTH_TOKEN, pathSecret },
+      },
+      { spoolDir: process.env.WEBHOOK_SPOOL_DIR },
+    );
+    if (outcome === "spooled") {
+      console.error(`[everyorg-webhook] database refused, spooled: ${code}`);
+      Sentry.captureMessage(`everyorg webhook spooled: ${code}`, { level: "warning" });
+      return bare(200);
+    }
     if (outcome === "decision_failed") {
       // A real gift may be unrecorded and its intent still open: the row is kept, so name it.
       console.error(`[everyorg-webhook] stored, not decided: payload ${payloadId}, ${code}`);

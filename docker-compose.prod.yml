@@ -38,14 +38,18 @@ services:
     <<: *logging
     restart: unless-stopped
     env_file: .env
-    environment: &trust-do-ca
+    environment: &app-worker-env
       # DATABASE_URL says sslmode=verify-full, and DO signs Managed Postgres
       # with its own project CA: without this Node rejects the connection as
       # SELF_SIGNED_CERT_IN_CHAIN. The cert is public; the droplet fetches it
       # with `doctl databases get-ca` (doc/infra.md, step 6; oplog 0001).
       NODE_EXTRA_CA_CERTS: /run/do-ca.crt
-    volumes: &do-ca
+      # Deliveries the database couldn't take, written by app, replayed by
+      # worker (ADR-0027 as amended 2026-11-03).
+      WEBHOOK_SPOOL_DIR: /spool
+    volumes: &app-worker-volumes
       - ./do-ca.crt:/run/do-ca.crt:ro
+      - webhook_spool:/spool
     expose:
       - "3000"
 
@@ -57,9 +61,10 @@ services:
     <<: *logging
     restart: unless-stopped
     env_file: .env
-    environment: *trust-do-ca
-    volumes: *do-ca
+    environment: *app-worker-env
+    volumes: *app-worker-volumes
 
 volumes:
   caddy_data:
   caddy_config:
+  webhook_spool:
