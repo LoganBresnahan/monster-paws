@@ -24,7 +24,9 @@ Production steps run in one SSH session per step (the droplet's ufw `LIMIT` on 2
       (ADR-0010 as amended 2026-09-30).
 - [x] Ship bar on `12c451f`: vitest 581 of 581 twice, typecheck, `npm run e2e` 39 of 39, all in the donate worktree on
       2026-11-03; the moderator read the three commits and didn't re-run them.
-- [ ] e2e against the published app image, with Every.org configured as production. Tell the moderator first:
+- [x] e2e against the published app image, with Every.org configured as production. Run 2026-11-03 21:45 UTC: 39 of 39 in 11.4 s,
+      and `/privacy` holds the new wording. `batch37a` was on the card during it, short of the dev-box line below: this doesn't use
+      the card, and about 21 GB was free. Tell the moderator first:
 
       docker run --rm -d --name mp-e2e --network host \
         -e DATABASE_URL=postgres://monsterpaws:monsterpaws@localhost:5432/monsterpaws_e2e \
@@ -33,10 +35,15 @@ Production steps run in one SSH session per step (the droplet's ufw `LIMIT` on 2
         ghcr.io/loganbresnahan/monster-paws-app:12c451f8588136b877cdb48976c686ff20dc3228
       PW_BASE_URL=http://127.0.0.1:3200 npm run e2e:prod
       docker stop mp-e2e
-- [ ] The proof re-run on the published images, compose's real volume and a private Postgres (ADR-0027 as amended
-      2026-11-03, decision 7; its Measured table holds the locally built images' results). Results in Run.
-- [ ] Migration `0016` rehearsed: `drizzle-kit migrate` on a scratch database restored from the newest dump in the main
-      checkout's `var/dumps/`, then dropped. Decisions rows equal payload rows, 0 undecided.
+- [x] The proof re-run on the published images, compose's real volume and a private Postgres (ADR-0027 as amended
+      2026-11-03, decision 7), 21:52 to 21:59 UTC with the card free, matching its Measured table: healthy, 200 in 0.05 s; database
+      stopped, 200 in 0.03 s, a file with no donor, recorded 80 s after it returned; a listener that never answers, 200 in 5.02 s,
+      `clock_expired` in sweeps, recorded 41 s after, the next delivery 0.02 s; 200 POSTs through a roll, all 404, slowest 1.3 s; a
+      9.6 s delivery with a roll at 3 s, recorded. The droplet's roll is what step 6 times.
+- [x] Migration `0016` rehearsed: `drizzle-kit migrate` on a scratch database restored from the newest dump in the main
+      checkout's `var/dumps/`, then dropped, 2026-11-03 21:52 UTC: 0 restore errors, 12 to 17 migrations, animals 112123 before and
+      after. That dump holds no webhook rows, so the backfill rests on a scratch database migrated to 0015 first (3 rows, the same
+      times, 0 undecided), and step 2 reads production's rows.
 - [ ] `pass` unlocked by Logan.
 - [ ] Not within an hour of 06:00, 07:00 or 08:30 UTC, and nothing in the main checkout from 06:45 UTC until that night's log
       shows `== exit`.
