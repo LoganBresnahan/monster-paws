@@ -50,8 +50,7 @@ export default async function DemoListing({ params }: { params: Promise<{ pet: s
         <h2 className="text-xl font-bold">Sponsor {pet.name}</h2>
         <p className="mt-2 text-muted">
           A donation for {pet.name} goes to {pronoun(pet, "their")} shelter, and we keep $0. You get
-          a watercolour keepsake of {pronoun(pet, "them")} and follow {pronoun(pet, "their")} story
-          until adoption day.
+          a watercolour keepsake of {pronoun(pet, "them")}.
         </p>
         <Link
           href={`/demo/${pet.slug}/sponsor`}

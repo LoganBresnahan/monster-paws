@@ -32,7 +32,7 @@ test("a crew painting and photo open whole and close three ways", async ({ page 
 // later): browse, listing, sponsor, a checkout placeholder, thanks, and the
 // pretend collection. No money moves and nothing is stored, so the walk is the
 // whole contract; the pet and amount ride in the URL.
-test("the demo walks a crew pet from browse to adoption day", async ({ page }) => {
+test("the demo walks a crew pet from browse to the keepsake", async ({ page }) => {
   await page.goto("/demo");
   await expect(page.getByText("Demo: no money moves")).toBeVisible();
   await page.getByRole("link", { name: /^Beetle/ }).click();
@@ -62,14 +62,11 @@ test("the demo walks a crew pet from browse to adoption day", async ({ page }) =
   await expect(page.getByRole("button", { name: "See Beetle's keepsake larger" })).toBeVisible({ timeout: 10_000 });
   await expect(page.getByText("$2 to her shelter")).toBeVisible();
 
-  await expect(page.getByText("✓ Confirmed by the shelter")).toHaveCount(1);
-  await page.getByRole("button", { name: "Next update" }).click();
-  await page.getByRole("button", { name: "Next update" }).click();
-  await expect(page.getByText("✓ Confirmed by the shelter")).toHaveCount(3);
-  await page.getByRole("button", { name: "Adoption day 🎉" }).click();
-  // Adoption is the story's last update, never a badge over the keepsake.
-  await expect(page.getByRole("listitem").filter({ hasText: "Beetle was adopted today. You were part of that." })).toBeVisible();
-  await expect(page.getByText("Adopted!")).toHaveCount(0);
+  // The walk ends at the keepsake: no updates or adoption day before attestations exist (ADR-0028 as amended 2026-11-03).
+  await expect(page.getByText("Confirmed by the shelter")).toHaveCount(0);
+  await expect(page.getByText("adopted today")).toHaveCount(0);
+  await expect(page.getByRole("button", { name: /next update|adoption day/i })).toHaveCount(0);
+  await expect(page.getByRole("link", { name: "See adoptable animals" })).toHaveAttribute("href", "/animals");
 });
 
 test("a crew name the demo does not have is a 404", async ({ page }) => {

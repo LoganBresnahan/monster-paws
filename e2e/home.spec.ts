@@ -7,6 +7,8 @@ test("home page renders the Monster Paws landing", async ({ page }) => {
   await expect(
     page.getByText("Every donation goes to the shelter. We keep $0."),
   ).toBeVisible();
+  // Outreach mail links to /#crew, and mail already sent keeps that URL (ADR-0029): never rename the anchor.
+  await expect(page.locator("#crew")).toHaveText("Meet the crew");
 });
 
 // AGPL-3.0 section 13 asks the running site to offer its source; the footer is

@@ -66,11 +66,9 @@ export default async function DemoSponsor({
         </div>
         <div className="rounded-cuddly border-2 border-paw/20 bg-card p-5">
           <h2 className="font-bold">What you get</h2>
-          <ul className="mt-2 space-y-1 text-sm leading-relaxed text-muted">
-            <li>🎨 A watercolour keepsake of {pronoun(pet, "them")}, painted from the shelter&apos;s photos</li>
-            <li>💌 Updates on the care you helped pay for</li>
-            <li>🎉 Word on the day {pronoun(pet, "they")} goes home</li>
-          </ul>
+          <p className="mt-2 text-sm leading-relaxed text-muted">
+            🎨 A watercolour keepsake of {pronoun(pet, "them")}, painted from the shelter&apos;s photos.
+          </p>
         </div>
       </section>
     </main>

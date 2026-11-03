@@ -59,23 +59,14 @@ function PaintingUnderWay({ pet }: { pet: CrewPet }) {
   );
 }
 
-const UPDATES = (pet: CrewPet) => [
-  { emoji: "💉", text: "Vaccinations brought up to date" },
-  { emoji: "🦷", text: "A dental cleaning at the vet" },
-  { emoji: "🏡", text: `Moved to a foster home while ${pronoun(pet, "they")} waits` },
-];
-
 /**
  * The collection card: the keepsake being painted, revealed a few seconds in
- * (the real one arrives when it is ready); below, example updates a tap at a
- * time, ending on adoption day.
+ * (the real one arrives when it is ready). The demo ends here: never bring back
+ * example updates or adoption day before attestations exist (ADR-0028 as
+ * amended 2026-11-03).
  */
 export function CollectionCard({ pet, amount, sponsoredOn }: { pet: CrewPet; amount: number; sponsoredOn: string }) {
   const [arrived, setArrived] = useState(false);
-  // the first update is there when the card opens; the button brings the rest
-  const [shown, setShown] = useState(1);
-  const updates = UPDATES(pet);
-  const adopted = shown > updates.length;
 
   useEffect(() => {
     const t = setTimeout(() => setArrived(true), PAINTING_MS);
@@ -121,64 +112,13 @@ export function CollectionCard({ pet, amount, sponsoredOn }: { pet: CrewPet; amo
         {pronoun(pet, "them")}.
       </p>
 
-      <h2 className="mt-10 text-2xl font-bold">{pet.name}&apos;s story</h2>
-      <p className="mt-2 text-muted">
-        While {pronoun(pet, "they")} waits, you hear about the care your donation helped pay for, each
-        update confirmed by the shelter.
+      <p className="mt-8 text-center text-muted">
+        {pet.name}&apos;s real ending: {pronoun(pet, "they")}&apos;s home with us.
       </p>
-      <p className="mt-5 text-xs font-bold tracking-wide text-muted uppercase">Example updates</p>
-      <ul aria-live="polite" className="mt-2 flex flex-col gap-3">
-        {updates.slice(0, shown).map((u) => (
-          <li
-            key={u.text}
-            className="flex items-center gap-3 rounded-cuddly border-2 border-paw/20 bg-card px-4 py-3 motion-safe:animate-[fade-in_400ms_ease-out]"
-          >
-            <span aria-hidden className="text-2xl">
-              {u.emoji}
-            </span>
-            <span className="flex-1">{u.text}</span>
-            <span className="shrink-0 rounded-full bg-leaf/15 px-3 py-1 text-xs font-bold text-leaf-deep">
-              ✓ Confirmed by the shelter
-            </span>
-          </li>
-        ))}
-        {/* Adoption is the story's last update, never a frame over the keepsake:
-            the painting stays the donor's to share as it is (Logan, 2026-10-26). */}
-        {adopted && (
-          <li className="flex items-center gap-3 rounded-cuddly border-2 border-honey bg-honey/15 px-4 py-3 motion-safe:animate-[fade-in_500ms_ease-out]">
-            <span aria-hidden className="text-2xl">
-              🎉
-            </span>
-            <span className="flex-1 font-semibold">
-              {pet.name} was adopted today. You were part of that.
-            </span>
-            <span className="shrink-0 rounded-full bg-leaf/15 px-3 py-1 text-xs font-bold text-leaf-deep">
-              ✓ Confirmed by the shelter
-            </span>
-          </li>
-        )}
-      </ul>
-      {adopted && (
-        <p className="mt-3 text-center text-sm text-muted motion-safe:animate-[fade-in_500ms_ease-out]">
-          {pet.name}&apos;s real ending: {pronoun(pet, "they")}&apos;s home with us.
-        </p>
-      )}
-      <div className="mt-6 flex flex-wrap items-center justify-center gap-4">
-        {shown < updates.length && (
-          <button type="button" onClick={() => setShown(shown + 1)} className={button}>
-            Next update
-          </button>
-        )}
-        {shown === updates.length && (
-          <button type="button" onClick={() => setShown(shown + 1)} className={button}>
-            Adoption day 🎉
-          </button>
-        )}
-        {adopted && (
-          <Link href="/animals" className={button}>
-            See adoptable animals
-          </Link>
-        )}
+      <div className="mt-6 flex justify-center">
+        <Link href="/animals" className={button}>
+          See adoptable animals
+        </Link>
       </div>
     </div>
   );

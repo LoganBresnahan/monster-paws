@@ -9,8 +9,7 @@ const HOW = [
   { title: "Find", blurb: "Browse real adoptable animals from shelters near you." },
   { title: "Sponsor", blurb: "Donate any amount. It goes to their shelter, and we keep $0." },
   { title: "Keepsake", blurb: "Get a watercolour keepsake painted in their likeness." },
-  { title: "Follow", blurb: "Hear about the care you helped pay for, confirmed by the shelter." },
-  { title: "Celebrate", blurb: "Hear the day they go home, and share their keepsake with everyone." },
+  { title: "Share", blurb: "Share their keepsake with everyone." },
 ];
 
 function HowVisual({ step }: { step: string }) {
@@ -19,7 +18,7 @@ function HowVisual({ step }: { step: string }) {
     case "Find":
       return (
         <div className={frame}>
-          <Image src="/brand/crew/ducky-photo.jpg" alt="" fill sizes="(min-width: 1024px) 190px, (min-width: 640px) 30vw, 90vw" className="object-cover" />
+          <Image src="/brand/crew/ducky-photo.jpg" alt="" fill sizes="(min-width: 1024px) 215px, (min-width: 640px) 45vw, 90vw" className="object-cover" />
           <span className="absolute bottom-2 left-2 rounded-full bg-card/90 px-2.5 py-1 text-xs shadow">
             <span className="font-bold">Ducky</span> · Pit Bull mix
           </span>
@@ -35,28 +34,14 @@ function HowVisual({ step }: { step: string }) {
     case "Keepsake":
       return (
         <div className={frame}>
-          <Image src="/brand/crew/ducky-painting.jpg" alt="" fill sizes="(min-width: 1024px) 190px, (min-width: 640px) 30vw, 90vw" className="object-cover" />
-        </div>
-      );
-    case "Follow":
-      return (
-        <div className={`${frame} flex flex-col justify-center gap-2 p-3 text-left text-xs`}>
-          {["💉 Vaccinations", "🦷 Dental cleaning"].map((u) => (
-            <span key={u} className="flex items-center justify-between gap-1 rounded-full bg-card px-3 py-1.5 shadow-sm">
-              {u}
-              <span className="font-bold text-leaf-deep">✓</span>
-            </span>
-          ))}
+          <Image src="/brand/crew/ducky-painting.jpg" alt="" fill sizes="(min-width: 1024px) 215px, (min-width: 640px) 45vw, 90vw" className="object-cover" />
         </div>
       );
     default:
       return (
         <div className={`${frame} flex flex-col items-center justify-center gap-2 p-3 text-xs`}>
-          <span className="flex w-full items-center justify-between gap-1 rounded-full bg-card px-3 py-1.5 text-left shadow-sm">
-            🎉 Ducky went home!
-            <span className="font-bold text-leaf-deep">✓</span>
-          </span>
           <span className="rounded-full border-2 border-leaf px-3 py-1 font-bold text-leaf-deep">Share ↗</span>
+          <span className="text-muted">Ducky&apos;s keepsake</span>
         </div>
       );
   }
@@ -76,8 +61,8 @@ export default function Home() {
         />
       </h1>
       <p className="mt-4 max-w-xl text-lg text-muted">
-        Sponsor a real shelter animal, get a keepsake painting in their
-        likeness, and follow their story all the way to adoption day.{" "}
+        Sponsor a real shelter animal and get a keepsake painting in their
+        likeness.{" "}
         <span className="font-semibold text-foreground">
           Every donation goes to the shelter. We keep $0.
         </span>
@@ -166,7 +151,7 @@ export default function Home() {
         <p className="mx-auto mt-2 max-w-2xl text-muted">
           Ducky&apos;s already home with us, so this is an illustration of what a sponsor sees.
         </p>
-        <ol className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-5">
+        <ol className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
           {HOW.map((step, i) => (
             <li key={step.title} className="rounded-cuddly border-2 border-paw/30 bg-card p-3 pb-4 text-left shadow-sm">
               <HowVisual step={step.title} />

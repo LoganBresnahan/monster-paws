@@ -333,3 +333,22 @@ replaces the one-page demo of the amendment above. Rules for every page:
 
 The sponsor, thank-you and collection pages are the first design of ADR-0027's
 donate loop (its amendment of today).
+
+## Amendment (2026-11-03): updates and adoption day leave the demo
+
+Logan: "Remove the animal updates from the demo, because they won't be ready in
+time for the Meta demo." Adoption day was built as the last update: "yeah
+adoption day goes too". The home page promised the same thing, and asked
+whether it changes too: "yes".
+
+- `/demo`'s collection page ends when the keepsake arrives. This replaces "the
+  story, adoption day" in the amendment of 2026-10-26, later, and "example
+  updates, adoption day" in the one before it, and it holds `/demo` to decision
+  6's "the demo ends at the card". One line stays below the card, "<pet>'s real
+  ending: she's home with us": it is true of the crew and promises nothing.
+- The home hero, the site's description and "How it works" stop promising
+  updates and adoption day, since the real sponsor page already says "We can't
+  promise updates". "How it works" is four cards: Find, Sponsor, Keepsake, Share.
+- Updates and adoption day are still the plan, so DIRECTION.md does not change.
+  When attestations ship they come back to the demo and the home page, under
+  ADR-0022's rule that adoption is an update, never a badge over the keepsake.
