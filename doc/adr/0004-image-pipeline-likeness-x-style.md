@@ -875,3 +875,9 @@ pg_dumps and the attestation mirror; the corpus is scraped HTML.
   though a bucket of its own costs nothing to keep.
 - A LoRA is published (an ADR-0031 amendment): its public copy is a
   separate decision; this bucket stays private.
+
+## Amendment (2026-11-03): "only on donation" becomes the first signal (proposed, ADR-0035)
+
+Generation still never runs per listing. ADR-0035 starts it at the first signal of a gift, the webhook or the donor's
+return, so a painting can exist with no recorded donation. Confirmed gifts go first, and at most 25 unconfirmed
+cycles of four paintings start in a rolling day (ADR-0035 decision 7).

@@ -315,7 +315,10 @@ photo; Replicate stays behind the same interface as the escape hatch
    zero value — and the card being created *for you* at sponsorship is the
    pack-opening moment. The art **arrives when it is ready**, not instantly,
    by email, because the home GPU may be asleep (ADR-0004 as amended
-   2026-10-05, ADR-0027 as amended 2026-11-02).
+   2026-10-05, ADR-0027 as amended 2026-11-02). **Proposed 2026-11-03
+   (ADR-0035):** a gift counts at its first signal, the webhook or the donor's
+   return, so a painting can exist before its donation is recorded, or
+   without one. Money claims still rest on the webhook alone.
    **Art-rights gate (ADR-0006):** generation uses only photos we hold
    rights to. Photo **consent** (one email of written permission) unlocks
    AI art — separate from, and cheaper than, **verification** (attestation

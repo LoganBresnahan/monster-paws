@@ -192,7 +192,9 @@ turning it back on stops every delivery, here and in production.
 The production webhook is a separate setup with its own three entries
 (`everyorg/webhook-token`, `auth-token`, `webhook-secret`), made before launch, on the main
 domain: `https://monsterpaws.org/api/webhooks/everyorg/$(pass show everyorg/webhook-secret)`,
-through the same edge, Caddy and app as the site (ADR-0027 as amended 2026-11-02).
+through the same edge, Caddy and app as the site (ADR-0027 as amended 2026-11-02). Planned (ADR-0027 as amended
+2026-11-03, oplog 0023): Caddy holds requests during a roll, and a spool volume shared by app and worker takes
+deliveries the database can't; the deployment diagrams change in that slice's commit.
 
 | Entry | What it is | What it's for | Lands in |
 | --- | --- | --- | --- |

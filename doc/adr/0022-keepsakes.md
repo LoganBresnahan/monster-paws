@@ -211,3 +211,11 @@ to make the painting."
   recorded `onEnd` terms, and the ask requests `keepsakes: "retain"`. A painting still owed after
   the end is a new end term `onEnd` doesn't describe, so the contract gains one before the first grant
   is recorded, or a revocation record can't express what we promised.
+
+## Amendment (2026-11-03): a keepsake can come before its donation (proposed, ADR-0035)
+
+ADR-0035 starts a painting at the first signal, the webhook or the donor's return, so a keepsake keys on the intent and
+reaches its donation through it, and may have none. The token page never shows a painting (its question 2), so this ADR's §1 and "there are no public
+paintings" stand. How the grant is read after a withdrawal is its question 4. A photo is held at the first signal, per listing, even for a gift still waiting for a place
+(ADR-0035 decisions 7 and 11). What we tell people becomes "can still get its painting" (its question 7); this ADR's
+"still gets" stays as recorded.

@@ -51,7 +51,9 @@ Check items off as they ship.
      else; a suppression check before every send; the signed bounce and
      complaint webhook (verified over the raw body, with a timestamp
      tolerance) writes suppressions. Unit test it with a good fixture and a
-     tampered one. Carry-in (ADR-0027 as amended 2026-10-22): a
+     tampered one. The unsubscribe acts only on POST (RFC 8058's
+     `List-Unsubscribe-Post`, and a page with a button for the body's link):
+     prove a GET writes no suppression and erases nothing (ADR-0035 question 6). Carry-in (ADR-0027 as amended 2026-10-22): a
      suppression is an HMAC of the lowercased address under a key in `pass`,
      never the address; the check runs before every send, beside Resend's
      own list. The webhook signing secret goes in `pass` and infra.md
@@ -129,9 +131,29 @@ Check items off as they ship.
      is painted after a withdrawal, reading the grant as of the gift's date and a photo
      held from the gift (ADR-0022 as amended 2026-11-02). Holding the photo ships with the
      first real Sponsor button, not with the painter: a dog adopted before the painter runs
-     would otherwise leave a painting owed with no photo. Carry-in for the art email: a
+     would otherwise leave a painting owed with no photo. Carry-in for the art email (ADR-0035 decision 8): the send as a droplet
+     sweep, with a recorded fact that the mail went; the per-email count of 3 cycles in its short-lived list, with its `/privacy` line and the HMAC key; a stop erasing every intent of that inbox. Carry-in for the art email: a
      bounced gift's thank-you page says so and takes a new address, which
      `correctDonorEmail` refuses today because the old one is erased.
+
+   - [ ] `webhook-hardening` (slice B; ADR-0027 as amended 2026-11-03) — medium, moderate ⚠ verify. Changes nothing
+     a donor sees; ships ahead of C and D, migration 0016, oplog 0023. Caddy's hold; the store's own clock; the spool
+     volume; store split from decide; the decisions table with production's rows backfilled as decided; the
+     droplet-only replay job, reporting a file older than 10 minutes. Verify: a spooled row equals a direct one, the
+     published image with compose's real volume against a private Postgres (never the shared dev one), a listener
+     that never answers for the hang, and `nonprofit_mismatch` and `charge_on_other_intent` never re-run. Before migrating,
+     oplog 0023 reads every row with a completed event and no donation, and accounts for each: the backfill marks them decided.
+   - [ ] `first-signal-return` (slice C; ADR-0035, proposed) — medium, moderate ⚠ verify. Waits on Logan accepting ADR-0035. Migration 0017. `success_url` = `/thanks/<token>`; one conditional UPDATE of the return time; the no-cookie
+     view, with the listing's photo under `/thanks`'s existing rule and never the painting (ADR-0035 question 2); plain `/thanks` listing only gifts with a return or a donation; `thankYouIntent`; the eraser unchanged, returned or not (question 5);
+     `/privacy`, with the line on kept paintings; the
+     daily check; the comments and copy ADR-0035 names. Verify: the staging
+     proof in ADR-0035 (abandon, no GET; pay, one GET), and reports scrubbed of the token.
+   - [ ] `keepsake-on-intent` (slice D; ADR-0035, proposed) — medium, moderate ⚠ verify. Waits on oplog 0021 and Logan accepting ADR-0035. Migration 0018. `keepsake.intent_id`; `snapshotKeepsake`; the droplet sweep with decision 7's limits, its guard by normalised address and its bounded read; the photo hold per listing, after
+     oplog 0023's HEAD and `paintings`' answer on which photos it needs. Stops at "owed": the `art.generate` handler has
+     no owner yet. Verify: simultaneous hits, a webhook and two sweeps give one keepsake.
+   - [ ] Slice E: the deploy of C and D with `/test-gift` removed, oplog 0024. The bank webhook doesn't hold it for safety:
+     after oplog 0021 a late delivery lands as `no_intent`, its raw row still holding `netAmount`. The cost is never seeing
+     a bank row decided, so it goes on Logan's word if the bank takes long.
 
 6. **deletion, and closing the docs**
    - [ ] `account-deletion` — high, moderate ⚠ verify. Carry-in: suppressions

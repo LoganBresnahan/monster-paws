@@ -464,3 +464,114 @@ painting depends on.
 - The test gift's rows must be gone before `snapshotKeepsake` or `art.generate` ship, or a real
   worker could pick up a gift with no animal.
 
+## Amendment (2026-11-03): the webhook survives a deploy and a database failover
+
+### Context
+Logan, 2026-11-03: relying on webhooks "seems somewhat fragile... what if a deploy occurs when a webhook
+fires?" He is right. Every.org's docs state no retry, the one failed delivery we saw never came back (oplog
+0018), and a public docs issue (everydotorg/charity-api-docs #46) shows another partner asking support for a
+replay, which suggests none is automatic without proving it. Caddy's `reverse_proxy app:3000` holds nothing
+during a roll. DigitalOcean's maintenance window is Tuesday 00:15 UTC, and on 2026-11-03 it failed the database
+over at 00:23:13. `createPool` sets no connection or query timeout, so an insert during a failover can hang until
+Cloudflare gives up at about 100 s, and the sender has a failure by then. Neither gap has been measured, and no
+gift arrived during that failover.
+
+The webhook still carries the money record whatever ADR-0035 decides about paintings, so this ships ahead of it.
+
+### Decision
+1. **Caddy holds requests during a roll:** `lb_try_duration 30s` on the `reverse_proxy`, until oplog 0023 times a
+   real roll on the droplet. Caddy's docs: a failed connection is always retried, POSTs included, and only GETs after
+   a round trip that failed. `lb_retry_match` is not added: Next finishes a request it already holds (measured below),
+   and a retried POST needs `request_buffers` too, or it hangs for the whole hold and then answers 502.
+2. **The store has its own clock of a few seconds, then the delivery goes to disk and answers 200.** A hang
+   counts as a failure, not only an error. Logan: "yes to caddy holding requests and saving to disk". A late insert
+   plus a replay makes two raw rows, which the row lock, `closed_at` and `donations_charge_uq` make safe.
+3. **A folder of files on a named volume shared by app and worker, never a database.** Memory is wiped by the
+   deploy this protects against, and SQLite would be a dependency for a folder's job. One file per delivery, written
+   to a temp name and renamed, so a half-written file is never read.
+4. **A file holds what the row would hold:** storable body, redacted headers, partner id, time received. It never
+   holds a name, email or street address (as amended 2026-11-02, decision 8). Replaying through `receiveWebhook` would corrupt the row:
+   re-shaping a cleaned body turns `droppedKeys` into `["droppedKeys"]`, which loses how a new field gets noticed,
+   and would lose the headers (the `Authorization` marker that amendment's decision 9 waits on) and the real `received_at`.
+   So store splits from decide, and replay inserts that row and decides from it. A spooled row must equal a direct one.
+5. **Decisions get an append-only table keyed on payload id,** donor-owned like its payload, written inside `decide`
+   and after its early returns. Undecided means no row. Today `decision_failed` is only a log line and a report, and
+   selecting "completed, open intent, no donation" would re-decide `nonprofit_mismatch` and `charge_on_other_intent`
+   every minute forever, since both leave the intent open. The migration backfills production's rows as decided, so
+   the proof row and the test-gift rows never re-run, with the outcome `before_this_table`, since the old code never
+   recorded one and this doesn't guess. It assumes every existing row was decided, so a `decision_failed` row from before
+   the migration would never re-run, and the bank delivery could land that way: oplog 0023 reads, before migrating, every row
+   with a completed event and no donation, and accounts for each. Oplog 0021's delete takes decisions before payloads: the
+   link blocks the other order.
+6. **A timer in the worker replays the folder and re-runs undecided rows each minute, on the droplet only**
+   (`doc/flows.md`: the home worker registers nothing else, and only production's compose sets `WEBHOOK_SPOOL_DIR`).
+   A plain timer, never pg-boss: once the worker is up it must keep running and reporting through an outage, and 1,440
+   jobs a day would only add rows. A worker booting into an outage exits at `boss.start()` and restarts until it ends,
+   reporting `[worker] fatal`, and the files wait. It reports when a file outlives 10 minutes, because its failing is
+   otherwise silent. An undecided row gets 30 seconds first, since a younger one is probably still inside its own request.
+7. **It is proven before production needs it:** the published image with compose's real volume against a private
+   Postgres, never the shared dev Postgres, which other worktrees' tests and servers use. A listener that never
+   answers gives the hang case.
+8. **Oplog 0023 is one deploy:** Caddy's restart first, then the timed roll, with no separate roll, since each one risks
+   the bank delivery. `./Caddyfile` is a single-file bind mount, and after git replaces the file a running container
+   still reads the old text, so `caddy reload` would succeed on the old config: verify from the running config through
+   Caddy's admin API, and keep `pull app worker` so the unpinned `caddy:2-alpine` doesn't move. A POST to a wrong secret
+   path during the roll proves the hold with no row written. A HEAD from the droplet to `cdn.rescuegroups.org` is a read
+   step, for ADR-0035's photo hold. Aim: live before 2026-11-10 00:15 UTC, since the maintenance window still reads
+   pending.
+
+### Measured (2026-11-03, images built from this tree, compose's real volume, a private Postgres)
+| Case | Result |
+|---|---|
+| Healthy | 200 in 0.06 s; one row each in payloads, decisions, donations and stats |
+| Database stopped | 200 in 0.03 s, one file holding no donor, `droppedKeys` and the auth marker kept. Recorded 80 s after the database returned, the file gone |
+| A listener that never answers | 200 in 5.03 s, one file. Sweeps reported `clock_expired` meanwhile. Recorded 35 s after the database returned, and the next delivery took 0.02 s |
+| A roll, 200 POSTs at 4 a second | Every one answered 404 from the app, slowest 1.3 s, no 502 |
+| A 9.6 s delivery with the roll at 3 s | 200 and recorded, from the old app, on the old container. The recreate took 10.9 s, so the old app sat until `docker stop`'s 10 s |
+| Caddy with no app at all | Holds a POST and delivers it intact once the app comes up (7.1 s); 502 at 30.1 s if it never does |
+| A connection cut after the request was sent | 502 at once. With `lb_retry_match` alone, 502 after the whole 30 s; with `request_buffers 128KiB` too, delivered |
+
+Moved to a real failover, these are the limits. The droplet's roll is slower than this machine's, which is what oplog 0023
+times. `createPool` still sets no connection timeout, because `connectionTimeoutMillis` would also limit the wait for a
+free slot, which the ingest shares. So a connection to a host that vanished without closing it can hold a slot until TCP gives
+up. The clock keeps deliveries safe meanwhile and the 10-minute report fires, but it recovers only as those slots free.
+
+### What Every.org's docs and API now say (read 2026-11-03)
+- **The Context's "only if the donor chose to share them" is out of date.** The Partner Webhook page: "Partner webhooks
+  include donor info by default; Every.org can configure your webhook to exclude it." Excluding it would mean a name or
+  address never reaches us, so it is asked.
+- **The documented API has no donation lookup:** nonprofit lookup, search, browse and fundraisers. A nonprofit's record
+  holds `hasAdmin` and `donationsEnabled`.
+- **`/v0.2/donations` is undocumented and closed to us.** It answers 400 "API key missing" with no key and 403 with our
+  public or private key, where a made-up path answers 404. Probing stopped there. Access is asked, since it could catch
+  a missed gift.
+- To ask support@every.org, sent by Logan, with no path, secret or key in it: retries and replay; how long their client
+  waits for our response; whether anything but the donor's browser fetches `success_url`; when a bank gift's webhook
+  fires; access to `/v0.2/donations`; leaving donor info out of our webhook; and what its receipt says about goods or services,
+  and whether a keepsake from a partner changes that.
+
+### Consequences
+- Migration 0016. `doc/infra.md` and `doc/flows.md` change in the slice's own commit, marked planned until then.
+- Closes `doc/issues.md`'s "A delivery stored but not decided has no way back in". What remains of the failover entry is a
+  droplet lost with its disk, which ADR-0035's return signal and daily check partly cover.
+- By-hand deletion and account deletion add the decisions rows. A spool file holds an intent id only for the minutes
+  until it replays, or until the report fires.
+
+### Alternatives
+- **SQLite or an in-memory database.** Rejected above.
+- **A second Postgres, or a hosted queue in front of the webhook.** Rejected: a new moving part to protect one route on a
+  $22/mo box, and a queue would hold deliveries somewhere else again.
+- **Answering 500 with the file written.** Rejected: nothing suggests Every.org retries, and the delivery is safe.
+- **`lb_retry_match` with `request_buffers` on the webhook's path.** Not needed yet: measured above. It stays the fix if oplog
+  0023 shows a delivery cut during a roll on the droplet.
+
+### Revisit triggers
+- Every.org documents a retry, or says how long it waits: the hold and the clock are set against it.
+- A file outlives the report's 10 minutes on production.
+
+## Amendment (2026-11-03): a painting at the first signal (proposed, ADR-0035)
+
+ADR-0035 starts a painting at the webhook or the donor's return, so decision 4's "Until a webhook records the gift, nothing is
+sent to that address" goes with it, and decision 11's "still gets its painting" becomes "can still get" in what we tell people
+(its question 7). The address stays erased on `email.delivered` and at 30 days from the form's submit (its questions 5 and 6).
+Both decisions stay as recorded above.

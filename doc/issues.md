@@ -86,18 +86,32 @@ is the record, and a file of ticked boxes stops being read.
   today a transient database failure leaves a real gift unrecorded until someone writes the rows
   by hand. Comes with the by-hand deletion tool, before any real gift.
 
+- **A gift arriving during a deploy or a database failover may go unrecorded.** Caddy's
+  `reverse_proxy app:3000` holds nothing while a roll replaces the app. DigitalOcean's maintenance
+  window is Tuesday 00:15 UTC. On 2026-11-03 it started at 00:16:44 and promoted a new primary at
+  00:23:13, and the window still reads pending. No gift arrived during it, and neither gap's length
+  has been measured. A delivery that can't be stored leaves no row for a re-run to use, only
+  a `not stored` report that names no gift, and Every.org didn't retry the one failed delivery we
+  saw (oplog 0018). Found by the donate stream, from payload ids jumping from 2 to 35, which is the
+  failover and not lost gifts: all three sequences moved by the same 33.
+
+- **Nobody has read whether a painting sent after a gift affects Every.org's tax receipt.** Both of Logan's
+  production receipts say "No goods or services are provided to you in exchange for your gift. Therefore, the full amount
+  you paid qualifies as a charitable contribution for US tax purposes." We send a painting after the gift, and no doc or
+  page covers how the two fit. A question for Every.org or a lawyer, not one to answer here, and it is in the email to
+  support@every.org. It bears on whether the painting is promised (ADR-0035, open question 7). Found 2026-11-03, while
+  Logan and the moderator discussed that line.
+
 - **Only the newest of two paid gifts can have its address fixed.** `/thanks` shows one gift, so
   a donor with two in one browser can't reach the older one's address from there. They write to
   hello@. Found by the 2026-11-02 review.
 
 - **Nothing limits how fast intents can be minted.** `startSponsorship` writes a row with an
   address per POST, and rows last 30 days. Found by the 2026-11-02 review; Cloudflare's rules were
-  not read for it. Matters once a real Sponsor button is open.
-
-- **Whether Every.org keeps our link's parameters in its URL is unread.** The link carries the
-  intent id and the email. If its page sends the full URL as a `Referer` to `/thanks`, they arrive
-  in our request. The scrub and `dataCollection` keep them out of reports, and the production gift
-  is the time to look, since staging's checkout blocks a script.
+  not read for it, and as documented they can't be the whole answer: `doc/infra.md` opens 443 to
+  everyone and records no Authenticated Origin Pulls, so a direct hit on the droplet skips them
+  (the live firewall not read). ADR-0035's limits don't close this, since the form still creates
+  rows. Matters once a real Sponsor button is open.
 
 - **Bytes are corrupted between home and the droplet, and the bridge's SSH
   connection drops on them.** Twice in four days: oplog 0012's rerun

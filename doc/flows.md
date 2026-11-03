@@ -329,8 +329,8 @@ displaying verbatim are different permissions.
   revoke "display" → pages fall back to facts + our words; purgeDisplay
                      (src/core/purge.ts) deletes that source's animal_display
                      rows once the revocation is committed; corpus untouched
-  revoke "digify"  → no new gifts, so no new art; a gift already recorded still gets its
-                     painting (ADR-0022 as amended 2026-11-02); existing cards keep
+  revoke "digify"  → no new gifts, so no new art; a gift already recorded can still get its
+                     painting (ADR-0022 as amended 2026-11-02, ADR-0035); existing cards keep
                      their credit line
 ```
 
@@ -582,11 +582,14 @@ after it, if at all.
        │                            a separate way in: /test-gift/<secret>, startTestGift(),
        │                            Logan's real-money tests, one named nonprofit, no
        │                            animal, no painting, gone once they're done
+       │                            (planned, ADR-0035) success_url = /thanks/<token>,
+       │                            its own 128-bit value, never the intent id
        │  ── Every.org boundary: the money and the receipt are theirs ──
        ▼
   POST /api/webhooks/everyorg/<secret>   unsigned; a wrong secret stores nothing
        │  production: monsterpaws.org, the site's own edge, Caddy and app
        │  (oplog 0019; ADR-0027 as amended 2026-11-02)
+       │  (planned, ADR-0027 as amended 2026-11-03) Caddy holds requests during a roll
        │  staging: staging-hooks.monsterpaws.org → tunnel → :3027 in
        │  monsterpaws-dev, this path only (scripts/staging-hooks.yml)
        ▼
@@ -594,6 +597,10 @@ after it, if at all.
   everyorg_webhook_payloads         storableBody(): named fields + headers, stored
        │                            before anything is believed (append-only); no
        │                            name, email or street address ever lands here
+       │  (planned, ADR-0027 as amended 2026-11-03) the store has its own clock; on failure
+       │  or a hang, one file on the spool volume holding what the row would hold, and 200.
+       │  A droplet worker job replays the folder and re-runs undecided rows each minute;
+       │  a decisions row per payload says what was decided
        │  match partnerDonationId → open intent, slug + EIN exact;
        │  anything else kept and logged, never acted on
        ▼
@@ -601,8 +608,16 @@ after it, if at all.
        │  donations row (charge_id unique: a replay inserts nothing)
        │  donation_stats row, only when the insert happened — no donor in it
        │  donation_intents.closed_at
-       │  (planned) the keepsake snapshot → keepsake + keepsake_fact; § Keepsake snapshot
-       │  (planned) the art job, queued when the LoRA ships; nothing queued until then
+       ▼
+  first signal                      (planned, ADR-0035) closed_at, or GET /thanks/<token>:
+       │                            one conditional UPDATE of the return time, nothing else
+       │  (planned) droplet worker sweep: intents with a signal and no keepsake, confirmed
+       │  first, never counted; then a return 2 minutes old, newest first, at most 25
+       │  cycles a rolling day and none while its normalised address has 3 waiting; over
+       │  that it goes the next day or on its webhook → keepsake on conflict do nothing;
+       │  the photo held per listing at the first signal, outside that total;
+       │  § Keepsake snapshot. Owed = a keepsake with no art fact; the art job, with a
+       │  singleton key, ships with its handler; nothing queued until then
        ▼
   /thanks                           says money moved only when the donation row
        │                            exists under this browser's cookie; shows
@@ -610,8 +625,11 @@ after it, if at all.
        │                            it showed, if it is in the cookie, in place of a
        │                            second email
        ▼
-  art email                         (planned) to donor_email: all four paintings,
-       │                            one-click unsubscribe, a link to make an account
+  art email                         (planned, droplet sweep) confirmed first, never
+       │                            counted; unconfirmed oldest first, at most 3 cycles a
+       │                            rolling day per email, a short-lived HMAC list; to donor_email:
+       │                            all four paintings, one-click unsubscribe, a link to
+       │                            make an account
        │                            that signs nobody in; the gift's only email
        ▼
   donor_email erased                (planned) no account: on Resend's email.delivered
@@ -642,7 +660,8 @@ Planned: roadmap item 4. The card reads the keepsake alone; the listing side
 may be purged, rebuilt or merged without touching it.
 
 ```
-  donation completes (Every.org)             (planned, item 4)
+  first signal: donation, or the donor's     (planned, ADR-0035; item 4)
+  return                                     no donation → no amount or date on the card
        │
        ▼
   snapshotKeepsake()  (planned, item 4)      the ONE writer — every field
