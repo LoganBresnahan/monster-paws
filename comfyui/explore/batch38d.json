@@ -1,0 +1,53 @@
+{
+  "_": "Batch 38d — Plum's shoulders: Logan 2026-11-03: \"one issue we have sometimes is that the shoulders often look too wide. its very evident on plum. He almost looks like a puppy head on a human body\". \"head-and-shoulders portrait\" is a human bust's words; two framings without them: a close portrait of the head and neck (storybook_head), and three-quarter view from the chest up (storybook_bust34). Plum collarless (38c's bare ending, Logan: \"no i want to collarless\") at 38c's eight seeds, whose bare paintings are the before.",
+  "animals": {
+    "Plum": {
+      "kind": "dog",
+      "describe": "male grey cane corso puppy",
+      "two": [
+        "PXL_20250423_185424061.PORTRAIT.jpg",
+        "downloadfile.jpg"
+      ],
+      "bare": "male grey cane corso puppy with a bare neck and nothing around it"
+    }
+  },
+  "photos": [
+    "two"
+  ],
+  "crops": [
+    "grownsubject"
+  ],
+  "aspect": [
+    "landscape"
+  ],
+  "describe": [
+    "bare"
+  ],
+  "families": [
+    "kleinbfl8"
+  ],
+  "graphs": [
+    "reference2"
+  ],
+  "prompts": [
+    "storybook_head",
+    "storybook_bust34"
+  ],
+  "denoise": [],
+  "weights": [],
+  "weight_types": [],
+  "end_at": [],
+  "seeds": [
+    88,
+    1357,
+    4242,
+    5150,
+    6060,
+    8642,
+    9119,
+    31337
+  ],
+  "heads": [
+    "grownhead"
+  ]
+}

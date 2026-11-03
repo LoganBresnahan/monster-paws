@@ -1,0 +1,47 @@
+{
+  "_": "Batch 32a — facing the viewer behind a wider sign, Plum: Logan 2026-11-02: \"yeah do the front facing test.\" In three-quarter view the hind leg and belly reach past the sign's edge, so its cover was the seed's luck (batch 31: the best four seeds 32 of 56). storybook_sign_front: sitting square behind a blank sign wider than the dog, facing the viewer, at batch 31's best four seeds (23, 333, 1111, 3000), so each painting has a three-quarter twin. klein-v1 as production paints, no LoRA; the name carved after by comfyui/signname.py.",
+  "animals": {
+    "Plum": {
+      "kind": "dog",
+      "describe": "male grey cane corso puppy",
+      "two": [
+        "PXL_20250423_185424061.PORTRAIT.jpg",
+        "downloadfile.jpg"
+      ]
+    }
+  },
+  "photos": [
+    "two"
+  ],
+  "crops": [
+    "grownsubject"
+  ],
+  "aspect": [
+    "landscape"
+  ],
+  "describe": [
+    "listing"
+  ],
+  "families": [
+    "kleinbfl8"
+  ],
+  "graphs": [
+    "reference2"
+  ],
+  "prompts": [
+    "storybook_sign_front"
+  ],
+  "denoise": [],
+  "weights": [],
+  "weight_types": [],
+  "end_at": [],
+  "seeds": [
+    23,
+    333,
+    1111,
+    3000
+  ],
+  "heads": [
+    "grownhead"
+  ]
+}

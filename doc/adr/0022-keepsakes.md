@@ -112,7 +112,7 @@ It must be in the first email: asking at the first revocation is too late.
 - A donor asks to delete their own keepsake — donor-initiated deletion is a
   privacy question, not a basis question; it needs its own decision.
 
-## Open question (2026-10-26): a mark on the keepsake
+## Open question (2026-10-26, settled 2026-11-02 below): a mark on the keepsake
 
 The crew's portraits on the home section carry a small `monsterpaws.org ·
 2026` in the bottom-right corner — the year it was painted, as an artist
@@ -139,6 +139,24 @@ Two notes from the same day, for whoever settles it:
   update, never a badge over the keepsake. No frame designs exist yet.
   DIRECTION.md's "Evolve" step (the card transforms into a gotcha-day
   version) is the thing this would revise, and is Logan's to settle there.
+
+### Settled (2026-11-02): every gift painting carries the mark
+
+Logan noticed the look tests carried no mark ("is that normal or should it
+be in the pipeline?"), said it reads "monsterpaws.org <year>", and
+settled the question the same day: "yes to the gift paintings, they get
+the watermark."
+
+- **Every painting a donor gets carries `monsterpaws.org · <year>`**,
+  bottom right, as the crew's portraits do: the year it was painted, in
+  the pixels. It is stamped after painting by `comfyui/mark.py`, measured
+  from `public/brand/crew/*-painting.jpg` (Geist Regular, about 214 px of
+  ink on 1216×832, a warm light grey multiplied into the paper).
+- **The mark is not a repair.** It covers nothing klein painted wrong, so
+  the rule against post-paint repair in the donation path (ADR-0004 as
+  amended) does not reach it.
+- **A frame or a card layout keeps it** (the notes above): a crop that
+  drops the mark is not allowed.
 
 ## Amendment (2026-10-27): the keepsake is the painting, never the photo
 

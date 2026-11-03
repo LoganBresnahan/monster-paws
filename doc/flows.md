@@ -735,8 +735,8 @@ round. Both workers are the same binary — the droplet's never registers
        │   (sex, colour, breed, age, species)   comfyui/explore/boxes-detected.json.
        │   painter: FLUX.2 klein 4B (BFL fp8)   comfyui/workflows/klein-v1.api.json
        │   reading the grown subject and head   (ADR-0004 as amended 2026-10-14,
-       │   crops as references · landscape      2026-10-15). klein only, no
-       │   canvas · a tripod stands · 4 cands   fallback painter
+       │   crops as references · landscape      2026-10-15, 2026-11-03). klein
+       │   canvas · chest-up portrait · 4 cands only, no fallback painter
        ▼
   signature out  (planned, item 4)              experiment: comfyui/signature.py,
        │   ink on the paper outside the dog's   LaMa on CPU (batches 9a–9c)

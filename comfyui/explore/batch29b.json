@@ -1,0 +1,87 @@
+{
+  "_": "Batch 29b — the seed search, four held-out Commons dogs (Pepe, Bianca, Bronco, Gonzaja): Logan 2026-11-02: \"yes\" to a search for more seeds like 23, which held the sign on 11 of 13 dogs (batches 27–28). The sitting full body behind a sign with the dog's name (storybook_sign) alone, at sixteen seeds no batch has used, on the six dogs that failed at some seed — the dogs that pass at every seed cannot tell a good seed from a bad one. klein-v1 as production paints, no LoRA. Seeds that pass on most of the six are then confirmed on dogs they have never painted.",
+  "animals": {
+    "pepe-a-josaphat-looking-back": {
+      "kind": "dog",
+      "describe": "grey weimaraner",
+      "one": [
+        "Pepe-a-Josaphat-looking-back.jpg"
+      ],
+      "set": "lora-holdout",
+      "name": "Pepe"
+    },
+    "bianca-2-meses": {
+      "kind": "dog",
+      "describe": "white boxer puppy",
+      "one": [
+        "Bianca-2-Meses.jpg"
+      ],
+      "set": "lora-holdout",
+      "name": "Bianca"
+    },
+    "bronco-laying-down-lr": {
+      "kind": "dog",
+      "describe": "tricolour beagle",
+      "one": [
+        "Bronco-laying-down-LR.jpg"
+      ],
+      "set": "lora-holdout",
+      "name": "Bronco"
+    },
+    "gonzaja-yellow3": {
+      "kind": "dog",
+      "describe": "tan sighthound-type dog",
+      "one": [
+        "Gonzaja-yellow3.jpg"
+      ],
+      "set": "lora-holdout",
+      "name": "Gonzaja"
+    }
+  },
+  "photos": [
+    "one"
+  ],
+  "crops": [
+    "grownsubject"
+  ],
+  "describe": [
+    "listing"
+  ],
+  "families": [
+    "kleinbfl8"
+  ],
+  "graphs": [
+    "reference2"
+  ],
+  "denoise": [],
+  "weights": [],
+  "weight_types": [],
+  "end_at": [],
+  "heads": [
+    "grownhead"
+  ],
+  "aspect": [
+    "landscape"
+  ],
+  "prompts": [
+    "storybook_sign"
+  ],
+  "seeds": [
+    101,
+    333,
+    500,
+    888,
+    1111,
+    1500,
+    2024,
+    3000,
+    3333,
+    4444,
+    5555,
+    6000,
+    7777,
+    8888,
+    9001,
+    12321
+  ]
+}

@@ -1,0 +1,60 @@
+{
+  "_": "Batch 37a — the cats as portraits, for the site's crew section: Logan 2026-11-03, to the moderator: \"we are going to do portraits because we can't guarantee a clean body. so the crew photos need updated.\" Marty and Stacey were never painted as portraits (batches 32–36 are the dogs). klein-v1 as production paints, no LoRA, the short portrait (storybook_bust, batch 35's winner) and its soft lower edge (storybook_bust_soft, batch 36a, Logan's read pending) at batch 35's eight seeds. Marty's words are batch 11b's closest (\"recolour\": the points and blue eyes spelled out, which his photos alone do not carry), Stacey's her listing words (\"female brown tabby cat\", as batches 11a–11c).",
+  "animals": {
+    "Marty": {
+      "kind": "cat",
+      "two": [
+        "PXL_20210107_162942931.jpg",
+        "IMG_4288.JPG"
+      ],
+      "crew": "male flame point Siamese cat, cream with orange ears, face and tail, and blue eyes"
+    },
+    "Stacey": {
+      "kind": "cat",
+      "two": [
+        "IMG_3110.jpg",
+        "IMG_20200516_211507.jpg"
+      ],
+      "crew": "female brown tabby cat"
+    }
+  },
+  "photos": [
+    "two"
+  ],
+  "crops": [
+    "grownsubject"
+  ],
+  "aspect": [
+    "landscape"
+  ],
+  "describe": [
+    "crew"
+  ],
+  "families": [
+    "kleinbfl8"
+  ],
+  "graphs": [
+    "reference2"
+  ],
+  "prompts": [
+    "storybook_bust",
+    "storybook_bust_soft"
+  ],
+  "denoise": [],
+  "weights": [],
+  "weight_types": [],
+  "end_at": [],
+  "seeds": [
+    23,
+    333,
+    1111,
+    3000,
+    47,
+    610,
+    2468,
+    7321
+  ],
+  "heads": [
+    "grownhead"
+  ]
+}

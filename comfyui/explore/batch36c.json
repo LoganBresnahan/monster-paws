@@ -1,0 +1,66 @@
+{
+  "_": "Batch 36c — words from the photo for the breeds klein paints from its own idea: Logan 2026-11-03 on batch 35, Max and Duke none of 16: \"basically the german shepards colors were wrong and the dobermans ears were wrong\". Claude read the two Commons photos and wrote what they show, once after the breed's name (traits_breed) and once without it (traits), since the name may be what calls up klein's idea of the breed; the short portrait (storybook_bust) at batch 35's eight seeds, whose listing-word paintings are the before. A test of whether words read from a photo would fix it (roadmap item 4's local photo-reading idea), before anything is built to read one. Max's black back is worded as fur, never \"saddle\", which klein paints as tack (batch 11b).",
+  "animals": {
+    "german-shepherd-aka-alsatian-and-alsatian-wolf-dog-deutscher": {
+      "kind": "dog",
+      "describe": "black and tan german shepherd",
+      "one": [
+        "German-Shepherd-aka-Alsatian-and-Alsatian-Wolf-Dog-Deutscher.jpg"
+      ],
+      "set": "lora-train",
+      "name": "Max",
+      "traits_breed": "red-tan german shepherd with black fur across its back and a black muzzle",
+      "traits": "large red-tan dog with black fur across its back, a black muzzle and tall pointed ears"
+    },
+    "doberman-pinscher-aka-dobermann": {
+      "kind": "dog",
+      "describe": "black and tan doberman pinscher",
+      "one": [
+        "Doberman-Pinscher-aka-Dobermann.jpg"
+      ],
+      "set": "lora-train",
+      "name": "Duke",
+      "traits_breed": "black and tan doberman pinscher with natural soft floppy ears that hang down",
+      "traits": "sleek black dog with tan markings on its muzzle, eyebrows and chest, and soft floppy ears that hang down"
+    }
+  },
+  "photos": [
+    "one"
+  ],
+  "crops": [
+    "grownsubject"
+  ],
+  "aspect": [
+    "landscape"
+  ],
+  "describe": [
+    "traits_breed",
+    "traits"
+  ],
+  "families": [
+    "kleinbfl8"
+  ],
+  "graphs": [
+    "reference2"
+  ],
+  "prompts": [
+    "storybook_bust"
+  ],
+  "denoise": [],
+  "weights": [],
+  "weight_types": [],
+  "end_at": [],
+  "seeds": [
+    23,
+    333,
+    1111,
+    3000,
+    47,
+    610,
+    2468,
+    7321
+  ],
+  "heads": [
+    "grownhead"
+  ]
+}

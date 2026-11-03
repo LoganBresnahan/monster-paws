@@ -1,0 +1,53 @@
+{
+  "_": "Batch 27b — the four a donor would get, for the male: klein-v1 exactly as production paints, no LoRA — both photos' grown subject and the grown head, the listing words, landscape — at eight seeds no batch has used. Logan 2026-11-02: \"for both males and females we send two portraits and two full body with the signs. males can be in any pose and females we hope are sitting. lets run a test of this and see what we get with the crew\" (ADR-0004 as amended 2026-10-15, decision 4). Plum, each seed a portrait (storybook_bust), standing beside a sign with his name (storybook_sign_stand), and sitting behind one as the females do (storybook_sign), to see whether one recipe serves both.",
+  "animals": {
+    "Plum": {
+      "kind": "dog",
+      "describe": "male grey cane corso puppy",
+      "two": [
+        "PXL_20250423_185424061.PORTRAIT.jpg",
+        "downloadfile.jpg"
+      ]
+    }
+  },
+  "photos": [
+    "two"
+  ],
+  "crops": [
+    "grownsubject"
+  ],
+  "aspect": [
+    "landscape"
+  ],
+  "describe": [
+    "listing"
+  ],
+  "families": [
+    "kleinbfl8"
+  ],
+  "graphs": [
+    "reference2"
+  ],
+  "prompts": [
+    "storybook_bust",
+    "storybook_sign_stand",
+    "storybook_sign"
+  ],
+  "denoise": [],
+  "weights": [],
+  "weight_types": [],
+  "end_at": [],
+  "seeds": [
+    23,
+    314,
+    777,
+    1001,
+    2718,
+    5050,
+    8080,
+    9999
+  ],
+  "heads": [
+    "grownhead"
+  ]
+}

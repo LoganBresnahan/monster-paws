@@ -1,0 +1,54 @@
+{
+  "_": "Batch 38a — the collar, Plum (his collar per Logan; the crew's photos are never viewed by Claude): Logan 2026-11-03 on batch 36: \"the plum paintings are a bit incomplete and could be said for other dogs with collars. they tend to blend in with the body rather than show clearly all around the neck\" (Plum 6 of 8 in batch 35, 0 of 8 on the same paintings in 36); then \"one of the two i guess we can run a test. half of plum with one description and half with the other. this effects other dogs as well\". The short portrait (storybook_bust, the winner of 35 and 36) at batch 35's eight seeds, the listing words with one of two endings: the neck described bare, the collar never named (bare), or the collar asked for whole, all the way round (worn); a harness is worded as a harness. Batch 35's short paintings are the before.",
+  "animals": {
+    "Plum": {
+      "kind": "dog",
+      "describe": "male grey cane corso puppy",
+      "two": [
+        "PXL_20250423_185424061.PORTRAIT.jpg",
+        "downloadfile.jpg"
+      ],
+      "bare": "male grey cane corso puppy with a bare neck and nothing around it",
+      "worn": "male grey cane corso puppy, wearing its collar, the whole collar painted clearly all the way around its neck"
+    }
+  },
+  "photos": [
+    "two"
+  ],
+  "crops": [
+    "grownsubject"
+  ],
+  "aspect": [
+    "landscape"
+  ],
+  "describe": [
+    "bare",
+    "worn"
+  ],
+  "families": [
+    "kleinbfl8"
+  ],
+  "graphs": [
+    "reference2"
+  ],
+  "prompts": [
+    "storybook_bust"
+  ],
+  "denoise": [],
+  "weights": [],
+  "weight_types": [],
+  "end_at": [],
+  "seeds": [
+    23,
+    333,
+    1111,
+    3000,
+    47,
+    610,
+    2468,
+    7321
+  ],
+  "heads": [
+    "grownhead"
+  ]
+}

@@ -22,6 +22,9 @@
 > (below).
 > Self-amended 2026-10-29: the weights we make live in a bucket of their
 > own, `monsterpaws-models`, not a prefix (below).
+> Self-amended 2026-11-03: every keepsake is a head-and-shoulders
+> portrait, four a donation; the anatomy LoRA is dropped and a tripod no
+> longer stands (below).
 
 ## Context
 The collector loop needs card art that is (a) unmistakably one set — the
@@ -881,3 +884,88 @@ pg_dumps and the attestation mirror; the corpus is scraped HTML.
 Generation still never runs per listing. ADR-0035 starts it at the first signal of a gift, the webhook or the donor's
 return, so a painting can exist with no recorded donation. Confirmed gifts go first, and at most 25 unconfirmed
 cycles of four paintings start in a rolling day (ADR-0035 decision 7).
+
+## Amendment (2026-11-03): four portraits a donation; the anatomy LoRA is dropped
+
+### Context
+Decision 4 of 2026-10-15 (male anatomy never on a female, none on any
+keepsake) sent the art work to an anatomy LoRA (2026-10-22). Its best, run
+2's step 3000 at strength 1.0, still failed 26 of 48 afters, and run 1's
+afters had measured 20–50% less fine detail than their befores
+(`doc/plans/base-model-candidates.md`, batches 17a–22a). Logan, 2026-11-02:
+"I think i should make an executive decision and move away from using a
+lora … the loss of likeness and increase in softness of the paintings is
+not worth it." He then narrowed the rule, "correct anatomy on males is
+fine. just no male sheaths on females", and the plan tried to keep a
+female's body clean without the LoRA: lying down (23a, 26a), nipples
+named (25a), a look up from above (26b), a sign in front of her (26c,
+27a–31b; the three-quarter sign covered about 57–70% per seed) and facing
+the viewer behind a wider one (32a–32b; "no this wont work at all"). The
+head-and-shoulders portrait passed throughout: 22 of 24 on the crew and 33
+of 40 on new dogs (27a–28a), and blind, 95 of 104 (35a–35b). Logan, on a
+body for every species: "i forgot about horses and pigs and all that"
+(2026-11-02); to the moderator, 2026-11-03: "we are going to do portraits
+because we can't guarantee a clean body."
+
+### Decision
+1. **Every keepsake is a head-and-shoulders portrait from the chest up**,
+   for every species and either sex. No body is painted. The words are
+   batch 35's short portrait ("a gentle storybook illustration of a
+   {kind}, a head-and-shoulders portrait from the chest up, looking toward
+   the viewer, soft watercolor, warm pastel palette, plain background"),
+   on klein-v1 as it stands: the grown subject and head crops as
+   references, the listing's words, the landscape canvas of 2026-10-15
+   decision 3, four steps.
+2. **The anatomy LoRA is dropped.** No checkpoint ships. Runs 1 and 2's
+   weights stay in `monsterpaws-models` (2026-10-29), unused.
+3. **Decision 2 of 2026-10-15 (a three-legged animal painted standing) is
+   withdrawn.** A portrait shows no legs, so a tripod is painted like any
+   other animal, and no leg is counted or taken out.
+4. **Decision 4 of 2026-10-15 is met by the framing.** Its first half
+   stands: male anatomy is never painted on a female. Its second half
+   ("none is wanted on any keepsake") is withdrawn (Logan, 2026-11-02),
+   which a portrait never tests.
+5. **A donation gets four portraits**, four seeds of the one prompt, and
+   the donor keeps all four (2026-10-14). The four portraits and four full
+   bodies Logan weighed on 2026-11-02 ("4 and 4 so 8 total per
+   donation") went with the body. Logan, 2026-11-03: "4 paintings come
+   in a cycle automatically", and asked whether a donation gets four
+   portraits: "yeah that all sounds right to me".
+
+### Consequences
+- The keepsake's prompt is one string for every animal. The workflow's
+  empty `text` is still filled by the worker at run time (roadmap item 4).
+- The leg, groin and lettering tools (`legs.py`, `legmask.py`,
+  `groinmask.py`, `groinlines.py`, `groinink.py`, `signname.py`) stay as
+  standing tools for the exploration. None enters the donation path.
+- The tripod keyword list in `doc/plans/listing-words.md` no longer sets a
+  pose. A three-legged fact still matters to the words, for what the
+  donor reads.
+- A portrait fails by the dog, not the seed: seven of batch 35's eight
+  seeds passed 12 or 13 of 13. The German shepherd's coat and the
+  Doberman's ears are painted from klein's idea of the breed, at every
+  seed. The likeness score does not see it (60% within one dog's
+  paintings, batch 35). Words read from the photo are tested in batch 36c.
+- Four of one prompt are near repeats, so auto-QC v0's outlier test
+  (four of a kind, `doc/plans/the-look-exploration.md`) applies as built.
+- Not decided here: whether the name is painted (Logan, 2026-11-03: names
+  are often listing notes) and which four seeds the worker uses. The mark
+  on a gift painting is ADR-0022's.
+
+### Alternatives
+- **The anatomy LoRA.** Dropped by Logan for its loss of likeness and
+  softness (decision 2).
+- **A pose or an object that hides a female's body**: lying down, a look
+  from above, a sign in front, three-quarter or facing (batches 23a–32b).
+  None covered reliably, and each was per species.
+- **A full body for males and a portrait for females.** A body is still
+  per species (a horse or a pig shows a sheath standing), and the set
+  would differ by sex.
+- **Erase or repaint the area after painting** (batches 9c–9d, 12c–12h).
+  Rejected 2026-10-15, and no post-paint repair is in the donation path.
+
+### Revisit triggers
+- A painter, LoRA or check that keeps a body clean on every species
+  (an anatomy check that rejects a painting, never repairs it): a full
+  body could return as an amendment.
+- Donors asking for the whole animal.

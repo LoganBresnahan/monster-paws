@@ -1,0 +1,69 @@
+{
+  "_": "Batch 23a — keeping the groin out by the pose, in place of the anatomy LoRA (ADR-0004 as amended 2026-10-15, decision 4; Logan 2026-11-02: \"move away from using a lora\"): batches 14a (Plum, Ducky) and 14b (Beetle, 'female bloodhound') exactly as production paints them — klein-v1, both photos' grown subject and the grown head, the listing words, landscape, the same eight seeds, no LoRA — with three new prompts in place of storybook_stand34 and storybook_sit34: two wordings of the down (storybook_down34, on its belly in three-quarter view; storybook_sphinx, chest and belly flat, front legs straight out), never on its side, and a head-and-shoulders portrait (storybook_bust). 14a–14b's 48 paintings are the before.",
+  "animals": {
+    "Plum": {
+      "kind": "dog",
+      "describe": "male grey cane corso puppy",
+      "two": [
+        "PXL_20250423_185424061.PORTRAIT.jpg",
+        "downloadfile.jpg"
+      ]
+    },
+    "Ducky": {
+      "kind": "dog",
+      "describe": "female tan pit bull mix",
+      "two": [
+        "PXL_20241229_195311064.RAW-01.COVER.jpg",
+        "PXL_20250621_160612271.PORTRAIT.jpg"
+      ]
+    },
+    "Beetle": {
+      "kind": "dog",
+      "describe": "female bloodhound",
+      "two": [
+        "IMG_2931.jpg",
+        "IMG_3545.jpg"
+      ]
+    }
+  },
+  "photos": [
+    "two"
+  ],
+  "crops": [
+    "grownsubject"
+  ],
+  "aspect": [
+    "landscape"
+  ],
+  "describe": [
+    "listing"
+  ],
+  "families": [
+    "kleinbfl8"
+  ],
+  "graphs": [
+    "reference2"
+  ],
+  "prompts": [
+    "storybook_down34",
+    "storybook_sphinx",
+    "storybook_bust"
+  ],
+  "denoise": [],
+  "weights": [],
+  "weight_types": [],
+  "end_at": [],
+  "seeds": [
+    11,
+    222,
+    4096,
+    8128,
+    17,
+    404,
+    1729,
+    6174
+  ],
+  "heads": [
+    "grownhead"
+  ]
+}

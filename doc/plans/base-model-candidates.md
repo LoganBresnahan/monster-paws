@@ -1415,6 +1415,10 @@ is not available for a new painting):
 2. **A local VLM on the Arc**, in the ComfyUI image under the guard,
    each with a `models.manifest` line (licence read) before it runs:
    Qwen3-VL-4B-Instruct or Qwen2.5-VL-3B-Instruct (Apache-2.0; the 7–8B
+   [correction 2026-11-03: Qwen2.5-VL-3B is under the Qwen Research
+   License, research and evaluation only — "If you are commercially using
+   the Materials, you shall request a license from us" — so it is out;
+   Qwen3-VL-2B and -4B are Apache-2.0, read on their model cards]
    fit the card only quantised and the explore container's 12 GB CPU cap
    not at all), and Moondream2 (Apache-2.0, ~2B, runs on the CPU in
    seconds) as the cheap end. Same question, same two views.
@@ -2273,6 +2277,1334 @@ strength where it had the checkpoint:
   Beetle's sitting, and one Beetle standing.
 - As before, one tick joins anatomy and likeness, so a fail does not say
   which of the two failed.
+
+### Batch 22a — run 2 above strength 1.0 (Claude, 2026-11-02; Logan's eye decides)
+
+- **Why**: run 1's grid rose with strength up to the 1.0 it stopped at
+  (36 ticks at 1.0 against 21 at 0.6 and 21 at 0.8), so whether more of
+  the LoRA still helps is free to ask at home before a longer run 3 is paid
+  for (Logan: "commit and run the strength test", 2026-11-02).
+- **`comfyui/explore/batch22a.json`**: batch 21a exactly, with checkpoint
+  3000 only (the best of 21a, 22 of 48) at strengths 1.25 and 1.5. 96
+  paintings, 96 done, no kill, 19.5 s each warm (63 s the first, cold);
+  01:52–02:36 UTC with the guard's restarts, the pool at 1.8 GB at every
+  chunk's end and idle after.
+- Not pre-read. Logan's page: `var/explore/index-all/lora-grid-22.html` —
+  each before and its three afters at 3000 in a 2×2 (before, 1.0; 1.25,
+  1.5), every picture the 1216×832 painting itself, one "acceptable" tick
+  on each after, the list copied out as `22 <dog> <pose> s<seed> w<strength>`.
+  The 1.0 afters are 21a's own paintings, asked again so the three
+  strengths are read side by side in one sitting. Checked headless: 48
+  befores and 144 afters at 1216×832, 144 distinct keys, a tick and its
+  untick both survive a reload, no horizontal scroll at desktop or phone
+  width.
+
+### Off the LoRA — Logan's decision (2026-11-02)
+
+Logan, after reading 21a and before reading 22a: "I think i should make
+an executive decision and move away from using a lora. reason being, I
+think the loss of likeness and increase in softness of the paintings is
+not worth it. they just look really good being painted from the model."
+
+- **The record agrees on the cost**: run 1's afters measured 20–50% less
+  fine detail than their befores, and drifted further from them with both
+  step and strength, Beetle most (17a–17d, measured 2026-10-30); the best
+  of run 2 still fails 26 of 48.
+- **His three ways to keep genitals out without a LoRA**:
+  1. Paint every dog lying down, in a "down" (on its belly, never on its
+     side).
+  2. Another pose, or something in the picture, that hides them.
+  3. Find the area and erase or repaint it, as the tripod step does for a
+     leg.
+- **What the record already says about each**:
+  1. No lying prompt has run on klein-v1. The prompt's pose wins over the
+     photo's: 13b and 13d painted lying Commons photos as sitting dogs
+     "without a trace of the lying pose", so a down prompt should paint
+     down dogs from standing photos. Logan named lying-down poses as a way
+     for the crew on 2026-10-23 (The cleanup — Logan's read). A tripod is
+     painted standing (ADR-0004 as amended 2026-10-15, decision 2), so
+     tripods need their own answer.
+  2. Sitting in three-quarter view does not hide them on klein-v1: none
+     of the 24 sitting befores was free of genitalia (Logan's baseline,
+     2026-10-30).
+  3. Repair after painting is kept out of the donation path (ADR-0004 as
+     amended 2026-10-22, reading decision 4 of 2026-10-15). The hand step
+     needed a trace placed by hand and still passed 41 of 80, 20 of 39 and
+     44 of 115; every automatic finder tried missed (RTMPose's hull is the
+     thigh, 12e; joining the lines, 12f; Claude's traces missed 21 of 46,
+     16a).
+- The checkpoints, their `models-candidates.manifest` lines and the
+  bucket's nine objects stay as they are until Logan says otherwise; the
+  ADR-0004 amendment that drops the LoRA comes with the way that replaces
+  it.
+
+### Batch 23a — the pose test (Claude, 2026-11-02; Logan's eye decides)
+
+- **Logan: "run the test"** — Logan's first two ways, as prompts on klein-v1
+  exactly as production paints (no LoRA, no step after the painting).
+- **Three new prompts in `comfyui/explore.py`**: `storybook_down34` (lying
+  on its belly in three-quarter view, front paws out in front, hind legs
+  tucked under), `storybook_sphinx` (chest and belly flat on the ground,
+  front legs straight out, hind legs folded beneath) and `storybook_bust`
+  (a head-and-shoulders portrait from the chest up), each spelled out so
+  klein does not lay the dog on its side.
+- **`comfyui/explore/batch23a.json`**: 14a's Plum and Ducky and 14b's
+  Beetle with everything else as 14a–14b (both photos' grown subject and
+  the grown head, the listing words, landscape, the same eight seeds), the
+  three prompts in place of standing and sitting. 72 paintings, 72 done,
+  no kill, 16.5 s each warm; 02:54–03:24 UTC, the pool 1.8–1.9 GB at each
+  chunk's end and 1.8 GB idle after.
+- Not pre-read. Logan's page: `var/explore/index-all/pose-grid-23.html` —
+  per dog and seed a 2×2 of the standing before and the three new
+  paintings, each the 1216×832 painting itself, one "acceptable" tick on
+  each new one (no genitalia, still the dog no worse than the before, and
+  a pose for a keepsake: a dog on its side fails), the list copied out as
+  `23 <dog> s<seed> <down34|sphinx|bust>`. Checked headless: 24 befores and
+  72 afters at 1216×832, 72 distinct keys, a tick and its untick both
+  survive a reload, no horizontal scroll at desktop or phone width.
+
+### Batch 23a — Logan's read (2026-11-02)
+
+In words, no tick list: "sphinx looked terrible. 3/4 was better but pretty
+much only beetle was acceptable like that. plum and ducky still had
+strange genitals or weird feet. and sometimes on the 3/4 the dogs would
+have three back legs or two bottoms."
+
+- **The portraits pass** (Logan, asked after): "the portraits were mostly
+  fine. just one bad one for beetle that gave her extremely wide
+  shoulders. hmmmm for v1 we might have to do portait. otherwise the
+  incorrect genitals really hurt us and i can't think of anything else
+  that makes sense, besides putting pants on the dog."
+- **The sphinx is out**, and the three-quarter down works only for Beetle;
+  on Plum and Ducky it keeps the genitals or breaks the feet, and klein
+  sometimes builds the down from too many parts (three hind legs, two
+  rumps).
+- **His question: with no pose in the prompt, does klein paint standing
+  and sitting?** The record says it takes the pose from the references
+  instead (3b: "the reference fixes the composition", couch and grass
+  included; 3b–4a: Ducky's couch photo, lying toward the camera, painted
+  a foreshortened, stubby Ducky, and a standing photo as the second
+  reference stood her up in profile). A pose in the prompt beats the
+  reference's (4a), which is why production names one, three-quarter
+  (4b), on a landscape canvas (9b). With no pose word, a listing's photos
+  would choose it: mostly standing or sitting, since that is how shelter
+  dogs are photographed, but a lying photo paints a lying dog.
+
+### Batch 24a — pants, tall grass and the portrait (for fun; Logan, 2026-11-02)
+
+- Logan: "just for fun, i want 3 kings of paintings of ducky, plum, and
+  beetle. 1 with pants on, 1 in tall grass, and 1 portrait." Two new
+  prompts in `comfyui/explore.py`: `storybook_pants34` (standing in
+  three-quarter view in snug knitted dog pants over the hips, belly and
+  hind legs) and `storybook_grass34` (standing in tall meadow grass and
+  wildflowers up to the chest), beside 23a's `storybook_bust`.
+- **`comfyui/explore/batch24a.json`**: 23a's recipe at three seeds it did
+  not use (7, 99, 1234), so the portraits are new ones. 27 paintings, 27
+  done, no kill, 16.5 s each warm; 04:00–04:12 UTC, the pool 1.6–1.8 GB.
+- Not pre-read. Logan's page: `var/explore/index-all/fun-24.html` — per
+  dog a row of each kind, every picture the 1216×832 painting itself, an
+  optional tick each. Checked headless (27 at 1216×832, a tick and its
+  untick survive a reload, no horizontal scroll at either width).
+
+### Correct anatomy on a male is fine — Logan's decision (2026-11-02)
+
+Logan: "correct anatomy on males is fine. just no male sheaths on
+females." And: "so for males i don't care if the sheath shows or not."
+Decision 4 of ADR-0004 as amended 2026-10-15 said none is
+wanted on any keepsake; its first half (never male anatomy on a female)
+stands and its second is withdrawn, by the ADR-0004 amendment that records
+the way chosen. Logan's idea to try with it: "if male, standing, if female
+sitting and maybe say with nipples" — batch 25a. Teats already pass batch
+9b's rule, and Logan saw sitting paintings show "small nipple bumps or
+sheath bump" (batch 17), so a female's own anatomy named may steer klein
+from the one to the other. If it works, Logan's thought: "maybe we ship
+both a full body and portrait per animal" (open, with the ADR-0004
+amendment).
+
+### Batch 25a — a female sitting, her nipples named (Claude, 2026-11-02; Logan's eye decides)
+
+- **Two new prompts in `comfyui/explore.py`**: `storybook_sit34_nipples`
+  ("a female dog with small nipples along her belly") and
+  `storybook_sit34_teats` ("her belly showing the two rows of small
+  nipples a female dog has"), each otherwise production's sitting prompt.
+- **`comfyui/explore/batch25a.json`**: 14a's Ducky and 14b's Beetle as
+  production paints them (klein-v1, both photos' grown subject and the
+  grown head, the listing words, landscape, the same eight seeds, no
+  LoRA), the two wordings in place of standing and sitting. 32 paintings,
+  32 done, no kill, 16.5 s each warm; 04:13–04:27 UTC, the pool at 1.6 GB.
+- Not pre-read. Logan's page: `var/explore/index-all/female-25.html` — per
+  dog and seed the 14a–14b sitting before and the two new paintings, each
+  the 1216×832 painting itself with one "acceptable" tick on the new rule
+  (no sheath or other male parts on her, nipples fine, and still her no
+  worse than the before). The before is ticked too, since the old
+  baseline (none of 24 sitting clean) counted teats as a fail. The list
+  copies out as `25 <dog> s<seed> <before|nipples|teats>`. Checked
+  headless: 48 at 1216×832, 48 distinct keys, a tick and its untick
+  survive a reload, no horizontal scroll at either width.
+
+### Batch 25a — Logan's read (2026-11-02)
+
+Logan: "very interesting test but neither will work." Naming her nipples,
+in either wording, does not make a sitting female safe: the prompt alone
+cannot keep a full body for a female inside decision 4, so a full body
+and a portrait per animal ("if this works") is out for females. Where that
+leaves the ways (Claude's read, Logan's to overrule):
+
+- **The portrait for every animal (Claude's recommendation for v1).** It
+  passed on all three dogs in 23a and 24a (one Beetle too broad in the
+  shoulders), it needs nothing from the listing's sex, and the donor's
+  four candidates stay one kind for the judge. Before it ships: the
+  portrait on the twelve Commons dogs held out of the LoRA set (four
+  seeds, 48 paintings), so the pass is not only the three dogs it was
+  found on; the likeness harness on it, since a change to a generation
+  prompt runs the harness before ship; and the ADR-0004 amendment.
+- **A full body as well, for males only.** Correct anatomy on a male is
+  fine, so two full bodies and two portraits for a male stay inside the
+  rule. It rests on the listing's sex being right: a female listed as
+  male would be painted standing, and klein paints male anatomy on a
+  female (one of Beetle's 14b likeness picks has a sheath she lacks).
+  Whether klein's male anatomy is correct is unmeasured: in 23a's downs
+  Plum, the male of the three, and Ducky had "strange genitals or weird
+  feet".
+
+### One more brainstorm — Logan's picks and a new rule (2026-11-02)
+
+Logan: "lets have one more quick brain storming session on how to get this
+to work reliably. lora had okay results but the image quality degrades.
+text prompts are often ignored. laying down in 3/4 pose wasn't terrible
+but sometimes the animal had two rearends and the foot under the stomach
+looked unatural." Claude's six: (1) the pose as a picture, a third
+reference; (2) the LoRA on the first of the four steps only; (3) something
+real over the hips (a high-sided dog bed, a basket, a blanket); (4) a
+camera angle, seen from a little above, looking up; (5) paint more and
+keep the clean ones, through a trained anatomy check, with the portrait
+filling any gap; (6) a real negative prompt. Claude offered (6) as
+untried, and it was not: klein Base with the anatomy negative (batch 10a,
+anatomy in 19 of 24 against 22, 135 s a painting, off the look) and NAG
+(batches 12a–12b, no setting removed anything) are both out.
+
+Logan: "i want to try 1. with the gray silhouette, 4. the looking up
+angle. and i just though of another. so males can do any pose, females
+should only sit or laydown. How about we try and add a sign infront of
+their genital area with the animals name on it?"
+
+- **The rule**: a male in any pose, a female sitting or lying down. It
+  rests on the listing's sex; Claude's proposal, Logan's to overrule: a
+  listing with no sex is painted as a female.
+- **The sign, Claude's read**: the most keepsake-like of the ways, since
+  the name makes the card the donor's own. The risk is the lettering: a
+  misspelled name on a keepsake is worse than no sign. Either klein
+  letters it and a spelling check turns away a miss, or the sign is
+  painted blank and the name lettered on after, which is an after-paint
+  step that ADR-0004 as amended 2026-10-22 keeps out of the donation path:
+  a name is not a repair, but the amendment would have to say so. Its
+  place is asked in words, which klein may ignore as it does the anatomy
+  words, and a sign stood on the ground in front, not held, keeps paws out
+  of it. Parked: on adoption day the evolution card's sign could change.
+
+### Batches 26a–26c — the silhouette, the angle and the sign (Claude, 2026-11-02; Logan's eye decides)
+
+- **The silhouette**: Bronco's down (Commons, lora-holdout,
+  `Bronco-laying-down-LR.jpg`): three-quarter, front paws out, hind legs
+  tucked, the groin out of sight. Cut by the detector's own SAM mask of it
+  (`var/explore/detect-lora/masks/`), the ear's speckled gaps closed,
+  filled flat grey on the pale ground; no tail, since the mask stopped
+  short of it. Two files in `var/comfyui/input/poses/`: `bronco-down.png`
+  at its own aspect for a reference, `bronco-down-canvas.png` on the
+  1216×832 canvas (80% of the width, on a ground line at 88% of the
+  height) for a starting image.
+- **`comfyui/explore.py`**: a `POSES` table and a `poses` axis on
+  reference2 — a pose read as a further reference after the head, so the
+  words can name it, or the canvas copy as the starting latent at a
+  denoise. The trap: at four steps a denoise above 0.8 starts from pure
+  noise all the same (KSampler keeps the last 4 of int(4 / denoise)
+  steps), so 0.8 skips one step of five and 0.65 two of six. The sign's
+  prompt takes the animal's name.
+- **The batches**, each 14a's Ducky and 14b's Beetle (the females) as
+  production paints them at the same eight seeds, no LoRA:
+  - 26a: the silhouette as a fourth reference, the prompt naming it
+    (`storybook_down34_silhouette`), 16 paintings.
+  - 26b: the silhouette as the starting image at 0.8 and 0.65, the down
+    without its tucked hind legs (`storybook_down34_paws`), 32.
+  - 26c: sitting seen from a little above, looking up
+    (`storybook_lookup`), and sitting behind a small wooden sign
+    hand-lettered with her name (`storybook_sign`), 32.
+- **The run**: 80 of 80, no kill, 15:58–16:33 UTC; 24.0 s a painting
+  warm with the fourth reference (26a), 16.5 s otherwise; the pool
+  1.7–1.9 GB. Every sign prompt carries the dog's own name.
+- Not pre-read. Logan's page: `var/explore/index-all/female-26.html` —
+  per dog and seed the down's row (23a's before, the silhouette as a
+  reference, painted over at 0.8 and at 0.65) and the sit's (14a–14b's
+  before, looking up, the sign), each the 1216×832 painting itself with
+  an "acceptable" tick (no sheath or other male parts on her, one body
+  with natural legs and feet, and still her, no worse than the before),
+  the befores ticked too, and on a sign a second tick for her name spelled
+  right. The list copies out as `26 <dog> s<seed> <tag>`, the names as
+  `… sign name-right`. Checked headless: 112 paintings (80 new, 32
+  befores) at 1216×832, 128 distinct keys, a tick and its untick survive
+  a reload, no horizontal scroll at either width.
+
+### Batches 26a–26c — Logan's first word (2026-11-02)
+
+Logan: "you know what we are getting somewhere with the sign. i think its
+the way to go BUT I'm thinking it might be acceptable for the user to get
+paintings with and without the sign so incase they are unhappy with the
+genitals they have the sign version which most of the time seems to cover
+the genitals sometimes not but not terrible. i'm almost thinking two
+images with a sign and two without." Open, with Claude's read (Logan's to
+overrule):
+
+- **For a male, two and two holds as it is**: correct anatomy on a male
+  is fine, so both halves are within the rule.
+- **For a female, a plain full body would break decision 4's first half**,
+  which Logan kept ("just no male sheaths on females"): the donor keeps
+  all four (ADR-0004 as amended 2026-10-14), so a sheath on two of them is
+  painted on her and handed over, not avoided by choice. A female's two
+  without a sign could be portraits instead, safe in 23a and 24a: two
+  with her name on a sign, two head and shoulders.
+- **The sign's own misses** ("sometimes not") still put male anatomy on a
+  female when they happen; how often, per dog, is in Logan's ticks on
+  `female-26.html`, and that rate decides whether the sign needs idea
+  5's anatomy check behind it; the name ticks say the same of a spelling
+  check.
+
+### The four a donor gets — Logan's decision (2026-11-02)
+
+Logan: "Ah okay so for both males and females we send two portraits and
+two full body with the signs. males can be in any pose and females we hope
+are sitting. lets run a test of this and see what we get with the crew."
+
+- **Every animal's four**: two head-and-shoulders portraits and two full
+  bodies behind or beside a wooden sign with the animal's name; a male in
+  any pose, a female sitting. No full body goes out without the sign.
+- It settles the two-and-two question above: a female's two without a
+  sign are portraits, so decision 4's first half (never male anatomy on a
+  female) holds but for the sign's own misses, whose rate the ticks give.
+- The ADR-0004 amendment records it once the crew's sets pass, with the
+  LoRA dropped, the male rule and what a tripod gets.
+
+### Batches 27a–27b — the crew's sets (Claude, 2026-11-02; Logan's eye decides)
+
+- **27a**: Ducky and Beetle, a portrait (`storybook_bust`) and a sitting
+  full body behind a sign with her name (`storybook_sign`, 26c's) at each
+  of eight seeds no batch had used (23, 314, 777, 1001, 2718, 5050, 8080,
+  9999), klein-v1 as production paints, no LoRA. 32 paintings.
+- **27b**: Plum at the same seeds, a portrait, standing beside a sign with
+  his name (`storybook_sign_stand`, new: beside, since nothing on a male
+  needs hiding), and sitting behind one as the females do. The sitting one
+  asks whether one recipe serves both: with no sex branch, a female
+  listed as male is still covered. 24 paintings.
+- **The run**: 56 of 56, no kill, 17:29–17:52 UTC, 16.5 s a painting
+  warm, the pool 1.7–1.8 GB; every sign prompt carries the dog's own name.
+- Not pre-read. Logan's page: `var/explore/index-all/sets-27.html` — per
+  dog two sets of eight (after Logan's eight-a-donation decision below),
+  each row one seed's portrait beside its sign, Plum's with his four
+  sitting behind the sign below; each painting the 1216×832 painting
+  itself with an "acceptable" tick (the dog's rule, one body with natural
+  legs and feet, still the dog), each sign a "name spelled right" tick,
+  each set an "I'd be happy sending this set of eight" tick (Plum's twice,
+  standing and sitting). Copies out as
+  `27 <dog> s<seed> <portrait|sign|sign-stand>`, `… name-right` and
+  `27 <dog> set<n> good[-sitting]`. Checked headless: 56 at 1216×832, 96
+  distinct keys, a tick and its untick survive a reload, no horizontal
+  scroll at either width. A reload within milliseconds of a tick can
+  miss it (Chromium writes a file page's storage a moment late); the
+  check waits half a second, as a person always does. The layout screenshot
+  happened to show one sign lettered "Betle" (Beetle, seed 1001): the
+  spelling risk is real; how often is in Logan's name ticks.
+
+### Four and four? — Logan's thought (2026-11-02)
+
+Logan: "i'm thinking 4 and 4 so 8 total per donation. how much time am i
+adding and do you think its okay?" Open; Claude's numbers and read:
+
+- **Time**: 16.5 s a painting warm on the A770, so four more add about
+  66 s: some 2 min 15 s of painting a set, plus the model's load when the
+  card is cold (the first painting of a batch took 45–65 s today). One
+  card paints about 218 an hour: some 27 donations an hour at eight, 54
+  at four.
+- **Storage**: a painting is 1.34 MB (27a's mean), so 5.4 MB more a
+  donation in R2; pennies, as the four-candidate amendment found.
+- **The cost that counts**: the donor keeps every candidate (ADR-0004 as
+  amended 2026-10-14), so each sign's miss or misspelled name is in the
+  set. At a per-sign rate p, the share of sets holding at least one is
+  1 − (1 − p)^4 against 1 − (1 − p)^2: at p = 10%, 34% against 19%.
+  Logan's ticks on `sets-27.html` give p, per dog.
+- **Four of a kind look alike**: four seeds of one prompt are near
+  repeats. If eight, Claude would vary them (a background, a season) so
+  each is its own picture.
+- **The judge needs kinds of four**: auto-QC v0 (`doc/plans/the-look-exploration.md`)
+  rejects the candidate whose mean cosine to the other three sits far
+  below, which assumes four paintings of one prompt. Across kinds a
+  portrait always looks the odd one out, and within a kind of two it
+  cannot tell which is odd; four of each gives it its comparison back.
+  It judges likeness and outliers only, never anatomy or the name.
+- Eight changes the set of four (ADR-0004 as amended 2026-10-14, decision
+  1), so it goes in the coming amendment.
+
+Logan: "okay so 4 and 4 and 4 seeds. so 1 portrait and 1 body use 1
+seed." **Decided: eight a donation** — four seeds, each painting one
+head-and-shoulders portrait and one full body with the name's sign; the
+four of a kind differ by seed, so the judge compares within each kind.
+Still to come: the sign's miss and misspelling rates, from Logan's ticks.
+27a–27b already hold two such sets per dog (seeds 23, 314, 777, 1001 and
+2718, 5050, 8080, 9999); `sets-27.html` shows them so.
+
+### Batches 27a–27b — Logan's read (2026-11-02)
+
+Logan's ticks, saved as `var/explore/index-all/sets-27-picks-2026-11-02.txt`
+("acceptable": the dog's rule, one body with natural legs and feet, still
+the dog):
+
+| | portrait | sign, sitting behind | sign, standing beside | name spelled right |
+| --- | --- | --- | --- | --- |
+| Plum (male) | 8 of 8 | 5 of 8 | 2 of 8 | 16 of 16 |
+| Ducky | 8 of 8 | 2 of 8 | — | 8 of 8 |
+| Beetle | 6 of 8 (not s314, s8080) | 2 of 8 | — | 7 of 8 |
+
+- **The portrait holds**: 22 of 24.
+- **The sign's full body does not yet**: a female's 4 of 16, so a set of
+  four signs would hold three she should not get, on average. Which part
+  of the rule failed each one the tick does not say.
+- **Plum sits better than he stands**: 5 of 8 behind the sign against 2
+  of 8 beside it, so one recipe (sitting behind the sign) serves the male
+  too, and needs no sex from the listing.
+- **The name is right 31 times in 32**; the miss is Beetle s1001's
+  "Betle", whose painting is otherwise acceptable.
+- **The same seeds pass on every dog**: both females' acceptable signs
+  are s23 and s1001, and Plum's sitting five include both. By chance two
+  of eight would match exactly one time in 28. The seed's noise sets the
+  layout before the dog's references shape it, so a seed that puts the
+  sign where it covers may do so for any dog — to be tried on dogs these
+  seeds have never painted.
+- **No set ticked** as good to send.
+
+What failed the females' signs, Logan: "either a small sheath or just odd
+looking genitals in general and sometimes messed up feet." And on the
+seeds: "yeah lets see if the seeds hold. so if they do do we just need to
+find more seeds that 'hold'". Claude's answer: yes — four that hold, one
+for each pair in a set of eight, found by painting the sign at many new
+seeds on a few dogs, keeping those that pass on every dog, and confirming
+them on dogs they never painted. The trap: a seed holds only while the
+recipe is unchanged (the canvas, the model, the steps, the sampler, the
+prompt's words, the photos' crops); any change to it re-opens the search.
+ComfyUI draws its starting noise on the CPU, so a seed paints the same on
+any card, but no other painter (the Replicate escape hatch) would
+reproduce it. The cost: every animal's sign paintings share four layouts.
+
+### Batch 28a — do the seeds hold on new dogs? (Claude, 2026-11-02; Logan's eye decides)
+
+- **`comfyui/explore/batch28a.json`**: the ten lora-holdout Commons dogs
+  whose head the detector found (batches 13a–13b; the other two have
+  none), klein-v1 as production paints — the one photo's grown subject and
+  the grown head, the listing words, landscape, no LoRA — at seeds 23, 314,
+  777 and 1001, each a portrait and a sitting full body behind the sign:
+  a set of eight per dog, 80 paintings. 23 and 1001 held on the crew; 314
+  and 777, which failed there, are the control, so a pass at 23 and 1001
+  means the seed and not easier dogs.
+- Each dog's sign carries a given name (`name` in the spec, which the
+  prompt now prefers to the animal's key): Gonzaja, Rusty and Pepe from
+  their files, then Otto, Daisy, Coco, Emily, Bianca, Sunny and Bronco.
+  Their sex is unknown, so the strict rule applies to all: nothing
+  showing, sheath or otherwise.
+- **The run**: 80 of 80, no kill, 18:22–18:44 UTC, 10.5 s a painting warm
+  (one photo, so two references), the pool 1.7–1.8 GB.
+- Not pre-read, and blind: Logan's page `var/explore/index-all/seeds-28.html`
+  never says which seeds held on the crew. Per dog its Commons photo,
+  then four rows, one per seed, a portrait beside its sign, each the
+  1216×832 painting itself with an "acceptable" tick (no genitals showing
+  at all, natural legs and feet, still the dog in the photo) and on a sign
+  a "spelled right" tick. Copies out as `28 <name> s<seed> <portrait|sign>`
+  and `… name-right`. Checked headless: 80 at 1216×832, the ten photos
+  load, 120 distinct keys, a tick and its untick survive a reload, no
+  horizontal scroll at either width.
+
+### Batch 28a — Logan's read (2026-11-02)
+
+Logan's ticks, saved as `var/explore/index-all/seeds-28-picks-2026-11-02.txt`:
+
+| seed | sign, the ten new dogs | with the crew's three sitting | portrait | name right |
+| --- | --- | --- | --- | --- |
+| 23 | 8 of 10 | 11 of 13 | 8 of 10 | 8 of 10 |
+| 1001 | 6 of 10 | 9 of 13 | 8 of 10 | 6 of 10 |
+| 314 (control) | 4 of 10 | 5 of 13 | 9 of 10 | 8 of 10 |
+| 777 (control) | 4 of 10 | 4 of 13 | 8 of 10 | 6 of 10 |
+
+- **The seed matters**: 14 of 20 signs at 23 and 1001 against 8 of 20 at
+  the control seeds, on dogs neither had painted. Seed 23 holds best, 11
+  of 13 dogs in all; 1001 is weaker on new dogs than on the crew.
+- **The dog matters too**: Rusty, Emily and Sunny pass at every seed;
+  Pepe, Bianca and Bronco only at 23; Gonzaja only at 1001, Coco only at
+  777. A search learns most from the dogs that fail somewhere.
+- **Even seed 23 misses** about one dog in seven, so four seeds as good
+  as it would still leave a set of eight about half a miss on average.
+- **Portraits**: 33 of 40, Coco 2 of 4; 55 of 64 with the crew's.
+- **Names**: 28 of 40 right. Daisy's and Emily's were misspelled at all
+  four seeds (Logan: "they were misspelled"); Gonzaja, Otto, Coco and
+  Sunny missed one each; Rusty, Pepe, Bianca and Bronco none. A name klein
+  cannot spell it misspells at every seed, so a fresh seed is no cure;
+  59 of 72 with the crew's. The ways: a spelling check that drops a
+  misspelled sign (and the set falls back to portraits), or the sign
+  painted blank and the name lettered on after in our own type — an
+  after-paint step ADR-0004 as amended 2026-10-22 keeps out of the
+  donation path, so the amendment would have to allow a name.
+
+### Batches 29a–29b — the seed search (Claude, 2026-11-02; Logan's eye decides)
+
+Logan: "yes" to the search. The sitting full body behind the sign alone
+(`storybook_sign`), at sixteen seeds no batch had used (101, 333, 500, 888,
+1111, 1500, 2024, 3000, 3333, 4444, 5555, 6000, 7777, 8888, 9001, 12321),
+on the six dogs that failed at some seed in batches 27–28: Ducky and
+Beetle (29a, two photos each) and Pepe, Bianca, Bronco and Gonzaja (29b,
+one photo each). klein-v1 as production paints, no LoRA; 96 paintings.
+A seed that passes on most of the six goes on to dogs it has never
+painted, since among sixteen some will pass on six by luck.
+
+- **The run**: 96 of 96, no kill, 19:03–19:34 UTC (16.5 s a painting warm
+  with two photos, 10.5 s with one), the pool 1.7–1.8 GB.
+- Not pre-read. Logan's page: `var/explore/index-all/seed-search-29.html`
+  — per dog its sixteen signs (the Commons dogs with their photo, the
+  crew's without), each the 1216×832 painting itself with one
+  "acceptable" tick; the name is not asked. Copies out as
+  `29 <name> s<seed>`. Checked headless: 96 at 1216×832, 96 distinct keys,
+  a tick and its untick survive a reload, no horizontal scroll at either
+  width.
+
+### Batches 29a–29b — Logan's read (2026-11-02)
+
+Logan's ticks, saved as `var/explore/index-all/seed-search-29-picks-2026-11-02.txt`:
+47 of 96. Per seed, of the six dogs (Ducky, Beetle, Pepe, Bianca, Bronco,
+Gonzaja):
+
+| seeds | dogs passed |
+| --- | --- |
+| 1111 | 6 of 6 |
+| 101, 333, 3000, 5555 | 5 of 6 |
+| 888, 4444 | 4 of 6 |
+| 500, 3333, 12321 | 3 of 6 |
+| 1500 | 2 of 6 |
+| 7777, 8888 | 1 of 6 |
+| 2024, 6000, 9001 | 0 of 6 |
+
+- **Seeds spread wide**, from all six to none, on the same six dogs: the
+  seed is most of the difference. 1111 is the first to pass everywhere;
+  101, 333, 3000 and 5555 miss one dog each, a different one apart from
+  3000 and 5555 (both Bronco).
+- **Ducky and Beetle pass at 8 and 9 of 16**, against 2 of 8 each in
+  batch 27: the crew's females are not hopeless, their seeds were.
+- Among sixteen, some pass by luck, so 1111, 101, 333, 3000 and 5555 go
+  to dogs they never painted, on the recipe that ships (the blank sign,
+  lettered), if batch 30 shows the blank sign keeps a seed's layout.
+
+### The name, lettered by us — Logan's decision (2026-11-02)
+
+Logan: "lets letter the name ourselves." The sign is painted blank and the
+name is set on it after, in our own type: always spelled right, any length
+or alphabet. It is an after-paint step, which ADR-0004 as amended
+2026-10-22 keeps out of the donation path, so the coming amendment allows
+this one: a name lettered on a board the painter left blank, never a
+repair of what it painted.
+
+### Batches 30a–30b and `comfyui/signname.py` — the blank sign, lettered (Claude, 2026-11-02; Logan's eye decides)
+
+- **`storybook_sign_blank`**: the sign prompt with "a small blank wooden
+  sign … the sign's board plain and smooth with nothing written on it" in
+  place of the name. At seeds 23 and 1001 on the thirteen dogs those seeds
+  painted with the name (30a: Plum, Ducky, Beetle; 30b: the ten held-out
+  Commons dogs), 26 paintings. Two questions: does klein leave the board
+  blank, and does each seed keep its layout when the words change from a
+  name to blank (a seed holds only while the recipe is unchanged, so the
+  search's seeds carry over only if it does).
+- **`comfyui/signname.py`** (CPU, the explore container): OWLv2 finds the
+  sign, SAM 2.1 outlines it, the board is the outline's longest run of
+  rows at least 75% of its widest, its corners the board's extreme
+  points; the name is set flat in Caveat Bold (SIL OFL 1.1, in
+  `var/fonts/caveat/` for the prototype, sha256 `0bdb6b66…57988`),
+  warped onto the corners inset 10% and 16%, and multiplied into the wood
+  in dark brown so the grain shows through. A font the donation path uses
+  needs its licence recorded beside its hash first, as a model does.
+- **The run**: 26 of 26, no kill, 19:59–20:14 UTC, the pool 1.8–1.9 GB.
+  `signname.py` found a board on all 26 (OWLv2's sign score 0.20–0.56)
+  and lettered each; its sheets (`var/explore/batch30{a,b}/signname/boards.jpg`)
+  show every board painted blank and its outline on the board.
+- **The layout partly holds**: the sign's box at each dog and seed,
+  blank against named, overlaps by IoU 0.35–0.72 (median 0.56), and the
+  blank board is larger (median 15% of the canvas against 12%), at seed
+  23 a little to the right. Whether the search's ranking carries over is
+  for the confirmation to show, on the blank sign.
+- Not pre-read. Logan's page: `var/explore/index-all/lettered-30.html` —
+  per dog and seed, klein's own lettering (batches 27–28, dashed, not
+  ticked) beside the blank sign lettered by us, which carries an
+  "acceptable" tick and a "the lettering looks good" tick. Copies out as
+  `30 <name> s<seed> ok|lettering`. Checked headless: 52 at 1216×832, 52
+  distinct keys, a tick and its untick survive a reload, no horizontal
+  scroll at either width.
+
+### The lettering, carved — Logan's word and the styles (2026-11-02)
+
+Logan on `lettered-30.html`: "the type looks too printed. it doesn't look
+like it belongs. though the size and spacing and spelling and all that is
+perfect. maybe if we could somehow give the lettering that carved in depth
+look. lets fix the lettering style first."
+
+- **`signname.py` now cuts the name in**: a V-groove whose depth is each
+  pixel's distance from the stroke's edge (smoothed by a third of the
+  stroke's half-width, or the distance's whole-pixel steps show as rings
+  on the walls), lit from the top left, so the upper-left wall falls in
+  shadow and the lower-right one catches the light, over a floor of the
+  board's own wood darkened; the stroke's edge wobbles a little, broad and
+  seeded by the name, so it reads as cut by hand. Size, spacing and place
+  are unchanged. The board's corners are kept in `boards.json`, so a new
+  style reruns without finding the board again.
+- **Three strengths** (`--style`): `carved`; `painted`, the groove
+  filled brown as a painted sign's is; `deep`, a darker floor and stronger
+  walls. The flat first try stays as `ink`.
+- Logan's page: `var/explore/index-all/lettering-style-30.html` — eight
+  boards (Plum, Ducky, Beetle, Gonzaja, Daisy, Emily, Bronco, Otto), each
+  in the three styles, the painting at full size with its board beneath at
+  the painting's own pixels; a "looks like it belongs" tick on each.
+  Checked headless: 24 paintings and 24 boards at 1216 wide, a tick and its
+  untick survive a reload, no horizontal scroll at either width.
+- **Logan's pick: `carved`**, 8 of 8; `painted` and `deep` none (saved as
+  `var/explore/index-all/lettering-style-30-picks-2026-11-02.txt`).
+  `carved` is `signname.py`'s default.
+
+### Batches 31a–31b — the seeds confirmed on the recipe that ships (Claude, 2026-11-02; Logan's eye decides)
+
+- The search's winners — 1111, 101, 333, 3000, 5555 — and seed 23 as the
+  reference, on the recipe that ships: the sign painted blank
+  (`storybook_sign_blank`) and the name carved in by `signname.py`.
+- On fourteen dogs these search seeds never painted: Plum (31a), the six
+  held-out Commons dogs the search left out (Rusty, Otto, Daisy, Coco,
+  Emily, Sunny) and seven lora-train Commons dogs no seed test used,
+  named for their signs Shadow, Biscuit, Clementine, Luna, Bailey, Max
+  and Duke (31b). 84 paintings, klein-v1 as production paints, no LoRA.
+- The four seeds that ship are the ones that pass most widely here; a
+  seed that passed six of six by luck in the search falls back now.
+- **The run**: 84 of 84, no kill, 20:52–21:20 UTC, the pool 1.8–1.9 GB.
+  `signname.py` found a board on all 84 and carved each name; four were
+  found at a low score (0.11–0.19: Sunny at seed 5555, Clementine twice,
+  Duke once), their outlines still on the board in the sheet
+  (`var/explore/batch31b/signname/boards.jpg`).
+- Not pre-read, and blind: Logan's page
+  `var/explore/index-all/seeds-confirm-31.html` never says which seeds the
+  search chose. Per dog its Commons photo (Plum's is never shown), then
+  its six carved signs, each the 1216×832 painting with an "acceptable"
+  tick and a "the name sits right on the sign" tick. Copies out as
+  `31 <name> s<seed> ok|name`. Checked headless: 84 at 1216×832, the
+  thirteen photos load, 168 distinct keys, a tick and its untick survive a
+  reload, no horizontal scroll at either width.
+- **The strict rule for every dog, males included** (Logan asked; Claude's
+  answer): one recipe paints every animal, so a seed is judged on whether
+  its sign covers whatever is there; a seed that covers a male covers a
+  female, and the Commons dogs' sex is unknown. In a donor's set a male's
+  correct anatomy past the sign is still fine.
+
+### Batches 31a–31b — Logan's read (2026-11-02)
+
+Logan's ticks, saved as `var/explore/index-all/seeds-confirm-31-picks-2026-11-02.txt`:
+42 of 84 acceptable, the name sitting right on 81 of 84.
+
+| seed | the search (6 dogs, the name painted) | here (14 new dogs, blank and carved) |
+| --- | --- | --- |
+| 3000 | 5 | 10 |
+| 1111 | 6 | 9 |
+| 333 | 5 | 7 |
+| 23 | 11 of 13 (batches 27–28) | 6 |
+| 101 | 5 | 5 |
+| 5555 | 5 | 5 |
+
+- **The seeds fell back toward half**, as a search's luck does, and the
+  blank prompt moved the layouts (seed 23 fell furthest). 3000 and 1111
+  held best, about two dogs in three.
+- **The best four** (23, 333, 1111, 3000): 32 of 56 sign paintings, every
+  dog at least one good sign, 11 of 14 at least two. A set's four signs
+  would hold about 1.7 that fail on average: seeds take the sign from
+  about 40% to about 60%, not to never.
+- **Some dogs are hard at every seed**: Coco and Duke 1 of 6, Clementine
+  and Luna 2; Emily 6 of 6. Logan: "i was also judging by likeness. coco
+  and the doberman tend to do poorly on likeness. coco just looks weird
+  and the doberman in the photo has floppy ears but klein really like to
+  give it pointed ears or a mix of both." So their misses are likeness,
+  not the sign. The breed word carries the breed's look over the photo's:
+  "doberman pinscher" paints the cropped, pointed ears most Dobermans are
+  pictured with, though this one's hang (a listing-words finding for
+  roadmap item 4). The next page ticks cover and likeness apart.
+- **The name**: 81 of 84 sit right. The three that do not (Rusty and
+  Bailey at 333, Luna at 3000) are boards of another build — a post rising
+  above the board, a raised frame — asked of Logan.
+- **What next, Claude's read**: in three-quarter view the hind leg and
+  belly reach past the sign's edge, so its cover is the seed's luck. A
+  dog sitting square behind a sign wider than it, facing the viewer,
+  would be covered by geometry; the front-on sit that showed the
+  underside (batch 9a) is what such a sign hides. Then idea 5's check,
+  for which Logan's ticks on some 250 sign paintings (batches 27–31) are
+  now the labels.
+
+### Batches 32a–32b — facing the viewer behind a wider sign (Claude, 2026-11-02; Logan's eye decides)
+
+Logan: "yeah do the front facing test." `storybook_sign_front`: the dog
+sitting square behind a blank sign wider than it, facing the viewer, the
+sign hiding everything below its chest. The fourteen dogs of batch 31
+(32a Plum, 32b the thirteen Commons dogs) at batch 31's best four seeds
+(23, 333, 1111, 3000), so each painting has a three-quarter twin; 56
+paintings, klein-v1 as production paints, no LoRA, the name carved by
+`signname.py`. The page ticks three things apart: covered (nothing
+showing, natural legs and feet), still the dog, and the name sitting
+right.
+
+- **The run**: 56 of 56, no kill, 21:50–22:10 UTC, the pool 1.8–1.9 GB.
+  `signname.py` lettered 55; Shadow at seed 1111 scored 0.09 for a sign
+  and was left unlettered (shown so on the page, still ticked for cover
+  and likeness). Many boards scored low (0.09–0.19).
+- **What the sheet shows** (`var/explore/batch32b/signname/boards.jpg`;
+  where the board is, not what it covers): most boards came out far wider
+  and taller than in three-quarter view, the dog peeking over it, often
+  only its head and paws showing. In several (the white Maltese, the black
+  dog, the black-and-white one) klein put the board behind the dog as a
+  backdrop, the dog sitting in front of it; there `signname.py` outlines
+  the backdrop and the name may land across the dog. A board behind the
+  dog would need finding and turning away before it is lettered.
+- Not pre-read. Logan's page: `var/explore/index-all/front-32.html` — per
+  dog its Commons photo (Plum's never), then four rows, each batch 31's
+  three-quarter sign at that seed (dashed, not ticked) beside the
+  front-facing one with three ticks: "covered", "still looks like the
+  dog", "the name sits right on the sign". Copies out as
+  `32 <name> s<seed> covered|likeness|name`. Checked headless: 112 at
+  1216×832 (56 new, 56 twins), 168 distinct keys, a tick and its untick
+  survive a reload, no horizontal scroll at either width.
+
+### Batches 32a–32b — Logan's read (2026-11-02)
+
+Logan: "no this wont work at all. if the sign is in front its way too big
+and for others it behind or sort of merged with the dog." Facing the
+viewer is out; the sign's full body stays three-quarter, at about 60% by
+seed (batch 31). Claude's read of the ways left, Logan's to choose:
+
+- **The portrait for v1**: 22 of 24 on the crew, 33 of 40 on new dogs,
+  and nothing to hide; variety from the setting rather than the pose.
+- **The portrait with the name**: head and shoulders above a small blank
+  board, the name carved in by `signname.py` — the name kept, the body
+  not shown. Untested.
+- **The three-quarter sign behind a check**: paint more, keep only those
+  a trained check passes, the portrait filling any gap; Logan's ticks on
+  some 250 sign paintings (batches 27–31) are its first labels, though
+  they mix cover with likeness. Days of work, and it gates a donor's set,
+  which ADR-0004 as amended 2026-10-14 does not allow yet.
+
+### Batches 33a–33b — the portrait with the name (Claude, 2026-11-02; Logan's eye decides)
+
+Logan: "yeah run the name board portrait test. i really wanted to get the
+full body to work but then i forgot about horses and pigs and all that" —
+a full body would need its cover worked out species by species (a
+horse's sheath, a pig's), where a portrait needs none. Two wordings:
+`storybook_bust_board`, a small blank board along the bottom of the
+picture in front of the chest, and `storybook_bust_necksign`, a small
+blank board hung on a cord around the neck; the name carved in by
+`signname.py`. The crew's three (33a) and batch 31b's thirteen Commons
+dogs (33b) at batch 31's four seeds (23, 333, 1111, 3000), klein-v1 as
+production paints, no LoRA; 128 paintings.
+
+- **The run**: 128 of 128, no kill, 22:32–23:16 UTC, the pool 1.9–2.0 GB
+  (it had crept from 1.6 over the day; the runbook acts above 4 at idle).
+  `signname.py` found a board on 102: every one of the 26 it missed is a
+  neck sign, which OWLv2 scores under its 0.1 floor with the two board
+  queries. So a third query ("a small wooden sign hanging from a dog's
+  neck"), and a rerun now looks again wherever no board was found rather
+  than reusing the miss; both wait on the donate deploy's hold (below).
+- **The lettering, after the hold** (CPU, from 23:47 UTC), three fixes
+  to `signname.py`, each found on these batches:
+  - "a small wooden sign hanging from a dog's neck" boxed the cord and
+    collar, not the board under them; "a blank rectangular wooden tag"
+    scores the board itself (0.47–0.79 on six missed). Never name the neck.
+  - A board too small to carry a name (under 40 × 14 px inset) crashed the
+    type-fitting; it is now no board.
+  - The neck query also boxed a dog's head in batch 34 — Beetle's name
+    carved on her forehead (seed 333, caught on the page check) — and a
+    rerun reused that board. A sign's box must now centre below 45% of the
+    picture's height, and every board of 33 and 34 was found afresh.
+- **All 192 lettered and marked** (128 of 33, 64 of 34); every lettered
+  painting checked on a contact sheet: each name on its board or tag.
+- Not pre-read. Logan's pages:
+  - `var/explore/index-all/name-portraits-33.html` — per dog (the crew's
+    three, then thirteen Commons dogs with their photo) and seed, the
+    board portrait beside the neck-sign portrait, each with "acceptable"
+    and "the name sits right"; copies out as
+    `33 <name> s<seed> board|necksign ok|name`. Checked headless: 128 at
+    1216×832, 256 distinct keys, a tick and its untick survive a reload,
+    no horizontal scroll at either width.
+  - `var/explore/index-all/dense-34.html` — batch 33's board portrait
+    (dashed, ticked on its own page) beside the dense prompt's, which
+    carries the same two ticks; copies out as
+    `34 <name> s<seed> dense ok|name`. Checked the same way: 128 pictures
+    (64 new), 128 keys.
+
+### Outside advice, checked against the record (2026-11-02)
+
+Logan asked Claude's read of four tips from another assistant:
+
+- **"Enable the native prompt upsampler (flux-3-image-klein-pup)"**: no
+  such node is in the ComfyUI we run (6b747c04); its only FLUX.2 nodes are
+  `EmptyFlux2LatentImage` and `Flux2Scheduler`, and its one prompt
+  enhancer is for LTX video. Ours are already full sentences, and the
+  record says the words lose to the references and the prior (batch 9b:
+  anatomy in 86 of 96 whatever the wording; batch 12a: the attention is
+  almost all references). A long, dense prompt is a cheap arm to try.
+- **"Say where the camera cuts off"**: that is the head-and-shoulders
+  portrait, 22 of 24 and 33 of 40 (batches 27–28).
+- **"Native bounding boxes in klein"**: none in our ComfyUI; as described
+  (the animal in the top 60%, floor below) it is the portrait again.
+- **"Mask and repaint the anatomy with klein's edit"**: the hand step of
+  October (trace, LaMa, klein Base, ink after), 41 of 80, 20 of 39 and 44
+  of 115, a mask per painting, and kept out of the donation path
+  (ADR-0004 as amended 2026-10-22); and klein takes 16.5 s a painting
+  here, not under a second.
+
+Then Logan's two sources (read 2026-11-02):
+
+- **BFL's `flux2` docs, `docs/flux2_with_prompt_upsampling.md`**: an
+  optional step, named for FLUX.2 [dev] only, through OpenRouter or a
+  local Mistral-Small-3.2-24B; it "can significantly improve results" on
+  reasoning-heavy prompts and "may not provide significant benefits" on
+  simple ones. No word of klein, nor of a warning against running without.
+- **The FLUX.2-klein-4B demo Space, commit `989c44e` ("Add prompt
+  upsampling", 2025-11-25)**: upsampling on by default, through a hosted
+  VLM (`baidu/ERNIE-4.5-VL-424B-A47B-Base-PT` on Hugging Face's inference
+  API), the input images sent along as base64. Two system prompts: one
+  makes a text-only prompt more descriptive while keeping its subject and
+  intent, the other turns an image request into one 50–80-word instruction.
+- **What it means here, Claude's read**: sending a listing photo to a
+  hosted model is out (ADR-0004: the photo never leaves the machine), and a
+  hosted text model would be a new service and its own ADR. But our prompt
+  is a fixed template around the listing's words, so it can be upsampled
+  once, offline, by hand to the text-only prompt's rules, and painted as an
+  arm beside the short one — a cheap test. The record says words move
+  anatomy little (batches 9b, 12a); what a denser prompt might move is
+  composition and detail. A local model that reads the photo (ear set,
+  coat) and adds what it sees to the words could fix a breed word's pull
+  (the Doberman's ears) — a new model with its own licence line and ADR,
+  parked for roadmap item 4.
+
+### Batches 34a–34b — the portrait's prompt upsampled (Claude, 2026-11-02; Logan's eye decides)
+
+Logan: "yes" to the upsampled arm. `storybook_bust_board_dense`: batch
+33's board portrait written out once, by hand, to the klein demo's
+text-only rules — the framing spelled out (the head and the top of the
+chest in the upper two thirds, the picture's edge across the chest,
+nothing below), the board described (smooth, honey-coloured, rounded,
+nothing on it), the look described (translucent washes, paper texture,
+fine brown outlines, cream, peach and sage, a plain pale ground). No
+hosted model and no photo sent anywhere. Batch 33's sixteen dogs at its
+four seeds, so each has a short-prompt twin; 64 paintings, the name
+carved after.
+
+- **The run**: 64 of 64, no kill, 23:21–23:44 UTC, the pool 1.8–2.0 GB.
+  Then the card idle for the donate deploy (the moderator's hold, from
+  23:44: no card work until released, no CPU work until its `e2e:prod`
+  ends); its lettering and both pages wait on that.
+
+### The mark on every keepsake — Logan (2026-11-02)
+
+Logan noticed the tests carry no `monsterpaws.org` mark: "is that normal
+or should it be in the pipeline?", then "its 'monsterpaws.org <year>'" and
+"the production images of the crew on the homepage have the watermark
+correctly applied". The mark is ADR-0022's open question of 2026-10-26:
+the crew's portraits carry `monsterpaws.org · 2026` bottom right, the year
+it was painted, and whether a donor's keepsake carries it too was left to
+settle before the first. **Settled by Logan: "yes to the gift paintings,
+they get the watermark"** — every donor's keepsake carries the mark as the
+crew's do; for the ADR-0022 amendment (Claude first said it was nowhere in
+the record: the search missed the middle dot).
+
+- **`signname.py` marks every lettered painting** as the crew's are,
+  measured from `public/brand/crew/*-painting.jpg` (1216×832): Geist
+  Regular (the site's face; the copy in next's `@vercel/og`, in
+  `var/fonts/geist/` for the prototype, sha256 `bde046dd…71d76`; its
+  licence read upstream 2026-11-03, SIL OFL 1.1, recorded in
+  `comfyui/mark.py`), 214 px of ink wide, 31
+  px from the right, its foot 30 px from the bottom, multiplied to about
+  (175, 169, 162) on the paper. The year is the year it is painted
+  (`--year` to set it).
+- Batches 33 and 34 are the first lettered with it.
+
+### The name in the painting? — Logan's doubt, and the names we hold (2026-11-03)
+
+Logan, before ticking batch 33 or 34: "I don't think the signs will work
+either. not all of the name data is clean that we get from rescue groups.
+some names are entire sentences … what if we display their name to the left
+or right of their portrait or at the bottom? or maybe it should be left off
+all together?"
+
+The dev corpus, read 2026-11-03 (`animals.name`, 116,463 animals): median 6
+characters, 90th percentile 14, 99th 37, longest 50; 9,694 (8%) are over
+15 and 2,048 (2%) over 30. The long ones mix real names with listing notes,
+often in one field: "Meowrvelous Mrs. Maisel", "Dark Knight Batman -
+Located in WI", "Hopper - (Courtesy Post) - Adopt Me!", "RUBY - HOUSTON TX-
+PENDING", "Rupert: Not at shelter (Donna)", "Qupid Ferguson Bonded To
+Donner". No rule cuts the note and keeps the name: a dash or a bracket
+starts a note in one and belongs to the name in another.
+
+Read against it (Claude's; Logan decides):
+
+- **A painted name is frozen; the record's is not.** A shelter drops
+  "PENDING" or "IN FOSTER" when it stops being true, and an adopter often
+  renames the animal: the adoption-day evolution would show the old name
+  carved in. A caption reads the current record.
+- **The card already captions the name** under the painting
+  (`src/app/demo/parts.tsx`, the demo's keepsake), so a name in the
+  painting says it twice.
+- **Beside or below the portrait, inside the image,** ends the board's
+  detector misses (three fixes in batch 33) but not the dirty name, which
+  is still in the file for good.
+- **The board's first job is gone:** it was there to hide a female's belly,
+  and the chest-up portrait needs no cover for any species (22 of 24 and
+  33 of 40, batches 27–28).
+
+Claude's recommendation: no name in the painting. A plain chest-up portrait
+with the crew's mark, and the name as type in the card's caption, read from
+the current record. If a downloaded or shared picture should carry the name,
+draw it from the record when that picture is made, never paint it.
+
+Then Logan, on sharing (2026-11-03): "from a users profile for instance i
+plan on making share links to socials. would a caption go with it? just the
+painting? my long term thought was that we would be able to decorate the
+painting afterwards with frames, such as 'happy birthday, a donation has
+been made in your name' or someting like that."
+
+Read against the record (Claude's; Logan decides):
+
+- **A caption on our page never travels.** A shared link carries one
+  picture (`og:image`) and a title and description as text, which some
+  platforms show and some barely do; a post to Instagram carries only the
+  image file. Whatever must travel has to be in the picture or the title.
+- **So there are three layers, and only the first is painted.** The
+  painting: plain, the crew's mark, the donor's keepsake for good. The share
+  card: composed by our code when it is shared, at the platform's shape
+  (1.91:1 for a link, 4:5 or 1:1 for a post, 9:16 for a story), the
+  painting plus the name and a line, read from the record at that moment.
+  The frame: the share card's template, seasonal (DIRECTION.md's
+  extensions), the adoption day's, or a gift's.
+- **Frames are the strongest reason to keep the name out of the painting.**
+  A frame carries the name in its own type, so a painted name would say it
+  twice, and a stale one would contradict it.
+- **The dirty name, fixed by the donor, by deleting only.** The share card
+  shows the record's name as words to keep or drop ("Hopper", "(Courtesy
+  Post)", "Adopt Me!"), with a guess ticked; the donor confirms, and the
+  choice is kept on their keepsake. Dropping words cannot put text on a
+  card under our domain that the shelter never wrote.
+- **A gift's frame is new scope.** Its words must state only what the
+  record holds (the donation, to which shelter, in whose name), and the
+  recipient's name is the first text a donor types onto a card; who the
+  recipient is and how they receive it wants its own ADR.
+- **ADR-0030 opens here.** Its trigger "the donor's keepsake ships" is
+  met, with the mark settled; it rejected a generated image "until a page
+  needs its own words in the image", which a share card does. Logan also
+  rejected paper added round the painting for the site's card (ADR-0030,
+  the 1200×630 alternative); a frame is paper that carries the name and the
+  occasion, so its look goes to his eye on a review page.
+
+### Batches 35a–35b — the plain portrait, short and long (Claude, 2026-11-03; Logan's eye decides)
+
+The name out of the painting (above), so the portrait with nothing added:
+the short prompt (`storybook_bust`, batches 24a–28a) against batch 34's
+hand-upsampled one with its board sentence taken out
+(`storybook_bust_dense`, checked in code to be that prompt less the one
+sentence). Logan, on the two prompts: "yeah okay"; on the seeds: "can we
+add some more unknown seeds for variaety?"
+
+- klein-v1 as production paints, no LoRA, on batch 33's sixteen: the crew's
+  three (35a, 48) and the thirteen Commons dogs (35b, 208). Eight seeds:
+  batches 33–34's four (23, 333, 1111, 3000) and four no batch had used
+  (47, 610, 2468, 7321). 256 paintings, both prompts painted fresh in one
+  run so each pair differs only by the prompt.
+- **The mark moves out of the lettering:** `comfyui/mark.py` stamps
+  `monsterpaws.org · <year>` on every painting of a batch into
+  `explore/<batch>/marked/`, the same function `signname.py` now imports,
+  since the mark stays on every gift painting with or without a name.
+- **The page is blind:** each pair left and right in a random order, each
+  painting linked under a random name in `var/explore/batch35-blind/`
+  (the key beside it), ticks "acceptable" and "the better of the two" (one
+  per pair, or neither): `var/explore/index-all/portraits-35.html`.
+- **Run 2026-11-03, 15:40–17:00 UTC:** all 256 painted, no kill, the pool
+  at 1.8 GB throughout; all 256 marked, the marks checked on a sheet of
+  corners against batch 33's. The page checked headless: 256 paintings at
+  1216×832, 13 photos, 512 ticks with unique keys kept over a reload, one
+  "better" per pair, no file name naming a prompt, no sideways scroll;
+  the short prompt fell on the left in 64 of the 128 pairs. Claude has not
+  read the paintings.
+
+### Batches 35a–35b — Logan's read (2026-11-03)
+
+Logan's ticks on the blind page, saved as
+`var/explore/index-all/portraits-35-picks-2026-11-03.txt` (decoded through
+`var/explore/batch35-blind/key.json`; the acceptable runs as each batch's
+`picks.txt`). Max and Duke carry no tick of either kind, and that is the
+read: "basically the german shepards colors were wrong and the dobermans
+ears were wrong". The counts below are over the other thirteen (Plum to
+Luna); Bailey is with Max and Duke.
+
+- **The short prompt wins, blind:** acceptable 95 of 104 against the long
+  one's 44; the better of the two in 91 pairs, the long in 7, neither in 6.
+  The crew alone: 21 of 24 against 10. Biscuit is the one dog the long
+  prompt suits (7 of 8 against 6, better 3 times). **The hand-upsampled
+  prompt is out.**
+- **The short portrait passes at nearly any seed:** 333 and 1111 13 of 13;
+  23, 3000, 47, 2468 and 7321 12 of 13; 610 9 of 13. Three of the four
+  seeds no batch had used pass as well as the four searched for, so for
+  the portrait the seed is not where it fails.
+- **It fails by the dog:** Bailey (tricolour beagle) 1 of 8 short, 3 of 8
+  long, no better one in five pairs; Max (German shepherd) and Duke
+  (Doberman) none of 16, the shepherd's colours wrong and the Doberman's
+  ears (Logan). Duke was also 1 of 6 in batch 31b, and the ears are
+  Logan's standing complaint (batch 31). The words were not wrong: Claude
+  read the two Commons photos, and "black and tan" is the coat of both;
+  but the shepherd is mostly red-tan under a black saddle and mask, its
+  head down licking snow (a foreshortened head crop), and the Doberman's
+  ears are natural and hang, where the breed is mostly pictured cropped
+  and pricked. klein paints the breed from its own idea of it rather than
+  from the references, and no seed fixes that (roadmap item 4's local
+  photo-reading idea: words from the photo, "floppy ears", in place of
+  the breed's).
+- **A line under the animal:** "many of the painting included a line at
+  the bottom of the animal which didn't disrupt its look but seemed
+  unnecessary" (Logan): an ink stroke where the chest stops, as if the
+  bust stood on a ground line. Not counted per painting.
+- **The likeness score does not see it** (`npm run explore:score`, the
+  picks as full run ids in each batch's `picks.txt`): the two prompts
+  score alike (mean 0.581 short, 0.584 long) where Logan took the short
+  95 to 44; within one dog and prompt an acceptable painting outscores an
+  unacceptable one in 151 of 253 pairs (60%); and Max (0.50) and Duke
+  (0.58) sit among the rest, Bailey (0.65) near the top. A wrong coat or
+  wrong ears is not what CLIP's cosine to the photo measures, so the
+  silent judge (ADR-0004 as amended 2026-10-14) would not have flagged
+  them.
+- A better one ticked on a pair with neither acceptable once (Plum s610,
+  short).
+
+### Batches 36a–36c — the line under the chest, and words for two breeds (Claude, 2026-11-03; Logan's eye decides)
+
+Logan: "both", to the two tests proposed after batch 35's read.
+
+- **The line (36a–36b, 112):** the short portrait with one phrase for its
+  lower edge, "the chest fading softly into the bare paper"
+  (`storybook_bust_soft`), on the crew and the eleven Commons dogs other
+  than Max and Duke, at batch 35's eight seeds. The soft edge is named and
+  the line is not, since klein tends to draw what a prompt names. Batch
+  35's short paintings are the before.
+- **The words (36c, 32):** Max and Duke with what their photos show,
+  written by Claude from the two Commons photos, once after the breed's
+  name and once without it (the name may be what calls up klein's idea of
+  the breed), with the short prompt at the eight seeds. Max: "red-tan
+  german shepherd with black fur across its back and a black muzzle" /
+  "large red-tan dog with black fur across its back, a black muzzle and
+  tall pointed ears" (first written with "a black saddle on its back",
+  changed before 36c ran: klein paints "saddle" as tack, batch 11b);
+  Duke: "black and tan doberman pinscher with natural soft floppy ears
+  that hang down" / "sleek black dog with tan markings on its muzzle,
+  eyebrows and chest, and soft floppy ears that hang down".
+  Batch 35's listing-word paintings are the before. If words fix them,
+  roadmap item 4's local photo-reading idea is worth building; this
+  tests the words, not a reader.
+- **One blind page, two parts:** `var/explore/index-all/portraits-36.html`,
+  the key in `var/explore/batch36-blind/`. Part 1, pairs: "acceptable", "a
+  line under the chest", "the better of the two". Part 2, threes:
+  "acceptable", "the best of the three".
+- **A tick for klein's signature on every painting**, at Logan's ask:
+  "a box to check if i see a fake signature. something there are
+  scribbles that are basically a fake signature that klein is painting"
+  (ADR-0004 as amended 2026-10-15 left `comfyui/signature.py`'s removal to
+  roadmap item 4; the ticks give its rate on the portrait, and a measure
+  for the detector). "Acceptable" is judged on the animal alone, the line
+  and the signature on their own ticks (Logan asked; as he read batch 35).
+- **Run 2026-11-03, 20:42–21:33 UTC:** 144 of 144 painted, no kill, the
+  pool 1.8–2.0 GB; all marked, the marks checked on a sheet of corners.
+  The page checked headless: 272 paintings at 1216×832 (112 pairs, 16
+  threes), 13 photos, 768 ticks with unique keys kept over a reload, one
+  better per pair or three, no file name naming a prompt, no sideways
+  scroll. Claude has not read the paintings.
+
+### Batch 37a — the cats as portraits, and the crew's pick for the site (Claude, 2026-11-03; Logan picks)
+
+Logan, to the moderator, 2026-11-03: "we are going to do portraits because
+we can't guarantee a clean body. so the crew photos need updated." The
+site's crew section (`src/ui/crew.ts`, `PAINTING` 1216×832) shows five,
+and Marty and Stacey had never been painted as portraits.
+
+- **37a, 32:** Marty and Stacey, klein-v1 as production paints, the short
+  portrait and its soft lower edge (batch 36a's, Logan's read pending) at
+  batch 35's eight seeds. Marty's words are batch 11b's closest ("male
+  flame point Siamese cat, cream with orange ears, face and tail, and blue
+  eyes": his photos alone lose the points), Stacey's her listing words
+  ("female brown tabby cat").
+- **The pick:** `var/explore/index-all/crew-portraits-37.html`, one tick
+  per animal among its sixteen (the dogs from 35a and 36a, the cats from
+  37a), in a random order under neutral names (`var/explore/crew-37-pick/`,
+  the key beside them). Each picked file goes to the moderator as its path
+  under `var/explore/<batch>/marked/`, the mark in its pixels; the UI chat
+  writes `public/brand/crew/`, never this stream.
+- **Run 2026-11-03, 21:34–21:50 UTC:** 32 of 32, no kill, the pool 1.9 GB;
+  all marked. The page holds 80, sixteen each: batch 35a's long prompt is
+  left out, having lost blind (the first build took all 104, caught by its
+  count). Checked headless: one tick per animal, kept over a reload, no
+  file name naming a prompt or batch, no sideways scroll.
+- **Rebuilt after batch 36's read** with the short portrait only, eight
+  each, 40 (the soft edge lost too), so the site shows what a donor gets;
+  a new tick store, so no earlier tick lands on another painting.
+- **Plum's eight replaced by batch 38a's sixteen** (both collar endings),
+  his old slots dropped from the key so no tick moves to a new painting;
+  48 on the page, checked headless again.
+
+### Four portraits a donation, and the amendment — Logan's word (2026-11-03)
+
+Asked three things together: the ADR-0004 amendment as drafted (every
+keepsake a chest-up portrait, the LoRA dropped, the tripod's standing rule
+withdrawn, never male anatomy on a female); CLAUDE.md's pipeline line from
+"a tripod painted standing" to "every keepsake a head-and-shoulders
+portrait"; and, with his two sayings side by side ("i'm thinking 4 and 4
+so 8 total per donation", 2026-11-02, while bodies were in; "4 paintings
+come in a cycle automatically", 2026-11-03, to the moderator), whether a
+donation gets four portraits. Logan: "yeah that all sounds right to me".
+
+- ADR-0004 as amended 2026-11-03, decisions 1–5, with four portraits a
+  donation as decision 5; CLAUDE.md's line and `doc/flows.md`'s painter
+  box follow it. Uncommitted until Logan's word to commit.
+- Still open: whether the name is painted, and which four seeds the worker
+  uses (any of batch 35's but 610 passed 12 or 13 of 13).
+
+### Batches 36a–36c — Logan's read (2026-11-03)
+
+Logan's ticks on the blind page, saved as
+`var/explore/index-all/portraits-36-picks-2026-11-03.txt` and decoded
+through `var/explore/batch36-blind/key.json`. With them: "so the plum
+paintings are a bit incomplete and could be said for other dogs with
+collars. they tend to blend in with the body rather than show clearly all
+around the neck."
+
+- **The soft lower edge is out:** over the thirteen ticked in batch 35
+  (Plum to Luna) the short portrait is acceptable 82 of 104 and the soft
+  76, and the better in 68 pairs against 23 (neither 13). Only Rusty,
+  Daisy and Coco took the soft more often.
+- **No line was ticked**, on either prompt, in 224 paintings, the 112 of
+  batch 35's short among them, where Logan had seen "many". Asked, Logan:
+  "there were no lines". The line is not a finding against the short
+  portrait.
+- **Collars:** Plum fell from 6 of 8 (batch 35) to 0 of 8 on the same
+  short paintings, for a collar painted half into the fur rather than
+  round the neck; Logan says the same of other collared dogs. Batch 35's
+  short paintings ticked again: 96 of 112 the same, 16 changed, 15 of
+  them to not acceptable, six of those Plum's.
+- **Words from the photo fix the breed:** Max, acceptable with his
+  listing words 0 of 8 (batches 35 and 36), with the breed and what the
+  photo shows 7 of 8, without the breed 6 of 8; Duke 0, 8 and 8. The best
+  of the three: the breed with the traits 6 times for each, the traits
+  alone 2, the listing words never. So the breed's name is kept and what
+  the photo shows is added. Claude wrote these words from the photos by
+  eye; a local model reading the photo (roadmap item 4) would have to
+  write as well, and is now worth building.
+- **Signatures:** 5 of 272 ticked (Plum s23, Shadow s3000, Sunny s23 on
+  the soft prompt; Max s610 twice), about 2%.
+
+### Batches 38a–38b — the collar (Claude, 2026-11-03; Logan's eye decides)
+
+Logan, asked whether a keepsake shows the collar at all: "yeah one of the
+two i guess we can run a test. half of plum with one description and half
+with the other. this effects other dogs as well not just plum."
+
+- **Two endings to the listing words**, the short portrait at batch 35's
+  eight seeds: the neck described bare, the collar never named (`bare`:
+  "with a bare neck and nothing around it"), or the collar asked for
+  whole (`worn`: "wearing its collar, the whole collar painted clearly all
+  the way around its neck"); a harness is worded as a harness, the chest
+  with the neck.
+- **38a, 16:** Plum alone, first, since the site's crew section has no
+  Plum yet (his collar per Logan; Claude never views the crew's photos).
+- **38b, 80:** the five of the thirteen Commons dogs whose photos show
+  something at the neck, read by Claude from the Commons photos: Rusty,
+  Otto and Biscuit a collar, Coco and Bailey a harness. Bailey's red
+  harness may be why he fails at nearly every seed (1 of 8 in 35, 0 in
+  36). Ducky and Beetle are left out until Logan says whether they wear
+  one.
+- Batch 35's short paintings are the before. If `bare` passes, it is the
+  only ending production can use without a reader that knows whether a
+  dog wears a collar; `worn` needs that reader (roadmap item 4).
+- **Collarless — Logan, shown 38a's Plum:** "no i want to collarless,
+  give me a new batch for plum please". So **38c, 16:** Plum at eight
+  seeds no batch had used (88, 1357, 4242, 5150, 6060, 8642, 9119,
+  31337), with `bare` and `nocollar` (the collar named and refused: "with
+  no collar, his bare neck showing only fur"). 38b was stopped at 22:42
+  UTC before it painted anything (by PID; the guard down, the run
+  container removed) and rewritten collarless before it ran again:
+  `bare` and `nocollar`, a harness dog's "with no harness or collar,
+  its bare neck and chest showing only fur". The crew page's Plum is
+  his collarless 24 (38a's `bare` and 38c), under new slot names.
+- **Run 2026-11-03:** 38a 22:33–22:39, 38c 22:45–22:50, 38b 22:53–23:21
+  UTC, 112 of 112, no kill, the pool 1.8–1.9 GB; all marked. The collar
+  page, blind: `var/explore/index-all/portraits-38.html`, the five dogs'
+  threes (batch 35's listing words, `bare`, `nocollar`), ticks
+  "acceptable", "a collar or harness painted", "a painted signature"
+  and "the best of the three"; Plum is judged on the crew page. Checked
+  headless: 120 at 1216×832, 5 photos, 480 ticks kept over a reload, no
+  file name naming a wording, no sideways scroll.
+
+### Batch 38d — the shoulders (Claude, 2026-11-03; Logan's eye decides)
+
+Logan, while picking the crew: "one issue we have sometimes is that the
+shoulders often look too wide. its very evident on plum. He almost looks
+like a puppy head on a human body."
+
+- **The words ask for it:** "a head-and-shoulders portrait" is how a
+  person's bust is described, so it may carry a human bust's broad
+  shoulders onto a dog, worst on a puppy's narrow chest.
+- **38d, 16:** two framings without the phrase, Plum collarless (`bare`)
+  at 38c's eight seeds, whose `bare` paintings are the before: "a close
+  portrait of its head and neck" (`storybook_head`: no shoulders named,
+  less body to paint) and "in three-quarter view, a portrait from the
+  chest up" (`storybook_bust34`: a dog turned a little shows a narrow
+  chest). Queued behind 38b. If one fixes Plum, it is tried on every dog
+  before the production prompt changes, since a prompt change moves the
+  layouts the seeds give.
+- **Every dog, at once:** Logan, "so same goes for all dogs btw.
+  sometimes the shoulders are just too wide." So **38e (16) and 38f
+  (104):** the same two framings on the other fifteen dogs at batch 35's
+  four strongest seeds (23, 333, 1111, 3000), each with its best words so
+  far (`best`: the listing's, or for Max and Duke 36c's breed with the
+  photo's traits); batch 35's short paintings (36c's for Max and Duke)
+  are the before. One page for the shoulders, Plum's 38d included, with a
+  tick "shoulders too wide" on every painting beside "acceptable", "a
+  painted signature" and "the best of the three".
+
+### A local photo reader — the candidates (Claude, 2026-11-03; Logan decides)
+
+Logan: "what model with vision can we run on the card as part of the
+process?" After batch 36c, words read from the photo are what fixed Max
+and Duke; the reader would write them, on the machine, so the photo never
+leaves (ADR-0004 as amended 2026-08-02).
+
+- **Qwen3-VL-2B-Instruct and -4B-Instruct** (Apache-2.0, model cards read
+  2026-11-03). `monster-paws-comfyui:dev` already carries transformers
+  5.20.2 with `qwen3_vl` and torch 2.14.1+xpu, so no new dependency: a
+  `models.manifest` line each (licence and hash) and a script. About 4.5
+  GB (2B) and 9 GB (4B) in bf16. The 2B may be quick enough on the CPU,
+  as the detector runs (ADR-0026), which keeps it off the Arc's traps;
+  the 4B on the card runs as its own process under the guard, before
+  ComfyUI paints, never beside it.
+- **Moondream2** (Apache-2.0, about 2B, captions and questions; its
+  successor Moondream 3 is a preview) as the cheap end.
+- **Out:** Qwen2.5-VL-3B (research licence, above); anything hosted
+  (BFL's and the klein demo's upsamplers, batch 34).
+- **The test, proposed:** each reader asked one structured question per
+  photo (coat colours and where they fall, markings, ear shape and
+  carriage, eye colour, anything worn), its words checked against those
+  Claude wrote by eye for Max and Duke and against Logan's read; then the
+  winner's words painted blind against the listing's on every dog. A
+  reader in the donation path is a new stage and a new model: an ADR-0004
+  amendment and the art flow in `doc/flows.md`, the listing-words plan's
+  reviewed table beside it or in its place.
+- **When:** Logan, "after i've chosen the crew paintings and probably a
+  deploy i will have us do tests wiht the models you suggested".
+
+### The painting job for the Meta demo — holes found (Claude, 2026-11-03; not a go)
+
+Logan, to the moderator: "for the meta demo we have to have the pipeline
+working locally on my card", due 2026-11-04 15:00 CT (21:00 UTC). The
+moderator's proposal: the dev database, a staging test card, a crew pet,
+a real email; this stream's part the `art.generate` handler. Checked
+against the code, before any build:
+
+- **Storage:** infra.md lists the R2 media write pair as "not created
+  yet", and public access is off on every bucket, so the email cannot
+  link to R2. Either the key is made, or the four are kept on the box and
+  attached.
+- **The animal:** the crew live in `src/ui/crew.ts`, not `animals`; the
+  crew's consent record covers the home section only (ADR-0030), so a
+  keepsake from a crew photo needs Logan's line in
+  `doc/consent/0001-the-crew.md`.
+- **Crops and words:** the worker has no photo-to-crops path (the
+  detector is Python on the CPU, ADR-0026); the crew's crops exist from
+  batch 11, and their words are hand words, the listing-words table
+  unbuilt.
+- **The card:** one driver at a time, and nothing paints in the nightly
+  quiet window (06:45 UTC until the night's log says `== exit`).
+- **The decision:** `art.generate` in the dev distro departs from ADR-0004
+  as amended 2026-10-05 (the dedicated Windows account), a dated note
+  under ADR-0028; ADR-0022's mark amendment and Geist's licence record
+  are still to write; klein's signature (about 2%) has no removal step.
+- **The smallest build:** a TypeScript handler running
+  `comfyui/run_workflow.py` four times (it fills the committed klein-v1
+  workflow by node id), then `mark.py`, then storing and four `art`
+  facts: about 3–4 hours after this stream's commit lands on topdog.
+  Freeze the prompt, framing and seeds by 15:00 UTC on 11-04 at the
+  latest.
+- **Storage reversed (the moderator, from Logan: "no lets build the share
+  page that opens form the email"):** after the mark, four JPEGs
+  re-encoded from pixels with no metadata and `share/<token>/manifest.json`
+  (the pet's name and kind, nothing of the donor) go to `monsterpaws-media`,
+  a production write under an oplog entry; the local files stay for the
+  email. Holes sent back: public access is off on every bucket (a public
+  hostname for media, or an app route with a media read key, is a step of
+  its own); the share token must be its own random value, never the
+  /thanks or claim token, and the keepsake has no token column yet;
+  ADR-0022 as amended 2026-11-02 rests on "there are no public
+  paintings", which a share page ends; the media write pair is not
+  made. `aws4fetch` (already used by `src/core/ingest/vault.ts`) signs
+  the upload, so no new dependency; each upload proved by reading it back
+  and comparing hashes.
+- **The moderator's answers (2026-11-03):** served through an app route,
+  media staying private (ADR-0035 Q2); the share token in donate's
+  migration 0017; the takedown in ADR-0036 (the UI chat), crew only for
+  the demo; the key and this stream's publishing under oplog 0026, which
+  this stream owns; publishing runs the UI chat's `npm run share --
+  publish`, never a write of the handler's own. The order: this stream's
+  commit on Logan's word, landed on topdog, then realigned onto topdog
+  (`git rebase --onto topdog HEAD` on his "realign"; there is no `demo`
+  branch, Logan: "we can just put it on topdog"), the handler built
+  there with an art-only worker mode (`npm run worker` registers
+  `ingest.poll` whenever the RescueGroups key is set).
+- **Crew photos at 1050×1400 are not enough for every head:** measured
+  from `boxes-detected.json`'s fractions (no photo viewed), four of the
+  ten grown heads fall to 130–300 px where klein reads about 768 (Marty's
+  PXL 133×122, Stacey's IMG_3110 171×187, Beetle's IMG_2931 236×296), so
+  the demo paints from the originals in `var/crew/`, whose crops batch 11
+  cut at full size.
+- **Live detection instead of the crop table:** about 6 s a photo warm on
+  the CPU (ADR-0026), the cold load unmeasured (30–60 s guessed); the
+  detect → grow → cut chain is joined by hand today, so live use is a
+  glue script of 1.5–2 h. Not built until Logan answers the moderator on
+  Meta's models (SAM 2.1 is Meta's, Apache-2.0, run locally).
+- **The share page's contract (the UI chat's, fixed):** `share/<token>/`
+  holds `1.jpg`–`4.jpg` at 1216×832, pixels only, and `manifest.json`
+  exactly `{"name":…,"kind":…}`, written last, since its presence makes
+  the page exist; the token is the keepsake's `share_token` (donate's
+  migration 0017), never one the handler mints.
+- **Live detection is in** (Logan: "we will use saml 3.1 but first lets
+  just develop on sam 2.1 we will swap it near the end"): the handler
+  first, then the detect → grow → cut glue on OWLv2 and SAM 2.1, the
+  pipeline chosen by `DETECT_PIPELINES`; the `sam3` client and every Meta
+  API call on `meta` (ADR-0028 §1). Found: no `meta/` entry in `pass`, so
+  no Model API key yet. The client is about 3–4 h (one Responses call
+  per photo and phrase, the `<0f>` grammar, the API's masks, the raw
+  responses cached; floors by eye on the crew, the blind-set measurement
+  not run), Python in `detect.py` only and needing no card, so it could
+  be built in parallel; its latest start about 13:00 UTC. A photo sent to
+  Meta: pixels only (the crew's phone photos carry GPS), refused in code
+  unless it is in the crew table, named in the crew's consent record
+  (ADR-0004 as amended 2026-08-02 §2), and Meta's terms on retention
+  read before the first call.
+- **Oplog 0026's check after the first real publish** (the UI chat):
+  `curl` `/share/<token>` and its `painting.jpg` on the live site with a
+  bot user agent, since the e2e image run does not cover those routes.
+- **Donate's contract** is on topdog as `fa00bd9`
+  (`doc/plans/demo-chain-contract.md`; `FACT`, `artKey`, `artFilePath`,
+  `ART_QUEUE_OPTIONS` in `src/core/keepsake.ts`); the art-only worker mode
+  is this stream's. Logan put the Meta key in `pass` as `meta/api-key`.
+- **The seam for the `sam3` client** (a separate chat on `meta`): stage 1
+  of `comfyui/detect.py`, `sam3(photos) -> {photo: {"species": [{box,
+  species, colour_prompt, other}], "heads": [{box, score}]}}`, boxes in the
+  image's pixels, the colour and other-species scores matched at IoU 0.5
+  as `grounding_dino` does; registered in `main()` with its own
+  `FLOOR["sam3"]`, `pools()` unchanged; SAM 2.1 outlines its boxes
+  tonight. `DETECT_PIPELINES=sam3` is the whole swap, and the key comes
+  from `MODEL_API_KEY` filled by `pass` at run time.
 
 ### Batches 14a–14b — Logan's picks (2026-10-28)
 

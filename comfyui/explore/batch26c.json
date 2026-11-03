@@ -1,0 +1,60 @@
+{
+  "_": "Batch 26c — a sitting female hidden by the angle or a sign (Logan 2026-11-02: \"4. the looking up angle\"; \"add a sign infront of their genital area with the animals name on it\"): 14a's Ducky and 14b's Beetle exactly as production paints them — klein-v1, both photos' grown subject and the grown head, the listing words, landscape, the same eight seeds, no LoRA. A female only sits or lies down (Logan 2026-11-02: \"males can do any pose, females should only sit or laydown\"; ADR-0004 as amended 2026-10-15, decision 4). Sitting seen from a little above, looking up (storybook_lookup), and sitting behind a small wooden sign hand-lettered with her name (storybook_sign).",
+  "animals": {
+    "Ducky": {
+      "kind": "dog",
+      "describe": "female tan pit bull mix",
+      "two": [
+        "PXL_20241229_195311064.RAW-01.COVER.jpg",
+        "PXL_20250621_160612271.PORTRAIT.jpg"
+      ]
+    },
+    "Beetle": {
+      "kind": "dog",
+      "describe": "female bloodhound",
+      "two": [
+        "IMG_2931.jpg",
+        "IMG_3545.jpg"
+      ]
+    }
+  },
+  "photos": [
+    "two"
+  ],
+  "crops": [
+    "grownsubject"
+  ],
+  "aspect": [
+    "landscape"
+  ],
+  "describe": [
+    "listing"
+  ],
+  "families": [
+    "kleinbfl8"
+  ],
+  "graphs": [
+    "reference2"
+  ],
+  "prompts": [
+    "storybook_lookup",
+    "storybook_sign"
+  ],
+  "denoise": [],
+  "weights": [],
+  "weight_types": [],
+  "end_at": [],
+  "seeds": [
+    11,
+    222,
+    4096,
+    8128,
+    17,
+    404,
+    1729,
+    6174
+  ],
+  "heads": [
+    "grownhead"
+  ]
+}

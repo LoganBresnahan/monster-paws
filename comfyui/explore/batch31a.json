@@ -1,0 +1,49 @@
+{
+  "_": "Batch 31a — the seeds confirmed, Plum: Logan 2026-11-02: the search's winners (1111 on all six dogs; 101, 333, 3000 and 5555 on five, batch 29) confirmed on dogs they never painted, on the recipe that ships: the sign painted blank (storybook_sign_blank) and the name carved into it after by comfyui/signname.py (Logan's pick: carved). Seed 23, which held on 11 of 13 dogs with the name painted, as the reference. klein-v1 as production paints, no LoRA.",
+  "animals": {
+    "Plum": {
+      "kind": "dog",
+      "describe": "male grey cane corso puppy",
+      "two": [
+        "PXL_20250423_185424061.PORTRAIT.jpg",
+        "downloadfile.jpg"
+      ]
+    }
+  },
+  "photos": [
+    "two"
+  ],
+  "crops": [
+    "grownsubject"
+  ],
+  "aspect": [
+    "landscape"
+  ],
+  "describe": [
+    "listing"
+  ],
+  "families": [
+    "kleinbfl8"
+  ],
+  "graphs": [
+    "reference2"
+  ],
+  "prompts": [
+    "storybook_sign_blank"
+  ],
+  "denoise": [],
+  "weights": [],
+  "weight_types": [],
+  "end_at": [],
+  "seeds": [
+    23,
+    101,
+    333,
+    1111,
+    3000,
+    5555
+  ],
+  "heads": [
+    "grownhead"
+  ]
+}

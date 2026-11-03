@@ -1,0 +1,127 @@
+{
+  "_": "Batch 30b — the blank sign, the ten held-out Commons dogs: Logan 2026-11-02: \"lets letter the name ourselves\" — klein misspelled Daisy and Emily at every seed (batch 28a). The sign painted blank (storybook_sign_blank), at seeds 23 and 1001, on every dog those seeds painted with the name (batches 27–28), klein-v1 as production paints, no LoRA: does klein leave the board blank, and does each seed keep its layout when the words change from a name to blank (a seed holds only while the recipe is unchanged)? The blank boards are then lettered by comfyui/signname.py.",
+  "animals": {
+    "gonzaja-yellow3": {
+      "kind": "dog",
+      "describe": "tan sighthound-type dog",
+      "one": [
+        "Gonzaja-yellow3.jpg"
+      ],
+      "set": "lora-holdout",
+      "name": "Gonzaja"
+    },
+    "rusty-11y9m-irish-setter-uthandi-chennai-may21-r16-04758": {
+      "kind": "dog",
+      "describe": "red irish setter",
+      "one": [
+        "Rusty-11y9m-Irish-Setter-Uthandi-Chennai-May21-R16-04758.jpg"
+      ],
+      "set": "lora-holdout",
+      "name": "Rusty"
+    },
+    "pepe-a-josaphat-looking-back": {
+      "kind": "dog",
+      "describe": "grey weimaraner",
+      "one": [
+        "Pepe-a-Josaphat-looking-back.jpg"
+      ],
+      "set": "lora-holdout",
+      "name": "Pepe"
+    },
+    "teckel-39": {
+      "kind": "dog",
+      "describe": "black and tan wire-haired dachshund",
+      "one": [
+        "Teckel-39.jpg"
+      ],
+      "set": "lora-holdout",
+      "name": "Otto"
+    },
+    "pies-nierasowy-20201003-1644-4305": {
+      "kind": "dog",
+      "describe": "white and tan small mixed-breed dog",
+      "one": [
+        "Pies-nierasowy-20201003-1644-4305.jpg"
+      ],
+      "set": "lora-holdout",
+      "name": "Daisy"
+    },
+    "chinese-crested-dog-on-the-beach-13200": {
+      "kind": "dog",
+      "describe": "white chinese crested powderpuff",
+      "one": [
+        "Chinese-crested-dog-on-the-beach-13200.jpg"
+      ],
+      "set": "lora-holdout",
+      "name": "Coco"
+    },
+    "emily-maltese": {
+      "kind": "dog",
+      "describe": "white maltese",
+      "one": [
+        "Emily-Maltese.jpg"
+      ],
+      "set": "lora-holdout",
+      "name": "Emily"
+    },
+    "bianca-2-meses": {
+      "kind": "dog",
+      "describe": "white boxer puppy",
+      "one": [
+        "Bianca-2-Meses.jpg"
+      ],
+      "set": "lora-holdout",
+      "name": "Bianca"
+    },
+    "dog-smiling-at-the-camera-reta-buenos-aires-argentina-04-01": {
+      "kind": "dog",
+      "describe": "white and tan short-haired dog",
+      "one": [
+        "Dog-smiling-at-the-camera-Reta-Buenos-Aires-Argentina-04-01-.jpg"
+      ],
+      "set": "lora-holdout",
+      "name": "Sunny"
+    },
+    "bronco-laying-down-lr": {
+      "kind": "dog",
+      "describe": "tricolour beagle",
+      "one": [
+        "Bronco-laying-down-LR.jpg"
+      ],
+      "set": "lora-holdout",
+      "name": "Bronco"
+    }
+  },
+  "photos": [
+    "one"
+  ],
+  "crops": [
+    "grownsubject"
+  ],
+  "describe": [
+    "listing"
+  ],
+  "families": [
+    "kleinbfl8"
+  ],
+  "graphs": [
+    "reference2"
+  ],
+  "denoise": [],
+  "weights": [],
+  "weight_types": [],
+  "end_at": [],
+  "heads": [
+    "grownhead"
+  ],
+  "aspect": [
+    "landscape"
+  ],
+  "prompts": [
+    "storybook_sign_blank"
+  ],
+  "seeds": [
+    23,
+    1001
+  ]
+}

@@ -1,0 +1,54 @@
+{
+  "_": "Batch 38c — Plum without a collar, for the site's crew section: Logan 2026-11-03, shown 38a: \"no i want to collarless, give me a new batch for plum please\". The short portrait, two collarless endings to his listing words: 38a's \"bare\" (the collar never named) and \"nocollar\" (the collar named and refused: \"with no collar, his bare neck showing only fur\"), at eight seeds no batch had used, for fresh candidates.",
+  "animals": {
+    "Plum": {
+      "kind": "dog",
+      "describe": "male grey cane corso puppy",
+      "two": [
+        "PXL_20250423_185424061.PORTRAIT.jpg",
+        "downloadfile.jpg"
+      ],
+      "bare": "male grey cane corso puppy with a bare neck and nothing around it",
+      "nocollar": "male grey cane corso puppy with no collar, his bare neck showing only fur"
+    }
+  },
+  "photos": [
+    "two"
+  ],
+  "crops": [
+    "grownsubject"
+  ],
+  "aspect": [
+    "landscape"
+  ],
+  "describe": [
+    "bare",
+    "nocollar"
+  ],
+  "families": [
+    "kleinbfl8"
+  ],
+  "graphs": [
+    "reference2"
+  ],
+  "prompts": [
+    "storybook_bust"
+  ],
+  "denoise": [],
+  "weights": [],
+  "weight_types": [],
+  "end_at": [],
+  "seeds": [
+    88,
+    1357,
+    4242,
+    5150,
+    6060,
+    8642,
+    9119,
+    31337
+  ],
+  "heads": [
+    "grownhead"
+  ]
+}

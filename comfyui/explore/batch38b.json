@@ -1,0 +1,99 @@
+{
+  "_": "Batch 38b — the collar, the five Commons dogs whose photos show one (Rusty, Otto, Biscuit: a collar; Coco, Bailey: a harness; read by Claude from the Commons photos 2026-11-03): Logan 2026-11-03 on batch 36: \"the plum paintings are a bit incomplete and could be said for other dogs with collars. they tend to blend in with the body rather than show clearly all around the neck\" (Plum 6 of 8 in batch 35, 0 of 8 on the same paintings in 36); then \"one of the two i guess we can run a test. half of plum with one description and half with the other. this effects other dogs as well\". The short portrait (storybook_bust, the winner of 35 and 36) at batch 35's eight seeds, the listing words with one of two endings: the neck described bare, the collar never named (bare), or the collar asked for whole, all the way round (worn); a harness is worded as a harness. Batch 35's short paintings are the before. Rewritten before any painting (the first run was stopped at 22:42 UTC with none done): Logan, shown 38a, \"no i want to collarless\", so the worn ending is dropped and both endings are collarless, as 38c's: bare (the collar never named) and nocollar (named and refused).",
+  "animals": {
+    "rusty-11y9m-irish-setter-uthandi-chennai-may21-r16-04758": {
+      "kind": "dog",
+      "describe": "red irish setter",
+      "one": [
+        "Rusty-11y9m-Irish-Setter-Uthandi-Chennai-May21-R16-04758.jpg"
+      ],
+      "set": "lora-holdout",
+      "name": "Rusty",
+      "bare": "red irish setter with a bare neck and nothing around it",
+      "nocollar": "red irish setter with no collar, its bare neck showing only fur"
+    },
+    "teckel-39": {
+      "kind": "dog",
+      "describe": "black and tan wire-haired dachshund",
+      "one": [
+        "Teckel-39.jpg"
+      ],
+      "set": "lora-holdout",
+      "name": "Otto",
+      "bare": "black and tan wire-haired dachshund with a bare neck and nothing around it",
+      "nocollar": "black and tan wire-haired dachshund with no collar, its bare neck showing only fur"
+    },
+    "chinese-crested-dog-on-the-beach-13200": {
+      "kind": "dog",
+      "describe": "white chinese crested powderpuff",
+      "one": [
+        "Chinese-crested-dog-on-the-beach-13200.jpg"
+      ],
+      "set": "lora-holdout",
+      "name": "Coco",
+      "bare": "white chinese crested powderpuff with a bare neck and chest and nothing around them",
+      "nocollar": "white chinese crested powderpuff with no harness or collar, its bare neck and chest showing only fur"
+    },
+    "young-mixed-breed-dog-aka": {
+      "kind": "dog",
+      "describe": "tan and black young mixed-breed dog",
+      "one": [
+        "Young-mixed-breed-dog-aka.jpg"
+      ],
+      "set": "lora-train",
+      "name": "Biscuit",
+      "bare": "tan and black young mixed-breed dog with a bare neck and nothing around it",
+      "nocollar": "tan and black young mixed-breed dog with no collar, its bare neck showing only fur"
+    },
+    "beagle-in-viroinval-dsc04556": {
+      "kind": "dog",
+      "describe": "tricolour beagle",
+      "one": [
+        "Beagle-in-Viroinval-DSC04556.jpg"
+      ],
+      "set": "lora-train",
+      "name": "Bailey",
+      "bare": "tricolour beagle with a bare neck and chest and nothing around them",
+      "nocollar": "tricolour beagle with no harness or collar, its bare neck and chest showing only fur"
+    }
+  },
+  "photos": [
+    "one"
+  ],
+  "crops": [
+    "grownsubject"
+  ],
+  "aspect": [
+    "landscape"
+  ],
+  "describe": [
+    "bare",
+    "nocollar"
+  ],
+  "families": [
+    "kleinbfl8"
+  ],
+  "graphs": [
+    "reference2"
+  ],
+  "prompts": [
+    "storybook_bust"
+  ],
+  "denoise": [],
+  "weights": [],
+  "weight_types": [],
+  "end_at": [],
+  "seeds": [
+    23,
+    333,
+    1111,
+    3000,
+    47,
+    610,
+    2468,
+    7321
+  ],
+  "heads": [
+    "grownhead"
+  ]
+}

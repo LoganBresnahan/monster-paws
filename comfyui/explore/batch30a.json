@@ -1,0 +1,61 @@
+{
+  "_": "Batch 30a — the blank sign, the crew: Logan 2026-11-02: \"lets letter the name ourselves\" — klein misspelled Daisy and Emily at every seed (batch 28a). The sign painted blank (storybook_sign_blank), at seeds 23 and 1001, on every dog those seeds painted with the name (batches 27–28), klein-v1 as production paints, no LoRA: does klein leave the board blank, and does each seed keep its layout when the words change from a name to blank (a seed holds only while the recipe is unchanged)? The blank boards are then lettered by comfyui/signname.py.",
+  "animals": {
+    "Plum": {
+      "kind": "dog",
+      "describe": "male grey cane corso puppy",
+      "two": [
+        "PXL_20250423_185424061.PORTRAIT.jpg",
+        "downloadfile.jpg"
+      ]
+    },
+    "Ducky": {
+      "kind": "dog",
+      "describe": "female tan pit bull mix",
+      "two": [
+        "PXL_20241229_195311064.RAW-01.COVER.jpg",
+        "PXL_20250621_160612271.PORTRAIT.jpg"
+      ]
+    },
+    "Beetle": {
+      "kind": "dog",
+      "describe": "female bloodhound",
+      "two": [
+        "IMG_2931.jpg",
+        "IMG_3545.jpg"
+      ]
+    }
+  },
+  "photos": [
+    "two"
+  ],
+  "crops": [
+    "grownsubject"
+  ],
+  "aspect": [
+    "landscape"
+  ],
+  "describe": [
+    "listing"
+  ],
+  "families": [
+    "kleinbfl8"
+  ],
+  "graphs": [
+    "reference2"
+  ],
+  "prompts": [
+    "storybook_sign_blank"
+  ],
+  "denoise": [],
+  "weights": [],
+  "weight_types": [],
+  "end_at": [],
+  "seeds": [
+    23,
+    1001
+  ],
+  "heads": [
+    "grownhead"
+  ]
+}

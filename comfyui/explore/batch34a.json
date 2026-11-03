@@ -1,0 +1,63 @@
+{
+  "_": "Batch 34a — the dense prompt, the crew: Logan 2026-11-02: \"yes\" to an upsampled prompt as an arm (BFL's FLUX.2-klein-4B demo upsamples every prompt by default, commit 989c44e). storybook_bust_board written out once by hand to the demo's text-only rules (storybook_bust_board_dense) — no hosted model, no photo sent anywhere — at batch 33's dogs and seeds, so each painting has a short-prompt twin. klein-v1 as production paints, no LoRA; the name carved after by comfyui/signname.py.",
+  "animals": {
+    "Plum": {
+      "kind": "dog",
+      "describe": "male grey cane corso puppy",
+      "two": [
+        "PXL_20250423_185424061.PORTRAIT.jpg",
+        "downloadfile.jpg"
+      ]
+    },
+    "Ducky": {
+      "kind": "dog",
+      "describe": "female tan pit bull mix",
+      "two": [
+        "PXL_20241229_195311064.RAW-01.COVER.jpg",
+        "PXL_20250621_160612271.PORTRAIT.jpg"
+      ]
+    },
+    "Beetle": {
+      "kind": "dog",
+      "describe": "female bloodhound",
+      "two": [
+        "IMG_2931.jpg",
+        "IMG_3545.jpg"
+      ]
+    }
+  },
+  "photos": [
+    "two"
+  ],
+  "crops": [
+    "grownsubject"
+  ],
+  "aspect": [
+    "landscape"
+  ],
+  "describe": [
+    "listing"
+  ],
+  "families": [
+    "kleinbfl8"
+  ],
+  "graphs": [
+    "reference2"
+  ],
+  "prompts": [
+    "storybook_bust_board_dense"
+  ],
+  "denoise": [],
+  "weights": [],
+  "weight_types": [],
+  "end_at": [],
+  "seeds": [
+    23,
+    333,
+    1111,
+    3000
+  ],
+  "heads": [
+    "grownhead"
+  ]
+}

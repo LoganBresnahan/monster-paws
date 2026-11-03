@@ -46,6 +46,12 @@ LORAS = {"watercolor": "watercolor_v1_sdxl.safetensors", "tinies": "Little_Tinie
 # training captions began with (comfyui/pairs.py), which the prompt then begins with too.
 KLEIN_LORAS = {f"anatomy-{s}": (f"anatomy-2026-10-29_{s:09d}.safetensors", "mpclean") for s in (1000, 1250, 1500, 1750, 2000)}
 KLEIN_LORAS |= {f"anatomy2-{s}": (f"anatomy-2026-11-01b_{s:09d}.safetensors", "mpclean") for s in (1500, 2000, 2500, 3000)}
+# A pose given as a picture, since klein follows its references over its words (batches 3b, 4a, 9b): a flat grey
+# silhouette cut by the detector's mask from a Commons photo, never a shelter one (batch 26a). The file under input/, and
+# None to read it as a further reference, or the denoise to paint over it as the starting image.
+# At four steps a denoise above 0.8 starts from pure noise all the same: KSampler keeps the last 4 of int(4 / denoise) steps.
+POSES = {"bronco-ref": ("poses/bronco-down.png", None), "bronco-init80": ("poses/bronco-down-canvas.png", 0.8),
+         "bronco-init65": ("poses/bronco-down-canvas.png", 0.65)}
 
 
 def licensed_lora(name: str) -> str:
@@ -64,6 +70,39 @@ PROMPTS = {
     "storybook_sit": "a gentle storybook illustration of a {kind} sitting upright and facing the viewer, soft watercolor, warm pastel palette, plain background",
     "storybook_sit34": "a gentle storybook illustration of a {kind} sitting in three-quarter view, looking toward the viewer, soft watercolor, warm pastel palette, plain background",
     "storybook_stand34": "a gentle storybook illustration of a {kind} standing in three-quarter view, looking toward the viewer, soft watercolor, warm pastel palette, plain background",
+    # Poses that keep the groin out of sight, tried in place of the anatomy LoRA (ADR-0004 as amended 2026-10-15, decision 4; batch 23a): on its belly, never on its side.
+    "storybook_down34": "a gentle storybook illustration of a {kind} lying down on its belly in three-quarter view, front paws stretched out in front, hind legs tucked under its body, head up and looking toward the viewer, soft watercolor, warm pastel palette, plain background",
+    "storybook_sphinx": "a gentle storybook illustration of a {kind} lying in a sphinx pose, chest and belly flat on the ground, both front legs straight out ahead, hind legs folded beneath it, head raised, looking toward the viewer, soft watercolor, warm pastel palette, plain background",
+    "storybook_bust": "a gentle storybook illustration of a {kind}, a head-and-shoulders portrait from the chest up, looking toward the viewer, soft watercolor, warm pastel palette, plain background",
+    # Something in the picture that covers the groin, painted beside the portrait (Logan, 2026-11-02; batch 24a).
+    "storybook_pants34": "a gentle storybook illustration of a {kind} standing in three-quarter view, wearing snug knitted dog pants that cover its hips, belly and hind legs, looking toward the viewer, soft watercolor, warm pastel palette, plain background",
+    "storybook_grass34": "a gentle storybook illustration of a {kind} standing in three-quarter view in tall meadow grass and wildflowers that rise up to its chest and hide its belly and legs, looking toward the viewer, soft watercolor, warm pastel palette, soft pale background",
+    # A female sits with her own anatomy named, so klein paints teats rather than a sheath: never male anatomy on a female (ADR-0004 as amended 2026-10-15, decision 4; batch 25a).
+    "storybook_sit34_nipples": "a gentle storybook illustration of a {kind} sitting in three-quarter view, a female dog with small nipples along her belly, looking toward the viewer, soft watercolor, warm pastel palette, plain background",
+    "storybook_sit34_teats": "a gentle storybook illustration of a {kind} sitting in three-quarter view, looking toward the viewer, her belly showing the two rows of small nipples a female dog has, soft watercolor, warm pastel palette, plain background",
+    # A female only sits or lies down (Logan, 2026-11-02): the down's body from a silhouette rather than words, the sit hidden by the angle or a sign (batch 26a).
+    "storybook_down34_silhouette": "a gentle storybook illustration of a {kind} lying down on its belly in exactly the pose of the plain grey silhouette, front paws stretched out in front, head up and looking toward the viewer, soft watercolor, warm pastel palette, plain background",
+    "storybook_down34_paws": "a gentle storybook illustration of a {kind} lying down on its belly in three-quarter view, front paws stretched out in front, head up and looking toward the viewer, soft watercolor, warm pastel palette, plain background",
+    "storybook_lookup": "a gentle storybook illustration of a {kind} sitting, seen from a little above, looking up at the viewer, soft watercolor, warm pastel palette, plain background",
+    # A male in any pose (Logan, 2026-11-02): standing beside the sign, nothing hidden (batch 27b).
+    "storybook_sign_stand": "a gentle storybook illustration of a {kind} standing in three-quarter view beside a small wooden sign that stands on the ground, the sign hand-lettered with the name \"{name}\", looking toward the viewer, soft watercolor, warm pastel palette, plain background",
+    # The sign painted blank and the name lettered on after in our own type, since klein misspells some names at every seed (Logan, 2026-11-02; batch 30a).
+    "storybook_sign_blank": "a gentle storybook illustration of a {kind} sitting in three-quarter view behind a small blank wooden sign that stands on the ground in front of it and hides its belly and hind legs, the sign's board plain and smooth with nothing written on it, looking toward the viewer, soft watercolor, warm pastel palette, plain background",
+    # Facing the viewer square behind a sign wider than the dog, so the sign covers by geometry rather than the seed's luck (batch 32a).
+    "storybook_sign_front": "a gentle storybook illustration of a {kind} sitting facing the viewer, directly behind a wide blank wooden sign that stands on the ground in front of it, the sign wider than the dog and hiding everything below its chest, the sign's board plain and smooth with nothing written on it, looking at the viewer, soft watercolor, warm pastel palette, plain background",
+    # The portrait carrying the name: a small blank board the name is carved into after, the body never shown, any species (Logan, 2026-11-02; batch 33a).
+    "storybook_bust_board": "a gentle storybook illustration of a {kind}, a head-and-shoulders portrait from the chest up, looking toward the viewer, a small blank wooden sign along the bottom of the picture in front of its chest, the sign's board plain and smooth with nothing written on it, soft watercolor, warm pastel palette, plain background",
+    # storybook_bust_board upsampled once, by hand, to the text-only rules of the FLUX.2-klein-4B demo's upsampler (more descriptive, subject and intent kept); never per donation, and never through a hosted model (batch 34a).
+    "storybook_bust_board_dense": "a gentle storybook watercolor illustration of a {kind}, painted as a head-and-shoulders portrait that ends at the chest: the head and the top of the chest fill the upper two thirds of the picture, the bottom edge of the picture cuts across the chest, and nothing below the chest is shown. It looks straight toward the viewer with a calm, friendly expression, its ears, eyes, muzzle and markings painted true to life. Along the bottom of the picture, in front of its chest, stands a small plain wooden sign: a smooth, light honey-coloured board with softly rounded corners and no writing, carving or marks of any kind on it. Soft translucent watercolor washes with gentle edges and visible paper texture, fine light brown ink outlines, a warm pastel palette of cream, peach and soft sage, and a plain, pale, softly blotted background with no scenery",
+    # storybook_bust_board_dense without its board: no name in the painting, since listing names carry notes and a painted name is frozen (Logan, 2026-11-03; batch 35a).
+    "storybook_bust_dense": "a gentle storybook watercolor illustration of a {kind}, painted as a head-and-shoulders portrait that ends at the chest: the head and the top of the chest fill the upper two thirds of the picture, the bottom edge of the picture cuts across the chest, and nothing below the chest is shown. It looks straight toward the viewer with a calm, friendly expression, its ears, eyes, muzzle and markings painted true to life. Soft translucent watercolor washes with gentle edges and visible paper texture, fine light brown ink outlines, a warm pastel palette of cream, peach and soft sage, and a plain, pale, softly blotted background with no scenery",
+    # storybook_bust with its lower edge described, for the ink line klein draws under the chest (Logan, 2026-11-03: "seemed uneseccary"); the soft edge named, never the line, since a named thing gets drawn (batch 36a).
+    "storybook_bust_soft": "a gentle storybook illustration of a {kind}, a head-and-shoulders portrait from the chest up, the chest fading softly into the bare paper, looking toward the viewer, soft watercolor, warm pastel palette, plain background",
+    # The portrait without "head-and-shoulders", a human bust's words that widen a dog's shoulders (Logan, 2026-11-03: Plum "almost looks like a puppy head on a human body"; batch 38d).
+    "storybook_head": "a gentle storybook illustration of a {kind}, a close portrait of its head and neck, looking toward the viewer, soft watercolor, warm pastel palette, plain background",
+    "storybook_bust34": "a gentle storybook illustration of a {kind}, in three-quarter view, a portrait from the chest up, looking toward the viewer, soft watercolor, warm pastel palette, plain background",
+    "storybook_bust_necksign": "a gentle storybook illustration of a {kind}, a head-and-shoulders portrait from the chest up, looking toward the viewer, wearing a small blank wooden sign hung on a cord around its neck, the sign's board plain and smooth with nothing written on it, soft watercolor, warm pastel palette, plain background",
+    "storybook_sign": "a gentle storybook illustration of a {kind} sitting in three-quarter view behind a small wooden sign that stands on the ground in front of it and hides its belly and hind legs, the sign hand-lettered with the name \"{name}\", looking toward the viewer, soft watercolor, warm pastel palette, plain background",
     # the body from the reference, not a new pose: a fixed pose redraws the body from the model's prior, which has four legs (batch 6a)
     "storybook_photopose": "a gentle storybook illustration of this {kind} in the same pose as in the photo, soft watercolor, warm pastel palette, plain background",
     "storybook_edit": "Turn this photo into a gentle storybook illustration of the {kind}, soft watercolor, warm pastel palette, plain background. Keep its body exactly as it is in the photo.",
@@ -260,6 +299,21 @@ def build_family_graph(run: dict, prefix: str) -> dict:
             g["head_cond"] = {"class_type": "ReferenceLatent", "inputs": {"conditioning": pos, "latent": ["head_ref", 0]}}
             pos = ["head_cond", 0]
             refs.append("head_ref")
+        if run.get("pose"):
+            from PIL import Image
+            image, start = POSES[run["pose"]]
+            g["pose"] = {"class_type": "LoadImage", "inputs": {"image": image}}
+            if start is None:  # read last, after the dog's own references, so the words can name it as the pose
+                pw, ph = bucket(Image.open(INPUT / image).size)
+                g["pose_scale"] = {"class_type": "ImageScale", "inputs": {"image": ["pose", 0], "upscale_method": "lanczos", "width": pw, "height": ph, "crop": "center"}}
+                g["pose_ref"] = {"class_type": "VAEEncode", "inputs": {"pixels": ["pose_scale", 0], "vae": ["vae", 0]}}
+                g["pose_cond"] = {"class_type": "ReferenceLatent", "inputs": {"conditioning": pos, "latent": ["pose_ref", 0]}}
+                pos = ["pose_cond", 0]
+                refs.append("pose_ref")
+            else:
+                g["pose_scale"] = {"class_type": "ImageScale", "inputs": {"image": ["pose", 0], "upscale_method": "lanczos", "width": canvas[0], "height": canvas[1], "crop": "center"}}
+                g["latent"] = {"class_type": "VAEEncode", "inputs": {"pixels": ["pose_scale", 0], "vae": ["vae", 0]}}
+                denoise = start
     neg = ["neg", 0]
     if run.get("nag"):
         # The negative reads the same references, or it cannot batch with the positive and NAG silently does nothing.
@@ -441,7 +495,7 @@ def expand(spec: dict) -> list[dict]:
             subject = info["kind"] if describe == "generic" else info["describe" if describe == "listing" else describe]
             for graph, prompt, seed, neg in itertools.product(spec["graphs"], spec["prompts"], spec["seeds"], spec.get("negatives", ["standard"])):
                 base = {"animal": animal, "kind": info["kind"], "photo": photo_key, "photos": photos, "crop": crop, "describe": describe, "aspect": aspect, "family": family,
-                        "graph": graph, "prompt": prompt, "prompt_text": PROMPTS[prompt].format(kind=subject),
+                        "graph": graph, "prompt": prompt, "prompt_text": PROMPTS[prompt].format(kind=subject, name=info.get("name", animal)),
                         "negative": NEGATIVES[neg] or (NEGATIVE if prompt == "photo" else NEGATIVE_STYLED), "neg": neg, "seed": seed}
                 controls = [(st, en) for st in spec.get("control_strength", [0]) for en in (spec.get("control_end", [1.0]) if st else [None])]
                 if family != "sdxl":
@@ -453,11 +507,12 @@ def expand(spec: dict) -> list[dict]:
                     fam_loras = [(None, None)]
                     if family.startswith("klein"):
                         fam_loras = [(l, w) for l in spec.get("loras", [None]) for w in ([None] if l is None else spec.get("lora_strengths", [1.0]))]
-                    for denoise, dtype, steps, (cs, ce), head, nag, (lora, lw) in itertools.product(spec["denoise"] if graph == "img2img" else [None], spec.get("dtypes", [None]), spec.get("steps", [None]), fam_controls, heads, spec.get("nags", [None]), fam_loras):
+                    poses = spec.get("poses", [None]) if graph == "reference2" else [None]
+                    for denoise, dtype, steps, (cs, ce), head, nag, (lora, lw), pose in itertools.product(spec["denoise"] if graph == "img2img" else [None], spec.get("dtypes", [None]), spec.get("steps", [None]), fam_controls, heads, spec.get("nags", [None]), fam_loras, poses):
                         if lora is not None:
                             licensed_lora(lora)
                         text = base["prompt_text"] if lora is None else f"{KLEIN_LORAS[lora][1]}, {base['prompt_text']}"
-                        runs.append({**base, "prompt_text": text, "lora": lora, "lora_strength": lw, "dtype": dtype, "steps": steps, "control_strength": cs, "control_end": ce, "denoise": denoise, "weight": None, "weight_type": None, "end_at": None, "head": head, "nag": nag})
+                        runs.append({**base, "prompt_text": text, "lora": lora, "lora_strength": lw, "dtype": dtype, "steps": steps, "control_strength": cs, "control_end": ce, "denoise": denoise, "weight": None, "weight_type": None, "end_at": None, "head": head, "nag": nag, "pose": pose})
                     continue
                 if graph in ("txt2img", "reference", "reference2"):
                     continue
@@ -477,7 +532,7 @@ def expand(spec: dict) -> list[dict]:
         if r.get("family", "sdxl") != "sdxl":
             bits.insert(2, r["family"])
             bits += [b for b in ({"fp8_e4m3fn": "fp8", "default": "bf16"}.get(r.get("dtype") or "", ""), f"st{r['steps']}" if r.get("steps") else "") if b]
-        bits += [b for b in (r["crop"], r.get("head"), r["describe"], r["lora"], r.get("lora_strength") and f"lw{r['lora_strength']}", r.get("aspect"), r.get("neg"), r.get("nag") and f"nag{r['nag']}") if b and b not in ("full", "generic", "square", "standard")]
+        bits += [b for b in (r["crop"], r.get("head"), r["describe"], r["lora"], r.get("lora_strength") and f"lw{r['lora_strength']}", r.get("aspect"), r.get("neg"), r.get("nag") and f"nag{r['nag']}", r.get("pose")) if b and b not in ("full", "generic", "square", "standard")]
         if r.get("control_strength"):
             bits.append(f"cn{r['control_strength']}e{r['control_end']}")
         if r["weight"] is not None:

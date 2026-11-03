@@ -1,0 +1,60 @@
+{
+  "_": "Batch 25a — a female painted sitting with her anatomy named (Logan 2026-11-02: \"if male, standing, if female sitting and maybe say with nipples\"; \"correct anatomy on males is fine. just no male sheaths on females\"; ADR-0004 as amended 2026-10-15, decision 4): 14a's Ducky and 14b's Beetle exactly as production paints them — klein-v1, both photos' grown subject and the grown head, the listing words, landscape, the same eight seeds, no LoRA — sitting in three-quarter view with two wordings of her nipples (storybook_sit34_nipples, storybook_sit34_teats). 14a–14b's sitting paintings at the same seeds are the before; Plum's standing ones are the male half, already painted.",
+  "animals": {
+    "Ducky": {
+      "kind": "dog",
+      "describe": "female tan pit bull mix",
+      "two": [
+        "PXL_20241229_195311064.RAW-01.COVER.jpg",
+        "PXL_20250621_160612271.PORTRAIT.jpg"
+      ]
+    },
+    "Beetle": {
+      "kind": "dog",
+      "describe": "female bloodhound",
+      "two": [
+        "IMG_2931.jpg",
+        "IMG_3545.jpg"
+      ]
+    }
+  },
+  "photos": [
+    "two"
+  ],
+  "crops": [
+    "grownsubject"
+  ],
+  "aspect": [
+    "landscape"
+  ],
+  "describe": [
+    "listing"
+  ],
+  "families": [
+    "kleinbfl8"
+  ],
+  "graphs": [
+    "reference2"
+  ],
+  "prompts": [
+    "storybook_sit34_nipples",
+    "storybook_sit34_teats"
+  ],
+  "denoise": [],
+  "weights": [],
+  "weight_types": [],
+  "end_at": [],
+  "seeds": [
+    11,
+    222,
+    4096,
+    8128,
+    17,
+    404,
+    1729,
+    6174
+  ],
+  "heads": [
+    "grownhead"
+  ]
+}

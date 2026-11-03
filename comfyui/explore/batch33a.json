@@ -1,0 +1,64 @@
+{
+  "_": "Batch 33a — the portrait with the name, the crew: Logan 2026-11-02: \"yeah run the name board portrait test. i really wanted to get the full body to work but then i forgot about horses and pigs and all that\" — the sign's full body is out (batches 27–32), the portrait passes (22 of 24 on the crew, 33 of 40 on new dogs). The head-and-shoulders portrait with a small blank board below its chest (storybook_bust_board) or hung on a cord around its neck (storybook_bust_necksign), the name carved in after by comfyui/signname.py. klein-v1 as production paints, no LoRA, at batch 31's four seeds (23, 333, 1111, 3000).",
+  "animals": {
+    "Plum": {
+      "kind": "dog",
+      "describe": "male grey cane corso puppy",
+      "two": [
+        "PXL_20250423_185424061.PORTRAIT.jpg",
+        "downloadfile.jpg"
+      ]
+    },
+    "Ducky": {
+      "kind": "dog",
+      "describe": "female tan pit bull mix",
+      "two": [
+        "PXL_20241229_195311064.RAW-01.COVER.jpg",
+        "PXL_20250621_160612271.PORTRAIT.jpg"
+      ]
+    },
+    "Beetle": {
+      "kind": "dog",
+      "describe": "female bloodhound",
+      "two": [
+        "IMG_2931.jpg",
+        "IMG_3545.jpg"
+      ]
+    }
+  },
+  "photos": [
+    "two"
+  ],
+  "crops": [
+    "grownsubject"
+  ],
+  "aspect": [
+    "landscape"
+  ],
+  "describe": [
+    "listing"
+  ],
+  "families": [
+    "kleinbfl8"
+  ],
+  "graphs": [
+    "reference2"
+  ],
+  "prompts": [
+    "storybook_bust_board",
+    "storybook_bust_necksign"
+  ],
+  "denoise": [],
+  "weights": [],
+  "weight_types": [],
+  "end_at": [],
+  "seeds": [
+    23,
+    333,
+    1111,
+    3000
+  ],
+  "heads": [
+    "grownhead"
+  ]
+}

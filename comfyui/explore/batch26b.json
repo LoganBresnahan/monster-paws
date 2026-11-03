@@ -1,0 +1,63 @@
+{
+  "_": "Batch 26b — the same silhouette as the starting image instead: 14a's Ducky and 14b's Beetle exactly as production paints them — klein-v1, both photos' grown subject and the grown head, the listing words, landscape, the same eight seeds, no LoRA. A female only sits or lies down (Logan 2026-11-02: \"males can do any pose, females should only sit or laydown\"; ADR-0004 as amended 2026-10-15, decision 4). Bronco's grey silhouette on the landscape canvas, painted over at denoise 0.8 and 0.65 (poses bronco-init80, bronco-init65; at four steps those skip one of five and two of six steps), the prompt the down without its tucked hind legs (storybook_down34_paws).",
+  "animals": {
+    "Ducky": {
+      "kind": "dog",
+      "describe": "female tan pit bull mix",
+      "two": [
+        "PXL_20241229_195311064.RAW-01.COVER.jpg",
+        "PXL_20250621_160612271.PORTRAIT.jpg"
+      ]
+    },
+    "Beetle": {
+      "kind": "dog",
+      "describe": "female bloodhound",
+      "two": [
+        "IMG_2931.jpg",
+        "IMG_3545.jpg"
+      ]
+    }
+  },
+  "photos": [
+    "two"
+  ],
+  "crops": [
+    "grownsubject"
+  ],
+  "aspect": [
+    "landscape"
+  ],
+  "describe": [
+    "listing"
+  ],
+  "families": [
+    "kleinbfl8"
+  ],
+  "graphs": [
+    "reference2"
+  ],
+  "prompts": [
+    "storybook_down34_paws"
+  ],
+  "denoise": [],
+  "weights": [],
+  "weight_types": [],
+  "end_at": [],
+  "seeds": [
+    11,
+    222,
+    4096,
+    8128,
+    17,
+    404,
+    1729,
+    6174
+  ],
+  "heads": [
+    "grownhead"
+  ],
+  "poses": [
+    "bronco-init80",
+    "bronco-init65"
+  ]
+}

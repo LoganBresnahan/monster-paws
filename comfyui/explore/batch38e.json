@@ -1,0 +1,58 @@
+{
+  "_": "Batch 38e — the shoulders, Ducky and Beetle: Logan 2026-11-03: \"one issue we have sometimes is that the shoulders often look too wide. its very evident on plum. He almost looks like a puppy head on a human body\"; then \"so same goes for all dogs btw. sometimes the shoulders are just too wide.\" Batch 38d's two framings without \"head-and-shoulders\" (storybook_head, storybook_bust34) on every other dog, at batch 35's four strongest seeds (23, 333, 1111, 3000), whose short paintings are the before; each dog's best words so far (`best`): its listing words, or for Max and Duke the breed with what the photo shows (batch 36c's traits_breed, Logan's best of three).",
+  "animals": {
+    "Ducky": {
+      "kind": "dog",
+      "describe": "female tan pit bull mix",
+      "two": [
+        "PXL_20241229_195311064.RAW-01.COVER.jpg",
+        "PXL_20250621_160612271.PORTRAIT.jpg"
+      ],
+      "best": "female tan pit bull mix"
+    },
+    "Beetle": {
+      "kind": "dog",
+      "describe": "female bloodhound",
+      "two": [
+        "IMG_2931.jpg",
+        "IMG_3545.jpg"
+      ],
+      "best": "female bloodhound"
+    }
+  },
+  "photos": [
+    "two"
+  ],
+  "crops": [
+    "grownsubject"
+  ],
+  "aspect": [
+    "landscape"
+  ],
+  "describe": [
+    "best"
+  ],
+  "families": [
+    "kleinbfl8"
+  ],
+  "graphs": [
+    "reference2"
+  ],
+  "prompts": [
+    "storybook_head",
+    "storybook_bust34"
+  ],
+  "denoise": [],
+  "weights": [],
+  "weight_types": [],
+  "end_at": [],
+  "seeds": [
+    23,
+    333,
+    1111,
+    3000
+  ],
+  "heads": [
+    "grownhead"
+  ]
+}
