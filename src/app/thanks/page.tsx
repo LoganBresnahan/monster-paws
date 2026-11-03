@@ -162,6 +162,11 @@ export default async function ThanksPage({
       <Link href={listed ? `/animals/${listed.id}` : "/animals"} className={button}>
         {listed ? `Back to ${name}` : "See adoptable animals"}
       </Link>
+      {listed && (
+        <Link href="/animals" className="mx-auto mt-3 text-sm text-muted underline hover:text-foreground">
+          See more animals
+        </Link>
+      )}
 
       {tracker && <TrackerPixel src={tracker} />}
     </main>

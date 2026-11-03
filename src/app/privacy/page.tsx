@@ -48,6 +48,14 @@ export default function PrivacyPage() {
         <li>Every.org also tells us your name, your email and any address you gave them. We don&apos;t keep those.</li>
         <li>We set one cookie, so this browser can show your thank-you page. It lasts {INTENT_COOKIE_DAYS} days.</li>
       </ul>
+      <p className={paragraph}>
+        Your painting is our thank-you, and it should reach your inbox once it&apos;s ready. In rare cases, an error or
+        something out of our control can stop one being made or sent. If that happens, write to{" "}
+        <a href={`mailto:${CONTACT_EMAIL}`} className="underline hover:text-foreground">
+          {CONTACT_EMAIL}
+        </a>{" "}
+        and we&apos;ll sort it out. Your donation goes to the shelter either way.
+      </p>
 
       <h2 className={heading}>What we keep, and for how long</h2>
       <ul className={list}>
@@ -68,7 +76,7 @@ export default function PrivacyPage() {
 
       <h2 className={heading}>If a shelter withdraws permission</h2>
       <p className={paragraph}>
-        We stop offering gifts for its animals. A gift already made still gets its painting, and we delete the photos once
+        We stop offering gifts for its animals. A gift already made can still get its painting, and we delete the photos once
         those are done. Keepsakes already given to donors, meaning the animal&apos;s name, breed, age and painting, stay
         with those donors.
       </p>

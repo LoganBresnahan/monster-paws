@@ -1,0 +1,21 @@
+import { renderToStaticMarkup } from "react-dom/server";
+import { describe, expect, it } from "vitest";
+import PrivacyPage from "@/app/privacy/page";
+
+/** Logan approved these words on 2026-11-03: change them only with him (ADR-0035 question 7). */
+describe("the privacy page", () => {
+  const text = renderToStaticMarkup(PrivacyPage())
+    .replace(/<[^>]+>/g, "")
+    .replace(/&#x27;/g, "'");
+
+  it("says a painting should arrive, that rare errors can stop one, and where to write", () => {
+    expect(text).toContain(
+      "Your painting is our thank-you, and it should reach your inbox once it's ready. In rare cases, an error or something out of our control can stop one being made or sent. If that happens, write to hello@monsterpaws.org and we'll sort it out. Your donation goes to the shelter either way.",
+    );
+  });
+
+  it("never promises a painting flatly after a shelter withdraws", () => {
+    expect(text).toContain("A gift already made can still get its painting");
+    expect(text).not.toContain("still gets its painting");
+  });
+});

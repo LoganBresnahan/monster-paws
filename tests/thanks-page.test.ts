@@ -119,6 +119,12 @@ describe.skipIf(SKIP_DB_TESTS)("the thank-you page", () => {
     expect(html).toContain(`href="/animals/${animalId}"`);
   });
 
+  it("offers the full list beside a listed animal's page, so a donor can keep browsing", async () => {
+    const html = await render();
+    expect(html).toContain('href="/animals"');
+    expect(html).toContain("See more animals");
+  });
+
   it("closes the photo, the pixel and the link once the listing is gone: a gift outlives it (ADR-0015 decision 3)", async () => {
     await db.update(animals).set({ status: "adopted" });
     const html = await render();
@@ -126,6 +132,7 @@ describe.skipIf(SKIP_DB_TESTS)("the thank-you page", () => {
     expect(html).not.toContain(PIXEL.replace("https://", ""));
     expect(html).not.toContain(`href="/animals/${animalId}"`);
     expect(html).toContain("See adoptable animals");
+    expect(html).not.toContain("See more animals");
     expect(html).toContain(ADDRESS);
   });
 });
