@@ -7,6 +7,7 @@ import { isDisplayLicensed, pickLicensedDisplay } from "@/core/display";
 import { INTENT_COOKIE, INTENT_COOKIE_DAYS, intentDonorEmail, intentIdsOf, intentRef, thankYouIntent } from "@/core/donate/intent";
 import { donationsForIntents } from "@/core/donate/webhook";
 import { paintingMailState } from "@/core/email/painting-state";
+import { isSuppressed, suppressionKey } from "@/core/email/suppression";
 import { getDb } from "@/db/client";
 import { animalDisplay, animals } from "@/db/schema";
 import { speciesEmoji, TrackerPixel } from "@/ui/animal";
@@ -55,6 +56,9 @@ export default async function ThanksPage({
   const donorEmail = await intentDonorEmail(db, subject.intentId);
   const mail = await paintingMailState(db, subject.intentId);
   const mailGone = mail === "sent" || mail === "on-its-way";
+  const key = suppressionKey();
+  // Never promise a mail the sweep will refuse: it can't send here until the address changes (ADR-0027 as amended 2026-11-02, decision 7).
+  const blocked = mail === "not-sent" && Boolean(donorEmail) && key !== null && (await isSuppressed(db, donorEmail!, key));
   // The form only while a new address can still change where the mail goes (ADR-0027 as amended 2026-11-02, decision 4).
   const takesAddress = mail === "bounced" || (mail === "not-sent" && Boolean(donorEmail));
   const { problem, saved } = await searchParams;
@@ -117,10 +121,20 @@ export default async function ThanksPage({
         </p>
       )}
 
+      {mail === "held" && (
+        <p role="status" className="mt-4 font-semibold text-foreground">
+          We hit a problem sending {name}&apos;s painting, and we&apos;re looking into it. You can write to{" "}
+          <a className="underline" href={`mailto:${CONTACT_EMAIL}`}>
+            {CONTACT_EMAIL}
+          </a>
+          .
+        </p>
+      )}
+
       {mail === "not-sent" && (
         <p className="mt-4 text-muted">
           We&apos;re still teaching our painter, so there&apos;s no watercolour of {name} yet and no date for one.
-          {donorEmail && (
+          {donorEmail && !blocked && (
             <>
               {" "}
               When it&apos;s ready we&apos;ll email it to <span className="font-semibold text-foreground">{donorEmail}</span>.
@@ -144,7 +158,7 @@ export default async function ThanksPage({
 
       {/* In place of a confirmation email: the page is how a typo gets caught (ADR-0027 as amended 2026-11-02). */}
       {takesAddress && (
-        <details open={Boolean(problem) || mail === "bounced"} className="mt-3 text-sm text-muted">
+        <details open={Boolean(problem) || mail === "bounced" || blocked} className="mt-3 text-sm text-muted">
           <summary className="cursor-pointer underline hover:text-foreground">Not the right address?</summary>
           <form action={fixDonorEmail} className="mx-auto mt-3 flex max-w-md flex-col gap-2 sm:flex-row">
             <input type="hidden" name="gift" value={intentRef(subject.intentId)} />
@@ -157,7 +171,7 @@ export default async function ThanksPage({
                 autoComplete="email"
                 maxLength={254}
                 defaultValue={donorEmail ?? ""}
-                aria-invalid={problem === "email" || problem === "suppressed" || undefined}
+                aria-invalid={problem === "email" || problem === "suppressed" || blocked || undefined}
                 className="block w-full rounded-cuddly border-2 border-paw/30 bg-background px-4 py-2 text-foreground outline-none focus:border-leaf"
               />
             </label>
@@ -173,7 +187,7 @@ export default async function ThanksPage({
               That doesn&apos;t look like an email address. Please check it.
             </p>
           )}
-          {problem === "suppressed" && (
+          {(problem === "suppressed" || blocked) && (
             <p role="alert" className="mt-2 font-semibold text-foreground">
               We can&apos;t send email to that address, so {name}&apos;s painting wouldn&apos;t reach you. This can happen when an
               earlier message bounced or was marked as spam, or you unsubscribed. Please use another address, or write to {CONTACT_EMAIL} and

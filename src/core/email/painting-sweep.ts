@@ -4,7 +4,7 @@ import type { Db } from "@/db/client";
 import { donationIntents, keepsake, keepsakeFact, paintingEmailSends } from "@/db/schema";
 import { type ArtReader, artReaderFromEnv } from "@/core/email/art-source";
 import { emailLinkOrigin, renderPaintingEmail } from "@/core/email/painting-email";
-import { settleEarlyDelivery } from "@/core/email/resend-webhook";
+import { settleEarlyEvent } from "@/core/email/resend-webhook";
 import { chooseEmailSender, EmailSendError, type EmailSender } from "@/core/email/sender";
 import { exactDigest, isSuppressed, suppressionKey, unsubscribeToken } from "@/core/email/suppression";
 import { FACT, type ArtFact } from "@/core/keepsake";
@@ -34,6 +34,8 @@ export interface SweepOptions {
 /** Counts and codes only, never an address (ADR-0010). */
 export interface SweepReport {
   sent: number;
+  /** a bounce that beat the write of `provider_id`: a person acts on it, as on any other bounce */
+  bounced: number;
   suppressed: number;
   /** claimed, not known to have gone, and past the idempotency window: a person looks */
   stale: number;
@@ -134,7 +136,7 @@ async function claimSend(db: Db, keepsakeId: number, now: Date): Promise<Claim> 
 export async function sendOwedPaintings(db: Db, options: SweepOptions): Promise<SweepReport> {
   const { key, sender, origin, readArt } = options;
   const now = options.now ?? new Date();
-  const report: SweepReport = { sent: 0, suppressed: 0, stale: 0, held: 0, incomplete: 0, artUnreadable: 0, failures: {} };
+  const report: SweepReport = { sent: 0, bounced: 0, suppressed: 0, stale: 0, held: 0, incomplete: 0, artUnreadable: 0, failures: {} };
 
   for (const owed of options.owed) {
     if (await isSuppressed(db, owed.to, key)) {
@@ -177,8 +179,8 @@ export async function sendOwedPaintings(db: Db, options: SweepOptions): Promise<
         .update(paintingEmailSends)
         .set({ sentAt: new Date(), providerId: sent.id })
         .where(eq(paintingEmailSends.keepsakeId, owed.keepsakeId));
-      await settleEarlyDelivery(db, sent.id, owed.to);
       report.sent++;
+      if ((await settleEarlyEvent(db, sent.id, owed.to)) === "bounced") report.bounced++;
     } catch (err) {
       const failure = err instanceof EmailSendError ? err : new EmailSendError("unexpected", "unknown", true);
       report.failures[failure.code] = (report.failures[failure.code] ?? 0) + 1;

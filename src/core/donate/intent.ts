@@ -222,7 +222,7 @@ export type AddressFix = "saved" | "resending" | "already-sent" | "erased";
 export async function correctDonorEmail(db: Db, intentId: string, donorEmail: string): Promise<AddressFix> {
   return db.transaction(async (tx) => {
     const state = await paintingMailState(tx, intentId);
-    if (state === "on-its-way" || state === "sent") return "already-sent";
+    if (state === "on-its-way" || state === "sent" || state === "held") return "already-sent";
     if (state === "bounced") {
       await tx.update(donationIntents).set({ donorEmail }).where(eq(donationIntents.id, intentId));
       await tx

@@ -29,6 +29,12 @@ export function mediaArtReader(baseUrl: string, get: typeof fetch = fetch): ArtR
   return async (art, index) => {
     // Checked before any URL is built, as the share page checks it (ADR-0036 decision 2).
     if (!art.shareToken || !SHARE_TOKEN.test(art.shareToken)) throw new Error("share token has the wrong shape");
+    // The manifest goes up last and comes down first (ADR-0036 decisions 10 and 11), so only with it is the
+    // mail's "view the paintings" link live: never mail once per set on the images alone.
+    if (index === 0) {
+      const manifest = await get(`${base}/share/${art.shareToken}/manifest.json`, { signal: AbortSignal.timeout(30_000) });
+      if (!manifest.ok) throw new Error(`share page not published: ${manifest.status}`);
+    }
     const response = await get(`${base}/share/${art.shareToken}/${index + 1}.jpg`, { signal: AbortSignal.timeout(30_000) });
     if (!response.ok) throw new Error(`painting not readable: ${response.status}`);
     if (Number(response.headers.get("content-length") ?? 0) > MAX_PAINTING_BYTES) throw new Error("painting too large");

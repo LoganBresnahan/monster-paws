@@ -41,7 +41,7 @@ export interface RenderedAsk {
 export const DEFAULT_ORIGIN = "https://monsterpaws.org";
 
 /** Our own painting, hosted by us — never a stored copy of a shelter's listing photo (ADR-0029 §3); never move `src/app/opengraph-image.jpg`, since mail already sent keeps loading this URL. */
-export const ASK_IMAGE = { path: "/opengraph-image.jpg", alt: "Beetle, a bloodhound, painted in watercolour: a Monster Paws keepsake." };
+export const ASK_IMAGE = { path: "/opengraph-image.jpg", alt: "Beetle, a bloodhound, painted in watercolour: a Monster Paws painting." };
 
 /** Every URL in the prose is a link in the HTML, so a reader taps it; the text part keeps the bare URL. Runs on escaped text. */
 function linkify(escaped: string): string {
@@ -82,7 +82,7 @@ export function renderAsk(input: AskInput): RenderedAsk {
       link: shelter.shelterViewUrl,
     },
     {
-      text: `The idea: a donor picks one of your animals, gives what they like, and gets a small painted keepsake of that animal. You can see it with our own pets at ${origin}/#crew, and walk through the whole thing at ${origin}/demo.`,
+      text: `The idea: a donor picks one of your animals and gives what they like to you. As our thank-you, we try to send them a small painting of that animal. You can see it with our own pets at ${origin}/#crew, and walk through the whole thing at ${origin}/demo.`,
     },
   ];
 
@@ -101,7 +101,7 @@ export function renderAsk(input: AskInput): RenderedAsk {
   }
 
   paragraphs.push({
-    text: `One plain term, so there is no surprise later: if you withdraw permission, we stop offering gifts for your animals. A gift already made can still get its painting, and we delete the photos once those are done. Keepsakes already given to donors — the animal's name, breed, age and painting — stay with those donors.`,
+    text: `One plain term, so there is no surprise later: if you withdraw permission, we stop taking donations for your animals and take down their public pages. For a donation already made, we still try to paint our thank-you, and we delete the photos once that's done. Paintings already sent, with the animal's name, breed and age, can't be recalled.`,
   });
 
   if (input.timing) {

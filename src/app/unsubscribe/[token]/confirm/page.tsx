@@ -38,16 +38,16 @@ export default async function UnsubscribeConfirmPage({
         <>
           <h1 className="mt-8 text-3xl font-bold">Done</h1>
           <p className="mt-4 text-lg text-muted">
-            We won&apos;t email this address again, and any paintings still on their way won&apos;t come by email. If you
-            change your mind, write to {contact}.
+            We won&apos;t email this address again, even about a painting we&apos;re still working on. If you change your
+            mind, write to {contact}.
           </p>
         </>
       ) : (
         <>
           <h1 className="mt-8 text-3xl font-bold">Stop emails from Monster Paws?</h1>
           <p className="mt-4 text-lg text-muted">
-            We won&apos;t email this address again. That includes any paintings still on their way, and we&apos;ll erase
-            this address from any gift still waiting on one.
+            We won&apos;t email this address again, even about a painting we&apos;re still working on, and we&apos;ll erase
+            this address from any donation it&apos;s on.
           </p>
           <form method="post" action={`/unsubscribe/${token}`}>
             <input type="hidden" name="confirm" value="yes" />

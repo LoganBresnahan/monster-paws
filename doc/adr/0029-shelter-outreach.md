@@ -248,3 +248,12 @@ sentence false; Logan: "we need to get rid of "donations can reach you today"".
 - `claim` is read from `shelter_nonprofits`, so a shelter gets the one-question ask
   only after a person confirms its match. Until then it counts as unknown and gets
   the claim line, even if its profile is claimed.
+
+## Note (2026-11-04): the ask's words after Logan's wording audit
+
+Logan's audit (2026-11-04: "approved, for the wording") changes the words the amendment above quotes, which stays as recorded.
+The idea is now: "a donor picks one of your animals and gives what they like to you. As our thank-you, we try to send them a
+small painting of that animal." The term is now: "if you withdraw permission, we stop taking donations for your animals and
+take down their public pages. For a donation already made, we still try to paint our thank-you, and we delete the photos once
+that's done. Paintings already sent, with the animal's name, breed and age, can't be recalled." The 46 emails already sent keep
+the older words.

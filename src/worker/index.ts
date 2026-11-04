@@ -201,16 +201,17 @@ function startPaintingEmailSweep(): () => void {
     try {
       const report = await runPaintingEmailTick(getDb(DATABASE_URL), process.env, { afterKeepsakeId: after });
       after = report.lastKeepsakeId ?? undefined;
-      const { sent, suppressed, stale, held, incomplete, artUnreadable, failures } = report;
+      const { sent, bounced, suppressed, stale, held, incomplete, artUnreadable, failures } = report;
       const failureCodes = Object.keys(failures);
-      if (sent + suppressed + stale + held + incomplete + artUnreadable > 0 || failureCodes.length > 0) {
+      const waiting = bounced + suppressed + stale + incomplete + artUnreadable;
+      if (sent + held + waiting > 0 || failureCodes.length > 0) {
         console.log(JSON.stringify({ event: "painting_email.sweep", ...report }));
       }
       const now = Date.now();
-      if ((failureCodes.length > 0 || stale + incomplete + artUnreadable > 0) && now - lastAlert >= WEBHOOK_REPEAT_ALERT_MS) {
+      if ((failureCodes.length > 0 || waiting > 0) && now - lastAlert >= WEBHOOK_REPEAT_ALERT_MS) {
         lastAlert = now;
         Sentry.captureMessage(
-          `painting email waiting: ${stale} stale, ${incomplete} incomplete, ${artUnreadable} unreadable, failures ${failureCodes.join(",") || "none"}`,
+          `painting email waiting: ${bounced} bounced, ${suppressed} suppressed, ${stale} stale, ${incomplete} incomplete, ${artUnreadable} unreadable, failures ${failureCodes.join(",") || "none"}`,
           { level: "error", tags: { job: "painting_email.sweep" } },
         );
       }

@@ -4,7 +4,8 @@ import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } 
 import ThanksPage from "@/app/thanks/page";
 import { intentRef } from "@/core/donate/intent";
 import { closeDb, type Db } from "@/db/client";
-import { keepsake, paintingEmailSends, animalDisplay, animalIdentities, animals, donationIntents } from "@/db/schema";
+import { keepsake, paintingEmailSends, emailSuppressions, animalDisplay, animalIdentities, animals, donationIntents } from "@/db/schema";
+import { exactDigest } from "@/core/email/suppression";
 import { SKIP_DB_TESTS, TEST_DATABASE_URL, testDb, truncateCorpus, truncateDonor } from "./support/db";
 
 /**
@@ -131,10 +132,28 @@ describe.skipIf(SKIP_DB_TESTS)("the thank-you page", () => {
       expect(html).not.toContain("teaching our painter");
     });
 
+    it("a refusal that isn't a bounce says there's a problem, never that it's on its way", async () => {
+      await sendRow({ refusedCode: "validation_error" });
+      const html = await render();
+      expect(html).toContain("hit a problem");
+      expect(html).not.toContain("on its way");
+      expect(html).not.toContain('name="email"');
+    });
+
     it("says a late change wasn't saved, in the words that are true", async () => {
       await sendRow({ sentAt: new Date() });
       expect(await render({ problem: "sent" })).toContain("wasn&#x27;t saved");
     });
+  });
+
+  it("a gift whose address is on the never-mail list asks for another, and never promises a mail", async () => {
+    vi.stubEnv("EMAIL_SUPPRESSION_KEY", "test-key");
+    await db.insert(emailSuppressions).values({ emailHmac: exactDigest(ADDRESS, "test-key"), reason: "bounce" });
+    const html = await render();
+    vi.unstubAllEnvs();
+    expect(html).toContain("We can&#x27;t send email to that address");
+    expect(html).toContain('name="email"');
+    expect(html).not.toContain("we&#x27;ll email it");
   });
 
   it("refuses a suppressed address in decision 7's words", async () => {

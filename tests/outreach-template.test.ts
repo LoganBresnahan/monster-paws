@@ -48,13 +48,17 @@ describe("ADR-0029 the ask", () => {
     expect(ask.text).toContain("confirm the photos are yours to license");
   });
 
-  it("states the withdrawal term up front: a gift already made can still get its painting, and the photos are deleted once those are done (ADR-0022 as amended 2026-11-02, ADR-0035)", () => {
-    expect(ask.text).toContain("A gift already made can still get its painting, and we delete the photos once those are done.");
+  it("states the withdrawal term up front, as Logan approved it 2026-11-04: nothing there is give-to-get", () => {
+    expect(ask.text).toContain("we stop taking donations for your animals and take down their public pages.");
+    expect(ask.text).toContain("For a donation already made, we still try to paint our thank-you, and we delete the photos once that's done.");
+    expect(ask.text).toContain("Paintings already sent, with the animal's name, breed and age, can't be recalled.");
     expect(ask.text).not.toContain("paintings down");
-    expect(ask.text).toContain(
-      "Keepsakes already given to donors — the animal's name, breed, age and painting — stay with those donors.",
-    );
     expect(ask.text).not.toMatch(/photo and artwork/);
+  });
+
+  it("never says a donor gets a painting in exchange, or calls a donation a gift (Logan, 2026-11-04)", () => {
+    expect(ask.text).toContain("As our thank-you, we try to send them a small painting of that animal.");
+    expect(ask.text).not.toMatch(/\bgifts?\b|\bgets a\b|keepsake/i);
   });
 
   it("carries the claim line, with the profile link, when the profile is unclaimed or unknown — and not when claimed", () => {
@@ -96,7 +100,7 @@ describe("ADR-0029 the ask", () => {
     for (const sentence of [
       "We keep $0.",
       "sent to third-party services to be processed",
-      "stay with those donors",
+      "take down their public pages",
       `reply "remove"`,
     ]) {
       expect(ask.html).toContain(sentence.replace(/"/g, "&quot;"));

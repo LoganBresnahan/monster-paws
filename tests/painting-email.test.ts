@@ -33,15 +33,29 @@ describe("the painting email (ADR-0027 as amended 2026-11-02, ADR-0035)", () => 
     expect(words).not.toMatch(/\$\d|\bamount\b|received|your donation|choose|pick one|favou?rite/);
   });
 
+  it("never says gift, and never that a painting is theirs (Logan, 2026-11-04)", () => {
+    for (const variant of [mail, renderPaintingEmail({ ...input, animalName: "A310627" })]) {
+      expect(`${variant.subject} ${variant.text} ${variant.html}`.toLowerCase()).not.toMatch(/\bgifts?\b|yours|your painting|to keep/);
+    }
+  });
+
+  it("uses Logan's approved words", () => {
+    expect(mail.subject).toBe("We painted Beetle to say thank you");
+    expect(mail.text).toContain("We painted Beetle four ways as our thank-you.");
+    expect(mail.text).toContain("They're attached to this email too.");
+    expect(mail.html).toContain("You can view the paintings here");
+    expect(mail.text).toContain("You're getting this because this address was entered when a donation to Beetle's shelter was started on Monster Paws.");
+  });
+
   it("opens with a title, and the plain text reads whole without it", () => {
     expect(mail.html).toMatch(/<h1 [^>]*font-size: 28px[^>]*>Thank you for thinking of Beetle\.<\/h1>/);
-    expect(mail.text.startsWith("Thank you for thinking of Beetle. We painted Beetle four ways, and they're all yours to keep.")).toBe(true);
+    expect(mail.text.startsWith("Thank you for thinking of Beetle. We painted Beetle four ways as our thank-you.")).toBe(true);
   });
 
   it("says why this address got it, in the text and the HTML", () => {
-    const why = "You're getting this because this address was entered when a gift for Beetle was started on Monster Paws.";
+    const why = "You're getting this because this address was entered when a donation to Beetle's shelter was started on Monster Paws.";
     expect(mail.text).toContain(why);
-    expect(mail.html).toContain(why.replace("'", "&#39;"));
+    expect(mail.html).toContain(why.replaceAll("'", "&#39;"));
   });
 
   it("has a Share button to the keepsake's page, and none without a token, never a dead link", () => {
@@ -50,7 +64,7 @@ describe("the painting email (ADR-0027 as amended 2026-11-02, ADR-0035)", () => 
     const none = renderPaintingEmail({ ...input, shareToken: null });
     expect(none.html).not.toContain("/share/");
     expect(none.text).not.toContain("/share/");
-    expect(none.html).not.toContain("Share ");
+    expect(none.html).not.toContain("You can view the paintings here");
   });
 
   it("has a one-click unsubscribe header and a link in the body, both to the same URL", () => {
@@ -76,17 +90,17 @@ describe("the painting email (ADR-0027 as amended 2026-11-02, ADR-0035)", () => 
 describe("a listing's name in the email", () => {
   it("drops a listing's notes everywhere the name goes", () => {
     const mail = renderPaintingEmail({ ...input, animalName: "Sparrow (Courtesy Post) Foster or Adopt Me!" });
-    expect(mail.subject).toBe("Your paintings of Sparrow");
+    expect(mail.subject).toBe("We painted Sparrow to say thank you");
     expect(mail.attachments[0].filename).toBe("sparrow-painting-1.jpg");
     expect(`${mail.text} ${mail.html}`).not.toMatch(/courtesy|adopt me/i);
   });
 
   it("uses no name at all when none survives, and still sends the paintings", () => {
     const mail = renderPaintingEmail({ ...input, animalName: "URGENT FOSTER HOMES NEEDED FOR CATS" });
-    expect(mail.subject).toBe("Your paintings from Monster Paws");
+    expect(mail.subject).toBe("We painted your chosen animal to say thank you");
     expect(mail.attachments).toHaveLength(4);
     expect(mail.text).toContain("the animal you chose");
-    expect(mail.text).toContain("a gift for an animal was started");
+    expect(mail.text).toContain("a donation to a shelter was started");
     expect(`${mail.subject} ${mail.text} ${mail.html}`).not.toMatch(/urgent|null|undefined/i);
   });
 });

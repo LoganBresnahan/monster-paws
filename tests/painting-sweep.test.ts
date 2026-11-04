@@ -190,6 +190,24 @@ describe.skipIf(SKIP_DB_TESTS)("the painting email sweep (ADR-0035)", () => {
     expect(intent.donorEmail).toBeNull();
   });
 
+  it("marks a bounce that beat the send's record as bounced, and reports it", async () => {
+    await db.insert(resendWebhookEvents).values({ svixId: "m1", eventType: "email.bounced", emailId: "re_early" });
+    const report = await run(sending(async () => ({ id: "re_early" })));
+    expect(report.bounced).toBe(1);
+    expect((await row()).refusedCode).toBe("bounced");
+    const [intent] = await db.select().from(donationIntents).where(eq(donationIntents.id, "intent-a"));
+    expect(intent.donorEmail).toBeNull();
+  });
+
+  it("never reads a soft bounce that beat the send's record as permanent", async () => {
+    await receiveResendEvent(db, "m1", JSON.stringify({ type: "email.bounced", data: { email_id: "re_early", to: [ADDRESS], bounce: { type: "Transient" } } }), KEY);
+    const report = await run(sending(async () => ({ id: "re_early" })));
+    expect(report.bounced).toBe(0);
+    expect((await row()).refusedCode).toBeNull();
+    const [intent] = await db.select().from(donationIntents).where(eq(donationIntents.id, "intent-a"));
+    expect(intent.donorEmail).toBe(ADDRESS);
+  });
+
   it("releases the claim when nothing left and a retry can work, so the window starts again", async () => {
     const sender = sending(async () => {
       throw new EmailSendError("rate_limit_exceeded", "no", true);

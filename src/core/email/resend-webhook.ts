@@ -75,7 +75,8 @@ export async function receiveResendEvent(db: Db, svixId: string, rawBody: string
   return db.transaction(async (tx) => {
     const fresh = await tx
       .insert(resendWebhookEvents)
-      .values({ svixId, eventType: type, emailId })
+      // A soft bounce under its own name, so `settleEarlyEvent` can never read one as permanent.
+      .values({ svixId, eventType: type === "email.bounced" && data?.bounce?.type !== "Permanent" ? "email.bounced.soft" : type, emailId })
       .onConflictDoNothing()
       .returning({ svixId: resendWebhookEvents.svixId });
     if (fresh.length === 0) return "replay";
@@ -134,23 +135,35 @@ export async function receiveResendEvent(db: Db, svixId: string, rawBody: string
 }
 
 /**
- * Resend can report a delivery before the sender has written `provider_id`: the event then found no
- * gift and its `svix-id` is spent, so no retry would ever erase the address. Called straight after that
- * write, this finishes the job.
+ * Resend can report on a mail before the sender has written `provider_id`: the event then found no
+ * gift and its `svix-id` is spent, so no retry would ever act on it. Called straight after that write,
+ * this finishes the job. A bounce wins over a delivery.
  */
-export async function settleEarlyDelivery(db: Db, emailId: string, sentTo: string): Promise<void> {
-  const [early] = await db
-    .select({ svixId: resendWebhookEvents.svixId })
+export async function settleEarlyEvent(db: Db, emailId: string, sentTo: string): Promise<"bounced" | "erased" | null> {
+  const early = await db
+    .select({ eventType: resendWebhookEvents.eventType })
     .from(resendWebhookEvents)
-    .where(and(eq(resendWebhookEvents.emailId, emailId), eq(resendWebhookEvents.eventType, "email.delivered")))
-    .limit(1);
-  if (!early) return;
+    .where(
+      and(
+        eq(resendWebhookEvents.emailId, emailId),
+        inArray(resendWebhookEvents.eventType, ["email.delivered", "email.bounced", "email.suppressed"]),
+      ),
+    );
+  if (early.length === 0) return null;
   const intentId = await intentOfEmail(db, emailId);
-  if (!intentId) return;
+  if (!intentId) return null;
   const [intent] = await db.select({ donorEmail: donationIntents.donorEmail }).from(donationIntents).where(eq(donationIntents.id, intentId));
-  if (!intent?.donorEmail || !sameAddress(intent.donorEmail, sentTo)) return;
+  const stillThisAddress = Boolean(intent?.donorEmail) && sameAddress(intent.donorEmail!, sentTo);
+
+  if (early.some((event) => event.eventType !== "email.delivered")) {
+    if (stillThisAddress) await db.update(donationIntents).set({ donorEmail: null }).where(eq(donationIntents.id, intentId));
+    await db.update(paintingEmailSends).set({ refusedCode: BOUNCED_CODE }).where(eq(paintingEmailSends.providerId, emailId));
+    return "bounced";
+  }
+  if (!stillThisAddress) return null;
   await db
     .update(donationIntents)
     .set({ donorEmail: null })
     .where(and(eq(donationIntents.id, intentId), isNull(donationIntents.accountId)));
+  return "erased";
 }

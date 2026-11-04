@@ -311,7 +311,9 @@ the send's own detail, except the first, which changes decision 8.
   `npm run email -- bounced | readdress` is the by-hand resend for a donor without that browser.
 - **The words are Logan's.** He approved the email's on 2026-11-03 ("yes email wording is good"), having asked for its title,
   then the unsubscribe page, `/privacy`'s marker line and the three `/thanks` sentences ("yeah those are fine"), and ADR-0027's
-  decision 7 words with "or you unsubscribed" added, as question 6 says ("yes to unsubscribe workind").
+  decision 7 words with "or you unsubscribed" added, as question 6 says ("yes to unsubscribe workind"). His wording audit then
+  changed the mail, the unsubscribe page and the ask: no "gift" a reader sees, nothing saying a painting is theirs, and the
+  painting as our thank-you, which we try to make ("approved, for the wording", 2026-11-04).
 - **The sweep walks the owed list, a batch a tick.** Gifts that can't send yet, a suppressed address, a set not yet published,
   would otherwise hold every place and stop all painting mail with nothing reported. An erased address isn't owed at all.
   What keeps waiting reports at most hourly. A bad API key or a spent quota retries, since it says nothing about a gift.

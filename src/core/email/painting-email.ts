@@ -35,8 +35,9 @@ function fileStem(animalName: string): string {
 
 /**
  * Never an amount, and never that money arrived: the intent holds no amount, and a painting can start
- * before the webhook (ADR-0035, decision 10). Never "choose one": all four are the donor's
- * (ADR-0004 as amended 2026-10-14). Nothing here may vary between attempts, or a retry under the same
+ * before the webhook (ADR-0035, decision 10). Never "choose one", and never "gift" or that a painting
+ * is theirs: the donation is the gift to the shelter, and the painting is our thank-you (Logan,
+ * 2026-11-04). Nothing here may vary between attempts, or a retry under the same
  * idempotency key is refused as a different body.
  */
 export function renderPaintingEmail(input: PaintingEmailInput): OutgoingEmail {
@@ -47,12 +48,12 @@ export function renderPaintingEmail(input: PaintingEmailInput): OutgoingEmail {
   const shareUrl = input.shareToken ? `${origin}/share/${input.shareToken}` : null;
 
   const ways = count === 4 ? "four ways" : `${count} ways`;
-  const subject = name ? `Your paintings of ${name}` : "Your paintings from Monster Paws";
+  const subject = name ? `We painted ${name} to say thank you` : "We painted your chosen animal to say thank you";
   const title = `Thank you for thinking of ${name ?? "the animal you chose"}.`;
-  const lead = `We painted ${name ?? "them"} ${ways}, and they're all yours to keep.`;
-  const attached = "They're attached to this email too, so you can save them.";
-  const share = name ? `Share ${name}'s painting` : "Share the painting";
-  const why = `You're getting this because this address was entered when a gift for ${name ?? "an animal"} was started on Monster Paws.`;
+  const lead = `We painted ${name ?? "them"} ${ways} as our thank-you.`;
+  const attached = "They're attached to this email too.";
+  const share = "You can view the paintings here";
+  const why = `You're getting this because this address was entered when a donation to ${name ? `${name}'s shelter` : "a shelter"} was started on Monster Paws.`;
   const stop = "Don't want email from us?";
   const contact = "Questions? Write to hello@monsterpaws.org.";
 

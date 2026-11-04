@@ -12,6 +12,29 @@ describe("reading a painting from the media hostname (ADR-0036 decision 5)", () 
     expect((get.mock.calls[0] as unknown as [string])[0]).toBe(`https://media.monsterpaws.org/share/${TOKEN}/2.jpg`);
   });
 
+  it("refuses the first painting until the manifest is up, because the mail's link needs the page", async () => {
+    const calls: string[] = [];
+    const get = async (url: string) => {
+      calls.push(url);
+      return new Response(url.endsWith("manifest.json") ? null : Buffer.from("x"), { status: url.endsWith("manifest.json") ? 404 : 200 });
+    };
+    const reader = mediaArtReader("https://media.monsterpaws.org", get as unknown as typeof fetch);
+    await expect(reader(art, 0)).rejects.toThrow(/not published/);
+    expect(calls).toEqual([`https://media.monsterpaws.org/share/${TOKEN}/manifest.json`]);
+  });
+
+  it("checks the manifest once per set, on the first painting", async () => {
+    const calls: string[] = [];
+    const get = async (url: string) => {
+      calls.push(url);
+      return new Response(Buffer.from("x"));
+    };
+    const reader = mediaArtReader("https://media.monsterpaws.org", get as unknown as typeof fetch);
+    await reader(art, 0);
+    await reader(art, 1);
+    expect(calls.filter((url) => url.endsWith("manifest.json"))).toHaveLength(1);
+  });
+
   it("throws on a taken-down painting, which leaves it owed and never mails a stale copy", async () => {
     const get = async () => new Response(null, { status: 404 });
     await expect(mediaArtReader("https://media.monsterpaws.org", get as unknown as typeof fetch)(art, 0)).rejects.toThrow(/404/);
