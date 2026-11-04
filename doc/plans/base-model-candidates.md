@@ -3833,6 +3833,19 @@ On Logan's "commit and realign" (this stream's work landed on topdog as
 - **Logan's eye on the rehearsal:** "these look great". The head fallback
   and the listing words are recorded in ADR-0004 as amended 2026-11-03's
   later note, with these runs as the evidence.
+- **The rehearsal before Spencer's go-live, 2026-11-04 15:53–15:57 UTC**
+  (oplog 0029's prerequisite; the moderator: the job hadn't run since
+  `f3e140e` changed `run()`, the crops and the head rule). The same real
+  `generateArt` and `guardPainter` at `a081344`, the same database and store,
+  two Commons originals of one dog as a listing's photos,
+  `Viljo-koirarannalla-16` and `-19` ("nova scotia duck tolling retriever
+  dog"). The first try **skipped in 14 s on memory, Windows free 20.2 GB
+  after the cache drop**, under `LOAD_FREE_GB`, which a real gift would hit
+  the same way; the VM held 6 GB, so the shortfall was on Windows. The retry
+  a minute later **painted in 209 s**: photo 1 left out ("the animal fills
+  32% of it, under a close-up's 40%"), photo 2 a close-up whose subject stood
+  in for the head, the spec `one: ["2.jpg"]`, four marked, four JPEGs and
+  four art facts, the photos and crops deleted.
 
 ### The crew for the site — Logan's picks (2026-11-04)
 
