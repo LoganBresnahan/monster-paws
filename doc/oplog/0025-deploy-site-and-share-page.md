@@ -1,10 +1,10 @@
-# 0025: Deploy `<SHA>` — the site's demo pages, the share page and the keepsake schema, with nothing painted
+# 0025: Deploy `9d297c9` — the site's demo pages, the share page and the keepsake schema, with nothing painted
 
 Status: planned
 Planned: 2026-11-04 · Run: —
 Why: social sites build a preview only from a public page, so the share page has to be live (ADR-0036), and the home and `/demo` changes ship for the Meta
 demo (ADR-0028 as amended 2026-11-03). Roadmap: Accounts and donating (item 4)
-Commit deployed: `<SHA>`, topdog's head once the mail, the UI chat's real-paintings commit and the `/privacy` line are in; the moderator names it. This entry is amended to it before step 1, and CI is read on it.
+Commit deployed: `9d297c9`, topdog's head with the mail, the UI chat's real-paintings commit and the `/privacy` line in, named by the moderator, this entry following in its own push so the image tag is the code commit
 
 What changes on the droplet: the app and worker images; migrations `0017` and `0018`; `SHARE_BASE_URL=https://media.monsterpaws.org` in `.env`. Compose and the `Caddyfile` are unchanged since `12c451f` (prerequisite below), so Caddy doesn't restart.
 
@@ -14,18 +14,18 @@ Who does what: **Logan gives the word for step 1, in the session that runs it.**
 
 ## Prerequisites
 - [x] Logan's words for `/privacy`'s share-page line are in, 2026-11-04 ("yes" to the draft, directly), and pinned by `tests/privacy-page.test.ts`.
-- [ ] CI green on `<SHA>`: `verify`, `images`, `sourcemaps`. Both `images` and `sourcemaps` before rolling (ADR-0010 as amended 2026-09-30).
-- [ ] Ship bar on `<SHA>`: vitest twice, typecheck, `npm run e2e`.
-- [ ] `git diff 12c451f <SHA> -- Caddyfile docker-compose.prod.yml` prints nothing. If it prints, this entry gains Caddy's restart or a compose step before step 1.
+- [ ] CI green on `9d297c9`: `verify`, `images`, `sourcemaps`. Both `images` and `sourcemaps` before rolling (ADR-0010 as amended 2026-09-30).
+- [ ] Ship bar on `9d297c9`: vitest twice, typecheck, `npm run e2e`.
+- [x] `git diff 12c451f 9d297c9 -- Caddyfile docker-compose.prod.yml` prints nothing, read 2026-11-04. If it prints, this entry gains Caddy's restart or a compose step before step 1.
 - [ ] e2e against the published app image, Every.org set to production. Tell the moderator first. `e2e/share.spec.ts` skips under `PW_BASE_URL`, so step 6 covers the share routes live.
 
       docker run --rm -d --name mp-e2e --network host \
         -e DATABASE_URL=postgres://monsterpaws:monsterpaws@localhost:5432/monsterpaws_e2e \
         -e PORT=3200 -e HOSTNAME=127.0.0.1 -e EVERYORG_ENV=production -e EVERYORG_WEBHOOK_TOKEN=e2e-token \
-        ghcr.io/loganbresnahan/monster-paws-app:<FULL SHA>
+        ghcr.io/loganbresnahan/monster-paws-app:9d297c9d9f37942eb9939512d9b4039695979854
       PW_BASE_URL=http://127.0.0.1:3200 npm run e2e:prod
       docker stop mp-e2e
-- [ ] Migrations `0017` and `0018` rehearsed on a scratch restore of the newest dump, then dropped: 17 to 19, animals unchanged.
+- [ ] Migrations `0017` and `0018` rehearsed on a scratch restore of the newest dump, then dropped: read back at 19, animals unchanged. The dump may hold fewer than production's 17, as 0023's held 12.
 - [ ] `pass` unlocked by Logan.
 - [ ] Not within an hour of 06:00, 07:00 or 08:30 UTC, and nothing in the main checkout from 06:45 UTC until that night's log shows `== exit`.
 - [ ] The dev box free: nobody on `:3100`/`:3200` or `monsterpaws_e2e`, no batch on the card. The moderator holds the card.
@@ -59,13 +59,13 @@ Rollback: n/a — a read.
 
 ### 3. Pull the release and set the one new key, one SSH session; nothing restarts
     ssh root@$IP 'cd monsterpaws && git pull --ff-only &&
-      sed -i "s/^IMAGE_TAG=.*/IMAGE_TAG=<FULL SHA>/" .env &&
+      sed -i "s/^IMAGE_TAG=.*/IMAGE_TAG=9d297c9d9f37942eb9939512d9b4039695979854/" .env &&
       printf "SHARE_BASE_URL=https://media.monsterpaws.org\n" >> .env &&
       grep -c ^SHARE_BASE_URL= .env &&
       docker compose -f docker-compose.prod.yml pull app worker &&
       docker compose -f docker-compose.prod.yml config --images'
 Only `app worker`, so the unpinned `caddy:2-alpine` doesn't move.
-Verify: the checkout at this entry's commit; app and worker resolve to `<SHA>` and are pulled; `SHARE_BASE_URL` counts `1`; all three still run the old containers.
+Verify: the checkout at this entry's commit; app and worker resolve to `9d297c9` and are pulled; `SHARE_BASE_URL` counts `1`; all three still run the old containers.
 Rollback: `IMAGE_TAG` back to step 1's sha, delete the `SHARE_BASE_URL` line, `git checkout <step 1's sha>`, and later `git checkout topdog`, since that leaves HEAD detached and the next pull fails until then.
 
 ### 4. Migrate, while the old images serve
@@ -109,7 +109,7 @@ Rollback: `IMAGE_TAG` back to step 1's sha, `up -d app worker`, after listing `/
       "psql \"\$DATABASE_URL\" -v ON_ERROR_STOP=1 -At -F \" \" -c \"SELECT count(*) FROM keepsake\" -c \"SELECT count(*) FROM painting_email_sends\" -c \"SELECT count(*) FROM pgboss.queue WHERE name = '"'"'art.generate'"'"'\""'
     curl -fsS https://monsterpaws.org/api/health
 If oplog 0026 has published a set by now, the moderator gives its token on stdin and `/share/<token>` is read once: 200, and an `og:image` naming `/share/<token>/1/painting.jpg`.
-Verify: five pages 200; all five share lines 404; the `/privacy` line counts `1`; "Paying by bank" counts `0`; the resend webhook 404; `/unsubscribe` no 5xx, status recorded; both containers print the media URL and `0`; the log grep counts `0`; `keepsake 0`, `painting_email_sends 0`, no `art.generate` queue; health 200 on `<SHA>`.
+Verify: five pages 200; all five share lines 404; the `/privacy` line counts `1`; "Paying by bank" counts `0`; the resend webhook 404; `/unsubscribe` no 5xx, status recorded; both containers print the media URL and `0`; the log grep counts `0`; `keepsake 0`, `painting_email_sends 0`, no `art.generate` queue; health 200 on `9d297c9`.
 Stop if: a keepsake, a send or an `art.generate` queue exists: find out why before anything else.
 Rollback: step 5's.
 
