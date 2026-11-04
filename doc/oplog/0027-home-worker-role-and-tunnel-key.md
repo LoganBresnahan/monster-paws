@@ -1,7 +1,7 @@
 # 0027: The art worker's way in — the `home_worker` role and a restricted tunnel key
 
-Status: planned
-Planned: 2026-11-04 · Run: —
+Status: run
+Planned: 2026-11-04 · Run: 2026-11-04, 04:33 to 04:37 UTC
 Why: a real gift's painting runs on the home card, and its job and facts live in production's Postgres (ADR-0004 as amended
 2026-10-05, `doc/flows.md`, Keepsake art). Logan, to the moderator, 2026-11-03: "i want real donations working". Roadmap: Accounts and
 donating (item 4)
@@ -22,9 +22,9 @@ Who does what: **Logan gives the word for step 1, in the session that runs it.**
 - [x] Logan's word to run the worker on the dev distro for now, to the moderator, 2026-11-04: "yes we can run the worker on this dev setup".
       ADR-0004 as amended 2026-11-04 records it. Its keys live beside dev's on this box, so they're made for this role alone and rolled when the
       real home distro exists.
-- [ ] Oplog 0025 has run: the grants name `keepsake.share_token`, which migration 0017 adds. Read back in step 1.
-- [ ] `pass` unlocked by Logan.
-- [ ] Not within an hour of 06:00, 07:00 or 08:30 UTC, and nothing in the main checkout from 06:45 UTC until that night's log shows `== exit`.
+- [x] Oplog 0025 has run: the grants name `keepsake.share_token`, which migration 0017 adds. Read back in step 1.
+- [x] `pass` unlocked by Logan.
+- [x] Not within an hour of 06:00, 07:00 or 08:30 UTC, and nothing in the main checkout from 06:45 UTC until that night's log shows `== exit`.
 - [x] The grants rehearsed on a scratch database, 2026-11-04 00:10 UTC, then dropped, with pg-boss 12.26.3 and the grants applied before the
       queue existed, as they will be here. The owner made the queue and sent a job; under the scoped role a worker with `migrate`, `supervise` and
       `schedule` off and `max: 2` started, took the job, read the token and the facts, wrote an art fact and completed it, with no error. Refused
@@ -113,7 +113,25 @@ Stop if: any donor table answers. Run step 5's rollback and tell Logan.
 Rollback: step 5's, then step 3's.
 
 ## Run
-<filled in as it happens>
+Logan, directly, in the session that ran it: "you can do 0027". The moderator was told first.
+
+**Changed from the steps above:**
+- **Step 1's OpenSSH read 8.9, not the 9.6 its Verify named.** I stopped and proved the line on a throwaway OpenSSH 8.9p1 (Ubuntu 22.04), 04:34 UTC, before touching the droplet: no command ran, scp copied nothing, `-R` on 18080 was refused, a forward to port 22 got no banner, and the database forward answered.
+- **Step 5's `doctl ... --format Password --no-header` is wrong:** `user create` has no such flag. The first try printed its usage, created no role, stored a junk value in `digitalocean/pg-home-worker-url`, and the grants stopped at their first line on `role "home_worker" does not exist`, so nothing on production changed. The second used `-o json` with `jq -r '.[0].password'` and `pass insert -m -f`, overwriting the junk.
+- Step 6 also read `pg_stat_ssl`, and ran the verifier's `begin; select pg_advisory_xact_lock(1,1); rollback;` and `current_database()`, which oplog 0028's step 7 had planned.
+- Step 4's `scp` wrote to the session's scratchpad, not `/tmp`.
+
+**Step 1, 04:33 UTC.** `doadmin` the only user. 2 lines in `authorized_keys`, 0 `monsterpaws-home-worker`. `current_user` and `pgboss.job`'s owner both `doadmin`. `keepsake` has `id`, `intent_id`, `share_token` and `snapshotted_at`, and 0 rows.
+
+**Steps 2 and 3, 04:35 UTC.** Key made, mode 600, stored in `pass`, its header read. 3 lines in `authorized_keys`, 1 `monsterpaws-home-worker`.
+
+**Step 4, 04:35 UTC.** `command: []` with no `RAN`; `scp: Connection closed`, nothing copied; `-R` on 18080: "remote port forwarding failed". The root key still works.
+
+**Step 5, 04:36 UTC.** `doadmin home_worker` listed. The password came back 24 URL-safe characters, read for length and shape only. 8 `GRANT`, 1 `ALTER DEFAULT PRIVILEGES`, `psql exit 0`.
+
+**Step 6, 04:36 UTC.** Through the tunnel: `home_worker`; `ssl t`, with `sslmode=verify-full` against the database's own name; 3 queues; 0 facts; 0 keepsake ids; `current_database()` read; the advisory lock taken and rolled back. **Refused with `permission denied`, all eight:** `donor_email`, `keepsake.intent_id`, `donations`, `everyorg_webhook_payloads`, `email_suppressions`, `animals`, `CREATE TABLE`, and an `UPDATE` of `keepsake_fact`. Tunnel down: 0 processes.
+
+Nothing failed in the end, and no worker has run under this role yet. `~/.ssh/authorized_keys.before-0027` stays on the droplet for the rollback; it holds no secret.
 
 ## Follow-ups
 - `doc/infra.md`'s Home worker registry and step 8: where the two entries actually live, and the exception.
