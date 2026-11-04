@@ -710,10 +710,14 @@ may be purged, rebuilt or merged without touching it.
 
 ## Keepsake art — generated on hardware we control, arriving when ready (ADR-0004 as amended 2026-10-05, ADR-0026)
 
-Planned: roadmap item 4 (pipeline v0), item 9 (the LoRA). The photo never
-leaves a machine we control; the job waits for the box, never the other way
-round. Both workers are the same binary — the droplet's never registers
-`art.generate`, the home's registers nothing else.
+Built for the Meta demo, crew only, in the dev distro against the dev
+Postgres (`monsterpaws_demo`, `doc/plans/demo-chain-contract.md`; ADR-0028
+§6): `WORKER_MODE=art` through the guard to four marked JPEGs and their art
+facts. Planned for production: roadmap item 4, the tunnel and the home
+account below. The photo never leaves a machine we control; the job waits
+for the box, never the other way round. Both workers are the same binary —
+the droplet's never registers `art.generate`, the home's registers nothing
+else.
 
 ```
   sweepKeepsakes()  (built, dark)               keepsake_fact rows written,
@@ -725,32 +729,32 @@ round. Both workers are the same binary — the droplet's never registers
        │  SSH tunnel droplet → PG (the droplet is the trusted source;
        │  the house opens no port — outbound only)
        ▼                                        ── home boundary ──
-  src/worker/index.ts, art.generate only        (planned) the worker
-       │                                        container, prod WSL distro
-       │                                        under the "monsterpaws"
-       │                                        Windows user
+  src/worker/index.ts  WORKER_MODE=art           built for the demo in the dev
+       │   registerArtGenerate → generateArt    distro (ADR-0028 §6): one job at
+       │   (src/worker/art.ts); exits at once   a time, crew only. Planned: the
+       │   on any art fact · skips the nightly  worker container, prod WSL
+       │   poll's window and a busy card        distro, "monsterpaws" user
        ▼
-  subject detection, CPU  (planned, ADR-0026)   experiment: comfyui/detect.py
-       │   OWLv2 asked for the listing's        (19/20 blind). Every box past
-       │   species, colour, head → SAM 2.1      the floors outlined; groups,
-       │   outlines → clean-up rules → six      duplicates, parts dropped.
-       │   votes → ALWAYS one animal chosen,    Never the framed photo for an
-       │   margin recorded; under 0.1 a second  unclear subject (Logan,
-       │   look on crops · head box inside it   2026-10-12)
-       │
-       │  POST /prompt  (localhost HTTP)
+  crops                                         ART_DETECT=live (built):
+       │   live: comfyui/live_crops.py —        detect.py → crops.py →
+       │   OWLv2 asked for the listing's        explore.cut, under the run's own
+       │   species, colour, head → SAM 2.1      name; DETECT_PIPELINES picks the
+       │   outlines → clean-up rules → six      detector (19/20 blind, ADR-0026).
+       │   votes → ALWAYS one animal chosen     Otherwise batch 11's crops, by
+       │   · head box inside it                 comfyui/keepsake-crew.json
        ▼
-  monster-paws-comfyui, headless, TORCH=xpu     (planned) CI-built. Built:
-       │   subject box at its aspect + head     comfyui/workflows/*.api.json,
-       │   (the companion animal stays          comfyui/models.manifest (hash
-       │   outside, never padded)               + licence), models.py fetch at
-       │   description from the listing's       start — mismatch = no serve.
-       │   fields through a reviewed table      Crops by the detector (ADR-0026):
-       │   (sex, colour, breed, age, species)   comfyui/explore/boxes-detected.json.
-       │   painter: FLUX.2 klein 4B (BFL fp8)   comfyui/workflows/klein-v1.api.json
-       │   reading the grown subject and head   (ADR-0004 as amended 2026-10-14,
-       │   crops as references · landscape      2026-10-15, 2026-11-03). klein
-       │   canvas · chest-up portrait · 4 cands only, no fallback painter
+  comfyui/guard.sh batch keepsake-<id> 4        built (demo): the spec beside the
+       │   explore.py's klein-v1 reference2     run, var/explore/<run>/spec.json;
+       │   graph, as the batches Logan read:    the guard kills ComfyUI on a pool
+       │   FLUX.2 klein 4B (BFL fp8) reading    leak. Planned: CI-built headless
+       │   the grown subject and head crops ·   ComfyUI, POST /prompt with
+       │   landscape canvas · chest-up portrait comfyui/workflows/klein-v1.api.json
+       │   · 4 seeds = 4 candidates             (ADR-0004 as amended 2026-11-03)
+       │   description: the pet's words, the    the listing's fields through a
+       │   crew's from the table                reviewed table (planned)
+       ▼
+  comfyui/mark.py                               built: monsterpaws.org · <year>
+       │   in the pixels, bottom right          on every gift painting (ADR-0022)
        ▼
   signature out  (planned, item 4)              experiment: comfyui/signature.py,
        │   ink on the paper outside the dog's   LaMa on CPU (batches 9a–9c)
@@ -762,11 +766,14 @@ round. Both workers are the same binary — the droplet's never registers
        │                                        2026-10-14); donors' face
        │                                        picks are its labelled set
        ▼
-  R2 monsterpaws-media  (write-only pair)       keys only in the DB
-       │
+  ART_STORE_DIR/keepsakes/<id>/<n>.jpg          built (demo): JPEG, pixels only;
+       │   artFilePath(artKey(id, n))           R2 monsterpaws-media through
+       │                                        `npm run share -- publish`
+       │                                        (planned, oplog 0026)
        ▼
-  keepsake_fact  field='art' ×4  basis=grant:<slug>:digify   (append)
-       │
+  keepsake_fact  field='art' ×4  basis = the photo fact's   (append, one
+       │                                        transaction: a part set is never
+       │                                        written)
        ▼
   "<pet>'s portraits are ready"  (planned)      the card's second reveal —
        │                                        the framed photo was the

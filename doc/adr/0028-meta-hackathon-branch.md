@@ -352,3 +352,35 @@ whether it changes too: "yes".
 - Updates and adoption day are still the plan, so DIRECTION.md does not change.
   When attestations ship they come back to the demo and the home page, under
   ADR-0022's rule that adoption is an update, never a badge over the keepsake.
+
+## Amendment (2026-11-04): the demo's painting job runs in the dev distro
+
+### Context
+Logan, to the moderator, 2026-11-03: "for the meta demo we have to have the
+pipeline working locally on my card". ADR-0004 as amended 2026-10-05 puts
+`art.generate` on the home worker: CI-built containers in a WSL distro of its
+own, under a dedicated Windows account, reached through a tunnel. None of that
+is built, and the entry is due 2026-11-04 21:00 UTC.
+
+### Decision
+- **For the demo, `art.generate` runs in the dev distro** (`monsterpaws-dev`),
+  as `npm run worker` with `WORKER_MODE=art`, against `monsterpaws_demo` only
+  (`doc/plans/demo-chain-contract.md`), crew only (decision 6). It paints
+  through `comfyui/guard.sh` and the look exploration's own graph, so a
+  keepsake is painted as the batches Logan read were.
+- **Crops come from the crew's table or from live detection**
+  (`ART_DETECT=live`): SAM 2.1 here, and SAM 3.1 only on `meta`, by
+  `DETECT_PIPELINES` (decision 1).
+- **Nothing here is production.** The droplet never sets `WORKER_MODE` (a test
+  holds it), and the home worker's own path stays ADR-0004's.
+
+### Consequences
+- The job shares the box with development: it skips while a guard batch or a
+  ComfyUI container is up, and in the nightly poll's quiet window, and the
+  sweep sends it again within the hour.
+- The dev account holds the demo's keys while it runs, which the home account
+  was meant to keep apart from development; that ends with the demo.
+
+### Revisit triggers
+- The home worker is built (roadmap item 4): the demo's path is retired, never
+  promoted to production.

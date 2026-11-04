@@ -124,7 +124,6 @@ PROMPTS = {
 
 def prep() -> None:
     """Copy every crew photo into input/crew/ as an upright PNG with no metadata at all, plus one PNG per subject box."""
-    from PIL import Image, ImageOps
     boxes = json.loads((HERE / "explore" / "boxes.json").read_text())
     sources = [(src.parent.name, src) for src in sorted(CREW.glob("*/*"))]
     for key, found in json.loads((HERE / "explore" / "boxes-detected.json").read_text()).items():
@@ -137,34 +136,39 @@ def prep() -> None:
         if src.suffix.lower() not in (".jpg", ".jpeg", ".png", ".webp", ".tif", ".tiff"):
             continue
         key = f"{animal}/{src.stem}"
-        wanted = {"full": None, **{k: v for k, v in boxes.get(key, {}).items() if not k.startswith("_")}}
-        outs = {crop: INPUT / input_name(animal, src.name, crop) for crop in wanted}
-        raws = [INPUT / input_name(animal, src.name, crop, raw=True) for crop in wanted if crop != "full"]
-        if all(o.exists() for o in list(outs.values()) + raws):
-            continue
-        outs["full"].parent.mkdir(parents=True, exist_ok=True)
-        # ImageOps.exif_transpose bakes the orientation in; `convert` then
-        # drops the info dict, so no EXIF, GPS or XMP survives into the PNG.
-        im = Image.open(src)
-        # A Commons JPEG can carry an EXIF block Pillow cannot parse (two of the LoRA set's, 2026-10-27); it is then read as it lies.
-        try:
-            im = ImageOps.exif_transpose(im)
-        except (SyntaxError, ValueError):
-            pass
-        im = im.convert("RGB")
-        im.thumbnail((1536, 1536), Image.LANCZOS)
-        for crop, box in wanted.items():
-            variants = {outs[crop]: None if box is None else squared(im, box)}
-            if box is not None:
-                variants[INPUT / input_name(animal, src.name, crop, raw=True)] = im.crop(tuple(round(b * d) for b, d in zip(box, im.size * 2)))
-            for dst, part in variants.items():
-                if dst.exists():
-                    continue
-                part = im if part is None else part
-                clean = Image.new("RGB", part.size)
-                clean.paste(part)
-                clean.save(dst, "PNG")
-                print(f"prep  {key} -> {dst.relative_to(INPUT)} {clean.size}")
+        cut(animal, src, {"full": None, **{k: v for k, v in boxes.get(key, {}).items() if not k.startswith("_")}}, key)
+
+
+def cut(animal: str, src: Path, wanted: dict, key: str) -> None:
+    """One photo upright as a PNG with no metadata, plus a square and a raw cut per box (fractions); what exists is kept."""
+    from PIL import Image, ImageOps
+    outs = {crop: INPUT / input_name(animal, src.name, crop) for crop in wanted}
+    raws = [INPUT / input_name(animal, src.name, crop, raw=True) for crop in wanted if crop != "full"]
+    if all(o.exists() for o in list(outs.values()) + raws):
+        return
+    outs["full"].parent.mkdir(parents=True, exist_ok=True)
+    # ImageOps.exif_transpose bakes the orientation in; `convert` then
+    # drops the info dict, so no EXIF, GPS or XMP survives into the PNG.
+    im = Image.open(src)
+    # A Commons JPEG can carry an EXIF block Pillow cannot parse (two of the LoRA set's, 2026-10-27); it is then read as it lies.
+    try:
+        im = ImageOps.exif_transpose(im)
+    except (SyntaxError, ValueError):
+        pass
+    im = im.convert("RGB")
+    im.thumbnail((1536, 1536), Image.LANCZOS)
+    for crop, box in wanted.items():
+        variants = {outs[crop]: None if box is None else squared(im, box)}
+        if box is not None:
+            variants[INPUT / input_name(animal, src.name, crop, raw=True)] = im.crop(tuple(round(b * d) for b, d in zip(box, im.size * 2)))
+        for dst, part in variants.items():
+            if dst.exists():
+                continue
+            part = im if part is None else part
+            clean = Image.new("RGB", part.size)
+            clean.paste(part)
+            clean.save(dst, "PNG")
+            print(f"prep  {key} -> {dst.relative_to(INPUT)} {clean.size}")
 
 
 def squared(im, box: list[float]):
@@ -603,8 +607,14 @@ def run_one(batch: str, run: dict) -> str:
             return f"{im['subfolder']}/{im['filename']}"
 
 
+def spec_path(batch: str) -> Path:
+    # A keepsake's spec is written beside its run by the art.generate handler, never into the repo (src/worker/art.ts).
+    committed = HERE / "explore" / f"{batch}.json"
+    return committed if committed.exists() else EXPLORE / batch / "spec.json"
+
+
 def run_batch(batch: str, limit: int | None, dry: bool, only: str | None = None) -> None:
-    spec = json.loads((HERE / "explore" / f"{batch}.json").read_text())
+    spec = json.loads(spec_path(batch).read_text())
     runs = expand(spec)
     out = EXPLORE / batch
     out.mkdir(parents=True, exist_ok=True)

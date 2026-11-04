@@ -11,7 +11,8 @@ import { createPgStages } from "@/core/ingest/pg";
 import { runIngest } from "@/core/ingest/pipeline";
 import { createRescueGroupsAdapter, rescueGroupsNormalizer } from "@/core/ingest/rescuegroups";
 import { eraseAbandonedAddresses } from "@/core/donate/intent";
-import { ART_GENERATE, ART_QUEUE_OPTIONS, sweepKeepsakes } from "@/core/keepsake";
+import { ART_GENERATE, ART_QUEUE_OPTIONS, sweepKeepsakes, type ArtGenerateJob } from "@/core/keepsake";
+import { generateArt, guardPainter } from "@/worker/art";
 import { sweepWebhookSpool } from "@/core/donate/webhook-replay";
 import { artReaderFromEnv } from "@/core/email/art-source";
 import { runPaintingEmailTick } from "@/core/email/painting-sweep";
@@ -139,7 +140,7 @@ const KEEPSAKE_SWEEP_MS = 60_000;
 
 /**
  * Only with `ART_SWEEP=on`: the compose files never set it, so turning it on is a line in that machine's `.env`
- * with its own oplog entry. It queues art and never paints: `art.generate` has no handler here (ADR-0004 as amended 2026-10-05).
+ * with its own oplog entry. It queues art and never paints: only a worker with `WORKER_MODE=art` has the handler (ADR-0004 as amended 2026-10-05).
  */
 async function startKeepsakeSweep(boss: PgBoss): Promise<() => void> {
   if (process.env.ART_SWEEP !== "on") return () => {};
@@ -218,6 +219,25 @@ function startPaintingEmailSweep(): () => void {
   return () => clearInterval(timer);
 }
 
+/**
+ * Only with `WORKER_MODE=art`, on the box with the card, and then nothing else registers: the droplet has no GPU and
+ * never sets it (ADR-0004 as amended 2026-10-05), and a RescueGroups key in the same `.env` must not start a poll here.
+ */
+async function registerArtGenerate(boss: PgBoss) {
+  await boss.createQueue(ART_GENERATE, ART_QUEUE_OPTIONS);
+  const painter = guardPainter(process.cwd());
+  await boss.work<ArtGenerateJob>(ART_GENERATE, { batchSize: 1 }, async ([job]) => {
+    try {
+      const outcome = await generateArt(getDb(DATABASE_URL), job.data.keepsakeId, painter, { live: process.env.ART_DETECT === "live" });
+      console.log(JSON.stringify({ event: "art.generate", keepsakeId: job.data.keepsakeId, ...outcome }));
+    } catch (err) {
+      Sentry.captureMessage(`art not generated: ${failureCode(err)}`, { level: "error", tags: { job: ART_GENERATE } });
+      throw err;
+    }
+  });
+  console.log(`[worker] ${ART_GENERATE} registered (WORKER_MODE=art)`);
+}
+
 async function main() {
   if (!DATABASE_URL) {
     // Pre-database deploys (landing only): idle instead of crash-looping so
@@ -236,16 +256,18 @@ async function main() {
   });
   await boss.start();
 
-  await registerIngestPoll(boss);
-  await registerAddressErasure(boss);
-  const stopWebhookSweep = startWebhookSweep();
-  const stopPaintingEmailSweep = startPaintingEmailSweep();
+  const artOnly = process.env.WORKER_MODE === "art";
+  if (artOnly) {
+    await registerArtGenerate(boss);
+  } else {
+    await registerIngestPoll(boss);
+    await registerAddressErasure(boss);
+  }
+  const stopWebhookSweep = artOnly ? () => {} : startWebhookSweep();
+  const stopPaintingEmailSweep = artOnly ? () => {} : startPaintingEmailSweep();
   const stopKeepsakeSweep = await startKeepsakeSweep(boss);
 
   // Job registrations land with their features:
-  //   art.generate       — keepsake card generation (roadmap item 4); never
-  //                        registered on the droplet, which has no GPU — only
-  //                        the home worker (ADR-0004 as amended 2026-10-05)
   //   attestation.publish — sign + R2 mirror (roadmap item 7)
 
   const shutdown = async () => {

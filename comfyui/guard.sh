@@ -98,6 +98,9 @@ batch() {
     echo "guard: chunk finished, $(mem)"
     # the harness reports how many runs remain before it starts the chunk
     if grep -q " 0 to go" "$out"; then rm -f "$out"; break; fi
+    # a chunk that painted every run left, none failed, is the last: a fresh ComfyUI only to read "0 to go" costs a load
+    local togo made; togo=$(grep -oE "[0-9]+ to go" "$out" | head -1 | cut -d" " -f1 || true); made=$(grep -cE "^\[[0-9]+/[0-9]+\] .* [0-9.]+s$" "$out" || true)
+    if [ -n "$togo" ] && [ "$togo" -le "$chunk" ] && [ "$made" -ge "$togo" ]; then rm -f "$out"; break; fi
     # a chunk that produced nothing would be retried forever (the bf16 Z-Image cells, 2026-10-11): stop instead
     if ! grep -qE "^\[[0-9]+/[0-9]+\] .* [0-9.]+s$" "$out"; then echo "guard: chunk made no progress — stopping; fix the spec or the graph" >&2; rm -f "$out"; exit 6; fi
     rm -f "$out"

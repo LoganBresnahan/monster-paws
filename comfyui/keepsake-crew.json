@@ -1,0 +1,87 @@
+{
+  "_": "The crew's painting table for the art.generate handler (src/worker/art.ts; ADR-0004 as amended 2026-11-03, ADR-0028 §6): each pet's two originals in var/crew/<Name>/, whose grown subject and head crops batch 11 cut at full size, and the words the reviewed batches painted them with. The prompt is batch 35's short portrait, its winner blind; prompt and seeds are frozen by Logan before the demo (the moderator: 9am Central on 2026-11-04 at the latest), and a change here is the whole change. Never a listing's photo: a listing goes through its held photo and detection. `detect` is the pet's listing as the detector reads it (comfyui/explore/detect.json, detect-crew2.json), used when ART_DETECT=live runs comfyui/live_crops.py instead of batch 11's crops.",
+  "prompt": "storybook_bust",
+  "seeds": [
+    23,
+    333,
+    1111,
+    3000
+  ],
+  "pets": {
+    "plum": {
+      "name": "Plum",
+      "kind": "dog",
+      "describe": "male grey cane corso puppy with a bare neck and nothing around it",
+      "two": [
+        "PXL_20250423_185424061.PORTRAIT.jpg",
+        "downloadfile.jpg"
+      ],
+      "from": "batch 38c (collarless, `bare`; Logan: \"no i want to collarless\")",
+      "detect": {
+        "species": "dog",
+        "colour": "grey",
+        "subject": "Plum, the grey cane corso puppy"
+      }
+    },
+    "ducky": {
+      "name": "Ducky",
+      "kind": "dog",
+      "describe": "female tan pit bull mix",
+      "two": [
+        "PXL_20241229_195311064.RAW-01.COVER.jpg",
+        "PXL_20250621_160612271.PORTRAIT.jpg"
+      ],
+      "from": "batch 35a (listing words)",
+      "detect": {
+        "species": "dog",
+        "colour": "tan",
+        "subject": "Ducky, the tan pit bull mix"
+      }
+    },
+    "beetle": {
+      "name": "Beetle",
+      "kind": "dog",
+      "describe": "female bloodhound",
+      "two": [
+        "IMG_2931.jpg",
+        "IMG_3545.jpg"
+      ],
+      "from": "batch 35a (listing words)",
+      "detect": {
+        "species": "dog",
+        "colour": "black and tan",
+        "subject": "Beetle, the black and tan bloodhound"
+      }
+    },
+    "marty": {
+      "name": "Marty",
+      "kind": "cat",
+      "describe": "male flame point Siamese cat, cream with orange ears, face and tail, and blue eyes",
+      "two": [
+        "PXL_20210107_162942931.jpg",
+        "IMG_4288.JPG"
+      ],
+      "from": "batch 37a (batch 11b's reworded colour)",
+      "detect": {
+        "species": "cat",
+        "colour": "white",
+        "subject": "Marty, the cream flame point cat"
+      }
+    },
+    "stacey": {
+      "name": "Stacey",
+      "kind": "cat",
+      "describe": "female brown tabby cat",
+      "two": [
+        "IMG_3110.jpg",
+        "IMG_20200516_211507.jpg"
+      ],
+      "from": "batch 37a (listing words)",
+      "detect": {
+        "species": "cat",
+        "colour": "brown tabby",
+        "subject": "Stacey, the brown tabby cat"
+      }
+    }
+  }
+}

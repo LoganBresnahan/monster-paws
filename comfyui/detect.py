@@ -36,6 +36,7 @@ sys.path.insert(0, str(HERE))
 MODELS = Path("/home/comfy/ComfyUI/models/detect")
 CREW = Path("/home/comfy/crew")
 PHOTOS = Path("/home/comfy/photos")
+EXPLORE = Path("/home/comfy/explore")
 OUT = Path(os.environ.get("DETECT_OUT", "/home/comfy/explore/detect"))
 PIPELINES = os.environ.get("DETECT_PIPELINES", "owlv2").split(",")
 LONG_SIDE = 1600
@@ -81,6 +82,9 @@ COLOUR_SETS = {
 
 def photo_path(ref: str) -> Path:
     kind, rel = ref.split(":", 1)
+    # A listing's photo is fetched at paint time beside its run and deleted with it, never kept (src/worker/art.ts; ADR-0022).
+    if kind == "held":
+        return EXPLORE / rel
     return (CREW if kind == "crew" else PHOTOS / "commons") / rel
 
 

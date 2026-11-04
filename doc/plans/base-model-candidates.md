@@ -3437,6 +3437,10 @@ with the other. this effects other dogs as well not just plum."
   `bare` and `nocollar`, a harness dog's "with no harness or collar,
   its bare neck and chest showing only fur". The crew page's Plum is
   his collarless 24 (38a's `bare` and 38c), under new slot names.
+- **Plum's forty (2026-11-04, Logan: "is our crew ready to pick? which
+  file?"):** his collarless short portraits (38a `bare`, 38c) and the
+  shoulder test's two framings (38d), under new slot names; 72 on the
+  page, checked headless.
 - **Run 2026-11-03:** 38a 22:33–22:39, 38c 22:45–22:50, 38b 22:53–23:21
   UTC, 112 of 112, no kill, the pool 1.8–1.9 GB; all marked. The collar
   page, blind: `var/explore/index-all/portraits-38.html`, the five dogs'
@@ -3472,6 +3476,29 @@ like a puppy head on a human body."
   are the before. One page for the shoulders, Plum's 38d included, with a
   tick "shoulders too wide" on every painting beside "acceptable", "a
   painted signature" and "the best of the three".
+- **Run 2026-11-03/04:** 38d 23:21–23:30, 38e 23:31–23:41, 38f 23:42–00:22
+  UTC. 38f's last chunk was killed by the guard at about 00:20 on the
+  host-free floor, not the pool: Windows free 10.1 GB against the 10 GB
+  floor, the shared pool 1.9 GB. Duke's eight runs (096–103) failed on
+  the refused connection, 96 of 104 painted. Windows free at idle had
+  fallen from 29.9 GB (15:37) to 15.4 GB with no ComfyUI up, held by
+  something the cache drop cannot return; the eight wait for the card
+  hold's release.
+- **The page, blind:** `var/explore/index-all/shoulders-38.html`, threes of
+  the portrait Logan read (Plum's 38c `bare`; batch 35's short; 36c's for
+  Max and Duke), `storybook_head` and `storybook_bust34`; ticks
+  "acceptable", "shoulders too wide", "a painted signature", "the best
+  of the three". Checked headless: 196 at 1216×832 (Duke's eight shown as
+  not painted), 13 photos, 784 ticks kept over a reload, no file name
+  naming a framing, no sideways scroll.
+- **Duke's eight repainted** 00:32–00:35 UTC after the hold's release (23.0
+  GB free after the drop, 13.8 at the load's low), 104 of 104; the page
+  rebuilt on the same key, 204 paintings, none missing.
+- **What a load needs:** after the guard's cache drop each start had 22–30
+  GB of Windows free, and a chunk's klein load took 6–11 GB of it (37a
+  28.4 → 17.2); the killed chunk started at 20.6. So the handler skips a
+  job under 22 GB after the drop (`LOAD_FREE_GB`, `src/worker/art.ts`)
+  rather than start a set the guard would kill.
 
 ### A local photo reader — the candidates (Claude, 2026-11-03; Logan decides)
 
@@ -3605,6 +3632,74 @@ against the code, before any build:
   `FLOOR["sam3"]`, `pools()` unchanged; SAM 2.1 outlines its boxes
   tonight. `DETECT_PIPELINES=sam3` is the whole swap, and the key comes
   from `MODEL_API_KEY` filled by `pass` at run time.
+
+### The art.generate handler, built for the demo (Claude, 2026-11-04)
+
+On Logan's "commit and realign" (this stream's work landed on topdog as
+`5b678a3`) and the moderator's go, on donate's contract (`fa00bd9`):
+
+- **`src/worker/art.ts`:** `generateArt` reads only the keepsake's facts,
+  exits at once on any art fact, skips the nightly poll's window (06:45
+  UTC until the night's log says `== exit`, capped at 10:00) and a busy
+  card, paints four, stores each as a pixels-only JPEG at
+  `artFilePath(artKey(id, n))`, and writes the four art facts in one
+  transaction on the photo fact's basis, or none. A held listing photo is
+  refused until its path is built. `guardPainter` writes the run's spec to
+  `var/explore/keepsake-<id>/spec.json` (`explore.py` reads it there when
+  no committed spec has the name), paints through `comfyui/guard.sh batch`,
+  and marks with `comfyui/mark.py`.
+- **`comfyui/keepsake-crew.json`:** each pet's originals and the words of
+  the batch Logan read (Plum 38c's collarless `bare`, Ducky and Beetle
+  35a's, Marty and Stacey 37a's), its detector words, and the prompt and
+  four seeds still to freeze (now batch 35's short portrait at 23, 333,
+  1111, 3000).
+- **Live detection (`ART_DETECT=live`):** `comfyui/live_crops.py` runs
+  `detect.py`, `crops.py` and `explore.cut` (prep's per-photo cut, moved
+  out unchanged) for one keepsake, under the run's own name, so batch 11's
+  crops are never what a live run paints from; `DETECT_PIPELINES` picks the
+  detector.
+- **`WORKER_MODE=art`** registers `art.generate` alone (the crew sweep
+  still with `ART_SWEEP=on`); the droplet's compose never sets it, a test
+  holds that. ADR-0028 as amended 2026-11-04 records the dev distro;
+  `doc/flows.md`'s art flow marks each stage built or planned.
+- **Tests:** `tests/art.test.ts`, twelve, the painter faked; the first real
+  run waits on the card's release after oplog 0023.
+- **The first real run, 2026-11-04 00:45–00:52 UTC** (the moderator's go, the
+  box quieted): a rehearsal gift to Beetle (`npm run demo -- gift beetle
+  hello@monsterpaws.org`) in `monsterpaws_demo`; the worker (`WORKER_MODE=art
+  ART_SWEEP=on`, `ART_STORE_DIR=/home/oof/monsterpaws/var/keepsakes`) swept it
+  into keepsake 1 at its first tick and painted it: 48.1 s cold, then 16.5 s
+  three times, 22.3 GB free after the drop, 16.7 GB at the low, no kill;
+  four marked JPEGs at 1216×832 with no EXIF or ICC, and four art facts on
+  the crew basis, about 4 min 48 s from job to files (a minute of it the
+  guard's second start, which only confirms "0 to go"). Found: the art
+  facts took the job's start as `snapshotted_at`; they now take the write's
+  time, keepsake 1's rows left as written. Claude has not looked at the four.
+- **Live detection proven on the CPU, 2026-11-04 01:00 UTC:**
+  `comfyui/live_crops.py` on Beetle's two originals (run `live-beetle-test`,
+  OWLv2 and SAM 2.1) in 32 s with the container's start and the models'
+  load, both photos cut with a head; every box (subject, grown subject,
+  head, grown head) at IoU 1.0 with batch 11's in `boxes-detected.json`.
+  So a live run paints from the same crops as the table. `detect.py` reads
+  a `held:` photo beside its run, for a listing's photo fetched at paint
+  time.
+- **The ship bar, 2026-11-04 01:54 UTC at load 1.6:** typecheck clean,
+  vitest 610 of 610 twice, `tests/ingest-pg-lifecycle.test.ts` included:
+  its two failures at 5b678a3's commit were the box's load.
+- **The guard's last start trimmed:** `comfyui/guard.sh batch` now ends after a
+  chunk that painted every run left with none failed, instead of starting a
+  fresh ComfyUI only to read "0 to go" (about a minute and a model load on
+  every keepsake and every batch's end); a failure still goes round again,
+  and the no-progress stop is unchanged. Untried on the card until the
+  hold for oplog 0025 is released.
+- **Owed after the realign onto donate's widened contract (`f29142f`):** a
+  listing's photos arrive in the job (`{ keepsakeId, photos }`, never a
+  fact, ADR-0022 as amended 2026-10-27), fetched at paint time and deleted
+  when the set is done, always through live detection, one or two photos;
+  the new `shelter` fact; a production worker only calls `work`, its pools
+  capped. And publishing, crew and real gifts alike, through the UI chat's
+  `npm run share -- publish` (Logan: "yes real paintings on the share page
+  is what we want"; "yes we can run the worker on this dev setup").
 
 ### Batches 14a–14b — Logan's picks (2026-10-28)
 
