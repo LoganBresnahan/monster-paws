@@ -1,4 +1,4 @@
-import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { eq } from "drizzle-orm";
@@ -10,7 +10,7 @@ import { artFilePath, CREW_BASIS, crewExternalId, FACT, grantBasis, mintShareTok
 import { closeDb, type Db } from "@/db/client";
 import { donationIntents, keepsake, keepsakeFact } from "@/db/schema";
 import { CREW } from "@/ui/crew";
-import { crewSpec, generateArt, hostFreeGb, inQuietWindow, listingWords, LOAD_FREE_GB, loadCrewTable, type CrewTable, type PaintSpec, type Painter } from "@/worker/art";
+import { bindArtStore, crewSpec, generateArt, hostFreeGb, inQuietWindow, listingWords, LOAD_FREE_GB, loadCrewTable, paintedFor, runName, type CrewTable, type PaintSpec, type Painter } from "@/worker/art";
 import { SKIP_DB_TESTS, TEST_DATABASE_URL, testDb, truncateDonor } from "./support/db";
 
 const TABLE: CrewTable = {
@@ -28,8 +28,9 @@ describe("the crew's painting table (ADR-0004 as amended 2026-11-03)", () => {
       families: ["kleinbfl8"], graphs: ["reference2"], prompts: ["storybook_bust"], seeds: [23, 333, 1111, 3000], heads: ["grownhead"] });
   });
 
-  it("refuses a pet it has no row for, and a set that is not four", () => {
+  it("refuses a pet it has no row for, an object's own name among them, and a set that is not four", () => {
     expect(() => crewSpec(TABLE, "rex", 7)).toThrow("no crew painting row");
+    for (const slug of ["constructor", "__proto__", "toString"]) expect(() => crewSpec(TABLE, slug, 7)).toThrow("no crew painting row");
     expect(() => crewSpec({ ...TABLE, seeds: [1, 2, 3] }, "plum", 7)).toThrow("four");
   });
 
@@ -50,6 +51,29 @@ describe("a listing's words, from its own fields", () => {
   it("are its sex and kind, lower case, the species when it has no kind, and no unknown sex", () => {
     expect(listingWords(f([[FACT.sex, "female"], [FACT.kind, "Pit Bull Terrier Mix"], [FACT.species, "dog"]]))).toBe("female pit bull terrier mix");
     expect(listingWords(f([[FACT.sex, "unknown"], [FACT.species, "cat"]]))).toBe("cat");
+  });
+});
+
+
+describe("a run's paintings", () => {
+  it("are this spec's runs only, by animal, prompt and words, the latest for a retried seed", () => {
+    const spec = crewSpec(TABLE, "plum", 7, "keepsake-7-abc");
+    const line = (animal: string, prompt: string, seed: number, output?: string) =>
+      JSON.stringify({ animal, prompt, describe: "listing", seed, ...(output ? { output } : {}) });
+    const log = [
+      line("Beetle", "storybook_bust", 23, "beetle-23.png"),
+      line("keepsake-7-abc", "storybook_head", 333, "old-prompt-333.png"),
+      line("keepsake-7-abc", "storybook_bust", 23, "first-23.png"),
+      line("keepsake-7-abc", "storybook_bust", 23, "retried-23.png"),
+      line("keepsake-7-abc", "storybook_bust", 1111),
+      line("keepsake-7-abc", "storybook_bust", 3000, "plum-3000.png"),
+    ].join("\n");
+    expect(paintedFor(log, spec)).toEqual(["retried-23.png", null, null, "plum-3000.png"]);
+  });
+
+  it("are named for the keepsake's own token, never its id alone, which every database starts at 1", () => {
+    expect(runName(1, "tokenA")).not.toBe(runName(1, "tokenB"));
+    expect(runName(1, "tokenA")).toMatch(/^keepsake-1-[0-9a-f]{12}$/);
   });
 });
 
@@ -166,6 +190,11 @@ describe.skipIf(SKIP_DB_TESTS)("art.generate (doc/plans/demo-chain-contract.md)"
     return id!;
   }
 
+  const nameOf = async (id: number) => {
+    const [row] = await db.select({ token: keepsake.shareToken }).from(keepsake).where(eq(keepsake.id, id));
+    return runName(id, row.token);
+  };
+
   const artOf = (id: number) =>
     db.select().from(keepsakeFact).where(eq(keepsakeFact.keepsakeId, id)).then((rows) => rows.filter((r) => r.field === FACT.art));
 
@@ -193,10 +222,10 @@ describe.skipIf(SKIP_DB_TESTS)("art.generate (doc/plans/demo-chain-contract.md)"
     const other = await crewKeepsake("plum");
     const live = painter();
     await generateArt(db, { keepsakeId: other }, live, { table: TABLE, now: NOON, nightly: null, live: true });
-    expect(live.detected).toEqual([{ name: `keepsake-${other}`, listing: { species: "dog", colour: "grey",
+    expect(live.detected).toEqual([{ name: await nameOf(other), listing: { species: "dog", colour: "grey",
       subject: "Plum, the grey cane corso puppy", photos: ["crew:Plum/a.jpg", "crew:Plum/b.jpg"] } }]);
     // read under the run's own name, so batch 11's crops are never what a live run paints from
-    expect(Object.keys(live.specs[0].animals)).toEqual([`keepsake-${other}`]);
+    expect(Object.keys(live.specs[0].animals)).toEqual([await nameOf(other)]);
   });
 
   it("never paints a keepsake twice", async () => {
@@ -265,7 +294,7 @@ describe.skipIf(SKIP_DB_TESTS)("art.generate (doc/plans/demo-chain-contract.md)"
     const p = painter();
     const outcome = await generateArt(db, { keepsakeId: id, photos: PHOTOS }, p, { table: TABLE, now: NOON, nightly: null });
     expect(outcome).toMatchObject({ status: "painted" });
-    const name = `keepsake-${id}`;
+    const name = await nameOf(id);
     // two at most, as klein-v1 reads them
     expect(p.fetched).toEqual([{ name, photos: PHOTOS.slice(0, 2) }]);
     expect(p.detected).toEqual([{ name, listing: { species: "dog", colour: "", subject: `${name}, the female pit bull terrier mix`,
@@ -281,7 +310,7 @@ describe.skipIf(SKIP_DB_TESTS)("art.generate (doc/plans/demo-chain-contract.md)"
     const p = painter(new Error("the guard stopped"));
     await expect(generateArt(db, { keepsakeId: id, photos: PHOTOS.slice(0, 1) }, p, { table: TABLE, now: NOON, nightly: null })).rejects.toThrow("the guard stopped");
     expect(p.specs[0].photos).toEqual(["one"]);
-    expect(p.forgotten).toEqual([`keepsake-${id}`]);
+    expect(p.forgotten).toEqual([await nameOf(id)]);
     expect(await artOf(id)).toEqual([]);
   });
 
@@ -311,13 +340,13 @@ describe.skipIf(SKIP_DB_TESTS)("art.generate (doc/plans/demo-chain-contract.md)"
     const id = await listingKeepsake();
     const one = painter(pngs, null, () => [{ file: "1.jpg", head: false }, { file: "2.jpg", head: true }]);
     await generateArt(db, { keepsakeId: id, photos: PHOTOS }, one, { table: TABLE, now: NOON, nightly: null });
-    expect(one.specs[0].animals[`keepsake-${id}`].two).toEqual(["2.jpg", "1.jpg"]);
+    expect(one.specs[0].animals[await nameOf(id)].two).toEqual(["2.jpg", "1.jpg"]);
 
     const other = await listingKeepsake();
     const none = painter(pngs, null, () => [{ file: "1.jpg", head: false }]);
     await expect(generateArt(db, { keepsakeId: other, photos: PHOTOS }, none, { table: TABLE, now: NOON, nightly: null })).rejects.toThrow("its head");
     expect(none.calls).toBe(0);
-    expect(none.forgotten).toEqual([`keepsake-${other}`]);
+    expect(none.forgotten).toEqual([await nameOf(other)]);
   });
 
   it("stops a crew pet's live run that loses one of its two photos", async () => {
@@ -325,5 +354,33 @@ describe.skipIf(SKIP_DB_TESTS)("art.generate (doc/plans/demo-chain-contract.md)"
     const lost = painter(pngs, null, () => [{ file: "a.jpg", head: true }]);
     await expect(generateArt(db, { keepsakeId: id }, lost, { table: TABLE, now: NOON, nightly: null, live: true })).rejects.toThrow("lost one");
     expect(lost.calls).toBe(0);
+  });
+
+  it("binds the art store to one database, and refuses a store another database marked", async () => {
+    expect(await bindArtStore(db)).toMatch(/test/);
+    const other = mkdtempSync(join(tmpdir(), "art-store-other-"));
+    writeFileSync(join(other, ".database"), "monsterpaws\n");
+    await expect(bindArtStore(db, other)).rejects.toThrow("belongs to database monsterpaws");
+    await expect(bindArtStore(db, "relative/store")).rejects.toThrow("absolute");
+    rmSync(other, { recursive: true, force: true });
+  });
+
+  it("paints a crew pet only on the crew's basis, and takes the latest photo fact", async () => {
+    const id = await crewKeepsake();
+    await db.insert(keepsakeFact).values({ keepsakeId: id, field: FACT.sourcePhoto, value: { pet: "plum", photo: "held/2.jpg" },
+      basis: CREW_BASIS, snapshottedAt: NOON });
+    await expect(generateArt(db, { keepsakeId: id }, painter(), { table: TABLE, now: NOON, nightly: null })).rejects.toThrow("names a photo");
+
+    const listing = await listingKeepsake();
+    await db.insert(keepsakeFact).values({ keepsakeId: listing, field: FACT.sourcePhoto, value: { pet: "plum", photo: null },
+      basis: SPENCER, snapshottedAt: NOON });
+    await expect(generateArt(db, { keepsakeId: listing }, painter(), { table: TABLE, now: NOON, nightly: null })).rejects.toThrow("shelter's basis");
+  });
+
+  it("writes one set when two handlers paint the same keepsake at once", async () => {
+    const id = await crewKeepsake();
+    const outcomes = await Promise.all([1, 2, 3].map(() => generateArt(db, { keepsakeId: id }, painter(), { table: TABLE, now: NOON, nightly: null })));
+    expect(outcomes.filter((o) => o.status === "painted")).toHaveLength(1);
+    expect(await artOf(id)).toHaveLength(4);
   });
 });

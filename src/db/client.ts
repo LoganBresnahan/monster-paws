@@ -23,7 +23,9 @@ export function getDb(connectionString = process.env.DATABASE_URL): Db {
  * connect (oplog 0005).
  */
 export function createPool(connectionString: string): Pool {
-  const p = new Pool({ connectionString, keepAlive: true });
+  // DB_POOL_MAX caps a worker that shares the 1-vCPU cluster from home (oplog 0027); unset keeps pg's default of 10.
+  const max = Number(process.env.DB_POOL_MAX) || undefined;
+  const p = new Pool({ connectionString, keepAlive: true, ...(max ? { max } : {}) });
   const report = (err: Error) => console.error(`[db] connection error: ${err.message}`);
   p.on("error", report);
   p.on("connect", (client) => client.on("error", report));

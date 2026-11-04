@@ -781,12 +781,16 @@ else.
        │                                        2026-10-14); donors' face
        │                                        picks are its labelled set
        ▼
-  ART_STORE_DIR/keepsakes/<id>/<n>.jpg          built (demo): JPEG, pixels only
-       │   artFilePath(artKey(id, n))
+  ART_STORE_DIR/keepsakes/<id>/<n>.jpg          built (demo): JPEG, pixels only;
+       │   artFilePath(artKey(id, n))           the store bound to one database
+       │                                        by its .database marker, since
+       │                                        every database's ids start at 1
        ▼
   keepsake_fact  field='art' ×4  basis = the keepsake's   (append, one
-       │                                        transaction: a part set is never
-       │                                        written)
+       │                                        transaction under a per-keepsake
+       │                                        advisory lock, the files written
+       │                                        inside it: a part set or a second
+       │                                        set is never written)
        ▼
   SHARE_PUBLISH=on: sharePublisher              built: the share tool's own
        │   keepsakeShare → encodePainting →     publish (src/core/share/), the

@@ -12,7 +12,7 @@ import { runIngest } from "@/core/ingest/pipeline";
 import { createRescueGroupsAdapter, rescueGroupsNormalizer } from "@/core/ingest/rescuegroups";
 import { eraseAbandonedAddresses } from "@/core/donate/intent";
 import { ART_GENERATE, ART_QUEUE_OPTIONS, sweepKeepsakes, type ArtGenerateJob } from "@/core/keepsake";
-import { generateArt, guardPainter, sharePublisher } from "@/worker/art";
+import { bindArtStore, generateArt, guardPainter, sharePublisher } from "@/worker/art";
 import { sweepWebhookSpool } from "@/core/donate/webhook-replay";
 import { artReaderFromEnv } from "@/core/email/art-source";
 import { runPaintingEmailTick } from "@/core/email/painting-sweep";
@@ -226,11 +226,15 @@ function startPaintingEmailSweep(): () => void {
 }
 
 /**
- * Only with `WORKER_MODE=art`, on the box with the card, and then nothing else registers: the droplet has no GPU and
+ * Only with `WORKER_MODE=art`, on the box with the card, and then no other job registers: the droplet has no GPU and
  * never sets it (ADR-0004 as amended 2026-10-05), and a RescueGroups key in the same `.env` must not start a poll here.
+ * `ART_SWEEP=on` beside it runs the crew sweep in this same process, the demo's one-process chain on the dev box;
+ * never under `home_worker`, which may not read the donor tables the sweep reads (oplog 0027).
  */
 async function registerArtGenerate(boss: PgBoss) {
-  await boss.createQueue(ART_GENERATE, ART_QUEUE_OPTIONS);
+  // Before any job: a store without a database of its own would mix two databases' keepsake 1 (verify, 2026-11-04).
+  console.log(`[worker] art store bound to database ${await bindArtStore(getDb(DATABASE_URL))}`);
+  if (process.env.ART_SWEEP === "on") await boss.createQueue(ART_GENERATE, ART_QUEUE_OPTIONS);
   const painter = guardPainter(process.cwd());
   // Built at registration, so a missing write key stops the worker at start rather than after a set is painted.
   const publish = sharePublisher(() => getDb(DATABASE_URL));
@@ -244,7 +248,10 @@ async function registerArtGenerate(boss: PgBoss) {
         Sentry.captureMessage(`art painted but not published: ${outcome.publishError}`, { level: "error", tags: { job: ART_GENERATE } });
       }
     } catch (err) {
-      Sentry.captureMessage(`art not generated: ${failureCode(err)}`, { level: "error", tags: { job: ART_GENERATE } });
+      // The handler's own messages name a keepsake, a run and a step, never a donor or a photo's URL, so they are logged whole.
+      const message = err instanceof Error ? err.message : String(err);
+      console.error(JSON.stringify({ event: "art.generate.failed", keepsakeId: job.data.keepsakeId, message }));
+      Sentry.captureMessage(`art not generated: ${failureCode(err)}: ${message}`, { level: "error", tags: { job: ART_GENERATE } });
       throw err;
     }
   });
@@ -262,14 +269,21 @@ async function main() {
     return;
   }
 
-  const boss = new PgBoss(DATABASE_URL);
+  const artOnly = process.env.WORKER_MODE === "art";
+  // The art worker only works its queue: no migrations, maintenance or cron of its own, and a capped pool, because
+  // the droplet's worker owns pg-boss's schema and the cluster is a db-s-1vcpu-1gb (oplog 0027). The dev box's
+  // one-process chain (ART_SWEEP=on) is the only worker on its database, so it keeps pg-boss's schema and upkeep.
+  if (artOnly) process.env.DB_POOL_MAX ??= "2";
+  const devChain = process.env.ART_SWEEP === "on";
+  const boss = artOnly
+    ? new PgBoss({ connectionString: DATABASE_URL, migrate: devChain, supervise: devChain, schedule: false, max: 2 })
+    : new PgBoss(DATABASE_URL);
   boss.on("error", (err: Error) => {
     console.error("[pg-boss]", err);
     Sentry.captureException(err, { tags: { component: "worker", source: "pg-boss" } });
   });
   await boss.start();
 
-  const artOnly = process.env.WORKER_MODE === "art";
   if (artOnly) {
     await registerArtGenerate(boss);
   } else {

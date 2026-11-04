@@ -384,3 +384,12 @@ is built, and the entry is due 2026-11-04 21:00 UTC.
 ### Revisit triggers
 - The home worker is built (roadmap item 4): the demo's path is retired, never
   promoted to production.
+
+### Later the same day: the same job paints real gifts
+Logan, to the moderator: "i want real donations working", and "yes we can run
+the worker on this dev setup". So ADR-0004 as amended 2026-11-04 governs where
+this job runs for production: on the dev distro, in a container, under a
+Postgres role and an SSH key of its own (oplog 0027). "Nothing here is
+production" now holds only for `monsterpaws_demo` and the crew sweep
+(`ART_SWEEP=on`), which never runs under that role. The revisit trigger above
+holds for both: when the home worker is built, this path is retired.

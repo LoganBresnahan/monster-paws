@@ -624,7 +624,9 @@ def run_batch(batch: str, limit: int | None, dry: bool, only: str | None = None)
     # Grouped by LoRA so the model is patched once per chunk: every switch
     # re-patches the UNet, and on the Arc that cost host memory (2026-10-08).
     todo = sorted(todo, key=lambda r: (r.get("family", "sdxl"), r.get("dtype") or "", r.get("lora") or ""))[: limit or None]
-    print(f"{batch}: {len(runs)} runs in spec, {len(done)} done, {len(todo)} to go")
+    # Done counts this spec's runs only: the log keeps ids a changed spec dropped, and guard.sh reads spec less done as what is left.
+    finished = sum(1 for r in runs if r["id"] in done)
+    print(f"{batch}: {len(runs)} runs in spec, {finished} done, {len(todo)} to go")
     if dry:
         for r in todo:
             print(" ", r["id"])

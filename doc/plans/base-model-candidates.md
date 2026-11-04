@@ -3732,6 +3732,21 @@ On Logan's "commit and realign" (this stream's work landed on topdog as
   (a token in a message is the page), and is never retried, so it is a hand
   rerun of `npm run share -- publish`. Checked on the CPU: a Commons photo
   as a held one, no colour, cut with its head in 13 s. Tests: twenty.
+- **The verifier's review of `ac90f6f` and `8cc3c7e`, fixed (2026-11-04):**
+  a run folder named for the keepsake's token (`runName`), since ids start
+  at 1 in every database and the demo's keepsake 1 would have shared
+  production's; the art store bound to one database by a `.database`
+  marker (`bindArtStore`, at boot and before a paint); a run's paintings
+  only this spec's (`paintedFor`: animal, prompt and words, not a seed
+  alone); a crew pet only on the crew's basis, its pet looked up by own
+  key, the latest photo fact; the files and facts written under a
+  per-keepsake advisory lock (three at once write one set); art mode's
+  pg-boss with no migrations, upkeep or cron and its pools capped at 2,
+  except the dev box's one-process chain (`ART_SWEEP=on`); failures
+  logged with their message; `explore.py`'s "done" this spec's runs only,
+  so the guard's arithmetic holds after a spec changes; ADR-0028's note
+  reconciled with real gifts. Deferred, in `doc/issues.md`: a failed
+  publish is never retried. Tests: twenty-five.
 
 ### The crew for the site — Logan's picks (2026-11-04)
 

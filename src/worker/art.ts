@@ -1,7 +1,8 @@
 import { spawn } from "node:child_process";
+import { createHash } from "node:crypto";
 import { createWriteStream, existsSync, mkdirSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
-import { basename, dirname, extname, join } from "node:path";
-import { and, eq } from "drizzle-orm";
+import { basename, dirname, extname, isAbsolute, join } from "node:path";
+import { and, asc, eq, sql } from "drizzle-orm";
 import sharp from "sharp";
 import { spokenAnimalName } from "@/core/email/animal-name";
 import type { DisplayPhoto } from "@/core/ingest/pipeline";
@@ -10,7 +11,7 @@ import { failureCode } from "@/core/observability";
 import { keepsakeShare } from "@/core/share/keepsake";
 import { createR2ObjectStore, encodePainting, publishShare } from "@/core/share/publish";
 import type { Db } from "@/db/client";
-import { keepsakeFact } from "@/db/schema";
+import { keepsake, keepsakeFact } from "@/db/schema";
 
 /** A listing as `comfyui/detect.py` reads it: the words its votes need and the photos it chooses in. */
 export interface DetectListing {
@@ -83,7 +84,8 @@ export function loadCrewTable(path = "comfyui/keepsake-crew.json"): CrewTable {
 
 /** Four seeds, one painting each: a donation gets four (ADR-0004 as amended 2026-11-03, decision 5). */
 export function crewSpec(table: CrewTable, slug: string, keepsakeId: number, animal?: string): PaintSpec {
-  const pet = table.pets[slug];
+  // own keys only: "constructor" or "__proto__" in a fact must never reach an object's prototype
+  const pet = Object.hasOwn(table.pets, slug) ? table.pets[slug] : undefined;
   if (!pet) throw new Error(`no crew painting row for '${slug}'`);
   if (table.seeds.length !== 4) throw new Error(`the crew table holds ${table.seeds.length} seeds; a donation gets four`);
   return {
@@ -142,6 +144,34 @@ export function listingSpec(table: CrewTable, name: string, species: string, wor
   };
 }
 
+/**
+ * A keepsake's run folder: never its id alone, which starts at 1 in every database, so the demo's keepsake 1 and
+ * production's would share a folder and a live run would read another animal's paintings (verify, 2026-11-04).
+ */
+export function runName(keepsakeId: number, shareToken: string): string {
+  return `keepsake-${keepsakeId}-${createHash("sha256").update(shareToken).digest("hex").slice(0, 12)}`;
+}
+
+const STORE_MARK = ".database";
+
+/**
+ * Binds `ART_STORE_DIR` to one database by a marker the first worker writes: `artKey` is the keepsake's id, so two
+ * databases sharing a store would overwrite each other's paintings. Refuses a store that names another.
+ */
+export async function bindArtStore(db: Db, root: string | undefined = process.env.ART_STORE_DIR): Promise<string> {
+  if (!root || !isAbsolute(root)) throw new Error("ART_STORE_DIR must be an absolute directory");
+  const [{ name }] = (await db.execute(sql`select current_database() as name`)).rows as { name: string }[];
+  mkdirSync(root, { recursive: true });
+  const mark = join(root, STORE_MARK);
+  if (!existsSync(mark)) writeFileSync(mark, `${name}\n`);
+  const bound = readFileSync(mark, "utf8").trim();
+  if (bound !== name) throw new Error(`ART_STORE_DIR belongs to database ${bound}, not ${name}`);
+  return name;
+}
+
+/** The namespace of the per-keepsake lock that serialises writing a set: two handlers once wrote eight art rows (verify). */
+const ART_LOCK = 0x41525447;
+
 const QUIET_START_MIN = 6 * 60 + 45;
 const QUIET_CAP_MIN = 10 * 60;
 
@@ -171,10 +201,14 @@ export async function generateArt(
   opts: { table?: CrewTable; now?: Date; nightly?: string | null; live?: boolean; publish?: (keepsakeId: number) => Promise<void> } = {},
 ): Promise<ArtOutcome> {
   const { keepsakeId, photos = [] } = job;
-  const facts = await db.select().from(keepsakeFact).where(eq(keepsakeFact.keepsakeId, keepsakeId));
+  const [row] = await db.select({ token: keepsake.shareToken }).from(keepsake).where(eq(keepsake.id, keepsakeId)).limit(1);
+  if (!row) throw new Error(`keepsake ${keepsakeId} doesn't exist`);
+  const facts = await db.select().from(keepsakeFact).where(eq(keepsakeFact.keepsakeId, keepsakeId)).orderBy(asc(keepsakeFact.id));
   if (facts.some((f) => f.field === FACT.art)) return { status: "has-art" };
-  const source = facts.find((f) => f.field === FACT.sourcePhoto);
+  // the latest row is the fact: a change is a new row, never an UPDATE (ADR-0022 §3)
+  const source = facts.filter((f) => f.field === FACT.sourcePhoto).at(-1);
   const crew = source ? (source.value as SourcePhotoFact) : null;
+  if (source && source.basis !== CREW_BASIS) throw new Error(`keepsake ${keepsakeId} names a crew pet on a shelter's basis`);
   // A crew pet paints from its own originals and a listing only from the photos its job carries (ADR-0028 §6, ADR-0022 as amended 2026-10-27).
   if (crew && (crew.photo !== null || photos.length > 0)) throw new Error(`keepsake ${keepsakeId} is a crew pet's and names a photo`);
   if (!crew && photos.length === 0) throw new Error(`keepsake ${keepsakeId} has neither a crew pet nor photos in its job`);
@@ -187,9 +221,10 @@ export async function generateArt(
   }
   const busy = await painter.busy();
   if (busy) return { status: "skipped", reason: busy };
+  await bindArtStore(db);
 
   const table = opts.table ?? loadCrewTable();
-  const name = `keepsake-${keepsakeId}`;
+  const name = runName(keepsakeId, row.token);
   let pngs: string[];
   if (crew) {
     const pet = table.pets[crew.pet];
@@ -221,20 +256,21 @@ export async function generateArt(
   if (pngs.length !== 4) throw new Error(`keepsake ${keepsakeId}: ${pngs.length} paintings, not four`);
 
   const arts: ArtFact[] = pngs.map((_, i) => ({ key: artKey(keepsakeId, i + 1), candidate: i + 1 }));
-  for (const [i, png] of pngs.entries()) {
-    const path = artFilePath(arts[i].key);
-    mkdirSync(dirname(path), { recursive: true });
-    // Pixels only, as every image we publish: sharp writes no metadata unless asked (ADR-0030).
-    await sharp(png).jpeg({ quality: 92, mozjpeg: true }).toFile(path);
-  }
-
   const wrote = await db.transaction(async (tx) => {
+    // Under the lock the files and the facts are one write: a second handler waits, then finds the art and writes nothing.
+    await tx.execute(sql`select pg_advisory_xact_lock(${ART_LOCK}, ${keepsakeId})`);
     const again = await tx
       .select({ id: keepsakeFact.id })
       .from(keepsakeFact)
       .where(and(eq(keepsakeFact.keepsakeId, keepsakeId), eq(keepsakeFact.field, FACT.art)))
       .limit(1);
     if (again.length > 0) return false;
+    for (const [i, png] of pngs.entries()) {
+      const path = artFilePath(arts[i].key);
+      mkdirSync(dirname(path), { recursive: true });
+      // Pixels only, as every image we publish: sharp writes no metadata unless asked (ADR-0030).
+      await sharp(png).jpeg({ quality: 92, mozjpeg: true }).toFile(path);
+    }
     await tx.insert(keepsakeFact).values(
       arts.map((value) => ({ keepsakeId, field: FACT.art, value, basis: basis!, snapshottedAt: opts.now ?? new Date() })),
     );
@@ -313,6 +349,18 @@ export function hostFreeGb(guardOutput: string): number | null {
 }
 
 /**
+ * Each seed's painting from a run's `runs.jsonl`, or null: only this spec's runs count, since a folder can hold an
+ * earlier prompt's and a seed alone names no animal (verify, 2026-11-04). The latest wins a retried seed.
+ */
+export function paintedFor(runsJsonl: string, spec: PaintSpec): (string | null)[] {
+  const [animal] = Object.keys(spec.animals);
+  const runs = runsJsonl.split("\n").filter(Boolean)
+    .map((line) => JSON.parse(line) as { animal: string; prompt: string; describe: string; seed: number; output?: string })
+    .filter((r) => r.output && r.animal === animal && r.prompt === spec.prompts[0] && r.describe === spec.describe[0]);
+  return spec.seeds.map((seed) => runs.findLast((r) => r.seed === seed)?.output ?? null);
+}
+
+/**
  * Paints through `comfyui/guard.sh batch`, never a ComfyUI of its own: the guard restarts ComfyUI and
  * kills it when the driver's pool leaks, and nothing drives the Arc except through it (doc/infra.md, Home GPU).
  */
@@ -370,14 +418,10 @@ export function guardPainter(root: string): Painter {
         root,
         log,
       );
-      const runs = readFileSync(join(dir, "runs.jsonl"), "utf8").split("\n").filter(Boolean)
-        .map((line) => JSON.parse(line) as { seed: number; output?: string })
-        .filter((r) => r.output);
-      return spec.seeds.map((seed) => {
-        const r = runs.findLast((x) => x.seed === seed);
-        if (!r?.output) throw new Error(`${name}: seed ${seed} was not painted; see ${log}`);
-        const marked = join(dir, "marked", `${basename(r.output, extname(r.output))}.png`);
-        if (!existsSync(marked)) throw new Error(`${name}: seed ${seed} was not marked; see ${log}`);
+      return paintedFor(readFileSync(join(dir, "runs.jsonl"), "utf8"), spec).map((output, i) => {
+        if (!output) throw new Error(`${name}: seed ${spec.seeds[i]} was not painted; see ${log}`);
+        const marked = join(dir, "marked", `${basename(output, extname(output))}.png`);
+        if (!existsSync(marked)) throw new Error(`${name}: seed ${spec.seeds[i]} was not marked; see ${log}`);
         return marked;
       });
     },

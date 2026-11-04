@@ -74,6 +74,18 @@ is the record, and a file of ticked boxes stops being read.
 
 ## Ops
 
+- **A painted keepsake whose publish failed is never published again.**
+  `art.generate` publishes through the share tool after writing the four
+  art facts (`sharePublisher`, `src/worker/art.ts`); a failure keeps the art
+  and raises "art painted but not published" in Sentry, but the sweep only
+  sends a job for a keepsake with no art, so nothing tries again. On
+  production the droplet mails from the published copy (the demo chain's
+  contract), so a gift whose publish failed gets no email until someone
+  runs `npm run share -- publish <keepsake-id>` by hand. A fix wants a
+  record of what was published, which the share tool doesn't keep: a
+  sweep for painted keepsakes with no published copy, or the email sweep
+  asking for one. Found while building the publish step, 2026-11-04.
+
 - **Worktrees' test runs truncate each other, because `.env`'s `TEST_DATABASE_URL`
   has no effect.** `npm test` is bare `vitest run`, which doesn't load `.env`, so
   `tests/support/db.ts` falls back to `monsterpaws_test` in every worktree, whatever
