@@ -74,6 +74,13 @@ export default function PrivacyPage() {
         </li>
       </ul>
 
+      <h2 className={heading}>Your painting&apos;s own page</h2>
+      <p className={paragraph}>
+        Your painting also gets its own page, so you can share it. Anyone with the link can open that page. It shows the
+        painting and the animal&apos;s name, and nothing about you. We take it down if you ask, or if the shelter withdraws
+        permission. The paintings in your email stay yours either way.
+      </p>
+
       <h2 className={heading}>If a shelter withdraws permission</h2>
       <p className={paragraph}>
         We stop offering gifts for its animals. A gift already made can still get its painting, and we delete the photos once

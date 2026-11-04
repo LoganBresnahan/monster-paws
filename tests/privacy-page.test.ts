@@ -14,6 +14,12 @@ describe("the privacy page", () => {
     );
   });
 
+  it("says what a share page shows and when it comes down, in Logan's words of 2026-11-04 (ADR-0036)", () => {
+    expect(text).toContain(
+      "Your painting also gets its own page, so you can share it. Anyone with the link can open that page. It shows the painting and the animal's name, and nothing about you. We take it down if you ask, or if the shelter withdraws permission. The paintings in your email stay yours either way.",
+    );
+  });
+
   it("never promises a painting flatly after a shelter withdraws", () => {
     expect(text).toContain("A gift already made can still get its painting");
     expect(text).not.toContain("still gets its painting");
