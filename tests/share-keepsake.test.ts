@@ -1,4 +1,7 @@
-import { readFileSync } from "node:fs";
+import { spawnSync } from "node:child_process";
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import path from "node:path";
 import { sql } from "drizzle-orm";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { spokenAnimalName } from "@/core/email/animal-name";
@@ -8,7 +11,7 @@ import { keepsakeShare, shelterShareTokens } from "@/core/share/keepsake";
 import type { ShelterEntry } from "@/core/shelters";
 import { closeDb, type Db } from "@/db/client";
 import { donationIntents, keepsake, keepsakeFact } from "@/db/schema";
-import { SKIP_DB_TESTS, testDb, truncateDonor } from "./support/db";
+import { SKIP_DB_TESTS, TEST_DATABASE_URL, testDb, truncateDonor } from "./support/db";
 
 const SLUG = "a-staging-nonprofit";
 const NOW = new Date("2026-11-04T12:00:00Z");
@@ -24,6 +27,47 @@ const shelterEntry = (grantedAt: string, revokedAt?: string): readonly ShelterEn
     grants: [{ permission: "digify", grantedAt, ...(revokedAt ? { revokedAt } : {}) }],
   } as unknown as ShelterEntry,
 ];
+
+// Run as the real CLI, because the check that matters is that a hand publish makes it at all.
+describe.skipIf(SKIP_DB_TESTS)("npm run share -- publish and the art store's marker (ADR-0036)", () => {
+  const stores: string[] = [];
+  function storeWith(marker: string | null): string {
+    const root = mkdtempSync(path.join(tmpdir(), "share-store-"));
+    stores.push(root);
+    if (marker !== null) writeFileSync(path.join(root, ".database"), `${marker}\n`);
+    return root;
+  }
+  function publish(root: string) {
+    return spawnSync("node_modules/.bin/tsx", ["src/worker/share-cli.ts", "publish", "1"], {
+      encoding: "utf8",
+      env: { ...process.env, DATABASE_URL: TEST_DATABASE_URL, ART_STORE_DIR: root, SHARE_WRITE_ENDPOINT: "", SHARE_WRITE_ACCESS_KEY_ID: "" },
+    });
+  }
+  afterAll(() => {
+    for (const root of stores) rmSync(root, { recursive: true, force: true });
+  });
+
+  it("refuses a store marked for another database, before reading the keepsake", { timeout: 30_000 }, () => {
+    const run = publish(storeWith("monsterpaws_demo"));
+    expect(run.status).toBe(1);
+    expect(run.stderr).toContain("belongs to database monsterpaws_demo");
+  });
+
+  it("refuses a store with no marker, and never writes one", { timeout: 30_000 }, () => {
+    const root = storeWith(null);
+    const run = publish(root);
+    expect(run.status).toBe(1);
+    expect(run.stderr).toContain("no database marker");
+    expect(existsSync(path.join(root, ".database"))).toBe(false);
+  });
+
+  it("gets past the check on this database's own store", { timeout: 30_000 }, () => {
+    const name = new URL(TEST_DATABASE_URL).pathname.slice(1);
+    const run = publish(storeWith(name));
+    expect(run.status).toBe(1);
+    expect(run.stderr).not.toMatch(/marker|belongs to database/);
+  });
+});
 
 describe.skipIf(SKIP_DB_TESTS)("what a keepsake publishes (ADR-0036)", () => {
   let db: Db;

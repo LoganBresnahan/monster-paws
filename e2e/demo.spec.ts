@@ -30,9 +30,9 @@ test("a crew painting and photo open whole and close three ways", async ({ page 
 
 // The demo walks the real pages with the crew (ADR-0028 as amended 2026-10-26,
 // later): browse, listing, sponsor, a checkout placeholder, thanks, and the
-// pretend collection. No money moves and nothing is stored, so the walk is the
+// pretend sponsor history. No money moves and nothing is stored, so the walk is the
 // whole contract; the pet and amount ride in the URL.
-test("the demo walks a crew pet from browse to the keepsake", async ({ page }) => {
+test("the demo walks a crew pet from browse to the painting", async ({ page }) => {
   await page.goto("/demo");
   await expect(page.getByText("Demo: no money moves")).toBeVisible();
   await page.getByRole("link", { name: /^Beetle/ }).click();
@@ -54,20 +54,28 @@ test("the demo walks a crew pet from browse to the keepsake", async ({ page }) =
   await page.waitForURL(/\/demo\/beetle\/thanks\?amount=2/);
   await expect(page.getByText("Your $2 is on its way to Beetle's shelter.")).toBeVisible();
   await expect(page.getByRole("img", { name: "A photo of Beetle" })).toBeVisible();
-  await page.getByRole("link", { name: "See Beetle in your collection" }).click();
+  await page.getByRole("link", { name: "See your sponsor history" }).click();
 
-  await page.waitForURL(/\/demo\/collection\/beetle\?amount=2/);
-  // The keepsake is being painted when the card first shows, never there at once.
-  await expect(page.getByText("Painting Beetle's keepsake")).toBeVisible();
-  await expect(page.getByRole("button", { name: "See Beetle's keepsake larger" })).toBeVisible({ timeout: 10_000 });
+  await page.waitForURL(/\/demo\/history\/beetle\?amount=2/);
+  // The painting is under way when the card first shows, never there at once.
+  await expect(page.getByText("Painting Beetle…")).toBeVisible();
+  await expect(page.getByRole("button", { name: "See Beetle's painting larger" })).toBeVisible({ timeout: 10_000 });
   await expect(page.getByText("$2 to her shelter")).toBeVisible();
 
-  // The walk ends at the keepsake: no updates or adoption day before attestations exist (ADR-0028 as amended 2026-11-03).
+  // The walk ends at the painting: no updates or adoption day before attestations exist (ADR-0028 as amended 2026-11-03).
   await expect(page.getByText("Confirmed by the shelter")).toHaveCount(0);
   await expect(page.getByText("adopted today")).toHaveCount(0);
   await expect(page.getByRole("button", { name: /next update|adoption day/i })).toHaveCount(0);
   await expect(page.getByRole("link", { name: "See adoptable animals" })).toHaveAttribute("href", "/animals");
 });
+
+// The painting is our own thank-you: no page says you give to get, or that a painting is yours (ADR-0037).
+for (const path of ["/", "/demo", "/demo/beetle", "/demo/beetle/sponsor", "/demo/beetle/thanks?amount=5", "/demo/history/beetle?amount=5"]) {
+  test(`${path} never says you give to get`, async ({ page }) => {
+    await page.goto(path);
+    await expect(page.getByRole("main")).not.toContainText(/\b(keepsakes?|gifts?|yours|you get|you keep|collection|shelf|in exchange)\b/i);
+  });
+}
 
 test("a crew name the demo does not have is a 404", async ({ page }) => {
   const response = await page.goto("/demo/nobody");

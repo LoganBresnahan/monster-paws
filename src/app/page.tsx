@@ -8,8 +8,8 @@ import { Lightbox } from "@/ui/lightbox";
 const HOW = [
   { title: "Find", blurb: "Browse real adoptable animals from shelters near you." },
   { title: "Sponsor", blurb: "Donate any amount. It goes to their shelter, and we keep $0." },
-  { title: "Keepsake", blurb: "Get a watercolour keepsake painted in their likeness." },
-  { title: "Share", blurb: "Share their keepsake with everyone." },
+  { title: "Our thank-you", blurb: "We try to paint them in watercolour." },
+  { title: "Share", blurb: "Share the painting with everyone." },
 ];
 
 function HowVisual({ step }: { step: string }) {
@@ -31,7 +31,7 @@ function HowVisual({ step }: { step: string }) {
           <span className="text-xs text-muted">→ to the shelter, $0 to us</span>
         </div>
       );
-    case "Keepsake":
+    case "Our thank-you":
       return (
         <div className={frame}>
           <Image src="/brand/crew/ducky-painting.jpg" alt="" fill sizes="(min-width: 1024px) 215px, (min-width: 640px) 45vw, 90vw" className="object-cover" />
@@ -41,7 +41,7 @@ function HowVisual({ step }: { step: string }) {
       return (
         <div className={`${frame} flex flex-col items-center justify-center gap-2 p-3 text-xs`}>
           <span className="rounded-full border-2 border-leaf px-3 py-1 font-bold text-leaf-deep">Share ↗</span>
-          <span className="text-muted">Ducky&apos;s keepsake</span>
+          <span className="text-muted">Ducky&apos;s painting</span>
         </div>
       );
   }
@@ -61,8 +61,8 @@ export default function Home() {
         />
       </h1>
       <p className="mt-4 max-w-xl text-lg text-muted">
-        Sponsor a real shelter animal and get a keepsake painting in their
-        likeness.{" "}
+        Sponsor a real shelter animal. As our thank-you, we try to paint them
+        in watercolour.{" "}
         <span className="font-semibold text-foreground">
           Every donation goes to the shelter. We keep $0.
         </span>
@@ -89,7 +89,7 @@ export default function Home() {
         </h2>
         <p className="mx-auto mt-2 max-w-2xl text-muted">
           The founders&apos; own pets, already home. Each watercolour is painted
-          by AI from real photos, like the keepsakes a sponsor collects.
+          by AI from real photos, like the ones we try to make for sponsors.
         </p>
         <ul className="mt-6 flex flex-wrap justify-center gap-8">
           {CREW.map((pet) => (

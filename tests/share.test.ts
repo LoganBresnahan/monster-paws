@@ -1,4 +1,5 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { GET } from "@/app/share/[token]/[n]/painting.jpg/route";
 import sharp from "sharp";
 import {
   createR2ObjectStore,
@@ -218,6 +219,33 @@ describe("the write store (ADR-0036)", () => {
     await expect(store.put(key, new Uint8Array([1]), "text/plain")).rejects.toThrow(/not a share key/);
     await expect(store.delete(key)).rejects.toThrow(/not a share key/);
     expect(urls).toEqual([]);
+  });
+});
+
+describe("the painting's route (ADR-0036)", () => {
+  const ctx = { params: Promise.resolve({ token: TOKEN, n: "2" }) };
+  const url = `https://monsterpaws.org/share/${TOKEN}/2/painting.jpg`;
+
+  beforeEach(() => {
+    vi.stubEnv("SHARE_BASE_URL", "https://files.example");
+    vi.stubGlobal("fetch", vi.fn(async () => new Response("bytes", { status: 200 })));
+  });
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    vi.unstubAllGlobals();
+  });
+
+  it("serves the painting at its one URL, cacheable", async () => {
+    const res = await GET(new Request(url), ctx);
+    expect(res.status).toBe(200);
+    expect(res.headers.get("cache-control")).toContain("s-maxage");
+  });
+
+  it("refuses a query string, uncached, since a purge can't name that entry", async () => {
+    const res = await GET(new Request(`${url}?x=1`), ctx);
+    expect(res.status).toBe(404);
+    expect(res.headers.get("cache-control")).toBe("no-store");
+    expect(fetch).not.toHaveBeenCalled();
   });
 });
 

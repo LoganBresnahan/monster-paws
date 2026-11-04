@@ -37,7 +37,7 @@ export function AmountPicker({ pet, initial }: { pet: CrewPet; initial: number }
   );
 }
 
-/** The keepsake still being painted: what the collection card shows until it arrives. */
+/** The keepsake still being painted: what the card shows until it arrives. */
 function PaintingUnderWay({ pet }: { pet: CrewPet }) {
   return (
     <div className="relative overflow-hidden rounded-[1rem] bg-card">
@@ -53,19 +53,19 @@ function PaintingUnderWay({ pet }: { pet: CrewPet }) {
         <span aria-hidden className="text-5xl motion-safe:animate-bounce">
           🖌️
         </span>
-        <p className="text-lg font-bold">Painting {pet.name}&apos;s keepsake…</p>
+        <p className="text-lg font-bold">Painting {pet.name}…</p>
       </div>
     </div>
   );
 }
 
 /**
- * The collection card: the keepsake being painted, revealed a few seconds in
+ * The sponsor history's card: the painting under way, revealed a few seconds in
  * (the real one arrives when it is ready). The demo ends here: never bring back
  * example updates or adoption day before attestations exist (ADR-0028 as
  * amended 2026-11-03).
  */
-export function CollectionCard({ pet, amount, sponsoredOn }: { pet: CrewPet; amount: number; sponsoredOn: string }) {
+export function SponsorHistoryCard({ pet, amount, sponsoredOn }: { pet: CrewPet; amount: number; sponsoredOn: string }) {
   const [arrived, setArrived] = useState(false);
 
   useEffect(() => {
@@ -84,12 +84,12 @@ export function CollectionCard({ pet, amount, sponsoredOn }: { pet: CrewPet; amo
               height={PAINTING[1]}
               alt={`${pet.name}, painted in watercolour`}
               caption={`${pet.name}, painted in watercolour`}
-              label={`See ${pet.name}'s keepsake larger`}
+              label={`See ${pet.name}'s painting larger`}
               className="block w-full rounded-[1rem] motion-safe:animate-[fade-in_500ms_ease-out]"
             >
               <Image
                 src={`/brand/crew/${pet.slug}-painting.jpg`}
-                alt={`${pet.name}'s keepsake, painted in watercolour`}
+                alt={`${pet.name}, painted in watercolour`}
                 width={PAINTING[0]}
                 height={PAINTING[1]}
                 sizes="(min-width: 672px) 640px, 90vw"
@@ -108,8 +108,7 @@ export function CollectionCard({ pet, amount, sponsoredOn }: { pet: CrewPet; amo
         </div>
       </div>
       <p className="mt-3 text-sm text-muted">
-        For a real sponsorship the painting takes a while, and you keep all four paintings we make of{" "}
-        {pronoun(pet, "them")}.
+        For a real sponsorship the painting takes a while.
       </p>
 
       <p className="mt-8 text-center text-muted">

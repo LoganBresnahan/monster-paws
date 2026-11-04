@@ -1,7 +1,7 @@
 # ADR-0036: A keepsake's paintings get a public page of their own, with no donor on it
 
-Status: proposed (2026-11-03). Logan asked for the page, chose its bucket and decided real paintings go on
-it. Accepting this ADR is his, along with the consent line for `doc/consent/0001-the-crew.md`.
+Status: accepted (2026-11-04). Logan, to the moderator: "accept 0036". He asked for the page, chose its
+bucket and decided real paintings go on it; the crew's consent line is in `doc/consent/0001-the-crew.md`.
 
 ## Context
 Logan, to the moderator, 2026-11-03: "no lets build the share page that opens form the email".
@@ -75,7 +75,9 @@ reads published files, not the database.
    `navigator.share` hands over the image file alone, fetched ahead of the tap, for Instagram and TikTok.
    Instagram has no share link, but Logan asked to see it: "i don't see instagram which would be nice". So
    it gets a button that opens that sheet, or, with no sheet, saves the image and says to post it by hand.
-10. **Publishing proves itself.** The command re-encodes from pixels alone, refuses any size but
+10. **Publishing proves itself.** The command refuses an `ART_STORE_DIR` whose marker is missing or names another
+    database, because a keepsake's id starts at 1 in every database and the wrong store would put another
+    animal's paintings under this token. It re-encodes from pixels alone, refuses any size but
     1216×832, reads each upload back by hash, and writes the manifest last, so a failed upload leaves no
     page. It prints each hash and the URL. Real writes go under an oplog entry and use the pair already
     in `pass`. Logan: "the cloudflare api tokens are already in pass. they are the generic named ones not
@@ -98,6 +100,20 @@ reads published files, not the database.
     runs: without the purge's keys the command says so and exits 2. It refuses to start without an https
     `SHARE_BASE_URL`, which would leave the media hostname's copies unpurged. A `--shelter` slug that matches
     nothing exits 2, so a typo can't read as a finished withdrawal.
+
+    **What the edge does**, from `paintings`' first real publish: Cloudflare caches a 404 on a `.jpg` for about
+    3 minutes, though not on a `.json`. After a takedown, `1.jpg` and `4.jpg` answered 404 on GET with
+    `cf-cache-status: HIT` while HEAD stayed 200. So a republish within about 3 minutes of a takedown, or of
+    any GET of a missing JPEG, needs a purge or the wait; the page can exist while its paintings 404. Check a
+    publish with GET on the public hostname, never HEAD: `publish`'s own read-back goes to R2 and can't see
+    this. A preview bot arriving in that window may cache a card with no image, so don't share the link until
+    GET answers 200.
+
+    The purge's 14 URLs are every URL our pages produce: the share page, four painting pages, four images, and
+    the media hostname's manifest and four JPEGs. A query string makes another entry at the edge, so the image
+    route answers one with an uncached 404. The media hostname can't refuse one, but its copies carry no
+    long cache header, and reaching them takes the token anyway. A crafted `/_next/image?url=/share/…` can leave
+    a copy in the container's optimizer cache for up to 4 hours. None of our pages produce one, so that is accepted.
 
 ## Consequences
 - A published painting is public to anyone holding the link, and a link can travel anywhere.

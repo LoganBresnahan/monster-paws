@@ -393,3 +393,10 @@ Postgres role and an SSH key of its own (oplog 0027). "Nothing here is
 production" now holds only for `monsterpaws_demo` and the crew sweep
 (`ART_SWEEP=on`), which never runs under that role. The revisit trigger above
 holds for both: when the home worker is built, this path is retired.
+
+## Amendment (2026-11-04): the demo's collection is a sponsor history
+
+Logan: "as far as the users 'collection' we need to avoid that they are 'theirs' more like, you can view the
+painting on your sponsor history page". So `/demo/collection/<pet>` becomes `/demo/history/<pet>`, and its "joins
+your shelf" line goes. Only the demo says it, because a real donor has no such page. The demo's other words follow
+ADR-0037: the painting is our thank-you, which we try to make.

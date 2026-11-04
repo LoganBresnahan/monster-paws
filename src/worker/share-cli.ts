@@ -13,6 +13,7 @@ import {
 import { isShareToken, sharePagePath } from "@/core/share/source";
 import { isValidSlug } from "@/core/sources";
 import { closeDb, getDb } from "@/db/client";
+import { checkArtStore } from "@/worker/art";
 import { SITE_ORIGIN } from "@/ui/site";
 
 const USAGE = `npm run share -- publish <keepsake-id>
@@ -42,6 +43,7 @@ function store() {
 async function publish(rawId: string | undefined): Promise<void> {
   const id = Number(rawId);
   if (!Number.isInteger(id) || id <= 0) throw new Error(`not a keepsake id\n\n${USAGE}`);
+  await checkArtStore(getDb());
   const { token, manifest, files } = await keepsakeShare(getDb(), id, { speak: spokenAnimalName });
   const paintings = await Promise.all(files.map(async (path) => encodePainting(await readFile(path))));
   const published = await publishShare(store(), manifest, paintings, token);

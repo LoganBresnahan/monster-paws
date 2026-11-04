@@ -60,14 +60,14 @@ export default async function DemoSponsor({
           <p className="mt-2 text-sm leading-relaxed text-muted">
             Straight to {pet.name}&apos;s shelter through Every.org, a nonprofit that sends it on and
             emails your tax receipt. <span className="font-semibold text-foreground">We keep $0.</span>{" "}
-            With a card, the processor&apos;s fee comes out of your gift, not on top
-            of it: about 30¢ plus 2%, so about 40¢ of a $5 gift.
+            With a card, the processor&apos;s fee comes out of your donation, not on top
+            of it: about 30¢ plus 2%, so about 40¢ of a $5 donation.
           </p>
         </div>
         <div className="rounded-cuddly border-2 border-paw/20 bg-card p-5">
-          <h2 className="font-bold">What you get</h2>
+          <h2 className="font-bold">Our thank-you</h2>
           <p className="mt-2 text-sm leading-relaxed text-muted">
-            🎨 A watercolour keepsake of {pronoun(pet, "them")}, painted from the shelter&apos;s photos.
+            🎨 We try to paint {pronoun(pet, "them")} in watercolour from the shelter&apos;s photos. Your donation goes to the shelter either way.
           </p>
         </div>
       </section>

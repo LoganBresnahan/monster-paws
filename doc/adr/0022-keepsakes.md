@@ -239,7 +239,7 @@ paintings" stand. How the grant is read after a withdrawal is its question 4. A 
 (ADR-0035 decisions 7 and 11). What we tell people becomes "can still get its painting" (its question 7); this ADR's
 "still gets" stays as recorded.
 
-## Amendment (2026-11-03): a public page for a published keepsake (proposed, ADR-0036)
+## Amendment (2026-11-03): a public page for a published keepsake (ADR-0036)
 
 ADR-0036 puts a published keepsake's paintings on a public page at an unguessable URL. Logan, 2026-11-04
 UTC: "yes real paintings on the share page is what we want". For anything published there, that reverses

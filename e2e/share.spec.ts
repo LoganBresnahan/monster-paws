@@ -27,7 +27,7 @@ test.skip(Boolean(process.env.PW_BASE_URL), "needs a server started with the sha
 
 test("the share page shows all four paintings, and each opens its own page", async ({ page }) => {
   await page.goto(SHARE);
-  await expect(page.getByRole("heading", { name: "Beetle's keepsake", level: 1 })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Beetle's paintings", level: 1 })).toBeVisible();
   await expect(page.getByText("Bloodhound · painted in watercolour")).toBeVisible();
   for (const n of [1, 2, 3, 4]) {
     await expect(page.getByRole("img", { name: `painting ${n} of 4` })).toHaveAttribute(
@@ -160,9 +160,17 @@ test("a token nobody published, a malformed one and a fifth painting are 404s", 
     "/share/..%2F..%2Fetc%2Fpasswd0000",
     `${SHARE}/5`,
     `${SHARE}/5/painting.jpg`,
+    `${SHARE}/1/painting.jpg?x=1`,
     "/share/nobodyPublishedThis000/1/painting.jpg",
   ]) {
     expect((await request.get(path)).status(), path).toBe(404);
+  }
+});
+
+test("a share page never says you give to get", async ({ page }) => {
+  for (const path of [SHARE, `${SHARE}/1`]) {
+    await page.goto(path);
+    await expect(page.getByRole("main")).not.toContainText(/\b(keepsakes?|gifts?|yours|you get|you keep|collection|in exchange)\b/i);
   }
 });
 

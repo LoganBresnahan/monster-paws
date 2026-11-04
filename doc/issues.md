@@ -50,7 +50,7 @@ is the record, and a file of ticked boxes stops being read.
 
 ## UI
 
-- **"How it works" cuts off the end of the painting's mark.** The Keepsake card
+- **"How it works" cuts off the end of the painting's mark.** The "Our thank-you" card
   in `src/app/page.tsx` shows Ducky's painting with `object-cover` in a 4:3
   frame, which trims the sides of the 1216×832 canvas, so the corner reads
   "monsterpaws.org · 2" instead of "monsterpaws.org · 2026". It did this before

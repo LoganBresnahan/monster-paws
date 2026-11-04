@@ -6,7 +6,7 @@ export function AboutMonsterPaws() {
     <section className="mt-14 rounded-cuddly border-2 border-paw/30 bg-card p-6 text-center">
       <h2 className="text-xl font-bold">What is Monster Paws?</h2>
       <p className="mx-auto mt-2 max-w-xl text-muted">
-        Sponsor a real shelter animal and get a keepsake painting in their likeness.{" "}
+        Sponsor a real shelter animal. As our thank-you, we try to paint them in watercolour.{" "}
         <span className="font-semibold text-foreground">Every donation goes to the shelter. We keep $0.</span>
       </p>
       <Link

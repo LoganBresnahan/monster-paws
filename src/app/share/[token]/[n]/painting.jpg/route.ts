@@ -4,10 +4,12 @@ import { isShareToken, paintingNumber, shareSourceFromEnv } from "@/core/share/s
 // never ends at the delete: it must purge them too (ADR-0036).
 const CACHE = "public, max-age=3600, s-maxage=2592000";
 
-export async function GET(_request: Request, { params }: { params: Promise<{ token: string; n: string }> }) {
+export async function GET(request: Request, { params }: { params: Promise<{ token: string; n: string }> }) {
   const { token, n: raw } = await params;
   const n = paintingNumber(raw);
-  const body = n && isShareToken(token) ? await shareSourceFromEnv()?.painting(token, n) : null;
+  // Never answer a query string: each is its own month-long entry at Cloudflare, which a takedown's purge can't name (ADR-0036).
+  const plain = !new URL(request.url).search;
+  const body = plain && n && isShareToken(token) ? await shareSourceFromEnv()?.painting(token, n) : null;
   if (!body) {
     return new Response("Not found", { status: 404, headers: { "Cache-Control": "no-store", "X-Robots-Tag": "noindex" } });
   }

@@ -28,7 +28,7 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
     token,
     n,
     title: `${name}, painted in watercolour — Monster Paws`,
-    description: `${name}${kind ? `, ${kind}` : ""}, painted in watercolour. A Monster Paws keepsake.`,
+    description: `${name}${kind ? `, ${kind}` : ""}, painted in watercolour by Monster Paws.`,
     alt: `${name}, painted in watercolour`,
   });
 }
@@ -69,7 +69,7 @@ export default async function SharePaintingPage({ params }: Params) {
           pageUrl={`${SITE_ORIGIN}${paintingPagePath(token, n)}`}
           imagePath={paintingImagePath(token, n)}
           fileName={fileName}
-          title={`${name}, a Monster Paws keepsake`}
+          title={`${name}, painted by Monster Paws`}
         />
       </div>
 

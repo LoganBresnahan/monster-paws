@@ -970,7 +970,7 @@ run needs a person at a terminal.
 
 ## Share page — a keepsake's own URL, no donor on it (ADR-0036)
 
-Built 2026-11-03, proposed, and nothing is published for real yet. `SHARE_BASE_URL` is `monsterpaws-media`,
+Built 2026-11-03. `SHARE_BASE_URL` is `monsterpaws-media`,
 public through `https://media.monsterpaws.org` (oplog 0026); only the loader knows it.
 
 ```

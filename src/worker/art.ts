@@ -169,6 +169,21 @@ export async function bindArtStore(db: Db, root: string | undefined = process.en
   return name;
 }
 
+/**
+ * The read-only check for `npm run share -- publish`: never write the marker here, because a hand run proves
+ * nothing about whose paintings a store holds, and `artKey` starts at 1 in every database, so the demo's keepsake 1
+ * would go out under production's token (verify, 2026-11-04; ADR-0036).
+ */
+export async function checkArtStore(db: Db, root: string | undefined = process.env.ART_STORE_DIR): Promise<string> {
+  if (!root || !isAbsolute(root)) throw new Error("ART_STORE_DIR must be an absolute directory");
+  const [{ name }] = (await db.execute(sql`select current_database() as name`)).rows as { name: string }[];
+  const mark = join(root, STORE_MARK);
+  if (!existsSync(mark)) throw new Error(`ART_STORE_DIR has no database marker, so nothing says it holds ${name}'s paintings`);
+  const bound = readFileSync(mark, "utf8").trim();
+  if (bound !== name) throw new Error(`ART_STORE_DIR belongs to database ${bound}, not ${name}`);
+  return name;
+}
+
 /** The namespace of the per-keepsake lock that serialises writing a set: two handlers once wrote eight art rows (verify). */
 const ART_LOCK = 0x41525447;
 

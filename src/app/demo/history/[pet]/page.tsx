@@ -4,14 +4,17 @@ import { notFound } from "next/navigation";
 import { CREW, crewPet, parseAmount } from "@/ui/crew";
 import { formatDate } from "@/ui/dates";
 import { SiteLogo } from "@/ui/site-logo";
-import { CollectionCard } from "../../parts";
+import { SponsorHistoryCard } from "../../parts";
 
 export function generateStaticParams() {
   return CREW.map((pet) => ({ pet: pet.slug }));
 }
 
-/** The donor's collection with one card — a pretend profile: no account exists, and nothing is stored. */
-export default async function DemoCollection({
+/**
+ * A pretend sponsor history with one card: no account exists, and nothing is stored. Only the demo says
+ * "sponsor history": a real donor has no such page, so never promise one elsewhere (ADR-0028 as amended 2026-11-04).
+ */
+export default async function DemoSponsorHistory({
   params,
   searchParams,
 }: {
@@ -27,16 +30,15 @@ export default async function DemoCollection({
     <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col px-6 py-12">
       <SiteLogo />
 
-      <h1 className="mt-8 text-3xl font-bold">Your collection</h1>
+      <h1 className="mt-8 text-3xl font-bold">Your sponsor history</h1>
       <p className="mt-1 text-muted">A pretend profile for the demo — nothing here is saved.</p>
 
       <div className="mt-8">
-        <CollectionCard pet={pet} amount={amount} sponsoredOn={formatDate(new Date())} />
+        <SponsorHistoryCard pet={pet} amount={amount} sponsoredOn={formatDate(new Date())} />
       </div>
 
       <section className="mt-14">
-        <h2 className="text-xl font-bold">Room for more</h2>
-        <p className="mt-1 text-sm text-muted">Every animal you sponsor joins your shelf.</p>
+        <h2 className="text-xl font-bold">More of the crew</h2>
         <ul className="mt-4 flex flex-wrap gap-3">
           {others.map((p) => (
             <li key={p.slug}>

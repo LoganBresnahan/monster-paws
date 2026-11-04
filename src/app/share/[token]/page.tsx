@@ -17,8 +17,8 @@ export async function generateMetadata({ params }: { params: Promise<{ token: st
   return shareMetadata({
     token,
     n: 1,
-    title: `${name}'s keepsake — Monster Paws`,
-    description: `Watercolour paintings of ${name}${kind ? `, ${kind}` : ""}. A Monster Paws keepsake.`,
+    title: `${name}'s paintings — Monster Paws`,
+    description: `Watercolour paintings of ${name}${kind ? `, ${kind}` : ""}. Painted by Monster Paws.`,
     alt: `${name}, painted in watercolour`,
   });
 }
@@ -36,7 +36,7 @@ export default async function SharePage({ params }: { params: Promise<{ token: s
     <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col px-6 py-12">
       <SiteLogo />
 
-      <h1 className="mt-8 text-3xl font-bold">{name}&apos;s keepsake</h1>
+      <h1 className="mt-8 text-3xl font-bold">{name}&apos;s paintings</h1>
       <p className="mt-2 text-lg text-muted">{paintedLine(kind)}. Pick one to save or share it.</p>
       <ShelterCredit shelter={shelter} />
 

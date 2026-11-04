@@ -16,7 +16,7 @@ const geistMono = Geist_Mono({
 
 const TITLE = "Monster Paws";
 const DESCRIPTION =
-  "Sponsor a real shelter animal and get a keepsake painting in their likeness. Every donation goes to the shelter, and we keep $0.";
+  "Sponsor a real shelter animal. As our thank-you, we try to paint them in watercolour. Every donation goes to the shelter, and we keep $0.";
 
 /**
  * Shared links are how donors arrive, so every page sends a card (ADR-0030).

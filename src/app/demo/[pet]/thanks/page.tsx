@@ -11,7 +11,7 @@ export function generateStaticParams() {
 /**
  * Back from checkout: the animal as the donor chose them, in their real
  * photo, and the way to their card. The keepsake is under way, never instant
- * (ADR-0004 as amended 2026-10-05) — it is revealed on the collection page.
+ * (ADR-0004 as amended 2026-10-05) — it is revealed on the sponsor history page.
  */
 export default async function DemoThanks({
   params,
@@ -43,16 +43,16 @@ export default async function DemoThanks({
           className="mx-auto h-auto max-h-[28rem] w-auto rounded-cuddly border-2 border-paw/30 shadow-sm"
         />
         <p className="mt-4 text-muted">
-          We&apos;re painting {pet.name}&apos;s keepsake now. For a real sponsorship it arrives when
-          it&apos;s ready and we email you; here in the demo, it&apos;s waiting in your collection.
+          We&apos;re painting {pet.name} as our thank-you. For a real sponsorship we try to email it
+          when it&apos;s ready. Here in the demo, you can view the painting on your sponsor history page.
         </p>
       </div>
 
       <Link
-        href={`/demo/collection/${pet.slug}?amount=${amount}`}
+        href={`/demo/history/${pet.slug}?amount=${amount}`}
         className="mx-auto mt-8 inline-block rounded-cuddly bg-leaf px-8 py-3 text-lg font-bold text-white shadow-md transition-colors hover:bg-leaf-deep"
       >
-        See {pet.name} in your collection
+        See your sponsor history
       </Link>
     </main>
   );
