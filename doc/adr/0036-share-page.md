@@ -113,7 +113,7 @@ reads published files, not the database.
 - A real shelter's animal can be public before its shelter knows these pages exist, because the email it
   said yes to doesn't mention them (decision 4).
 - **A withdrawal strands a paid gift's mail.** `publish` reads today's grant while `snapshotKeepsake` paints
-  on the gift's date, and on production the droplet reads art from the bucket. So a paid gift whose shelter
+  on the grant as of when the gift began (`created_at`, ADR-0035 question 4), and on production the droplet reads art from the bucket. So a paid gift whose shelter
   has withdrawn gets painted, as ADR-0022 as amended 2026-11-02 promises, but is never published and then
   can't be mailed. It needs its own path before the first withdrawal.
 - `/deploy`'s image run doesn't cover these routes: `e2e/share.spec.ts` skips under `PW_BASE_URL`, since

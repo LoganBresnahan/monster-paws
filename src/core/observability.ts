@@ -12,8 +12,10 @@ export interface ReportingEnv {
   release: string | undefined;
 }
 
-// `\bshare\/`, never `\/share\/`: an object key has no leading slash, and share errors name one (ADR-0036).
-const SECRET_IN_PATH = /(\/api\/webhooks\/everyorg\/|\/test-gift\/|\bshare\/|\/unsubscribe\/)[^"/?#\s\\]+/g;
+const SECRET_IN_PATH = /(\/api\/webhooks\/everyorg\/|\/test-gift\/|\/unsubscribe\/)[^"/?#\s\\]+/g;
+// The token's shape, never any segment: a stack frame must keep `core/share/publish.ts`. `\b`, because
+// an object key has no leading slash, and share errors name one (ADR-0036).
+const SHARE_TOKEN_IN_PATH = /\bshare\/[A-Za-z0-9_-]{22}(?![A-Za-z0-9_-])/g;
 const EMAIL_ADDRESS = /[^\s"<>(),;:\\/?&=]+(?:@|%40)[^\s"'<>(),;:\\/?&=]+\.[^\s"'<>(),;:\\/?&=]+/g;
 /** Drizzle ends a failed query's message with its parameters, and on the donor tables those are an intent id or an address. */
 const QUERY_PARAMS = /\bparams: .*/g;
@@ -24,7 +26,10 @@ export function scrubAddresses(text: string): string {
 
 function scrubValue(value: unknown): unknown {
   if (typeof value === "string") {
-    return scrubAddresses(value.replace(SECRET_IN_PATH, "$1<secret>")).replace(QUERY_PARAMS, "params: <removed>");
+    return scrubAddresses(value.replace(SECRET_IN_PATH, "$1<secret>").replace(SHARE_TOKEN_IN_PATH, "share/<secret>")).replace(
+      QUERY_PARAMS,
+      "params: <removed>",
+    );
   }
   if (Array.isArray(value)) return value.map(scrubValue);
   if (value && typeof value === "object") {

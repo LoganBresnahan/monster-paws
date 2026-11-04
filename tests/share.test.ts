@@ -299,6 +299,11 @@ describe("error reports (ADR-0036)", () => {
     expect(scrubbed).toContain("/share/<secret>/2/painting.jpg");
   });
 
+  it("keep a stack frame's file names, since only the token's shape is scrubbed", () => {
+    const stack = "at send (/app/src/core/share/publish.ts:44:12)\n at /usr/share/nodejs/x.js:1:1\n at /share/too-short";
+    expect(JSON.stringify(scrubEvent({ stack }))).toBe(JSON.stringify({ stack }));
+  });
+
   // The real messages, which name an object key with no leading slash, so a path-only scrub misses them.
   async function messageOf(failing: () => Promise<unknown>): Promise<string> {
     const err = await failing().then(
