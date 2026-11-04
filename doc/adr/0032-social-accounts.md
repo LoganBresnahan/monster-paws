@@ -239,3 +239,8 @@ feeds are built from them and there is no other discovery
 the discovery (`#shelterdogs #adoptdontshop #rescueanimals #watercolor
 #monsterpaws`). The hackathon demo post on X carries whatever tag the
 Official Rules name, on that post only (ADR-0028).
+
+## Amendment (2026-11-04): the banners keep the full-size Beetle
+
+Logan: "keep full size beetle" (ADR-0030 as amended 2026-11-04). `npm run social:assets` builds from
+`public/brand/crew/beetlefull-painting.jpg`, whose rows the script's crop numbers were measured on.

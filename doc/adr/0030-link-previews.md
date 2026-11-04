@@ -133,3 +133,11 @@ painting's 1216×832.
 - A platform changes its ratio or size limits (X's 5 MB, Facebook's 8 MB;
   the build fails on either), or a feed's centre crop of the 1.46:1
   painting cuts Beetle badly enough to want a 1.91:1 pick.
+
+## Amendment (2026-11-04): the card keeps the full-size Beetle
+
+The crew section's paintings became portraits (ADR-0004 as amended 2026-11-03), and Logan chose for the
+card, the banners and the outreach image: "keep full size beetle". So `src/app/opengraph-image.jpg` is
+unchanged, and `npm run og:image` builds from `public/brand/crew/beetlefull-painting.jpg`, a byte-identical
+copy of the earlier painting, because her crew slug now holds the portrait and a run from it would silently
+change a card every platform caches. `tests/crew-assets.test.ts` pins the script to that file.

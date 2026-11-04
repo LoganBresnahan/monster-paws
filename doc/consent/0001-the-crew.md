@@ -19,6 +19,10 @@
   shelter outreach ask (`ASK_IMAGE` in `src/core/outreach/template.ts`), loaded
   from monsterpaws.org into a shelter's inbox — Logan's choice the same day, as
   the face of Monster Paws everywhere.
+- **Extended 2026-11-03 (ADR-0036, ADR-0028):** the crew's photos as the source of keepsakes painted for the
+  Meta demo; those paintings on public share pages at monsterpaws.org; and the crew's photos, with their
+  metadata removed, sent to Meta's Model API to find the animal in each one, except `Plum/downloadfile.jpg`,
+  which never goes to Meta. Meta doesn't train on these, but it may keep them with no time limit.
 - **Basis:** the founder's own pets and his own photos; given in the working
   session that built the section, and in the commit that adds this file.
 - **Files:** `public/brand/crew/<pet>-painting.jpg`, `<pet>-photo.jpg` (the
@@ -40,5 +44,9 @@
 Portraits since 2026-11-03. Logan: "we are going to do portraits because we can't guarantee a clean body.
 so the crew photos need updated." Only the paintings changed, and the real photos and thumbs are as they
 were. None of these went through the hand step, unlike the earlier picks, which git keeps. The batches are
-read in `doc/plans/base-model-candidates.md` (ADR-0004 as amended 2026-11-03). Revoking is deleting the files and this section in one
+read in `doc/plans/base-model-candidates.md` (ADR-0004 as amended 2026-11-03). The link-preview card, the social banners and the image in shelter outreach (the 2026-10-27 extensions
+above) keep Beetle's earlier full-size painting. Logan: "keep full size beetle". That is batch 12g, 029,
+made by klein-v1 (11b), the anatomy traced out and repainted by klein Base, kept pixels only as
+`public/brand/crew/beetlefull-painting.jpg`, which no page shows; `src/app/opengraph-image.jpg` is unchanged.
+Revoking is deleting the files and this section in one
 commit.

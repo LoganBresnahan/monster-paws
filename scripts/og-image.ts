@@ -8,7 +8,9 @@
 import path from "node:path";
 import sharp from "sharp";
 
-const PAINTING = path.resolve("public/brand/crew/beetle-painting.jpg");
+// The full-size Beetle, never the crew's portrait under her own slug: the card keeps her whole
+// (Logan: "keep full size beetle"; ADR-0030 as amended 2026-11-04).
+const PAINTING = path.resolve("public/brand/crew/beetlefull-painting.jpg");
 const WORDMARK = path.resolve("public/brand/wordmark-v1.png");
 const OUT = path.resolve("src/app/opengraph-image.jpg");
 const INK = 140; // greyscale below this is the dog, never the wash

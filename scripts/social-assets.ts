@@ -13,7 +13,9 @@ import sharp from "sharp";
 
 const CREAM = { r: 0xfa, g: 0xf4, b: 0xe8 }; // --background in src/app/globals.css
 const WORDMARK = path.resolve("public/brand/wordmark-v1.png");
-const PAINTING = path.resolve("public/brand/crew/beetle-painting.jpg");
+// The full-size Beetle, never the crew's portrait under her own slug: every row measured below is
+// this painting's (Logan: "keep full size beetle"; ADR-0032 as amended 2026-11-04).
+const PAINTING = path.resolve("public/brand/crew/beetlefull-painting.jpg");
 const OUT = path.resolve("var/social");
 
 // A square avatar is shown in a circle on X and Bluesky: the wordmark's

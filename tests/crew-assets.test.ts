@@ -50,6 +50,20 @@ describe("the link-preview card carries pixels only", () => {
   });
 });
 
+// Her crew slug holds the portrait, so a run from it would silently change the card, the banners and the
+// image in shelter mail, which load the card's URL (ADR-0030 as amended 2026-11-04).
+describe("the card and the banners build from the full-size Beetle", () => {
+  it.each(["og-image.ts", "social-assets.ts"])("%s names that file, never her crew slug", (script) => {
+    const source = readFileSync(path.resolve(__dirname, "..", "scripts", script), "utf8");
+    expect(source).toContain("public/brand/crew/beetlefull-painting.jpg");
+    expect(source).not.toContain("public/brand/crew/beetle-painting.jpg");
+  });
+
+  it("is painting-sized", () => {
+    expect(dimensions(readFileSync(path.join(dir, "beetlefull-painting.jpg")))).toEqual([1216, 832]);
+  });
+});
+
 describe("public/brand/crew carries pixels only", () => {
   const files = readdirSync(dir);
 
