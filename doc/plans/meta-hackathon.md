@@ -115,10 +115,18 @@ the delineation table in `README.md`.
      have already seen. Don't call it blind in the video or the write-up. Logan
      chose SAM 3.1 for the demo before this ran, so it decides nothing.
    - [ ] `sam3-crops`. `crops.py` runs on sam3's output (16 grown boxes in
-     `grown.json`). The painting goes through `paintings`' glue. `Plum/downloadfile.jpg`,
-     one of Plum's two in `keepsake-crew.json`, is refused, and Logan chose to
-     replace it: "i guess we need to get rid of the download photo and regenerate
-     the plum photos". His other five photos already run on sam3.
+     `grown.json`). The painting goes through `paintings`' glue. `Plum/downloadfile.jpg`
+     was one of Plum's two in `keepsake-crew.json` and is refused, so Logan replaced
+     it: "i guess we need to get rid of the download photo and regenerate the plum
+     photos". The row now names `PXL_20250423_185424061.PORTRAIT.jpg` and
+     `PXL_20250422_224209397.jpg`, and Meta gets their clean copies.
+     **Running the art worker on `sam3`:** set `ART_DETECT=live`,
+     `ART_CREW_DETECTOR=sam3` and `MODEL_API_KEY="$(pass show meta/api-key | head -n1)"`
+     in the worker's own environment when it starts, from this branch. `liveCropsArgs`
+     passes the key's name and compose reads the value from there, so it's never in a
+     command line, a file or a log; with no key, a run on photos with no stored reply
+     stops. A listing is always `owlv2`, with the key blanked. The whole path under
+     `ART_CREW_DETECTOR=sam3` hasn't had a real run yet; it waits for the card.
    - README: "sam3 pipeline, prompts, measurement, crops" with commits.
 
    **Measured 2026-11-04, 16 crew photos, seen by the rules, boxes read by

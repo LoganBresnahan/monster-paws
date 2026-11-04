@@ -248,7 +248,9 @@ async function registerArtGenerate(boss: PgBoss) {
   let lastSkipAlert = 0;
   await boss.work<ArtGenerateJob>(ART_GENERATE, { batchSize: 1 }, async ([job]) => {
     try {
-      const outcome = await generateArt(getDb(DATABASE_URL), job.data, painter, { live: process.env.ART_DETECT === "live", publish });
+      // The crew's detector only by its own variable: DETECT_PIPELINES in this environment never decides a run (ADR-0028 §6).
+      const crewDetector = process.env.ART_CREW_DETECTOR === "sam3" ? "sam3" : "owlv2";
+      const outcome = await generateArt(getDb(DATABASE_URL), job.data, painter, { live: process.env.ART_DETECT === "live", crewDetector, publish });
       // Never the job's data: a listing's photo URLs stay out of the log.
       console.log(JSON.stringify({ event: "art.generate", keepsakeId: job.data.keepsakeId, ...outcome }));
       // A skip for the card or the memory says why, at most hourly: donate's "waiting past 30 minutes" alert can't (ART_SKIP_ALERT_MS).

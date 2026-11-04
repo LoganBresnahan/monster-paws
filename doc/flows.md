@@ -769,9 +769,11 @@ else.
        │   live: comfyui/live_crops.py —        crops.py → explore.cut, under the
        │   OWLv2 asked for the listing's        run's own name, cut.json naming
        │   species, colour (none for a listing: the photos cut. The handler sets
-       │   the colour vote abstains), head →    DETECT_PIPELINES=owlv2 on every
-       │   SAM 2.1 outlines → clean-up rules →  run, never the worker's own (19/20
-       │                                        blind, ADR-0026). Always for a listing,
+       │   the colour vote abstains), head →    the detector per keepsake: owlv2
+       │   SAM 2.1 outlines → clean-up rules →  for a listing always; sam3 for a
+       │                                        crew pet only by ART_CREW_DETECTOR
+       │                                        (ADR-0028 §6; 19/20 blind,
+       │                                        ADR-0026). Always for a listing,
        │   six votes → one animal chosen, or    and a photo with none is left
        │   none in that photo · head inside it  out; a crew pet with
        │                                        ART_DETECT=live, otherwise batch

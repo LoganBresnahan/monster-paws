@@ -93,7 +93,7 @@ describe("a run's paintings", () => {
 });
 
 
-describe("the detector a run uses (ADR-0028 §1)", () => {
+describe("the detector a run uses (ADR-0028 §6)", () => {
   it("says why a detection stopped, in live_crops' own words for the run", () => {
     const log = "owlv2-raw-v4: 8s\nkeepsake-1-abc: 0 of 1 photos cut\nkeepsake-1-abc: no animal chosen in any photo; nothing to paint from\n";
     expect(lastRunLine(log, "keepsake-1-abc")).toBe("no animal chosen in any photo; nothing to paint from");
@@ -118,16 +118,20 @@ describe("the detector a run uses (ADR-0028 §1)", () => {
     expect(lastRunLine(`ValueError: ${"y".repeat(400)}`, "keepsake-1-abc")).toHaveLength(200);
   });
 
-  it("is the local one, set on the container whatever the worker's environment names", () => {
-    const before = process.env.DETECT_PIPELINES;
-    process.env.DETECT_PIPELINES = "sam3";
+  it("passes the run's own detector to the container, and names Meta's key only for sam3, never its value", () => {
+    const before = process.env.MODEL_API_KEY;
+    process.env.MODEL_API_KEY = "a-key";
     try {
-      const args = liveCropsArgs("keepsake-1-abc");
-      expect(args).toContain("DETECT_PIPELINES=owlv2");
-      expect(args.join(" ")).not.toContain("sam3");
+      const local = liveCropsArgs("keepsake-1-abc", "owlv2");
+      expect(local).toContain("DETECT_PIPELINES=owlv2");
+      expect(local).toContain("MODEL_API_KEY=");
+      const meta = liveCropsArgs("keepsake-1-abc", "sam3");
+      expect(meta).toContain("DETECT_PIPELINES=sam3");
+      expect(meta).toContain("MODEL_API_KEY");
+      expect([...local, ...meta].join(" ")).not.toContain("a-key");
     } finally {
-      if (before === undefined) delete process.env.DETECT_PIPELINES;
-      else process.env.DETECT_PIPELINES = before;
+      if (before === undefined) delete process.env.MODEL_API_KEY;
+      else process.env.MODEL_API_KEY = before;
     }
   });
 });
@@ -326,9 +330,10 @@ describe.skipIf(SKIP_DB_TESTS)("art.generate (doc/plans/demo-chain-contract.md)"
   const NOON = new Date("2026-11-04T12:00:00Z");
 
   function painter(paint: string[] | Error = pngs, busy: string | null = null, cut?: (photos: string[]) => { file: string; head: boolean }[]) {
-    const p: Painter & { calls: number; detected: unknown[]; specs: PaintSpec[]; fetched: unknown[]; forgotten: string[] } = {
+    const p: Painter & { calls: number; detected: unknown[]; detectors: string[]; specs: PaintSpec[]; fetched: unknown[]; forgotten: string[] } = {
       calls: 0,
       detected: [],
+      detectors: [],
       specs: [],
       fetched: [],
       forgotten: [],
@@ -340,8 +345,9 @@ describe.skipIf(SKIP_DB_TESTS)("art.generate (doc/plans/demo-chain-contract.md)"
       forget: async (name) => {
         p.forgotten.push(name);
       },
-      crops: async (name, listing) => {
+      crops: async (name, listing, detector) => {
         p.detected.push({ name, listing });
+        p.detectors.push(detector);
         return cut ? cut(listing.photos) : listing.photos.map((ref) => ({ file: ref.split("/").at(-1)!, head: true }));
       },
       paint: async (_name, spec) => {
@@ -624,12 +630,22 @@ describe.skipIf(SKIP_DB_TESTS)("art.generate (doc/plans/demo-chain-contract.md)"
     try {
       const id = await listingKeepsake();
       const p = painter();
-      await generateArt(db, { keepsakeId: id, photos: PHOTOS }, p, { table: TABLE, now: NOON, nightly: null });
-      // the painter's crops take no detector at all: guardPainter's are liveCropsArgs', owlv2 alone (above)
-      expect(p.detected).toHaveLength(1);
+      await generateArt(db, { keepsakeId: id, photos: PHOTOS }, p, { table: TABLE, now: NOON, nightly: null, crewDetector: "sam3" });
+      expect(p.detectors).toEqual(["owlv2"]);
     } finally {
       if (before === undefined) delete process.env.DETECT_PIPELINES;
       else process.env.DETECT_PIPELINES = before;
     }
+  });
+
+  it("detects a crew pet with sam3 only when the worker says so", async () => {
+    const id = await crewKeepsake();
+    const unset = painter();
+    await generateArt(db, { keepsakeId: id }, unset, { table: TABLE, now: NOON, nightly: null, live: true });
+    expect(unset.detectors).toEqual(["owlv2"]);
+    const other = await crewKeepsake("plum");
+    const meta = painter();
+    await generateArt(db, { keepsakeId: other }, meta, { table: TABLE, now: NOON, nightly: null, live: true, crewDetector: "sam3" });
+    expect(meta.detectors).toEqual(["sam3"]);
   });
 });

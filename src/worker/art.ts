@@ -62,17 +62,24 @@ export interface Painter {
   /** deletes run `name`'s fetched photos and everything cut from them */
   forget(name: string): Promise<void>;
   /** cuts run `name`'s crops by live detection into `input/crew/<name>/` (`comfyui/live_crops.py`), and returns the photos cut */
-  crops(name: string, listing: DetectListing & { photos: string[] }): Promise<CutPhoto[]>;
+  crops(name: string, listing: DetectListing & { photos: string[] }, detector: Detector): Promise<CutPhoto[]>;
   /** paints `spec` as run `name` and returns its marked PNGs, one per seed in the spec's order */
   paint(name: string, spec: PaintSpec): Promise<string[]>;
 }
 
 /**
- * `live_crops.py` in the explore container on the local detector, set here and never inherited from the worker's
- * `DETECT_PIPELINES`: a listing's photo never leaves the machine (ADR-0004 as amended 2026-08-02; ADR-0028 §1).
+ * The detector a run uses, chosen per keepsake, never inherited from `DETECT_PIPELINES`: `sam3` sends the photo to
+ * Meta's API, which only the crew's consent covers (ADR-0028 §6), so a listing is always `owlv2`.
  */
-export function liveCropsArgs(name: string): string[] {
-  return ["compose", "-f", "comfyui/compose.yml", "run", "--rm", "--no-deps", "-e", "DETECT_PIPELINES=owlv2",
+export type Detector = "owlv2" | "sam3";
+
+/**
+ * `live_crops.py` in the explore container with the run's detector set. `sam3` names Meta's key and compose reads it from
+ * the worker's environment: never its value here, which would sit in `ps` and any log of these arguments (ADR-0028).
+ */
+export function liveCropsArgs(name: string, detector: Detector): string[] {
+  return ["compose", "-f", "comfyui/compose.yml", "run", "--rm", "--no-deps",
+    "-e", `DETECT_PIPELINES=${detector}`, "-e", detector === "sam3" ? "MODEL_API_KEY" : "MODEL_API_KEY=",
     "--entrypoint", "python", "explore", "/home/comfy/harness/live_crops.py", name];
 }
 
@@ -246,6 +253,8 @@ export async function generateArt(
     now?: Date;
     nightly?: string | null;
     live?: boolean;
+    /** the crew's detector, set on the worker explicitly (`ART_CREW_DETECTOR`); `owlv2` when unset */
+    crewDetector?: Detector;
     publish?: (keepsakeId: number) => Promise<void>;
   } = {},
 ): Promise<ArtOutcome> {
@@ -280,7 +289,7 @@ export async function generateArt(
     const pet = table.pets[crew.pet];
     let two: string[] | undefined;
     if (opts.live && pet) {
-      const cut = await painter.crops(name, { ...pet.detect, photos: pet.two.map((file) => `crew:${pet.name}/${file}`) });
+      const cut = await painter.crops(name, { ...pet.detect, photos: pet.two.map((file) => `crew:${pet.name}/${file}`) }, opts.crewDetector ?? "owlv2");
       // The crew's two are vetted photos of the pet: one the detector can't find is a fault to see, never a set from the other.
       if (pet.two.some((file) => !cut.some((c) => c.file === file))) {
         throw new Error(`keepsake ${keepsakeId}: live detection lost one of ${pet.name}'s photos`);
@@ -298,7 +307,8 @@ export async function generateArt(
     try {
       const files = await painter.fetchPhotos(name, photos.slice(0, 2));
       // No colour: `animals` holds none, so the detector's colour vote abstains (ADR-0026).
-      const cut = await painter.crops(name, { species, colour: "", subject: `${name}, the ${words}`, photos: files.map((f) => `held:${name}/photos/${f}`) });
+      // Always the local detector: a listing's photo never goes to Meta, whatever the worker's environment says (ADR-0028 §6).
+      const cut = await painter.crops(name, { species, colour: "", subject: `${name}, the ${words}`, photos: files.map((f) => `held:${name}/photos/${f}`) }, "owlv2");
       // A photo with no animal chosen is left out; the head is read from the first photo, so one with its own head leads,
       // and a photo whose subject stands in for its head (`live_crops.py`) still paints.
       const usable = [...cut].sort((a, b) => Number(b.head) - Number(a.head));
@@ -515,7 +525,7 @@ export function guardPainter(root: string): Painter {
         rmSync(dir, { recursive: true, force: true });
       }
     },
-    async crops(name, { photos, ...listing }) {
+    async crops(name, { photos, ...listing }, detector) {
       const dir = join(explore, name);
       mkdirSync(dir, { recursive: true });
       writeFileSync(join(dir, "detect.json"), JSON.stringify({ _: `${name}: one listing for live detection`, listings: { [name]: { ...listing, photos } } }, null, 2) + "\n");
@@ -523,7 +533,7 @@ export function guardPainter(root: string): Painter {
       // The log is appended across attempts, so only this attempt's part may say why it stopped; bytes, since bars are not ASCII.
       const from = existsSync(log) ? statSync(log).size : 0;
       try {
-        await run("docker", liveCropsArgs(name), root, log);
+        await run("docker", liveCropsArgs(name, detector), root, log);
       } catch (err) {
         // live_crops says why in its last line (no photo, no animal): carried into the error with the exit, so the alert says both.
         const why = lastRunLine(existsSync(log) ? readFileSync(log).subarray(from).toString("utf8") : "", name);
