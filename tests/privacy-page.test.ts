@@ -33,5 +33,6 @@ describe("the privacy page", () => {
     expect(text).not.toMatch(/\bgifts?\b/i);
     expect(text).not.toContain("Your painting");
     expect(text).not.toContain("stay yours");
+    expect(text).not.toMatch(/\baccount\b/i);
   });
 });

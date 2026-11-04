@@ -88,9 +88,6 @@ export default function PrivacyPage() {
         name, breed and age, can&apos;t be recalled.
       </p>
 
-      <h2 className={heading}>If you make an account</h2>
-      <p className={paragraph}>We keep your email and your donations until you delete it.</p>
-
       <h2 className={heading}>Who helps us</h2>
       <p className={paragraph}>
         Every.org (donations), Resend (email we send), Google (email you send us), DigitalOcean and Cloudflare (hosting
