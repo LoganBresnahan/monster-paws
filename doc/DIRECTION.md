@@ -19,8 +19,9 @@ tiers all fail it.)
 **Verified sponsorship with provenance, not "buy a slice of a dog."**
 
 Donors browse animals, choose one, and donate. The money goes to that animal's
-shelter (the shelter may spend it on any animal — no earmarking pretense). In
-return the donor gets, for **the remainder of that animal's stay**:
+shelter (the shelter may spend it on any animal — no earmarking pretense). As
+our thank-you, we try to give the donor, for **the remainder of that animal's
+stay**:
 
 - **Provenance-backed updates** — care events backed by cryptographically
   signed attestations from the shelter (and ideally co-signed by the vet),

@@ -30,7 +30,7 @@ link previews, emails and the shelter ask. In what a person reads:
 ## Consequences
 - **This changes our words, not what happens.** A painting still only follows a donation, so this doesn't settle
   whether a painting affects Every.org's receipt. That stays the open question in `doc/issues.md`.
-- `doc/DIRECTION.md:23`, "In return the donor gets", says the opposite. It is Logan's to change, and he has been asked.
+- `doc/DIRECTION.md` said "In return the donor gets". It now says "As our thank-you, we try to give the donor" (Logan, 2026-11-04: "ok").
 - Words already sent can't change: Spencer's thread and any shelter already written to read "gets a small painted
   keepsake". Words outside the repo, such as social bios and posts, the hackathon write-up and the video, have to
   be read by hand.

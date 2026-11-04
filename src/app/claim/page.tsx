@@ -48,8 +48,7 @@ export default function ClaimPage() {
           <h2 className="text-xl font-bold">Claim your shelter</h2>
           <p className="mt-2 flex-1 text-sm leading-relaxed text-muted">
             Tell us it&apos;s yours and we&apos;ll correct anything wrong, credit you properly, and
-            walk you through turning on verified updates for your supporters. Free, and you can
-            stop any time.
+            help you open donations for your animals. Free, and you can stop any time.
           </p>
           <a
             href={mailto(
