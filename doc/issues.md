@@ -69,6 +69,14 @@ is the record, and a file of ticked boxes stops being read.
 
 ## Ops
 
+- **The photo reader's coat rule refuses a semicolon, so a good answer loses its
+  words.** `read.py`'s `COAT` allows letters, spaces, commas, apostrophes and hyphens,
+  and the 4B sometimes writes "Light tan on head, face, and ears; white under chin"
+  (the hamster in batch 41a's read, 1 of 20; none of 40b's 13). It fails safe: the
+  listing's words alone, and a Sentry warning "the photo reader gave no words". The
+  fix is one character plus a worker restart, for after the go-live, with the species
+  gate's change. Found 2026-11-04.
+
 - **`crops` and `paint` in the painting job have no time limit, where the reader
   now does.** A hung `live_crops.py` or guard batch would hold the art worker's
   one slot, and every later job would skip as busy until someone kills it, with

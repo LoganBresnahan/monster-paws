@@ -4080,6 +4080,27 @@ against 40b's head-only reader paintings, 52 a side.
 - The likeness harness had them level (0.586 each); his ticks don't.
 
 
+### The reader's first run inside the real job (2026-11-04, 21:59–22:07 UTC)
+
+Oplog 0029's rehearsal: from `~/monsterpaws-art-ab34160`, a fresh export of topdog's
+tip by the restart list's recipe, through the real `generateArt` as the worker calls
+it, on `monsterpaws_lora_test` and the rehearsal store, with Logan's apps as they
+were and two Commons originals (`ART_PHOTO_HOSTS=upload.wikimedia.org` for this run).
+
+- **A dog, its head found:** painted in 272 s, the reader 56.1 s of it. klein
+  received "male mixed breed dog with brown and black on head, ears, and face,
+  medium fur and folded-over ears". The log says only "read".
+- **A cat, the species gate, a close-up standing in:** painted in 187 s from "female
+  domestic long hair cat", no warning. So the reader costs a dog about 85 s.
+- **Memory:** 19.2 GB free before the first drop, 28.9 GB 54 s later; 19.7 GB for one
+  sample during each klein load, then 22 GB and up.
+- **The words:** a search of everything the dog's run left behind and its log finds
+  them in no file. It leaves `cut.json`, `detect.json` (the listing's words only),
+  `marked/` and `thumbs/`.
+- **Not exercised:** a real 600 s hang and the fallback on a real failure, both tested
+  with fakes; publish, off for this rehearsal; a real shelter's photo. Claude looked at
+  the 8 paintings at contact-sheet size for gross failures only.
+
 ### Batches 40c–40d — the ear wording, and Logan's read (2026-11-04)
 
 After 40b Logan noted Max's colour was worse than our own words and Duke's ears

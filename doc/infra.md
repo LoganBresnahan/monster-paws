@@ -1010,8 +1010,10 @@ What was load-bearing, in the order it was found:
   as file-backed pages that `docker stats` doesn't count (it showed under 1
   GB; `free`'s cache column and the process's RSS do). It took Windows free
   from 28.4 to 20.3 GB while reading, and a job's drop after it then reached
-  33 GB in ~40 s and painted, never under 22 GB through the load. So a reader
-  must exit before the drop, never run beside a paint. `memory=32GB`
+  33 GB in ~40 s and painted. Sampled every 9 s from a fresh export
+  (2026-11-04, 22:00 UTC), free dips to 19.7 GB for one sample during each
+  klein load, then holds 22 GB and up, against the guard's 10 GB floor. So a
+  reader must exit before the drop, never run beside a paint. `memory=32GB`
   stays. `autoMemoryReclaim=dropCache` (WSL drops the cache when the VM
   is idle) is untried here; the 10-10 freezes were under `gradual`.
   Still unmeasured: a model load also takes several GB outside the VM
