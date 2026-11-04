@@ -609,7 +609,7 @@ after it, if at all.
        ▼
   first signal                      (planned, ADR-0035) closed_at, or GET /thanks/<token>:
        │                            one conditional UPDATE of the return time, nothing else
-       │  sweepKeepsakes (ART_SWEEP=on, dark until a shelter holds a grant): closed_at, a donation,
+       │  sweepKeepsakes (ART_SWEEP=on): closed_at, a donation,
        │  a crew pet or a digify grant as of created_at, no keepsake → snapshotKeepsake;
        │  no art fact → boss.send, a key and a one-hour slot; 30 minutes after the gift → an alert
        │  (planned) droplet worker sweep: intents with a signal and no keepsake, confirmed
@@ -680,19 +680,19 @@ may be purged, rebuilt or merged without touching it.
   return                                     no donation → no amount or date on the card
        │
        ▼
-  snapshotKeepsake()  (built, dark)          the ONE writer — every field
+  snapshotKeepsake()  (built)                the ONE writer — every field
        │                                     must name its basis or it is
        │                                     not written; under a grant, no photo field
        │  reads, once, at a recorded gift:
        │    crew: src/ui/crew.ts, on CREW_BASIS
        │    listing: animals + the shelter registry, grant as of created_at
        ▼
-  keepsake            (built, dark)          intent_id NOT NULL UNIQUE, its donation
+  keepsake            (built)                intent_id NOT NULL UNIQUE, its donation
        │                                     reached through the intent (ADR-0035 decision 9);
        │                                     share_token, 128 bits of its own (ADR-0036)
        │                                     append-only, never UPDATEd
        ▼
-  keepsake_fact       (built, dark)           (keepsake_id, field, value,
+  keepsake_fact       (built)                 (keepsake_id, field, value,
        │                                      basis, snapshotted_at)
        │   basis = grant:<slug>:<permission> → kept per the grant's onEnd
        │   basis = aggregator:<source>       → purged with the source
@@ -720,7 +720,7 @@ the droplet's never registers `art.generate`, the home's registers nothing
 else.
 
 ```
-  sweepKeepsakes()  (built, dark)               keepsake_fact rows written,
+  sweepKeepsakes()  (built)                     keepsake_fact rows written,
        │                                        basis = grant:<slug>:digify
        │  boss.send('art.generate', {keepsakeId, photos}, artJobOptions)
        ▼

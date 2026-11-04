@@ -1024,3 +1024,9 @@ deadline. The second distro and Windows account of the 2026-10-05 amendment wait
 - A job waits while a guard batch has the card, and from 06:45 UTC until the nightly poll's log shows `== exit`.
 
 Revisit: when gifts arrive with nobody watching, or a dev session and a painting collide.
+
+## Amendment (2026-11-04): what Spencer Pet Rescue's yes rests on
+
+This ADR's 2026-08-02 amendment put a third-party-processing disclosure and a photo-rights confirmation in the digify consent email. For Spencer Pet Rescue,
+Logan decided a plain yes is enough: ADR-0028 as amended 2026-11-04 has his words and what was and wasn't answered. Its photos are painted on the home card and
+don't go to a hosted API, so there is no third-party disclosure to rest on. The next shelter's yes is its own decision.

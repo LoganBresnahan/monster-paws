@@ -12,7 +12,8 @@ What changes on the droplet: the app and worker images; any new migration; one `
 Who does what: **Logan gives the word for step 1 and for the donation in step 8 and the send in step 9, in the session that runs them.** `paintings` restarts its worker in step 7. Production steps run in one SSH session per step (the droplet's ufw `LIMIT` on 22/tcp).
 
 ## Prerequisites
-- [ ] **Spencer's yes:** its Message-ID, the sha256 of the raw message in the vault and its exact words, from the `emails` session, which reads the thread. Not recorded before then.
+- [x] **Spencer's yes:** "Yes you may", at 15:29:35 UTC on 2026-11-04, from Kristen, answering "may we use the photos in your listings to make art of your animals for your donors?". Read by the `emails` session, which checked DKIM, SPF and DMARC as passing, and that those words are all she wrote. Its `evidence` line is in the registry, with the hash read again here against the raw file.
+- [ ] Logan's link to `/privacy` has gone to Kristen, before the button opens (the moderator is reminding him).
 - [ ] The commit on `<SHA>` holds, together:
   - The registry entry in `src/core/shelters.ts`: slug `spencer-pet-rescue`, `shelterExternalIds: ["rescuegroups:org:11756"]`, checked by a person, one `digify` grant with its words as `basis` and `<Message-ID> sha256:<hex>` as `evidence`.
   - An ADR-0028 amendment on §5 and §6: a listing's photo under this grant, citing the reply.
@@ -33,6 +34,16 @@ Who does what: **Logan gives the word for step 1 and for the donation in step 8 
 - [ ] The deadline: a yes by about 22:00 UTC leaves room before 2026-11-05 02:00 UTC. After that Logan decides, and the crew backup stands.
 
 ## Steps
+
+### 0. The raw message into the vault
+The hash fits one exact file, the Gmail API's raw message, held in the `emails` session's scratchpad. It holds her address and Logan's phone number, so it never enters this repo (ADR-0029 as amended 2026-10-27).
+
+    RCLONE_CONFIG_R2_TYPE=s3 RCLONE_CONFIG_R2_PROVIDER=Cloudflare RCLONE_CONFIG_R2_ENDPOINT="$(pass show cloudflare/r2-vault-endpoint | head -n1)" \
+    RCLONE_CONFIG_R2_ACCESS_KEY_ID="$(pass show cloudflare/r2-vault-access-key-id | head -n1)" RCLONE_CONFIG_R2_SECRET_ACCESS_KEY="$(pass show cloudflare/r2-vault-secret-access-key | head -n1)" \
+    sh -c 'rclone copyto <that file> "r2:monsterpaws-vault/consent/rescuegroups:org:11756-2026-11-04.eml" && rclone cat "r2:monsterpaws-vault/consent/rescuegroups:org:11756-2026-11-04.eml" | sha256sum'
+Verify: the hash starts `302eaa800a84e56d`, the registry's.
+Stop if: it differs. Nothing in the button depends on this step, but the evidence does.
+Rollback: `rclone deletefile`.
 
 ### 1. Record what is running — this is the rollback, and it closes the button
     IP=$(DIGITALOCEAN_ACCESS_TOKEN=$(pass show digitalocean/api-token | head -n1) doctl compute droplet get monsterpaws --format PublicIPv4 --no-header)

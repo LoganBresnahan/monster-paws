@@ -227,7 +227,7 @@ describe.skipIf(SKIP_DB_TESTS)("the keepsake sweep (ADR-0035 decisions 6 and 9)"
       await db.insert(animalDisplay).values({ animalId: row.id, source: "rescuegroups", photos, fetchedAt: now } as typeof animalDisplay.$inferInsert);
     }
 
-    it("paints nothing while no shelter holds a grant, which is how production stays dark", async () => {
+    it("paints nothing for a shelter with no grant", async () => {
       await listing();
       await recorded("rescuegroups", "rg-7");
       expect(await sweepKeepsakes(db, send)).toEqual({ written: 0, sent: 0, stalled: 0, failures: [] });

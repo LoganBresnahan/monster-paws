@@ -56,10 +56,30 @@ export interface ShelterEntry {
  * table is deferred to roadmap item 4/7 and stays a mechanical migration as
  * long as `slug` remains the natural key.
  *
- * Empty until roadmap item 5 (local consent outreach) — we hold no grants yet,
- * and an entry without one is a shelter we may not scrape.
+ * Spencer Pet Rescue is the one grant so far. Logan decided what it rests on, recorded in ADR-0028 as
+ * amended 2026-11-04: its yes answers one question, and the photo-rights confirmation wasn't separately answered.
+ * An entry without a grant is a shelter we may not scrape or paint.
  */
-export const SHELTERS: readonly ShelterEntry[] = [];
+export const SHELTERS: readonly ShelterEntry[] = [
+  {
+    slug: "spencer-pet-rescue",
+    name: "Spencer Pet Rescue",
+    siteUrl: "http://SpencerPetRescue.info",
+    listingsUrl: "http://SpencerPetRescue.info",
+    tier: "aggregator",
+    goldenFixture: null,
+    shelterExternalIds: ["rescuegroups:org:11756"],
+    grants: [
+      {
+        permission: "digify",
+        grantedAt: "2026-11-04T15:29:35Z",
+        granter: "Kristen, admin of Spencer Pet Rescue, who runs its Every.org page",
+        basis: 'Asked "may we use the photos in your listings to make art of your animals for your donors?", answered "Yes you may".',
+        evidence: "<CAPMTWd_UEmoBKeTJ=E-ToR_juzQPHHCM1swBP6ADaBEEyE_zvg@mail.gmail.com> sha256:302eaa800a84e56de1236c1585ada4c803dc8e0d356e319676cde0117c0965a7",
+      },
+    ],
+  },
+];
 
 export function shelterBySlug(
   slug: string,

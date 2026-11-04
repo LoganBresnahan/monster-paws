@@ -136,7 +136,7 @@ describe("a scrape source is licensed by its shelter's display grant, or not at 
 
   it("denies against the real registry when the caller passes none", () => {
     // The shape every page will call: no registry argument, so the checked-in
-    // (and today empty) SHELTERS applies. Defaulting to allow here would
+    // SHELTERS applies, which holds no display grant. Defaulting to allow here would
     // license every scraped shelter at once.
     expect(isDisplayLicensed("scrape:happy-tails")).toBe(false);
     expect(pickLicensedDisplay([row("scrape:happy-tails")])).toBeNull();

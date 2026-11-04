@@ -6,7 +6,7 @@ export function SiteFooter() {
     <footer className="mt-auto border-t-2 border-paw/20 px-6 py-8 text-sm text-muted">
       <div className="mx-auto flex w-full max-w-7xl flex-col items-center gap-3 xl:flex-row xl:justify-between">
         <p className="whitespace-nowrap">
-          © {new Date().getFullYear()} Monster Paws · Donations coming soon!
+          © {new Date().getFullYear()} Monster Paws
         </p>
         <nav aria-label="Site" className="flex flex-col items-center gap-3 sm:flex-row sm:flex-wrap sm:justify-center sm:gap-x-6 xl:flex-nowrap">
           <a href={`mailto:${CONTACT_EMAIL}`} className="whitespace-nowrap hover:text-foreground">

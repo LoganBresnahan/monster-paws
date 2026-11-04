@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  EVIDENCE,
   SHELTERS,
   SHELTER_EXCLUSIONS,
   exclusionProblems,
@@ -36,8 +37,8 @@ const shelter = (over: Partial<ShelterEntry> = {}): ShelterEntry => ({
 const asOf = (iso: string) => new Date(iso);
 
 describe("shelter registry (ADR-0006 as amended)", () => {
-  it("holds no grants yet — outreach is roadmap item 5", () => {
-    expect(SHELTERS).toHaveLength(0);
+  it("is well formed, and holds only the shelters that have said yes", () => {
+    expect(SHELTERS.map((shelter) => shelter.slug)).toEqual(["spencer-pet-rescue"]);
     expect(registryProblems()).toEqual([]);
   });
 
@@ -172,6 +173,32 @@ describe("shelter registry (ADR-0006 as amended)", () => {
       "duplicate slug 'happy-tails-rescue'",
       "happy-tails-rescue/display: grantedAt 'whenever' is not an ISO date",
     ]);
+  });
+});
+
+describe("Spencer Pet Rescue's grant (ADR-0028 as amended 2026-11-04)", () => {
+  const key = "rescuegroups:org:11756";
+
+  it("holds digify from the moment of its yes, and only digify, on its one checked key", () => {
+    const spencer = shelterByExternalId(key);
+    expect(spencer?.slug).toBe("spencer-pet-rescue");
+    expect(spencer?.grants.map((grant) => grant.permission)).toEqual(["digify"]);
+    expect(hasGrant(spencer, "digify", new Date("2026-11-04T15:29:34Z"))).toBe(false);
+    expect(hasGrant(spencer, "digify", new Date("2026-11-04T15:29:36Z"))).toBe(true);
+    expect(hasGrant(spencer, "scrape", new Date("2026-11-05"))).toBe(false);
+    expect(hasGrant(spencer, "display", new Date("2026-11-05"))).toBe(false);
+  });
+
+  it("points at the raw message by Message-ID and hash, and records her words", () => {
+    const [grant] = shelterByExternalId(key)!.grants;
+    expect(grant.evidence).toMatch(EVIDENCE);
+    expect(grant.basis).toContain("Yes you may");
+    expect(registryProblems()).toEqual([]);
+  });
+
+  it("makes her a partner, and nobody else", () => {
+    expect(isPartnerShelter(key, new Date("2026-11-05"))).toBe(true);
+    expect(isPartnerShelter("rescuegroups:org:1", new Date("2026-11-05"))).toBe(false);
   });
 });
 

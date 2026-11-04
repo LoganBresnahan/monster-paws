@@ -204,8 +204,6 @@ export default async function AnimalPage({ params }: { params: Promise<{ id: str
         <p className="mt-2 text-muted">
           Listed by {orgLink}
           {place ? ` in ${place}.` : org?.endsWith(".") ? "" : "."}
-          {!canSponsor &&
-            ` When sponsoring opens, a donation for ${animal.name} will go to ${org ?? "their shelter"}, and we keep $0 — we never hold the money.`}
         </p>
         {!partner && (
           <p className="mt-4 text-sm text-muted">

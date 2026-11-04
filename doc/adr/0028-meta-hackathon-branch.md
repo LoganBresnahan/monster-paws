@@ -400,3 +400,24 @@ Logan: "as far as the users 'collection' we need to avoid that they are 'theirs'
 painting on your sponsor history page". So `/demo/collection/<pet>` becomes `/demo/history/<pet>`, and its "joins
 your shelf" line goes. Only the demo says it, because a real donor has no such page. The demo's other words follow
 ADR-0037: the painting is our thank-you, which we try to make.
+
+## Amendment (2026-11-04): a listing's photo, under Spencer Pet Rescue's grant
+
+Decision 5 asked for "photos the shelter sends us directly", and decision 6 said the demo paints the crew or
+consented first-party photos, "never a RescueGroups listing's photo". Logan, 2026-11-03: "beetle painting is the backup, i
+want real donations working". The ask to a shelter already named its listings' photos (ADR-0029 §3).
+
+Logan's email, 2026-11-04 00:20 UTC: "may we use the photos in your listings to make art of your animals for your
+donors?". Kristen, an admin of Spencer Pet Rescue who runs its Every.org page, 15:29:35 UTC: "Yes you may". That is the grant
+in `src/core/shelters.ts`, and real gifts to its animals are painted from their listing photos under it. This replaces decisions
+5 and 6 on photos, for a shelter holding a `digify` grant. The crew stay the backup, and the demo may show either.
+
+**What it rests on, and that's Logan's decision.** Her reply answers that one question. The thread's earlier request to confirm the
+photos are hers to license wasn't separately answered, and the thread's withdrawal term is the older one. Logan: "all we need is a yes
+from her and its good enough. shes an admin of the shelter she runs the every.org page. she already knows the plan about making art
+for people when they donate. i think its fine. I will send the email myself". So ADR-0004 as amended 2026-08-02's photo-rights
+confirmation and third-party disclosure rest, for this grant, on those words and on painting at home. A shelter's photos don't go to
+Meta's API: its answer to that question was never given, so SAM 3.1 stays on the crew and real gifts use the local detector.
+
+**If it withdraws:** the newer rule, in which a gift already made can still get its painting. Logan: "use the newer rule for spencers". Its
+notice is the link to `/privacy` in his next email, with no extra sentences: "no in the next email to her we will just link the privacy page".
