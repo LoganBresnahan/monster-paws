@@ -83,7 +83,7 @@ export default function PrivacyPage() {
 
       <h2 className={heading}>If a shelter withdraws permission</h2>
       <p className={paragraph}>
-        We stop taking donations for its animals and take down their public pages. For a donation already made, we still try
+        We take the Sponsor button off its animals and take down their public pages. For a donation already made, we still try
         to paint our thank-you, and we delete the photos once that&apos;s done. Paintings already sent, with the animal&apos;s
         name, breed and age, can&apos;t be recalled.
       </p>

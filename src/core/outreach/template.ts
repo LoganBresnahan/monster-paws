@@ -101,7 +101,7 @@ export function renderAsk(input: AskInput): RenderedAsk {
   }
 
   paragraphs.push({
-    text: `One plain term, so there is no surprise later: if you withdraw permission, we stop taking donations for your animals and take down their public pages. For a donation already made, we still try to paint our thank-you, and we delete the photos once that's done. Paintings already sent, with the animal's name, breed and age, can't be recalled.`,
+    text: `One plain term, so there is no surprise later: if you withdraw permission, we take the Sponsor button off your animals and take down their public pages. For a donation already made, we still try to paint our thank-you, and we delete the photos once that's done. Paintings already sent, with the animal's name, breed and age, can't be recalled.`,
   });
 
   if (input.timing) {

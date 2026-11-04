@@ -49,7 +49,8 @@ describe("ADR-0029 the ask", () => {
   });
 
   it("states the withdrawal term up front, as Logan approved it 2026-11-04: nothing there is give-to-get", () => {
-    expect(ask.text).toContain("we stop taking donations for your animals and take down their public pages.");
+    expect(ask.text).toContain("we take the Sponsor button off your animals and take down their public pages.");
+    expect(ask.text).not.toMatch(/\b(take|takes|taking) donations\b/i);
     expect(ask.text).toContain("For a donation already made, we still try to paint our thank-you, and we delete the photos once that's done.");
     expect(ask.text).toContain("Paintings already sent, with the animal's name, breed and age, can't be recalled.");
     expect(ask.text).not.toContain("paintings down");

@@ -257,3 +257,11 @@ small painting of that animal." The term is now: "if you withdraw permission, we
 take down their public pages. For a donation already made, we still try to paint our thank-you, and we delete the photos once
 that's done. Paintings already sent, with the animal's name, breed and age, can't be recalled." The 46 emails already sent keep
 the older words.
+
+## Note (2026-11-04, later): "we dont take donations"
+
+Logan, on the privacy page: "in the privacy page, "We stop taking donations" is wrong. we dont take donations". The money goes
+to the shelter through Every.org, and we never process a payment. He said "yes" to the words that replace it, so the term now
+opens: "if you withdraw permission, we take the Sponsor button off your animals and take down their public pages." The rest of
+the term is unchanged, `/privacy` says the same, and the note above stays as recorded. The 46 emails already sent keep the
+older words.

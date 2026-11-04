@@ -25,6 +25,11 @@ describe("the privacy page", () => {
     expect(text).not.toContain("still gets its painting");
   });
 
+  it("never says we take donations, which go to the shelter through Every.org", () => {
+    expect(text).toContain("We take the Sponsor button off its animals and take down their public pages.");
+    expect(text).not.toMatch(/\b(take|takes|taking) donations\b/i);
+  });
+
   it("says it last changed on 4 November 2026", () => {
     expect(text).toContain("Last changed 4 November 2026");
   });
