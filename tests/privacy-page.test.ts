@@ -25,7 +25,7 @@ describe("the privacy page", () => {
     expect(text).not.toContain("still gets its painting");
   });
 
-  it("says when it last changed, so a change to these words moves the date too", () => {
+  it("says it last changed on 4 November 2026", () => {
     expect(text).toContain("Last changed 4 November 2026");
   });
 

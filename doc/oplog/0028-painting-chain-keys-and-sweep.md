@@ -74,7 +74,7 @@ Stop if: a keepsake or a job exists: `ART_SWEEP` off first, by step 4's rollback
 Rollback: step 5's.
 
 ### 7. The database's name resolves to the tunnel, on this box
-The worker can't run in a container: `guardPainter` needs `docker`, `guard.sh`, `powershell.exe` and `wsl.exe`, and in `node:24-alpine` every job would fail. On the host it needs the database's own hostname to reach the tunnel, so TLS still verifies that name. WSL rewrites `/etc/hosts` at every distro start unless told not to. Logan types this, with `!`:
+The worker can't run in a container: `guardPainter` needs `docker`, `guard.sh`, `powershell.exe` and `wsl.exe`, and in `node:24-alpine` every job would fail. On the host it needs the database's own hostname to reach the tunnel, so TLS still verifies that name. WSL rewrites `/etc/hosts` at every distro start unless told not to. Logan types this, with `!`, or in a WSL terminal if sudo can't prompt there:
 
     ! H=$(pass show digitalocean/pg-home-worker-url | head -n1 | sed -E 's#^.*@([^:/]+):.*#\1#'); sudo sed -i '/^\[network\]/a generateHosts = false' /etc/wsl.conf && printf '127.0.0.1 %s\n' "$H" | sudo tee -a /etc/hosts >/dev/null; unset H
 
