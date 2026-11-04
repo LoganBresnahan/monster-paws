@@ -256,6 +256,9 @@ async function registerArtGenerate(boss: PgBoss) {
         lastSkipAlert = Date.now();
         Sentry.captureMessage(`art skipped: ${outcome.reason}`, { level: "warning", tags: { job: ART_GENERATE } });
       }
+      if (outcome.status === "painted" && outcome.warning) {
+        Sentry.captureMessage(`art painted with a warning: ${outcome.warning}`, { level: "warning", tags: { job: ART_GENERATE } });
+      }
       if (outcome.status === "painted" && outcome.published === false) {
         // The art stands; nothing retries the publish, so this is the alert to run `npm run share -- publish` by hand.
         Sentry.captureMessage(`art painted but not published: ${outcome.publishError}`, { level: "error", tags: { job: ART_GENERATE } });
@@ -292,16 +295,17 @@ async function main() {
     ? new PgBoss({ connectionString: DATABASE_URL, migrate: devChain, supervise: devChain, schedule: false, max: 2 })
     : new PgBoss(DATABASE_URL);
   // The art worker reaches the cluster through a tunnel from home: a dropped tunnel makes pg-boss error several times
-  // a second (verify, 2026-11-04), so it reports one an interval with the count it held back, never each.
+  // a second (verify, 2026-11-04), so it reports one an interval with the count it held back, never each, to Sentry
+  // and to its own log alike, where a line for each came to ~200 MB a day.
   let lastBossReport = 0;
   let heldBack = 0;
   boss.on("error", (err: Error) => {
-    console.error("[pg-boss]", err);
     if (artOnly && Date.now() - lastBossReport < BOSS_REPORT_MS) {
       heldBack += 1;
       return;
     }
     lastBossReport = Date.now();
+    console.error("[pg-boss]", ...(heldBack ? [`(${heldBack} held back since the last)`] : []), err);
     Sentry.captureException(err, { tags: { component: "worker", source: "pg-boss" }, extra: { heldBack } });
     heldBack = 0;
   });

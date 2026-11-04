@@ -83,7 +83,7 @@ export interface CutPhoto {
 }
 
 export type ArtOutcome =
-  | { status: "painted"; keys: string[]; published?: boolean; publishError?: string }
+  | { status: "painted"; keys: string[]; published?: boolean; publishError?: string; warning?: string }
   | { status: "has-art" }
   | { status: "skipped"; reason: string };
 
@@ -92,7 +92,7 @@ export function loadCrewTable(path = "comfyui/keepsake-crew.json"): CrewTable {
 }
 
 /** Four seeds, one painting each: a donation gets four (ADR-0004 as amended 2026-11-03, decision 5). */
-export function crewSpec(table: CrewTable, slug: string, keepsakeId: number, animal?: string): PaintSpec {
+export function crewSpec(table: CrewTable, slug: string, keepsakeId: number, animal?: string, two?: string[]): PaintSpec {
   // own keys only: "constructor" or "__proto__" in a fact must never reach an object's prototype
   const pet = Object.hasOwn(table.pets, slug) ? table.pets[slug] : undefined;
   if (!pet) throw new Error(`no crew painting row for '${slug}'`);
@@ -100,7 +100,7 @@ export function crewSpec(table: CrewTable, slug: string, keepsakeId: number, ani
   return {
     _: `keepsake ${keepsakeId}: ${pet.name}, painted by art.generate from comfyui/keepsake-crew.json`,
     // the crops are read under this name: the pet's for batch 11's, the run's own for a live detection
-    animals: { [animal ?? pet.name]: { kind: pet.kind, describe: pet.describe, two: pet.two } },
+    animals: { [animal ?? pet.name]: { kind: pet.kind, describe: pet.describe, two: two ?? pet.two } },
     photos: ["two"],
     crops: ["grownsubject"],
     aspect: ["landscape"],
@@ -125,14 +125,16 @@ function text(facts: { field: string; value: unknown }[], field: string): string
 /**
  * A listing's words from its own fields, "female tuxedo cat": the reviewed words table is not built, and no one reads
  * a shelter's photo to write them. The corpus says "Male" and "Female"; a breed that doesn't name its species gets it,
- * since "tuxedo" or "domestic short hair" alone is not an animal (verify, 2026-11-04).
+ * since "tuxedo" or "domestic short hair" alone is not an animal, and one that does never gets it twice, two words
+ * ("guinea pig") as well as one (verify, 2026-11-04).
  */
 export function listingWords(facts: { field: string; value: unknown }[]): string {
   const sex = text(facts, FACT.sex)?.toLowerCase();
   const species = text(facts, FACT.species)?.toLowerCase();
   const kind = text(facts, FACT.kind)?.toLowerCase();
   const words = [sex === "female" || sex === "male" ? sex : null, kind];
-  if (species && !(kind ?? "").split(/\W+/).includes(species)) words.push(species);
+  const spaced = (s: string) => ` ${s.split(/\W+/).filter(Boolean).join(" ")} `;
+  if (species && !spaced(kind ?? "").includes(spaced(species))) words.push(species);
   return words.filter(Boolean).join(" ") || "animal";
 }
 
@@ -273,16 +275,22 @@ export async function generateArt(
   const table = opts.table ?? loadCrewTable();
   const name = runName(keepsakeId, row.token);
   let pngs: string[];
+  let warning: string | undefined;
   if (crew) {
     const pet = table.pets[crew.pet];
+    let two: string[] | undefined;
     if (opts.live && pet) {
       const cut = await painter.crops(name, { ...pet.detect, photos: pet.two.map((file) => `crew:${pet.name}/${file}`) });
       // The crew's two are vetted photos of the pet: one the detector can't find is a fault to see, never a set from the other.
       if (pet.two.some((file) => !cut.some((c) => c.file === file))) {
         throw new Error(`keepsake ${keepsakeId}: live detection lost one of ${pet.name}'s photos`);
       }
+      const headless = pet.two.filter((file) => !cut.find((c) => c.file === file)?.head);
+      if (headless.length > 0) warning = `live detection found no head in ${headless.length} of ${pet.name}'s photos; a close-up's subject stood in`;
+      // the head is read from the first photo, so one with its own head leads, as a listing's does
+      two = [...pet.two].sort((a, b) => Number(headless.includes(a)) - Number(headless.includes(b)));
     }
-    pngs = await painter.paint(name, crewSpec(table, crew.pet, keepsakeId, opts.live ? name : undefined));
+    pngs = await painter.paint(name, crewSpec(table, crew.pet, keepsakeId, opts.live ? name : undefined, two));
   } else {
     const species = text(facts, FACT.species);
     if (!species) throw new Error(`keepsake ${keepsakeId} has no ${FACT.species} fact`);
@@ -326,13 +334,14 @@ export async function generateArt(
   });
   if (!wrote) return { status: "has-art" };
   const keys = arts.map((a) => a.key);
-  if (!opts.publish) return { status: "painted", keys };
+  const painted = { status: "painted" as const, keys, ...(warning ? { warning } : {}) };
+  if (!opts.publish) return painted;
   try {
     await opts.publish(keepsakeId);
-    return { status: "painted", keys, published: true };
+    return { ...painted, published: true };
   } catch (err) {
     // The code alone: a publish error can carry the share token, and a token is the page (ADR-0036).
-    return { status: "painted", keys, published: false, publishError: failureCode(err) };
+    return { ...painted, published: false, publishError: failureCode(err) };
   }
 }
 
@@ -365,11 +374,17 @@ function run(cmd: string, args: string[], cwd: string, log: string): Promise<voi
     const child = spawn(cmd, args, { cwd, stdio: ["ignore", "pipe", "pipe"] });
     child.stdout.pipe(out, { end: false });
     child.stderr.pipe(out, { end: false });
-    child.on("error", reject);
-    child.on("close", (code) => {
-      out.end();
-      if (code === 0) resolveRun();
-      else reject(new Error(`${basename(cmd)} ${args[0]} exited ${code}; see ${log}`));
+    let failed: Error | undefined;
+    out.on("error", (err) => (failed ??= err));
+    child.on("error", (err) => (failed ??= err));
+    child.on("close", (code, signal) => {
+      // Never settle before the log is on disk (and "close" follows a failed spawn too): the caller reads its tail
+      // for why the run stopped, and an unflushed tail gives an earlier line (verify, 2026-11-04).
+      out.end(() => {
+        if (failed) reject(failed);
+        else if (code === 0) resolveRun();
+        else reject(new Error(`${basename(cmd)} ${args[0]} exited ${code ?? signal}; see ${log}`));
+      });
     });
   });
 }
@@ -412,16 +427,15 @@ export function paintedFor(runsJsonl: string, spec: PaintSpec): (string | null)[
 const LOG_NOISE = /it\/s\]|%\||^Container |^Loading weights|^WARN|level=warn|^\[transformers\]/;
 
 /**
- * Why a run stopped, for its error and its alert: the last line its own scripts wrote about it (`<name>: …`),
- * else the log's last line that isn't noise, which is Python's own message when a script died. At most 200
- * characters: a detector's error can quote a remote service's reply, and nothing outside the code may rely on
- * what that holds (the sam3 chat, 2026-11-04).
+ * Why a run stopped, for its error and its alert: the last line of the attempt that isn't noise, whoever wrote it,
+ * so a crash after the scripts' own word on a photo is the crash (verify, 2026-11-04); their `<name>: ` goes. At
+ * most 200 characters: a detector's error can quote a remote service's reply, and nothing outside the code may
+ * rely on what that holds (the sam3 chat, 2026-11-04).
  */
 export function lastRunLine(log: string, name: string): string | null {
-  const lines = log.split("\n").map((l) => l.trim()).filter(Boolean);
-  const own = lines.filter((l) => l.startsWith(`${name}: `)).at(-1);
-  const line = own ? own.slice(name.length + 2) : lines.filter((l) => !LOG_NOISE.test(l)).at(-1);
-  return line ? line.slice(0, 200) : null;
+  const line = log.split("\n").map((l) => l.trim()).filter((l) => l && !LOG_NOISE.test(l)).at(-1);
+  if (!line) return null;
+  return (line.startsWith(`${name}: `) ? line.slice(name.length + 2) : line).slice(0, 200);
 }
 
 /** ComfyUI's data root as `comfyui/compose.yml` resolves it: COMFYUI_DATA, relative to `comfyui/`, or `var/comfyui`. */
@@ -472,7 +486,15 @@ export function guardPainter(root: string): Painter {
         const chunks: Uint8Array[] = [];
         let size = 0;
         const reader = res.body.getReader();
-        for (let part = await reader.read(); !part.done; part = await reader.read()) {
+        for (;;) {
+          let part: ReadableStreamReadResult<Uint8Array>;
+          try {
+            part = await reader.read();
+          } catch {
+            // a dropped connection or the timeout mid-body, which undici words as a bare "terminated" (verify, 2026-11-04)
+            throw new Error(`${name}: photo ${i + 1} stopped arriving after ${size} bytes`);
+          }
+          if (part.done) break;
           size += part.value.byteLength;
           if (size > MAX_PHOTO_BYTES) {
             await reader.cancel();
@@ -502,9 +524,10 @@ export function guardPainter(root: string): Painter {
       try {
         await run("docker", liveCropsArgs(name), root, log);
       } catch (err) {
-        // live_crops says why in its own last line (no photo, no animal): carried into the error, so the alert says it too.
+        // live_crops says why in its last line (no photo, no animal): carried into the error with the exit, so the alert says both.
         const why = lastRunLine(existsSync(log) ? readFileSync(log).subarray(from).toString("utf8") : "", name);
-        throw new Error(why ? `${name}: detection stopped: ${why}` : String(err instanceof Error ? err.message : err));
+        const exit = err instanceof Error ? err.message : String(err);
+        throw new Error(why ? `${name}: detection stopped: ${why} (${exit})` : exit);
       }
       return JSON.parse(readFileSync(join(dir, "cut.json"), "utf8")) as CutPhoto[];
     },

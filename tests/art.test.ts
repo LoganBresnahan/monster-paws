@@ -1,9 +1,10 @@
-import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { spawnSync } from "node:child_process";
+import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { eq } from "drizzle-orm";
 import sharp from "sharp";
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { mintIntentId } from "@/core/donate/intent";
 import { receiveWebhook } from "@/core/donate/webhook";
 import { artFilePath, CREW_BASIS, crewExternalId, FACT, grantBasis, mintShareToken, snapshotKeepsake } from "@/core/keepsake";
@@ -60,6 +61,12 @@ describe("a listing's words, from its own fields", () => {
     expect(listingWords(f([[FACT.sex, "Male"], [FACT.kind, "Siamese Cat"], [FACT.species, "cat"]]))).toBe("male siamese cat");
     expect(listingWords(f([[FACT.sex, "Unknown"], [FACT.species, "cat"]]))).toBe("cat");
   });
+
+  it("never name a two-word species twice", () => {
+    expect(listingWords(f([[FACT.sex, "Female"], [FACT.kind, "Guinea Pig"], [FACT.species, "guinea pig"]]))).toBe("female guinea pig");
+    expect(listingWords(f([[FACT.sex, "Male"], [FACT.kind, "Sugar Glider"], [FACT.species, "sugar glider"]]))).toBe("male sugar glider");
+    expect(listingWords(f([[FACT.sex, "Male"], [FACT.kind, "Lop Eared"], [FACT.species, "rabbit"]]))).toBe("male lop eared rabbit");
+  });
 });
 
 
@@ -88,12 +95,18 @@ describe("a run's paintings", () => {
 
 describe("the detector a run uses (ADR-0028 §1)", () => {
   it("says why a detection stopped, in live_crops' own words for the run", () => {
-    const log = "owlv2-raw-v4: 8s\nkeepsake-1-abc: 0 of 1 photos cut\nkeepsake-1-abc: no animal chosen in any photo; nothing to paint from\nother: x\n";
+    const log = "owlv2-raw-v4: 8s\nkeepsake-1-abc: 0 of 1 photos cut\nkeepsake-1-abc: no animal chosen in any photo; nothing to paint from\n";
     expect(lastRunLine(log, "keepsake-1-abc")).toBe("no animal chosen in any photo; nothing to paint from");
     expect(lastRunLine("", "keepsake-2-def")).toBeNull();
   });
 
-  it("finds the run's own line under a progress bar or docker's chatter, and else the script's own last words", () => {
+  it("takes a crash after the scripts' own word on a photo as the reason, not that word (verify, 2026-11-04)", () => {
+    const log = "keepsake-1-abc: no head chosen in held:keepsake-1-abc/photos/1.jpg, a close-up; its subject stands in for the head\n" +
+      "Traceback (most recent call last):\nPIL.UnidentifiedImageError: cannot identify image file\n";
+    expect(lastRunLine(log, "keepsake-1-abc")).toBe("PIL.UnidentifiedImageError: cannot identify image file");
+  });
+
+  it("finds the last line under a progress bar or docker's chatter", () => {
     const noisy = "keepsake-1-abc: 1 of 1 photos cut\nLoading weights: 100%|██████████| 357/357 [00:00<00:00, 1871.42it/s]\n Container comfyui-explore-run-1 Stopping\n";
     expect(lastRunLine(noisy, "keepsake-1-abc")).toBe("1 of 1 photos cut");
     const died = "owlv2-raw-v4: 8s\nTraceback (most recent call last):\n  File \"detect.py\", line 1\nRuntimeError: sam3: MODEL_API_KEY is not set\nLoading weights:  42%|████▏     | 222/529 [00:00<00:00, 2215.91it/s]\n";
@@ -120,6 +133,101 @@ describe("the detector a run uses (ADR-0028 §1)", () => {
 });
 
 
+describe("a photo with no head chosen (comfyui/live_crops.py)", () => {
+  // Fixture provenance: each photo's boxes as detect-lora's grown.json holds them (2026-10-12); the shares are the
+  // ones verify counted on 2026-11-04, and Pongpong's chosen subject is the dog's rear half.
+  const PHOTOS = {
+    pongpong: { detsubject: [0.5014, 0.4726, 0.6984, 0.748], grownsubject: [0.5012, 0.4325, 0.7269, 0.7992], dethead: null, grownhead: null },
+    dogFriend: { detsubject: [0.0608, 0.1498, 0.5819, 0.8711], grownsubject: [0.0606, 0.147, 0.5869, 0.8705], dethead: null, grownhead: null },
+    viljo19: { detsubject: [0.0022, 0.4397, 0.8902, 0.907], grownsubject: [0.0, 0.3575, 0.8901, 0.9069], dethead: null, grownhead: null },
+    dalmatian: { detsubject: [0.065, 0.0798, 0.6334, 0.7818], grownsubject: [0.0013, 0.0778, 0.7056, 0.7816],
+      dethead: [0.2372, 0.3731, 0.3148, 0.4514], grownhead: [0.2372, 0.3731, 0.3148, 0.4514] },
+  };
+  const choose = (found: object) => {
+    const r = spawnSync("python3", ["-I", "-c", "import json, sys; sys.path.insert(0, 'comfyui'); import live_crops; " +
+      "print(json.dumps(live_crops.choose(json.load(sys.stdin))))"], { input: JSON.stringify(found), encoding: "utf8" });
+    expect(r.status, r.stderr).toBe(0);
+    return JSON.parse(r.stdout) as [Record<string, number[]> | null, number];
+  };
+
+  it("is left out when the animal fills under 40% of the frame, since that subject can be its rear half", () => {
+    expect(choose(PHOTOS.pongpong)).toEqual([null, expect.closeTo(0.054, 3)]);
+    expect(choose(PHOTOS.dogFriend)).toEqual([null, expect.closeTo(0.376, 3)]);
+  });
+
+  it("paints from a close-up, its subject standing in for the head", () => {
+    const [boxes, share] = choose(PHOTOS.viljo19);
+    expect(share).toBeCloseTo(0.415, 3);
+    expect(boxes).toEqual({ ...PHOTOS.viljo19, dethead: PHOTOS.viljo19.detsubject, grownhead: PHOTOS.viljo19.grownsubject });
+  });
+
+  it("keeps a photo's own head, however little of the frame the animal fills", () => {
+    expect(choose(PHOTOS.dalmatian)[0]).toEqual(PHOTOS.dalmatian);
+    const far = { ...PHOTOS.dalmatian, detsubject: [0.5, 0.5, 0.6, 0.6] };
+    expect(choose(far)[0]).toEqual(far);
+  });
+});
+
+
+describe("a stopped detection, through the real run (verify, 2026-11-04)", () => {
+  const root = mkdtempSync(join(tmpdir(), "art-crops-"));
+  const explore = join(root, "var", "explore");
+  const bin = join(root, "bin");
+  mkdirSync(explore, { recursive: true });
+  mkdirSync(bin);
+  // Stands in for `docker compose run … live_crops.py <name>`; FAKE_MODE says which real outcome it plays.
+  writeFileSync(join(bin, "docker"), `#!/bin/sh
+for a; do name=$a; done
+case "$FAKE_MODE" in
+  exit-line) echo "$name: 0 of 1 photos cut into input/crew/$name/, 0 with a head"; echo "$name: no animal chosen in any photo; nothing to paint from" >&2; exit 1;;
+  ok)        echo "$name: 1 of 1 photos cut into input/crew/$name/, 1 with a head"; echo '[{"ref":"x","file":"1.jpg","head":true}]' > "${explore}/$name/cut.json"; exit 0;;
+  no-output) echo "Cannot connect to the Docker daemon" >&2; exit 125;;
+  traceback) echo "$name: no head chosen in held:$name/photos/1.jpg, a close-up; its subject stands in for the head"; echo "Traceback (most recent call last):" >&2; echo "PIL.UnidentifiedImageError: cannot identify image file" >&2; exit 1;;
+  oom)       echo "$name: no head chosen in held:$name/photos/1.jpg, a close-up; its subject stands in for the head"; exit 137;;
+esac
+`);
+  chmodSync(join(bin, "docker"), 0o755);
+  const listing = { species: "dog", colour: "", subject: "x", photos: ["held:x/photos/1.jpg"] };
+  const painter = guardPainter(root);
+  const stopped = async (name: string, mode: string) => {
+    process.env.FAKE_MODE = mode;
+    try {
+      return await painter.crops(name, listing);
+    } catch (err) {
+      return (err as Error).message;
+    }
+  };
+  const PATH = process.env.PATH;
+  beforeEach(() => {
+    process.env.PATH = `${bin}:${PATH}`;
+  });
+  afterEach(() => {
+    process.env.PATH = PATH;
+    delete process.env.FAKE_MODE;
+  });
+  afterAll(() => rmSync(root, { recursive: true, force: true }));
+
+  it("says the script's last word every time, read only once the log is on disk", async () => {
+    const said = new Set<unknown>();
+    for (let i = 0; i < 100; i++) {
+      const name = `keepsake-${i}-race`;
+      said.add(String(await stopped(name, "exit-line")).replaceAll(name, "<run>"));
+    }
+    expect([...said]).toEqual([`<run>: detection stopped: no animal chosen in any photo; nothing to paint from (docker compose exited 1; see ${explore}/<run>.log)`]);
+  });
+
+  it("reads only this attempt's part of the log", async () => {
+    expect(await stopped("keepsake-1-stale", "ok")).toEqual([{ ref: "x", file: "1.jpg", head: true }]);
+    expect(await stopped("keepsake-1-stale", "no-output")).toMatch(/: detection stopped: Cannot connect to the Docker daemon \(docker compose exited 125;/);
+  });
+
+  it("reports a crash after a stand-in line as the crash, and keeps the exit code when the script said nothing more", async () => {
+    expect(await stopped("keepsake-2-trace", "traceback")).toMatch(/detection stopped: PIL\.UnidentifiedImageError: cannot identify image file \(docker compose exited 1;/);
+    expect(await stopped("keepsake-3-oom", "oom")).toMatch(/\(docker compose exited 137;/);
+  });
+});
+
+
 describe("a listing's photos, fetched (verify, 2026-11-04)", () => {
   const root = mkdtempSync(join(tmpdir(), "art-fetch-"));
   const fetchPhotos = guardPainter(root).fetchPhotos;
@@ -135,6 +243,20 @@ describe("a listing's photos, fetched (verify, 2026-11-04)", () => {
     await expect(fetchPhotos("r", [photo("http://cdn.rescuegroups.org/a.jpg")])).rejects.toThrow("photo 1 is not from an allowed host");
     const bad = fetchPhotos("r", [photo("https://cdn.rescuegroups.org/a.jpg"), photo("not a url at all")]);
     await expect(bad).rejects.not.toThrow("not a url at all");
+  });
+
+  it("names the photo a dropped connection cut off, never a bare \"terminated\"", async () => {
+    const body = new ReadableStream<Uint8Array>({
+      start: (c) => c.enqueue(new Uint8Array(1000)),
+      pull: (c) => c.error(new TypeError("terminated")),
+    });
+    vi.stubGlobal("fetch", async () => new Response(body, { headers: { "content-type": "image/jpeg" } }));
+    try {
+      await expect(fetchPhotos("keepsake-1-abc", [photo("https://cdn.rescuegroups.org/a.jpg")]))
+        .rejects.toThrow("keepsake-1-abc: photo 1 stopped arriving after 1000 bytes");
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 
   it("resolves ComfyUI's data root as the compose file does", () => {
@@ -421,6 +543,20 @@ describe.skipIf(SKIP_DB_TESTS)("art.generate (doc/plans/demo-chain-contract.md)"
     await expect(generateArt(db, { keepsakeId: other, photos: PHOTOS }, none, { table: TABLE, now: NOON, nightly: null })).rejects.toThrow("no photo with the animal");
     expect(none.calls).toBe(0);
     expect(none.forgotten).toEqual([await nameOf(other)]);
+  });
+
+  it("warns when a crew pet's live run finds no head in a photo, and leads with the one that has its own", async () => {
+    const id = await crewKeepsake();
+    const headless = painter(pngs, null, () => [{ file: "a.jpg", head: false }, { file: "b.jpg", head: true }]);
+    const outcome = await generateArt(db, { keepsakeId: id }, headless, { table: TABLE, now: NOON, nightly: null, live: true });
+    expect(outcome).toMatchObject({ status: "painted", warning: "live detection found no head in 1 of Plum's photos; a close-up's subject stood in" });
+    expect(headless.specs[0].animals[await nameOf(id)].two).toEqual(["b.jpg", "a.jpg"]);
+
+    const other = await crewKeepsake();
+    const both = painter();
+    const fine = await generateArt(db, { keepsakeId: other }, both, { table: TABLE, now: NOON, nightly: null, live: true });
+    expect(fine).not.toHaveProperty("warning");
+    expect(both.specs[0].animals[await nameOf(other)].two).toEqual(["a.jpg", "b.jpg"]);
   });
 
   it("stops a crew pet's live run that loses one of its two photos", async () => {

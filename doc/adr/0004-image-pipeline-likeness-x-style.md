@@ -1011,6 +1011,22 @@ the Commons originals: the cat a mean 0.640, the dog 0.601, against 0.584 for
 the three-quarter view's batches; it cannot see a wrong coat or wrong ears, so
 Logan's eye decided: "these look great".
 
+**Narrowed the same day: only a close-up's crop stands in**, the detector's
+subject filling at least 40% of the frame (`CLOSE_UP` in
+`comfyui/live_crops.py`). A headless photo farther off is left out, and a
+listing with no other photo stops with an alert, which a person can act on,
+where a wrong painting would go to the donor. verify's read of the detection
+set's Commons photos: 46 of 121 had no head chosen, 5 of them with the animal
+filling 70% of the frame or more, 10 at 40–70%, 8 at 25–40%, 11 at 10–25% and
+12 under 10%. In `3625Pongpong-Bail-Santo-Tomas-La-Union-67` the detector chose
+the dog's rear half, and its four paintings would have been four rear halves.
+61,183 of the 116,463 listings shown have one photo. Logan, to the moderator,
+2026-11-04: "okay i agree (probably need to see and test this tomorrow with
+commons photos)". **The 40% is provisional** until he has looked at far-off
+headless Commons photos painted, Pongpong and cases near the line among them.
+Below it the stop is the safe default, so a shelter's opening doesn't wait on
+that look.
+
 ## Amendment (2026-11-04): the art worker runs on the dev setup for now
 
 Logan, to the moderator, 2026-11-04: "yes we can run the worker on this dev setup", so that real gifts can be painted by the Meta
