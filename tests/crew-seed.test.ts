@@ -69,7 +69,7 @@ describe.skipIf(SKIP_DB_TESTS)("the seeded crew through the real pages' reads", 
   it("carries a rehearsal gift from the decision to a keepsake and its job", async () => {
     await rehearsalGift(db, "beetle", "pat@example.org");
     const report = await sweepKeepsakes(db, async () => "job");
-    expect(report).toEqual({ written: 1, sent: 1 });
+    expect(report).toEqual({ written: 1, sent: 1, stalled: 0 });
     expect(await db.select().from(keepsake)).toHaveLength(1);
   });
 });

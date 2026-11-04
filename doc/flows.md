@@ -612,8 +612,9 @@ after it, if at all.
        ▼
   first signal                      (planned, ADR-0035) closed_at, or GET /thanks/<token>:
        │                            one conditional UPDATE of the return time, nothing else
-       │  sweepKeepsakes (crew only, ART_SWEEP=on, local demo; ADR-0028 §6): closed_at and no
-       │  keepsake → snapshotKeepsake; no art fact → boss.send, a key and a one-hour slot
+       │  sweepKeepsakes (ART_SWEEP=on, dark until a shelter holds a grant): closed_at, a donation,
+       │  a crew pet or a digify grant as of the gift's date, no keepsake → snapshotKeepsake;
+       │  no art fact → boss.send, a key and a one-hour slot; 30 minutes with no art → an alert
        │  (planned) droplet worker sweep: intents with a signal and no keepsake, confirmed
        │  first, never counted; then a return 2 minutes old, newest first, at most 25
        │  cycles a rolling day and none while its normalised address has 3 waiting; over
@@ -667,19 +668,19 @@ may be purged, rebuilt or merged without touching it.
   return                                     no donation → no amount or date on the card
        │
        ▼
-  snapshotKeepsake()  (crew only, ADR-0028 §6) the ONE writer — every field
-       │              (listings planned,     must name its basis or it is
-       │               item 4)               not written
-       │  crew: src/ui/crew.ts, on CREW_BASIS
-       │  (planned) reads, once, at the first signal:
-       │    animals + licensed animal_display row + the shelter registry
+  snapshotKeepsake()  (built, dark)          the ONE writer — every field
+       │                                     must name its basis or it is
+       │                                     not written; under a grant, no photo field
+       │  reads, once, at a recorded gift:
+       │    crew: src/ui/crew.ts, on CREW_BASIS
+       │    listing: animals + the shelter registry, grant as of the gift's date
        ▼
-  keepsake            (built, crew only)     intent_id NOT NULL UNIQUE, its donation
+  keepsake            (built, dark)          intent_id NOT NULL UNIQUE, its donation
        │                                     reached through the intent (ADR-0035 decision 9);
        │                                     share_token, 128 bits of its own (ADR-0036)
        │                                     append-only, never UPDATEd
        ▼
-  keepsake_fact       (built, crew only)      (keepsake_id, field, value,
+  keepsake_fact       (built, dark)           (keepsake_id, field, value,
        │                                      basis, snapshotted_at)
        │   basis = grant:<slug>:<permission> → kept per the grant's onEnd
        │   basis = aggregator:<source>       → purged with the source
@@ -702,9 +703,9 @@ round. Both workers are the same binary — the droplet's never registers
 `art.generate`, the home's registers nothing else.
 
 ```
-  sweepKeepsakes()  (crew only, ADR-0028 §6)    keepsake_fact rows written,
+  sweepKeepsakes()  (built, dark)               keepsake_fact rows written,
        │                                        basis = grant:<slug>:digify
-       │  boss.send('art.generate', {keepsakeId}, artJobOptions)
+       │  boss.send('art.generate', {keepsakeId, photos}, artJobOptions)
        ▼
   pg-boss queue  art.generate                   DO Managed Postgres
        │                                        ── droplet boundary ──

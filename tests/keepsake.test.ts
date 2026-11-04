@@ -13,14 +13,16 @@ import {
   CREW_BASIS,
   crewExternalId,
   FACT,
+  grantBasis,
   mintShareToken,
   snapshotKeepsake,
   sweepKeepsakes,
   type SendArtJob,
 } from "@/core/keepsake";
+import type { ShelterEntry } from "@/core/shelters";
 import { closeDb, type Db } from "@/db/client";
-import { donationIntents, keepsake, keepsakeFact } from "@/db/schema";
-import { SKIP_DB_TESTS, TEST_DATABASE_URL, testDb, truncateDonor } from "./support/db";
+import { animalDisplay, animalIdentities, animals, donationIntents, keepsake, keepsakeFact } from "@/db/schema";
+import { SKIP_DB_TESTS, TEST_DATABASE_URL, testDb, truncateCorpus, truncateDonor } from "./support/db";
 
 const SLUG = "a-staging-nonprofit";
 const EIN = "12-3456789";
@@ -79,6 +81,7 @@ describe.skipIf(SKIP_DB_TESTS)("the keepsake sweep (ADR-0035 decisions 6 and 9)"
   });
 
   beforeEach(async () => {
+    await truncateCorpus(db);
     await truncateDonor(db);
     sends.length = 0;
   });
@@ -133,7 +136,7 @@ describe.skipIf(SKIP_DB_TESTS)("the keepsake sweep (ADR-0035 decisions 6 and 9)"
 
   it("writes nothing for a gift not yet recorded: tonight's signal is the webhook alone", async () => {
     await intentFor("manual", crewExternalId("plum"));
-    expect(await sweepKeepsakes(db, send)).toEqual({ written: 0, sent: 0 });
+    expect(await sweepKeepsakes(db, send)).toEqual({ written: 0, sent: 0, stalled: 0 });
     expect(await db.select().from(keepsake)).toEqual([]);
   });
 
@@ -141,7 +144,7 @@ describe.skipIf(SKIP_DB_TESTS)("the keepsake sweep (ADR-0035 decisions 6 and 9)"
     const listing = await recorded("rescuegroups", "rg-7");
     const testGift = await recorded("manual", "test-gift");
     const unknown = await recorded("manual", crewExternalId("nobody"));
-    expect(await sweepKeepsakes(db, send)).toEqual({ written: 0, sent: 0 });
+    expect(await sweepKeepsakes(db, send)).toEqual({ written: 0, sent: 0, stalled: 0 });
     expect(await snapshotKeepsake(db, listing)).toBeNull();
     expect(await snapshotKeepsake(db, testGift)).toBeNull();
     expect(await snapshotKeepsake(db, unknown)).toBeNull();
@@ -157,7 +160,97 @@ describe.skipIf(SKIP_DB_TESTS)("the keepsake sweep (ADR-0035 decisions 6 and 9)"
     expect(sends[0]).toEqual({ keepsakeId: id, options: artJobOptions(id) });
 
     await db.insert(keepsakeFact).values({ keepsakeId: id, field: FACT.art, value: { key: artKey(id, 1), candidate: 1 }, basis: CREW_BASIS, snapshottedAt: new Date() });
-    expect(await sweepKeepsakes(db, send)).toEqual({ written: 0, sent: 0 });
+    expect(await sweepKeepsakes(db, send)).toEqual({ written: 0, sent: 0, stalled: 0 });
+  });
+
+  describe("a listing's gift, under a shelter's grant (ADR-0006 decision 5, ADR-0022 as amended)", () => {
+    const SHELTER = "rescuegroups:org:1";
+    const PHOTO = { url: "https://cdn.rescuegroups.org/rex.jpg", width: 600, height: 800 };
+    const granted = (grantedAt: string, revokedAt?: string): readonly ShelterEntry[] => [
+      {
+        slug: "happy-tails",
+        name: "Happy Tails",
+        siteUrl: "https://example.org",
+        listingsUrl: "https://example.org/dogs",
+        tier: "aggregator",
+        goldenFixture: null,
+        shelterExternalIds: [SHELTER],
+        grants: [{ permission: "digify", grantedAt, revokedAt, granter: "A Person, director", basis: "yes", evidence: "<a@b> sha256:0" }],
+      },
+    ];
+
+    async function listing(photos: { url: string; width: number; height: number }[] = [PHOTO]) {
+      const [row] = await db
+        .insert(animals)
+        .values({ name: "Rex", species: "dog", breed: "Beagle", sex: "Male", status: "available", shelterExternalId: SHELTER, orgName: "Happy Tails" })
+        .returning({ id: animals.id });
+      const now = new Date();
+      await db.insert(animalIdentities).values({ animalId: row.id, source: "rescuegroups", externalId: "rg-7", lastSeenAt: now, sourceUpdatedAt: now });
+      await db.insert(animalDisplay).values({ animalId: row.id, source: "rescuegroups", photos, fetchedAt: now } as typeof animalDisplay.$inferInsert);
+    }
+
+    it("paints nothing while no shelter holds a grant, which is how production stays dark", async () => {
+      await listing();
+      await recorded("rescuegroups", "rg-7");
+      expect(await sweepKeepsakes(db, send)).toEqual({ written: 0, sent: 0, stalled: 0 });
+      expect(await db.select().from(keepsake)).toEqual([]);
+    });
+
+    it("writes the facts on the grant, with no photo field, and carries the photos in the job", async () => {
+      await listing();
+      await recorded("rescuegroups", "rg-7");
+      const sent: unknown[] = [];
+      await sweepKeepsakes(db, async (_name, data) => (sent.push(data), "job"), new Date(), granted("2026-01-01"));
+      const [{ id }] = await db.select({ id: keepsake.id }).from(keepsake);
+      const facts = await db.select().from(keepsakeFact).where(eq(keepsakeFact.keepsakeId, id));
+      expect(Object.fromEntries(facts.map((fact) => [fact.field, fact.value]))).toEqual({
+        [FACT.name]: "Rex",
+        [FACT.species]: "dog",
+        [FACT.kind]: "Beagle",
+        [FACT.sex]: "Male",
+        [FACT.shelter]: "Happy Tails",
+      });
+      expect(new Set(facts.map((fact) => fact.basis))).toEqual(new Set([grantBasis("happy-tails")]));
+      expect(sent).toEqual([{ keepsakeId: id, photos: [PHOTO] }]);
+    });
+
+    it("reads the grant as of the gift's date: a withdrawal after it still paints, and a gift before the grant doesn't", async () => {
+      await listing();
+      await recorded("rescuegroups", "rg-7");
+      const after = new Date("2026-12-01");
+      expect((await sweepKeepsakes(db, send, after, granted("2026-12-01"))).written).toBe(0);
+      expect((await sweepKeepsakes(db, send, after, granted("2026-01-01", "2026-11-20"))).written).toBe(1);
+    });
+
+    it("never touches another shelter's gift", async () => {
+      await listing();
+      await recorded("rescuegroups", "rg-7");
+      const other = granted("2026-01-01").map((entry) => ({ ...entry, shelterExternalIds: ["rescuegroups:org:2"] }));
+      expect((await sweepKeepsakes(db, send, new Date(), other)).written).toBe(0);
+    });
+
+    it("sends no job for a listing with no photo, and says so once it has waited 30 minutes", async () => {
+      await listing([]);
+      await recorded("rescuegroups", "rg-7");
+      const registry = granted("2026-01-01");
+      const first = new Date();
+      expect(await sweepKeepsakes(db, send, first, registry)).toEqual({ written: 1, sent: 0, stalled: 0 });
+      const later = new Date(first.getTime() + 31 * 60 * 1000);
+      expect(await sweepKeepsakes(db, send, later, registry)).toEqual({ written: 0, sent: 0, stalled: 1 });
+    });
+
+    it("stops calling a gift stalled once its art exists", async () => {
+      await listing();
+      await recorded("rescuegroups", "rg-7");
+      const registry = granted("2026-01-01");
+      const first = new Date();
+      await sweepKeepsakes(db, send, first, registry);
+      const later = new Date(first.getTime() + 31 * 60 * 1000);
+      expect((await sweepKeepsakes(db, send, later, registry)).stalled).toBe(1);
+      const [{ id }] = await db.select({ id: keepsake.id }).from(keepsake);
+      await db.insert(keepsakeFact).values({ keepsakeId: id, field: FACT.art, value: { key: artKey(id, 1), candidate: 1 }, basis: grantBasis("happy-tails"), snapshottedAt: later });
+      expect(await sweepKeepsakes(db, send, later, registry)).toEqual({ written: 0, sent: 0, stalled: 0 });
+    });
   });
 
   it("really gets one job from pg-boss 12.26.3 for many ticks, and a key alone would not", async () => {

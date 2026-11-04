@@ -134,18 +134,25 @@ function startWebhookSweep(): () => void {
 const KEEPSAKE_SWEEP_MS = 60_000;
 
 /**
- * Only with `ART_SWEEP=on`, which the droplet's compose must never set: production's sweep is ADR-0035's limited one, not this crew-only one (ADR-0028 §6).
+ * Only with `ART_SWEEP=on`: the compose files never set it, so turning it on is a line in that machine's `.env`
+ * with its own oplog entry. It queues art and never paints: `art.generate` has no handler here (ADR-0004 as amended 2026-10-05).
  */
 async function startKeepsakeSweep(boss: PgBoss): Promise<() => void> {
   if (process.env.ART_SWEEP !== "on") return () => {};
   await boss.createQueue(ART_GENERATE, ART_QUEUE_OPTIONS);
   let running = false;
+  let lastStalledAlert = 0;
   const timer = setInterval(async () => {
     if (running) return;
     running = true;
     try {
       const report = await sweepKeepsakes(getDb(DATABASE_URL), (name, data, options) => boss.send(name, { ...data }, options));
-      if (report.written > 0 || report.sent > 0) console.log(JSON.stringify({ event: "keepsake.sweep", ...report }));
+      if (report.written > 0 || report.sent > 0 || report.stalled > 0) console.log(JSON.stringify({ event: "keepsake.sweep", ...report }));
+      const now = Date.now();
+      if (report.stalled > 0 && now - lastStalledAlert >= WEBHOOK_REPEAT_ALERT_MS) {
+        lastStalledAlert = now;
+        Sentry.captureMessage(`paid paintings waiting past 30 minutes: ${report.stalled}`, { level: "error", tags: { job: "keepsake.sweep" } });
+      }
     } catch (err) {
       Sentry.captureMessage(`keepsake sweep failed: ${failureCode(err)}`, { level: "error", tags: { job: "keepsake.sweep" } });
     } finally {

@@ -269,8 +269,8 @@ function photosOf(payload: RescueGroupsAnimal): DisplayPhoto[] {
  * ADR-0006 amendment of 2026-08-25 licenses the listing description and photo
  * URLs under `aggregator-display`, and ADR-0015 carries them as `display`,
  * never as claims. The line that has not moved: prose and photos are
- * expression, so they never enter `AnimalClaims` and never reach the art
- * pipeline (decision 5 — no keepsake art from an API photo, ever).
+ * expression, so they never enter `AnimalClaims`, and only a shelter's own
+ * `digify` grant lets one be painted (ADR-0006 decision 5, ADR-0029 §3).
  */
 export const rescueGroupsNormalizer: Normalizer<RescueGroupsAnimal> = {
   source: "rescuegroups",
