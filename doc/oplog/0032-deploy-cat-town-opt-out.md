@@ -1,7 +1,7 @@
 # 0032: Deploy `dea83ba` — Cat Town's opt-out, ahead of the go-live
 
-Status: planned
-Planned: 2026-11-04 · Run: —
+Status: run
+Planned: 2026-11-04 · Run: 2026-11-04, 17:05 to 17:09 UTC
 Why: Cat Town replied to Logan's wave: "remove and take us off your email list". The ask promised that takes its listings down (ADR-0029 §5), and this is the first real opt-out. Logan, directly: "sure ship it first", ahead of the vision-model test that holds oplog 0029, and "we can probably just branch off of where the last deploy was and add this removal?". Roadmap: Shelter consent (item 5)
 Commit deployed: `dea83ba`, on branch `hotfix/cat-town`, `83b2bc9` plus the exclusion alone. CI builds images for `hotfix/**`. The exclusion also lands on topdog, so oplog 0029's image keeps it.
 
@@ -17,9 +17,9 @@ Who does what: **Logan gave the word above, to the session running this.** Produ
 - [x] e2e against the published app image, Every.org set to production, 2026-11-04 17:04 UTC: 46 passed in 11.0 s, 13 skipped, all in `e2e/share.spec.ts`. The published worker image booted on a throwaway database: up after 24 s, 0 fatal lines, no `art.generate` queue.
 - [x] `git diff --stat 83b2bc9 dea83ba` read: `src/core/shelters.ts` and `tests/shelter-registry.test.ts`, and nothing in `public/`, `drizzle/` or the server config.
 - [x] Disk clear for the pull: 12G free after oplog 0031.
-- [ ] `pass` unlocked by Logan.
-- [ ] Not within an hour of 06:00, 07:00 or 08:30 UTC, and the night's log shows `== exit`.
-- [ ] The moderator rechecks the box. **Short of the usual line, on the moderator's say and Logan's "okay lets try the deploy":** `paintings`' batch may be on the card through this roll, so the risk is the box freezing during an SSH step. One session per step, and the rollback `83b2bc9` ready.
+- [x] `pass` unlocked by Logan.
+- [x] Not within an hour of 06:00, 07:00 or 08:30 UTC, and the night's log shows `== exit`.
+- [x] The moderator rechecked the box at 17:05 UTC: batch 40a on the card, 24 GB free in Windows, the driver pool 1.7 GB, load 1.9, no build or test. **Short of the usual line, on the moderator's say and Logan's "okay lets try the deploy":** `paintings`' batch may be on the card through this roll, so the risk is the box freezing during an SSH step. One session per step, and the rollback `83b2bc9` ready.
 
 ## Steps
 
@@ -78,7 +78,25 @@ Verify: six pages 200; Cat Town's animal and sponsor pages 404, and its shelter 
 Rollback: step 3b's.
 
 ## Run
-<filled in as it happens>
+Logan, directly, in the session that ran it: "sure ship it first" and "we can probably just branch off of where the last deploy was and add this removal?". To the moderator: "okay lets try the deploy", which it read as this entry and told him so. Commit deployed `dea83ba`, on `hotfix/cat-town`.
+
+**This ran with the card busy, deliberately:** `paintings`' batch 40a was on the card throughout, guard PID 3430363 from before step 0 to after step 4. Nothing hiccuped on this side: no SSH step stalled, and 21 GB was free in the WSL distro at the end. Whether the batch's own output was affected is `paintings`' to read.
+
+**Changed from the steps above:** step 0 ran `rclone` from its pinned image with `RCLONE_S3_NO_CHECK_BUCKET=true`. `/test-gift` wasn't read live: the image at 17:04 UTC answered 404, and 83b2bc9 had already removed it.
+
+**Step 0, 17:06 UTC.** The raw message at `r2:monsterpaws-vault/consent/rescuegroups:org:5818-2026-11-04.eml`, the hash read back from the vault starting `ef6e69b7e108975c`, the one in `SHELTER_EXCLUSIONS`.
+
+**Step 1, 17:06 UTC.** `IMAGE_TAG` `83b2bc901e68e87b251d3f1a8e98ba228b5481d7`, the rollback. Checkout `4445141`. `/` 52%. `ART_SWEEP 1`, `EMAIL_SWEEP 0`, `WORKER_MODE 0`. Health 200 on `83b2bc9`.
+
+**Step 2, 17:06 UTC.** `migrations 19`. 54 available Cat Town animals. One read before the roll: 200, naming Cat Town.
+
+**Step 3, 17:06 to 17:07 UTC.** App and worker pulled at `dea83ba2f2726b96e7922afe4ce5843be4d4f345`; the checkout still `4445141`; all three on the old containers.
+
+**Step 3b, 17:07 UTC.** The roll took 3.49 s by `time`, 17:07:16 to 17:07:20. 180 POSTs, 180 `404`, **no 5xx**, slowest 10.13 s. Health 200 on `dea83ba`. Caddy not recreated. The worker still up about a minute on, with 0 `fatal` lines. `/` 56%, 11G free.
+
+**Step 4, 17:08 UTC.** Six pages 200. That Cat Town animal 404, its sponsor page 404, and its shelter view `0`. `/animals` holds no "Can be sponsored" or "Sponsorable first". The footer's line still `1`. Better Stack, a count only: 0 reports in 15 minutes.
+
+Nothing failed, and nothing was rolled back.
 
 ## Follow-ups
 - Oplog 0029 rolls onto its own sha, which holds this exclusion through topdog, and rolling back past it must keep the exclusion.
