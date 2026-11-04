@@ -126,7 +126,15 @@ the delineation table in `README.md`.
      passes the key's name and compose reads the value from there, so it's never in a
      command line, a file or a log; with no key, a run on photos with no stored reply
      stops. A listing is always `owlv2`, with the key blanked. The whole path under
-     `ART_CREW_DETECTOR=sam3` hasn't had a real run yet; it waits for the card.
+     `ART_CREW_DETECTOR=sam3` had its first real run on 2026-11-04.
+     **That run:** Plum, keepsake 2 on `monsterpaws_demo`, from `99d92f7`, with
+     `PXL_20250423_185424061.PORTRAIT.jpg` and `PXL_20250422_224209397.jpg`. Meta got
+     their clean copies, 8 calls, $0.02, about $0.27 in all. Both photos were cut, each
+     with a head, IoU 0.74 and 0.76 with the hand-drawn boxes. The first job skipped at
+     21 GB free, under the 22 GB floor, and a retry painted about 20 minutes later.
+     Four paintings are in `var/keepsakes/keepsakes/2/`; nothing was published and no
+     mail went. Logan, relayed by the moderator: "plums paintins from saml 3.1 look
+     good". The sheet for the video still waits for his look.
    - README: "sam3 pipeline, prompts, measurement, crops" with commits.
 
    **Measured 2026-11-04, 16 crew photos, seen by the rules, boxes read by
