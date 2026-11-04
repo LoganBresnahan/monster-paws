@@ -197,7 +197,7 @@ def owl_ask(im, species: str, colour: str, floor: float) -> dict:
     """One OWLv2 pass: per box, the species, colour, head and other-species scores, boxes in the image's pixels."""
     import torch
     proc, model = owl()
-    queries = [f"a photo of a {species}", f"a photo of a {colour} {species}", f"a photo of the head of a {species}"]
+    queries = [f"a photo of a {species}", f"a photo of a {colour} {species}" if colour else f"a photo of a {species}", f"a photo of the head of a {species}"]
     queries += [f"a photo of a {o}" for o in others(species)]
     inputs = proc(text=[queries], images=im, return_tensors="pt")
     with torch.no_grad():
@@ -326,6 +326,9 @@ def shares(im, mask) -> dict:
 
 def colour_score(colour: str, share: dict) -> float:
     parts = colour.split(" and ")
+    # A listing with no colour, or one the palette has no set for, votes nothing: every candidate scores alike (ADR-0026).
+    if any(part not in COLOUR_SETS for part in parts):
+        return 0.0
     got = [sum(share.get(p, 0.0) for p in COLOUR_SETS[part]) for part in parts]
     return min(got) * len(parts) if len(parts) > 1 else got[0]
 

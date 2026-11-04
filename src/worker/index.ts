@@ -12,7 +12,7 @@ import { runIngest } from "@/core/ingest/pipeline";
 import { createRescueGroupsAdapter, rescueGroupsNormalizer } from "@/core/ingest/rescuegroups";
 import { eraseAbandonedAddresses } from "@/core/donate/intent";
 import { ART_GENERATE, ART_QUEUE_OPTIONS, sweepKeepsakes, type ArtGenerateJob } from "@/core/keepsake";
-import { generateArt, guardPainter } from "@/worker/art";
+import { generateArt, guardPainter, sharePublisher } from "@/worker/art";
 import { sweepWebhookSpool } from "@/core/donate/webhook-replay";
 import { artReaderFromEnv } from "@/core/email/art-source";
 import { runPaintingEmailTick } from "@/core/email/painting-sweep";
@@ -232,10 +232,17 @@ function startPaintingEmailSweep(): () => void {
 async function registerArtGenerate(boss: PgBoss) {
   await boss.createQueue(ART_GENERATE, ART_QUEUE_OPTIONS);
   const painter = guardPainter(process.cwd());
+  // Built at registration, so a missing write key stops the worker at start rather than after a set is painted.
+  const publish = sharePublisher(() => getDb(DATABASE_URL));
   await boss.work<ArtGenerateJob>(ART_GENERATE, { batchSize: 1 }, async ([job]) => {
     try {
-      const outcome = await generateArt(getDb(DATABASE_URL), job.data.keepsakeId, painter, { live: process.env.ART_DETECT === "live" });
+      const outcome = await generateArt(getDb(DATABASE_URL), job.data, painter, { live: process.env.ART_DETECT === "live", publish });
+      // Never the job's data: a listing's photo URLs stay out of the log.
       console.log(JSON.stringify({ event: "art.generate", keepsakeId: job.data.keepsakeId, ...outcome }));
+      if (outcome.status === "painted" && outcome.published === false) {
+        // The art stands; nothing retries the publish, so this is the alert to run `npm run share -- publish` by hand.
+        Sentry.captureMessage(`art painted but not published: ${outcome.publishError}`, { level: "error", tags: { job: ART_GENERATE } });
+      }
     } catch (err) {
       Sentry.captureMessage(`art not generated: ${failureCode(err)}`, { level: "error", tags: { job: ART_GENERATE } });
       throw err;

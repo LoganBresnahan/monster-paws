@@ -712,10 +712,11 @@ may be purged, rebuilt or merged without touching it.
 
 ## Keepsake art — generated on hardware we control, arriving when ready (ADR-0004 as amended 2026-10-05, ADR-0026)
 
-Built for the Meta demo, crew only, in the dev distro against the dev
-Postgres (`monsterpaws_demo`, `doc/plans/demo-chain-contract.md`; ADR-0028
-§6): `WORKER_MODE=art` through the guard to four marked JPEGs and their art
-facts. Planned for production: roadmap item 4, the tunnel and the home
+Built for the Meta demo in the dev distro against the dev Postgres
+(`monsterpaws_demo`, `doc/plans/demo-chain-contract.md`; ADR-0028 §6), for a
+crew pet or a listing whose shelter holds a `digify` grant: `WORKER_MODE=art`
+through the guard to four marked JPEGs and their art facts, then the share
+tool's publish. Planned for production: roadmap item 4, the tunnel and the home
 account below. The photo never leaves a machine we control; the job waits
 for the box, never the other way round. Both workers are the same binary —
 the droplet's never registers `art.generate`, the home's registers nothing
@@ -733,17 +734,28 @@ else.
        ▼                                        ── home boundary ──
   src/worker/index.ts  WORKER_MODE=art           built for the demo in the dev
        │   registerArtGenerate → generateArt    distro (ADR-0028 §6): one job at
-       │   (src/worker/art.ts); exits at once   a time, crew only. Planned: the
-       │   on any art fact · skips the nightly  worker container, prod WSL
-       │   poll's window and a busy card        distro, "monsterpaws" user
+       │   (src/worker/art.ts); exits at once   a time. Planned: the worker
+       │   on any art fact · skips the nightly  container, prod WSL distro,
+       │   poll's window, a busy card and under "monsterpaws" user
+       │   22 GB free after the cache drop
        ▼
-  crops                                         ART_DETECT=live (built):
-       │   live: comfyui/live_crops.py —        detect.py → crops.py →
-       │   OWLv2 asked for the listing's        explore.cut, under the run's own
-       │   species, colour, head → SAM 2.1      name; DETECT_PIPELINES picks the
-       │   outlines → clean-up rules → six      detector (19/20 blind, ADR-0026).
-       │   votes → ALWAYS one animal chosen     Otherwise batch 11's crops, by
-       │   · head box inside it                 comfyui/keepsake-crew.json
+  a listing's photos  (built)                   fetched from the job's URLs to
+       │   two at most, beside the run          var/explore/<run>/photos/; they,
+       │   (fetchPhotos)                        the detector's overlays and the
+       │                                        crops are deleted when the try
+       │                                        ends, painted or not (forget;
+       │                                        ADR-0022 as amended 2026-11-02)
+       ▼
+  crops                                         live (built): detect.py →
+       │   live: comfyui/live_crops.py —        crops.py → explore.cut, under the
+       │   OWLv2 asked for the listing's        run's own name, cut.json naming
+       │   species, colour (none for a listing: the photos cut; DETECT_PIPELINES
+       │   the colour vote abstains), head →    picks the detector (19/20 blind,
+       │   SAM 2.1 outlines → clean-up rules →  ADR-0026). Always for a listing,
+       │   six votes → one animal chosen, or    and a photo with none is left
+       │   none in that photo · head inside it  out; a crew pet with
+       │                                        ART_DETECT=live, otherwise batch
+       │                                        11's crops (keepsake-crew.json)
        ▼
   comfyui/guard.sh batch keepsake-<id> 4        built (demo): the spec beside the
        │   explore.py's klein-v1 reference2     run, var/explore/<run>/spec.json;
@@ -752,8 +764,9 @@ else.
        │   the grown subject and head crops ·   ComfyUI, POST /prompt with
        │   landscape canvas · chest-up portrait comfyui/workflows/klein-v1.api.json
        │   · 4 seeds = 4 candidates             (ADR-0004 as amended 2026-11-03)
-       │   description: the pet's words, the    the listing's fields through a
-       │   crew's from the table                reviewed table (planned)
+       │   description: the crew's words from   a listing's sex and kind as
+       │   the table; a listing's sex and kind  published (listingWords); the
+       │                                        reviewed words table (planned)
        ▼
   comfyui/mark.py                               built: monsterpaws.org · <year>
        │   in the pixels, bottom right          on every gift painting (ADR-0022)
@@ -768,14 +781,20 @@ else.
        │                                        2026-10-14); donors' face
        │                                        picks are its labelled set
        ▼
-  ART_STORE_DIR/keepsakes/<id>/<n>.jpg          built (demo): JPEG, pixels only;
-       │   artFilePath(artKey(id, n))           R2 monsterpaws-media through
-       │                                        `npm run share -- publish`
-       │                                        (planned, oplog 0026)
+  ART_STORE_DIR/keepsakes/<id>/<n>.jpg          built (demo): JPEG, pixels only
+       │   artFilePath(artKey(id, n))
        ▼
-  keepsake_fact  field='art' ×4  basis = the photo fact's   (append, one
+  keepsake_fact  field='art' ×4  basis = the keepsake's   (append, one
        │                                        transaction: a part set is never
        │                                        written)
+       ▼
+  SHARE_PUBLISH=on: sharePublisher              built: the share tool's own
+       │   keepsakeShare → encodePainting →     publish (src/core/share/), the
+       │   publishShare, R2 monsterpaws-media   manifest last; a failure keeps
+       │   share/<token>/, read back by hash    the art and alerts by its code,
+       │                                        never retried (a hand rerun of
+       │                                        `npm run share -- publish`);
+       │                                        first real run: oplog 0026
        ▼
   "<pet>'s portraits are ready"  (planned)      the card's second reveal —
        │                                        the framed photo was the

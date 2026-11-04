@@ -3716,6 +3716,22 @@ On Logan's "commit and realign" (this stream's work landed on topdog as
   capped. And publishing, crew and real gifts alike, through the UI chat's
   `npm run share -- publish` (Logan: "yes real paintings on the share page
   is what we want"; "yes we can run the worker on this dev setup").
+- **Built after the realign (2026-11-04, on `ce4d076`):** the job is
+  `{ keepsakeId, photos? }`. A listing's photos, two at most, are fetched
+  beside the run, cut by live detection with no colour (`detect.py`'s colour
+  vote now abstains for a colour it has no set for, the colour ask falls back
+  to the species), painted from the photos an animal was found in, a head
+  first, and deleted with the detector's overlays and the crops when the try
+  ends, painted or not. Its words are its sex and kind as published
+  (`listingWords`: "female pit bull terrier mix"), the art facts on its
+  grant's basis. `live_crops.py` writes `cut.json` and leaves out, by name,
+  a photo with no animal chosen (sam3 can return none); with no head
+  anywhere it stops. A crew pet's live run that loses either photo stops.
+  With `SHARE_PUBLISH=on`, `sharePublisher` runs the share tool's own
+  publish after the facts; a failure keeps the art, is reported by its code
+  (a token in a message is the page), and is never retried, so it is a hand
+  rerun of `npm run share -- publish`. Checked on the CPU: a Commons photo
+  as a held one, no colour, cut with its head in 13 s. Tests: twenty.
 
 ### The crew for the site — Logan's picks (2026-11-04)
 

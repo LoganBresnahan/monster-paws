@@ -1,9 +1,14 @@
 import { spawn } from "node:child_process";
-import { createWriteStream, existsSync, mkdirSync, readFileSync, realpathSync, writeFileSync } from "node:fs";
+import { createWriteStream, existsSync, mkdirSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { basename, dirname, extname, join } from "node:path";
 import { and, eq } from "drizzle-orm";
 import sharp from "sharp";
-import { artFilePath, artKey, FACT, type ArtFact, type SourcePhotoFact } from "@/core/keepsake";
+import { spokenAnimalName } from "@/core/email/animal-name";
+import type { DisplayPhoto } from "@/core/ingest/pipeline";
+import { artFilePath, artKey, CREW_BASIS, FACT, type ArtFact, type ArtGenerateJob, type SourcePhotoFact } from "@/core/keepsake";
+import { failureCode } from "@/core/observability";
+import { keepsakeShare } from "@/core/share/keepsake";
+import { createR2ObjectStore, encodePainting, publishShare } from "@/core/share/publish";
 import type { Db } from "@/db/client";
 import { keepsakeFact } from "@/db/schema";
 
@@ -32,7 +37,7 @@ export interface CrewTable {
 /** A spec in `comfyui/explore.py`'s own shape, so a keepsake is painted exactly as the batches Logan read were. */
 export interface PaintSpec {
   _: string;
-  animals: Record<string, { kind: string; describe: string; two: string[] }>;
+  animals: Record<string, { kind: string; describe: string; one?: string[]; two?: string[] }>;
   photos: string[];
   crops: string[];
   aspect: string[];
@@ -51,14 +56,24 @@ export interface PaintSpec {
 export interface Painter {
   /** a reason the card is not free, or null: one driver at a time (doc/infra.md, Home GPU) */
   busy(): Promise<string | null>;
-  /** cuts run `name`'s crops by live detection into `input/crew/<name>/` (`comfyui/live_crops.py`) */
-  crops(name: string, listing: DetectListing & { photos: string[] }): Promise<void>;
+  /** fetches a listing's photos beside run `name` (`var/explore/<name>/photos/`) and returns their file names */
+  fetchPhotos(name: string, photos: DisplayPhoto[]): Promise<string[]>;
+  /** deletes run `name`'s fetched photos and everything cut from them */
+  forget(name: string): Promise<void>;
+  /** cuts run `name`'s crops by live detection into `input/crew/<name>/` (`comfyui/live_crops.py`), and returns the photos cut */
+  crops(name: string, listing: DetectListing & { photos: string[] }): Promise<CutPhoto[]>;
   /** paints `spec` as run `name` and returns its marked PNGs, one per seed in the spec's order */
   paint(name: string, spec: PaintSpec): Promise<string[]>;
 }
 
+/** A photo `comfyui/live_crops.py` cut: an animal was chosen in it, and maybe its head. */
+export interface CutPhoto {
+  file: string;
+  head: boolean;
+}
+
 export type ArtOutcome =
-  | { status: "painted"; keys: string[] }
+  | { status: "painted"; keys: string[]; published?: boolean; publishError?: string }
   | { status: "has-art" }
   | { status: "skipped"; reason: string };
 
@@ -76,6 +91,42 @@ export function crewSpec(table: CrewTable, slug: string, keepsakeId: number, ani
     // the crops are read under this name: the pet's for batch 11's, the run's own for a live detection
     animals: { [animal ?? pet.name]: { kind: pet.kind, describe: pet.describe, two: pet.two } },
     photos: ["two"],
+    crops: ["grownsubject"],
+    aspect: ["landscape"],
+    describe: ["listing"],
+    families: ["kleinbfl8"],
+    graphs: ["reference2"],
+    prompts: [table.prompt],
+    denoise: [],
+    weights: [],
+    weight_types: [],
+    end_at: [],
+    seeds: table.seeds,
+    heads: ["grownhead"],
+  };
+}
+
+function text(facts: { field: string; value: unknown }[], field: string): string | undefined {
+  const value = facts.filter((f) => f.field === field).at(-1)?.value;
+  return typeof value === "string" && value.trim() ? value.trim() : undefined;
+}
+
+/** A listing's words from its own fields, "female pit bull terrier mix": the reviewed words table is not built, and no one reads a shelter's photo to write them. */
+export function listingWords(facts: { field: string; value: unknown }[]): string {
+  const sex = text(facts, FACT.sex);
+  const kind = text(facts, FACT.kind) ?? text(facts, FACT.species) ?? "animal";
+  return [sex === "female" || sex === "male" ? sex : null, kind].filter(Boolean).join(" ").toLowerCase();
+}
+
+/** A listing painted from its own photos, one or two, by the crew table's prompt and four seeds. */
+export function listingSpec(table: CrewTable, name: string, species: string, words: string, files: string[], keepsakeId: number): PaintSpec {
+  if (files.length < 1 || files.length > 2) throw new Error(`${name}: ${files.length} photos; a listing paints from one or two`);
+  if (table.seeds.length !== 4) throw new Error(`the crew table holds ${table.seeds.length} seeds; a donation gets four`);
+  const key = files.length === 2 ? "two" : "one";
+  return {
+    _: `keepsake ${keepsakeId}: a listing, painted by art.generate from its own photos and fields`,
+    animals: { [name]: { kind: species, describe: words, [key]: files } },
+    photos: [key],
     crops: ["grownsubject"],
     aspect: ["landscape"],
     describe: ["listing"],
@@ -115,17 +166,20 @@ function nightlyLog(now: Date, dir = "var/nightly"): string | null {
  */
 export async function generateArt(
   db: Db,
-  keepsakeId: number,
+  job: ArtGenerateJob,
   painter: Painter,
-  opts: { table?: CrewTable; now?: Date; nightly?: string | null; live?: boolean } = {},
+  opts: { table?: CrewTable; now?: Date; nightly?: string | null; live?: boolean; publish?: (keepsakeId: number) => Promise<void> } = {},
 ): Promise<ArtOutcome> {
+  const { keepsakeId, photos = [] } = job;
   const facts = await db.select().from(keepsakeFact).where(eq(keepsakeFact.keepsakeId, keepsakeId));
   if (facts.some((f) => f.field === FACT.art)) return { status: "has-art" };
   const source = facts.find((f) => f.field === FACT.sourcePhoto);
-  if (!source) throw new Error(`keepsake ${keepsakeId} has no ${FACT.sourcePhoto} fact`);
-  const photo = source.value as SourcePhotoFact;
-  // A named photo is a held listing photo, painted through live detection; never from the crew's table (ADR-0028 §6).
-  if (photo.photo !== null) throw new Error(`keepsake ${keepsakeId} names a held photo; only the crew's table paints`);
+  const crew = source ? (source.value as SourcePhotoFact) : null;
+  // A crew pet paints from its own originals and a listing only from the photos its job carries (ADR-0028 §6, ADR-0022 as amended 2026-10-27).
+  if (crew && (crew.photo !== null || photos.length > 0)) throw new Error(`keepsake ${keepsakeId} is a crew pet's and names a photo`);
+  if (!crew && photos.length === 0) throw new Error(`keepsake ${keepsakeId} has neither a crew pet nor photos in its job`);
+  const basis = source?.basis ?? facts[0]?.basis;
+  if (!crew && (!basis || basis === CREW_BASIS)) throw new Error(`keepsake ${keepsakeId}'s photos come with no listing's basis`);
 
   const now = opts.now ?? new Date();
   if (inQuietWindow(now, opts.nightly !== undefined ? opts.nightly : nightlyLog(now))) {
@@ -136,12 +190,34 @@ export async function generateArt(
 
   const table = opts.table ?? loadCrewTable();
   const name = `keepsake-${keepsakeId}`;
-  const pet = table.pets[photo.pet];
-  if (opts.live && pet) {
-    await painter.crops(name, { ...pet.detect, photos: pet.two.map((file) => `crew:${pet.name}/${file}`) });
+  let pngs: string[];
+  if (crew) {
+    const pet = table.pets[crew.pet];
+    if (opts.live && pet) {
+      const cut = await painter.crops(name, { ...pet.detect, photos: pet.two.map((file) => `crew:${pet.name}/${file}`) });
+      // The crew's two are vetted photos of the pet: one the detector can't find is a fault to see, never a set from the other.
+      if (pet.two.some((file) => !cut.some((c) => c.file === file)) || !cut.find((c) => c.file === pet.two[0])?.head) {
+        throw new Error(`keepsake ${keepsakeId}: live detection lost one of ${pet.name}'s photos or its first's head`);
+      }
+    }
+    pngs = await painter.paint(name, crewSpec(table, crew.pet, keepsakeId, opts.live ? name : undefined));
+  } else {
+    const species = text(facts, FACT.species);
+    if (!species) throw new Error(`keepsake ${keepsakeId} has no ${FACT.species} fact`);
+    const words = listingWords(facts);
+    try {
+      const files = await painter.fetchPhotos(name, photos.slice(0, 2));
+      // No colour: `animals` holds none, so the detector's colour vote abstains (ADR-0026).
+      const cut = await painter.crops(name, { species, colour: "", subject: `${name}, the ${words}`, photos: files.map((f) => `held:${name}/photos/${f}`) });
+      // A photo with no animal chosen is left out; the head is read from the first photo, so one with a head leads.
+      const usable = [...cut].sort((a, b) => Number(b.head) - Number(a.head));
+      if (!usable[0]?.head) throw new Error(`keepsake ${keepsakeId}: no photo with the animal and its head`);
+      pngs = await painter.paint(name, listingSpec(table, name, species, words, usable.map((c) => c.file), keepsakeId));
+    } finally {
+      // The photos and everything cut from them go when the attempt ends, painted or not: they are fetched again for a retry (ADR-0022 as amended 2026-11-02).
+      await painter.forget(name);
+    }
   }
-  const spec = crewSpec(table, photo.pet, keepsakeId, opts.live ? name : undefined);
-  const pngs = await painter.paint(name, spec);
   if (pngs.length !== 4) throw new Error(`keepsake ${keepsakeId}: ${pngs.length} paintings, not four`);
 
   const arts: ArtFact[] = pngs.map((_, i) => ({ key: artKey(keepsakeId, i + 1), candidate: i + 1 }));
@@ -160,11 +236,43 @@ export async function generateArt(
       .limit(1);
     if (again.length > 0) return false;
     await tx.insert(keepsakeFact).values(
-      arts.map((value) => ({ keepsakeId, field: FACT.art, value, basis: source.basis, snapshottedAt: opts.now ?? new Date() })),
+      arts.map((value) => ({ keepsakeId, field: FACT.art, value, basis: basis!, snapshottedAt: opts.now ?? new Date() })),
     );
     return true;
   });
-  return wrote ? { status: "painted", keys: arts.map((a) => a.key) } : { status: "has-art" };
+  if (!wrote) return { status: "has-art" };
+  const keys = arts.map((a) => a.key);
+  if (!opts.publish) return { status: "painted", keys };
+  try {
+    await opts.publish(keepsakeId);
+    return { status: "painted", keys, published: true };
+  } catch (err) {
+    // The code alone: a publish error can carry the share token, and a token is the page (ADR-0036).
+    return { status: "painted", keys, published: false, publishError: failureCode(err) };
+  }
+}
+
+/**
+ * The share tool's own publish (`npm run share -- publish`), after the four art facts; only with
+ * `SHARE_PUBLISH=on` and the write pair in the environment from `pass`, never a file (oplog 0026, ADR-0036).
+ */
+export function sharePublisher(db: () => Db, env = process.env): ((keepsakeId: number) => Promise<void>) | undefined {
+  if (env.SHARE_PUBLISH !== "on") return undefined;
+  const need = (key: string) => {
+    const value = env[key];
+    if (!value) throw new Error(`SHARE_PUBLISH=on needs ${key}`);
+    return value;
+  };
+  const store = createR2ObjectStore({
+    endpoint: need("SHARE_WRITE_ENDPOINT"),
+    accessKeyId: need("SHARE_WRITE_ACCESS_KEY_ID"),
+    secretAccessKey: need("SHARE_WRITE_SECRET_ACCESS_KEY"),
+  });
+  return async (keepsakeId) => {
+    const share = await keepsakeShare(db(), keepsakeId, { speak: spokenAnimalName });
+    const paintings = await Promise.all(share.files.map((path) => encodePainting(path)));
+    await publishShare(store, share.manifest, paintings, share.token);
+  };
 }
 
 function run(cmd: string, args: string[], cwd: string, log: string): Promise<void> {
@@ -220,12 +328,33 @@ export function guardPainter(root: string): Painter {
       if (free !== null && free < LOAD_FREE_GB) return `Windows free ${free} GB, under ${LOAD_FREE_GB} GB before a model load`;
       return null;
     },
+    async fetchPhotos(name, photos) {
+      const dir = join(explore, name, "photos");
+      mkdirSync(dir, { recursive: true });
+      const files: string[] = [];
+      for (const [i, photo] of photos.entries()) {
+        if (!photo.url.startsWith("https://")) throw new Error(`${name}: photo ${i + 1} is not an https URL`);
+        const res = await fetch(photo.url, { signal: AbortSignal.timeout(30_000) });
+        const type = res.headers.get("content-type") ?? "";
+        if (!res.ok || !type.startsWith("image/")) throw new Error(`${name}: photo ${i + 1} answered ${res.status} ${type}`);
+        const file = `${i + 1}.${type.includes("png") ? "png" : type.includes("webp") ? "webp" : "jpg"}`;
+        writeFileSync(join(dir, file), Buffer.from(await res.arrayBuffer()));
+        files.push(file);
+      }
+      return files;
+    },
+    async forget(name) {
+      for (const dir of [join(explore, name, "photos"), join(explore, name, "detect"), join(root, "var", "comfyui", "input", "crew", name)]) {
+        rmSync(dir, { recursive: true, force: true });
+      }
+    },
     async crops(name, { photos, ...listing }) {
       const dir = join(explore, name);
       mkdirSync(dir, { recursive: true });
       writeFileSync(join(dir, "detect.json"), JSON.stringify({ _: `${name}: one listing for live detection`, listings: { [name]: { ...listing, photos } } }, null, 2) + "\n");
       await run("docker", ["compose", "-f", "comfyui/compose.yml", "run", "--rm", "--no-deps", "--entrypoint", "python", "explore",
         "/home/comfy/harness/live_crops.py", name], root, join(explore, `${name}.log`));
+      return JSON.parse(readFileSync(join(dir, "cut.json"), "utf8")) as CutPhoto[];
     },
     async paint(name, spec) {
       const dir = join(explore, name);
