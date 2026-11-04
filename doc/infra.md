@@ -538,6 +538,10 @@ ssh root@$IP 'git clone <repo-url> monsterpaws && cd monsterpaws &&
 ## Recurring ops
 
 ```sh
+# After a deploy — the droplet's 25 GB holds about a dozen images, and each deploy leaves its
+# predecessor, about 1.7 GB. Keep the running one and the one before it, removing the rest
+# by name (oplog 0031). Never `docker image prune -a`: scripts/backup-db.sh runs
+# postgres:16.4-alpine and rclone/rclone:1.68.2, which it would take.
 # Monthly, or before any look/art work after a Windows driver, WSL or kernel
 # update — the home GPU stack (Home GPU section): check the four pinned
 # versions in comfyui/Dockerfile against intel/compute-runtime,

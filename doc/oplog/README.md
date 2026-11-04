@@ -40,6 +40,7 @@ is an ADR; the daily numbers brief is `doc/ops/` (ADR-0010 as amended).
 | [0028](0028-painting-chain-keys-and-sweep.md) | The painting chain's keys and the keepsake sweep on, with no shelter to paint for | run | 2026-11-04 |
 | [0029](0029-spencer-grant-and-go-live.md) | Spencer's grant, the Sponsor button opens, and the first real donation | planned | — |
 | [0030](0030-deploy-wording-before-the-outreach-wave.md) | Deploy `83b2bc9`: the wording and fixes, before the claimed-shelter wave | run | 2026-11-04 |
+| [0031](0031-remove-old-images.md) | Remove old images from the droplet, before oplog 0029 pulls another | planned | — |
 
 ## Entry format
 
