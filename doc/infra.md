@@ -1005,7 +1005,13 @@ What was load-bearing, in the order it was found:
   within about 20 s, while Windows free read 25.3, 25.5 at 16 s, 29.0 at
   21 s and 32.6 at 27 s, a lag of 20–27 s and then a ~7 GB jump;
   `FreePhysicalMemory` matched `\Memory\Available Bytes` (29.0 and 28.9),
-  so the reading counts standby. `memory=32GB`
+  so the reading counts standby. The photo reader before a paint (the 4B,
+  2026-11-04, Logan's apps open): it holds ~9.7 GB, its weights
+  as file-backed pages that `docker stats` doesn't count (it showed under 1
+  GB; `free`'s cache column and the process's RSS do). It took Windows free
+  from 28.4 to 20.3 GB while reading, and a job's drop after it then reached
+  33 GB in ~40 s and painted, never under 22 GB through the load. So a reader
+  must exit before the drop, never run beside a paint. `memory=32GB`
   stays. `autoMemoryReclaim=dropCache` (WSL drops the cache when the VM
   is idle) is untried here; the 10-10 freezes were under `gradual`.
   Still unmeasured: a model load also takes several GB outside the VM

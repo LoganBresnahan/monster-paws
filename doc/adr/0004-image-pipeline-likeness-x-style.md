@@ -1046,3 +1046,44 @@ Revisit: when gifts arrive with nobody watching, or a dev session and a painting
 This ADR's 2026-08-02 amendment put a third-party-processing disclosure and a photo-rights confirmation in the digify consent email. For Spencer Pet Rescue,
 Logan decided a plain yes is enough: ADR-0028 as amended 2026-11-04 has his words and what was and wasn't answered. Its photos are painted on the home card and
 don't go to a hosted API, so there is no third-party disclosure to rest on. The next shelter's yes is its own decision.
+
+## Amendment (2026-11-04): a photo reader adds the look of a dog's head to its listing's words
+
+A listing's words are its sex, its kind and its species, so klein has to copy colours and ears from the crops, and it misses: Logan's reads
+of batches 35–38 named German shepherd colours and Doberman ears, and words read by eye fixed both (batch 36c). Logan, to the moderator:
+"i'm thinking we test with vision models to fix likeness before we deploy". The test is in `doc/plans/base-model-candidates.md` ("The
+photo reader, tried").
+
+1. **Qwen3-VL-4B-Instruct** (Apache-2.0) reads the photo that leads, the one whose own head the painter reads, on the CPU in the explore
+   container (`comfyui/read.py`), and its phrase follows the listing's words in the prompt. Its weights have their lines in
+   `models.manifest`. `read.py` verifies them when it loads them, offline. ComfyUI's start skips them (`MODELS_SKIP=read/`), because
+   ComfyUI never loads them and the hash costs 11 s. The 2B read Duke's natural ears as upright twice and is dropped. A hosted reader
+   is out, because a listing's photo never leaves this machine.
+2. **One question, about the head, face and ears only:** their colours, the fur length, and the ears as one of six choices. Never the
+   neck, chest, body, legs, paws or tail. Words for those made klein paint the whole dog, and a chest's colour reads to it as clothing
+   (Logan, batch 40a: "is the vision model causing us to paint the whole body?", "i think describing the chest is a mistake"). These
+   are the exact words he judged, and any change goes back in front of his eye: two rewordings read worse (batches 40c-40d).
+3. **Dogs only**, until a cat batch has been looked at. A cat keeps its listing's words.
+4. **A reader that fails, or gives no words, never costs the painting:** the set is painted from the listing's words, and the outcome
+   carries a warning to Sentry. `ART_READER=off` on the worker turns the reader off with a restart, for words that come back bad.
+5. **The words are read from a shelter's photo, so they reach only the prompt:** never the log (`read.py` prints "read" for a held
+   photo), never a donor or shelter. `forget` removes `read.json`, `spec.json`, `runs.jsonl`, the run's sheet and ComfyUI's own output,
+   whose PNGs embed the prompt in their metadata, with the photos and the crops. It keeps only the marked paintings the set is written
+   from, which carry no metadata (ADR-0022 as amended 2026-11-02).
+6. **Memory:** while reading, the reader holds ~9.7 GB as file-backed pages, and took Windows free from 28.4 to 20.3 GB. It exits before
+   the paint, and the paint's cache drop waits for `LOAD_FREE_GB` (doc/infra.md, Home GPU).
+
+The evidence is Logan's blind read of batch 40b, the head-only words against the listing's, 52 paintings a side. A likeness: 35 for the
+listing's words, 45 with the reader's. The ears right: 38 and 47. The better of the two: 24 and 23. The gain is where the listing's words
+fail, Luna, Duke and Coco, and the cost is Bailey. The likeness harness had the two level, because it compares the whole photo. Logan:
+"yeah i think we should ship it". He read two rewordings against it. A "soft drop" ear choice, the only one explained, took 10 of 13 dogs
+and was never painted (40c). Three ear shapes with the length apart made 38 likenesses and 44 right ears, losing Duke and Sunny, and won
+more head to head against the listing's words, 28 to 17 where 40b's are 23 to 24 (40d). Then: "ship 40b".
+
+Consequences: a dog's donation takes about 80 s more on the CPU (65 s to read, 11 s to verify). The words are long and literal, as the
+reader writes them. Duke's ears stay "not as floppy as they should be", Max's colour stays worse than our own words, and Bailey loses a
+likeness. Under 40d's wording Duke got a pointed ear with a hanging flap beside it. Why isn't settled, and the risk stands on a breed or
+seed these paintings didn't show. A wording change needs a worker restart and no deploy, because the reader runs only here.
+
+Revisit: a cat batch; a wording Logan reads better, the shade wording first; a reader on the card if the CPU time matters; any painting a
+donor reads as the wrong dog because of its words.

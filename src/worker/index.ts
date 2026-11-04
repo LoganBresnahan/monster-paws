@@ -248,7 +248,7 @@ async function registerArtGenerate(boss: PgBoss) {
   let lastSkipAlert = 0;
   await boss.work<ArtGenerateJob>(ART_GENERATE, { batchSize: 1 }, async ([job]) => {
     try {
-      const outcome = await generateArt(getDb(DATABASE_URL), job.data, painter, { live: process.env.ART_DETECT === "live", publish });
+      const outcome = await generateArt(getDb(DATABASE_URL), job.data, painter, { live: process.env.ART_DETECT === "live", reader: process.env.ART_READER !== "off", publish });
       // Never the job's data: a listing's photo URLs stay out of the log.
       console.log(JSON.stringify({ event: "art.generate", keepsakeId: job.data.keepsakeId, ...outcome }));
       // A skip for the card or the memory says why, at most hourly: donate's "waiting past 30 minutes" alert can't (ART_SKIP_ALERT_MS).

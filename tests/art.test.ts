@@ -11,7 +11,7 @@ import { artFilePath, CREW_BASIS, crewExternalId, FACT, grantBasis, mintShareTok
 import { closeDb, type Db } from "@/db/client";
 import { donationIntents, keepsake, keepsakeFact } from "@/db/schema";
 import { CREW } from "@/ui/crew";
-import { bindArtStore, comfyData, crewSpec, generateArt, guardPainter, hostFreeGb, inQuietWindow, lastRunLine, listingWords, liveCropsArgs, LOAD_FREE_GB, loadCrewTable, paintedFor, photoHosts, runName, type CrewTable, type PaintSpec, type Painter } from "@/worker/art";
+import { bindArtStore, comfyData, crewSpec, generateArt, guardPainter, hostFreeGb, inQuietWindow, lastRunLine, listingWords, liveCropsArgs, LOAD_FREE_GB, loadCrewTable, paintedFor, photoHosts, readArgs, READER, runName, type CrewTable, type PaintSpec, type Painter } from "@/worker/art";
 import { SKIP_DB_TESTS, TEST_DATABASE_URL, testDb, truncateDonor } from "./support/db";
 
 const TABLE: CrewTable = {
@@ -252,6 +252,38 @@ describe("the busy check before a load", () => {
 });
 
 
+describe("the photo reader (comfyui/read.py; ADR-0004 as amended 2026-11-04)", () => {
+  const phrase = (fields: object) => {
+    const r = spawnSync("python3", ["-I", "-c", "import json, sys; sys.path.insert(0, 'comfyui'); import read; print(json.dumps(read.phrase(json.load(sys.stdin))))"],
+      { input: JSON.stringify(fields), encoding: "utf8" });
+    expect(r.status, r.stderr).toBe(0);
+    return JSON.parse(r.stdout) as string | null;
+  };
+
+  it("runs the local 4B on the CPU, on the run's own fetched photo", () => {
+    const args = readArgs("keepsake-1-abc", "dog", "2.jpg");
+    expect(args).toContain(`READER=${READER}`);
+    expect(READER).toBe("qwen3-vl-4b-instruct");
+    expect(args.slice(-3)).toEqual(["/home/comfy/explore/keepsake-1-abc/read.json", "dog", "held:keepsake-1-abc/photos/2.jpg"]);
+  });
+
+  // Fixture provenance: the 4B's own answers for Duke and Otto in batch 40b, whose paintings Logan judged (2026-11-04).
+  it("turns an answer into the words Logan judged", () => {
+    expect(phrase({ coat: "Black and tan markings on head and face, ears black", length: "short", ears: "folded-over", eyes: "dark brown" }))
+      .toBe("with black and tan markings on head and face, ears black, short fur and folded-over ears");
+    // a reader can run past its choice: the choice it starts with is the answer
+    expect(phrase({ coat: "Black and tan on head, face, and ears with soft, drooping edges.", length: "Medium", ears: "Long hanging with soft, drooping edges", eyes: "Dark brown" }))
+      .toBe("with black and tan on head, face, and ears with soft, drooping edges, medium fur and long hanging ears");
+  });
+
+  it("gives no words for an answer it can't read, so the listing's stand alone", () => {
+    expect(phrase({})).toBeNull();
+    expect(phrase({ coat: "black", length: "very long", ears: "folded-over" })).toBeNull();
+    expect(phrase({ coat: "black", length: "short", ears: "like a bat" })).toBeNull();
+  });
+});
+
+
 describe("a listing's photos, fetched (verify, 2026-11-04)", () => {
   const root = mkdtempSync(join(tmpdir(), "art-fetch-"));
   const fetchPhotos = guardPainter(root).fetchPhotos;
@@ -281,6 +313,19 @@ describe("a listing's photos, fetched (verify, 2026-11-04)", () => {
     } finally {
       vi.unstubAllGlobals();
     }
+  });
+
+  it("are forgotten with everything read from them: the crops, the reader's words and the prompt, never the marked paintings", async () => {
+    const run = join(root, "var", "explore", "keepsake-9-abc");
+    // ComfyUI's own PNGs embed the prompt in their metadata, so they carry the reader's words too
+    const output = join(root, "var", "comfyui", "output", "explore", "keepsake-9-abc");
+    for (const dir of [join(run, "photos"), join(run, "detect"), join(run, "marked"), output]) mkdirSync(dir, { recursive: true });
+    for (const file of ["photos/1.jpg", "read.json", "spec.json", "runs.jsonl", "index.html", "marked/s23.png"]) writeFileSync(join(run, file), "x");
+    writeFileSync(join(output, "s23.png"), "x");
+    await guardPainter(root).forget("keepsake-9-abc");
+    for (const gone of ["photos", "detect", "read.json", "spec.json", "runs.jsonl", "index.html"]) expect(existsSync(join(run, gone)), gone).toBe(false);
+    expect(existsSync(output)).toBe(false);
+    expect(existsSync(join(run, "marked", "s23.png"))).toBe(true);
   });
 
   it("resolves ComfyUI's data root as the compose file does", () => {
@@ -325,9 +370,11 @@ describe.skipIf(SKIP_DB_TESTS)("art.generate (doc/plans/demo-chain-contract.md)"
   let pngs: string[];
   const NOON = new Date("2026-11-04T12:00:00Z");
 
-  function painter(paint: string[] | Error = pngs, busy: string | null = null, cut?: (photos: string[]) => { file: string; head: boolean }[]) {
-    const p: Painter & { calls: number; detected: unknown[]; specs: PaintSpec[]; fetched: unknown[]; forgotten: string[] } = {
+  function painter(paint: string[] | Error = pngs, busy: string | null = null, cut?: (photos: string[]) => { file: string; head: boolean }[],
+    look: (file: string) => string | null | Error = () => null) {
+    const p: Painter & { calls: number; detected: unknown[]; specs: PaintSpec[]; fetched: unknown[]; forgotten: string[]; reads: unknown[] } = {
       calls: 0,
+      reads: [],
       detected: [],
       specs: [],
       fetched: [],
@@ -339,6 +386,12 @@ describe.skipIf(SKIP_DB_TESTS)("art.generate (doc/plans/demo-chain-contract.md)"
       },
       forget: async (name) => {
         p.forgotten.push(name);
+      },
+      read: async (name, species, file) => {
+        p.reads.push({ name, species, file });
+        const said = look(file);
+        if (said instanceof Error) throw said;
+        return said;
       },
       crops: async (name, listing) => {
         p.detected.push({ name, listing });
@@ -490,13 +543,13 @@ describe.skipIf(SKIP_DB_TESTS)("art.generate (doc/plans/demo-chain-contract.md)"
   ];
 
   // A listing's keepsake as donate's sweep writes it: its own fields, all on its shelter's grant, and no photo fact.
-  async function listingKeepsake(): Promise<number> {
+  async function listingKeepsake(species = "dog", kind = "Pit Bull Terrier Mix"): Promise<number> {
     const intentId = mintIntentId();
     await db.insert(donationIntents).values({ id: intentId, animalSource: "rescuegroups", animalExternalId: "12345",
       nonprofitSlug: "a-staging-nonprofit", nonprofitEin: "12-3456789", donorEmail: "pat@example.org" });
     const [row] = await db.insert(keepsake).values({ intentId, shareToken: mintShareToken(), snapshottedAt: NOON }).returning({ id: keepsake.id });
     await db.insert(keepsakeFact).values(
-      ([[FACT.name, "Hopper - (Courtesy Post) - Adopt Me!"], [FACT.species, "dog"], [FACT.kind, "Pit Bull Terrier Mix"], [FACT.sex, "Female"],
+      ([[FACT.name, "Hopper - (Courtesy Post) - Adopt Me!"], [FACT.species, species], [FACT.kind, kind], [FACT.sex, "Female"],
         [FACT.shelter, "Spencer Pet Rescue"]] as const).map(([field, value]) => ({ keepsakeId: row.id, field, value, basis: SPENCER, snapshottedAt: NOON })),
     );
     return row.id;
@@ -581,6 +634,40 @@ describe.skipIf(SKIP_DB_TESTS)("art.generate (doc/plans/demo-chain-contract.md)"
     const fine = await generateArt(db, { keepsakeId: other }, both, { table: TABLE, now: NOON, nightly: null, live: true });
     expect(fine).not.toHaveProperty("warning");
     expect(both.specs[0].animals[await nameOf(other)].two).toEqual(["a.jpg", "b.jpg"]);
+  });
+
+  it("adds the photo reader's words for a dog, read from the photo that leads, only when the worker asks (ADR-0004 as amended 2026-11-04)", async () => {
+    const id = await listingKeepsake();
+    const look = "with tan face, short fur and soft ears that hang down beside the cheeks";
+    const p = painter(pngs, null, () => [{ file: "1.jpg", head: false }, { file: "2.jpg", head: true }], () => look);
+    expect(await generateArt(db, { keepsakeId: id, photos: PHOTOS }, p, { table: TABLE, now: NOON, nightly: null, reader: true })).not.toHaveProperty("warning");
+    expect(p.reads).toEqual([{ name: await nameOf(id), species: "dog", file: "2.jpg" }]);
+    expect(p.specs[0].animals[await nameOf(id)].describe).toBe(`female pit bull terrier mix dog ${look}`);
+
+    const off = await listingKeepsake();
+    const q = painter(pngs, null, undefined, () => look);
+    await generateArt(db, { keepsakeId: off, photos: PHOTOS }, q, { table: TABLE, now: NOON, nightly: null });
+    expect(q.reads).toEqual([]);
+    expect(q.specs[0].animals[await nameOf(off)].describe).toBe("female pit bull terrier mix dog");
+  });
+
+  it("paints on the listing's words alone, and says so, when the reader fails or gives none, and never reads a cat", async () => {
+    const failed = await listingKeepsake();
+    const p = painter(pngs, null, undefined, () => new Error("docker compose exited 1; see x.log"));
+    expect(await generateArt(db, { keepsakeId: failed, photos: PHOTOS }, p, { table: TABLE, now: NOON, nightly: null, reader: true }))
+      .toMatchObject({ status: "painted", warning: "the photo reader failed, so the listing's words alone: docker compose exited 1; see x.log" });
+    expect(p.specs[0].animals[await nameOf(failed)].describe).toBe("female pit bull terrier mix dog");
+
+    const none = await listingKeepsake();
+    expect(await generateArt(db, { keepsakeId: none, photos: PHOTOS }, painter(), { table: TABLE, now: NOON, nightly: null, reader: true }))
+      .toMatchObject({ status: "painted", warning: "the photo reader gave no words, so the listing's alone" });
+
+    // Logan has judged the reader on dogs only: a cat keeps its listing's words
+    const cat = await listingKeepsake("cat", "Domestic Short Hair");
+    const c = painter(pngs, null, undefined, () => "with grey face");
+    expect(await generateArt(db, { keepsakeId: cat, photos: PHOTOS }, c, { table: TABLE, now: NOON, nightly: null, reader: true })).not.toHaveProperty("warning");
+    expect(c.reads).toEqual([]);
+    expect(c.specs[0].animals[await nameOf(cat)].describe).toBe("female domestic short hair cat");
   });
 
   it("stops a crew pet's live run that loses one of its two photos", async () => {

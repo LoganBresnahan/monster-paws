@@ -151,7 +151,12 @@ def main(argv: list[str]) -> int:
         return 2
     store = Path(argv[2]) if len(argv) > 2 else Path(os.environ.get("COMFYUI_MODELS", DEFAULT_STORE))
     failures = 0
+    # MODELS_SKIP: path prefixes this start leaves to whatever loads them, as ComfyUI's start leaves `read/` to read.py,
+    # which verifies the reader's weights against this same manifest when it loads them (ADR-0004 as amended 2026-11-04).
+    skip = tuple(p for p in os.environ.get("MODELS_SKIP", "").split(",") if p)
     for e in entries:
+        if skip and e.path.startswith(skip):
+            continue
         dest = store / e.path
         if not dest.exists():
             if cmd == "verify":

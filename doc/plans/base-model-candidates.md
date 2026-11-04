@@ -3994,6 +3994,141 @@ model problem".
 - Five dogs, one photo each: what it shows is the line's direction, not
   where between 5% and 41% the line belongs.
 
+### The photo reader, tried — batch 40a (Claude, 2026-11-04; Logan's eye decides)
+
+Logan, to the moderator: "one thing before this deploy. i'm thinking we test with
+vision models to fix likeness before we deploy. i feel we have the time". The plan
+above, run: `comfyui/read.py` asks each photo one structured question in the
+explore container on the CPU: the coat and where its colours fall (fur only,
+never what it wears), the fur length, and the ears, chosen from six shapes
+rather than given examples, "how this dog's own ears look in this photo, not
+how its breed's usually do". Its answer becomes "with <coat>, <length> fur and
+<ears> ears" after the listing's words. Commons photos only (batch 38f's 13
+dogs); the weights in `models-candidates.manifest`, read offline.
+
+| Reader | Seconds a photo | Duke's ears | Ears that read wrong by eye |
+| --- | --- | --- | --- |
+| Qwen3-VL-2B, first question | 26–39 | tall upright pointed | Duke, Daisy |
+| Qwen3-VL-2B, question above | 33–45 | tall upright pointed | Duke, Bailey |
+| **Qwen3-VL-4B, question above** | 56–78 | **folded-over** | Bailey |
+
+- **The 4B is the one painted.** It reads Duke's natural ears as folded, which
+  the 2B never did, and Coco's and Emily's long fur, which the 2B called
+  short. On the first question the 2B also put Coco's red harness into her
+  coat. Max's upright ears and black back all three read right. Bailey the
+  beagle's long ears the 4B calls "short floppy".
+- **These are Claude's reads of the photos at contact-sheet size,** and
+  several (Coco seen from behind, Sunny, Luna) can't be called at that size.
+  The paintings are what decide.
+- Its words are long and literal, as a listing's would be: Sunny's carry "wet
+  fur, muddy paws", Coco's "slightly tousled by wind". Nothing was cleaned up,
+  because a shipped reader wouldn't be either.
+- **Memory** (doc/infra.md, Home GPU): the 4B holds about 9.7 GB, its weights as
+  file-backed pages, so `docker stats` shows under 1 GB. Run before a job, it
+  took Windows free from 28.4 to 20.3 GB, and the job's drop then brought it
+  back to 33 GB before the paint.
+- Batch 40a: the 13 dogs at `storybook_bust34` and the crew table's four seeds,
+  `listing` (batch 38f's words) against `reader` (those plus the 4B's), 104
+  paintings, for Logan's blind look on `var/explore/index-all/reader-40.html`.
+  Painted 17:00–17:33 UTC, 104 of 104, with no kill; donate's 0032 roll at
+  17:06–17:09 left the chunk it crossed exactly as fast as the one before.
+- **Likeness** (`likeness.py`, which can't see ears or coat): the reader's words
+  a mean 0.596 against the listing's 0.586, ahead on 9 of the 13 dogs; most
+  for Rusty (+0.066) and Otto (+0.047), least for Bailey (−0.028), Sunny
+  (−0.025) and Coco (−0.017). Yours to overrule: the ears are the question.
+- **Logan's first look at 40a, before his ticks:** "is the vision model causing
+  us to paint the whole body? that would be a problem … maybe if we told it to
+  focus on the animals head only", then "i think describing the chest is a
+  mistake. often a clothing item was rendered when there is none for, a white
+  patched chest for instance". The prompts bear him out: the reader's words
+  put "brown sides … muddy paws", "covering entire body including tail" and
+  "spots on belly" inside "a portrait from the chest up", because the question
+  asked where the colours fall "on its body".
+- **Batch 40b: the reader asked about the head, face and ears only**, never the
+  neck, chest, body, legs, paws or tail, in at most 10 words. The 4B again,
+  13 photos in 14 min. Duke's ears are still "folded-over". Max's slipped to
+  "upright with folded tips", where both earlier runs said pointed. Otto ran
+  past his choice ("long hanging with soft, drooping edges"), so `phrase()`
+  now takes the choice an answer starts with. Only the reader arm is
+  repainted, 52 paintings, paired on `var/explore/index-all/reader-40b.html`
+  with 40a's listing paintings.
+- **40b's likeness:** a mean 0.586, level with the listing's 0.586, ahead on 7
+  of 13. 40a's whole-body words scored higher (0.596) because the harness
+  compares the painting with the whole photo, so it rewards the whole body
+  Logan named a problem. Here the score is no guide, only his eye.
+
+### Batch 40b — Logan's read of the photo reader (2026-11-04)
+
+Logan's ticks saved as `var/explore/index-all/reader-40b-picks-2026-11-04.txt`,
+decoded through `var/explore/reader40b-blind/key.json`: 40a's listing paintings
+against 40b's head-only reader paintings, 52 a side.
+
+| Of 52 a side | Listing's words | + the reader's (head only) |
+| --- | --- | --- |
+| A likeness of this dog | 35 | 45 |
+| The ears are right | 38 | 47 |
+| The better of the two | 24 | 23 |
+
+- **The reader raises the floor:** the gain is where the listing's words fail.
+  Luna went from 0 to 4 likenesses and from 0 to 4 right ears, Duke from 0 to
+  4 likenesses, Coco from 2 to 4 likenesses and from 1 to 4 right ears, and
+  the reader's was the better painting all twelve times.
+- **It costs on Bailey** (3 likenesses to 1). Where both arms were already
+  likenesses (Shadow, Otto, Daisy, Emily, Clementine), Logan mostly preferred
+  the listing's painting, so "better" comes out even. Max is a likeness in
+  neither arm, with his ears right in both.
+- The likeness harness had them level (0.586 each); his ticks don't.
+
+
+### Batches 40c–40d — the ear wording, and Logan's read (2026-11-04)
+
+After 40b Logan noted Max's colour was worse than our own words and Duke's ears
+"did become floppy just not as floppy as they should be".
+
+- **40c, never painted:** 40b's question plus each colour by its exact shade and
+  one new ear choice, "soft drop", the only choice with an explanation. It took
+  10 of 13 dogs, Max's upright ears among them.
+- **40d:** the shade wording, three ear shapes (standing up, folded at the tip,
+  hanging down) and the ears' length asked on its own. Logan's ticks are saved
+  as `var/explore/index-all/reader-40d-picks-2026-11-04.txt`, decoded through
+  `var/explore/reader40d-blind/key.json`.
+
+| Of 52 a side | Listing's words | 40b's reader | 40d's reader |
+| --- | --- | --- | --- |
+| A likeness of this dog | 35 | 45 | 38 |
+| The ears are right | 38 on 40b's page, 41 on 40d's | 47 | 44 |
+| Better than the listing's, head to head | | 23 to 24 | 28 to 17 |
+
+- **His marks are steady, so these gaps aren't noise:** the same 52 listing
+  paintings, reshuffled on the two pages, got the same 35 likeness ticks, and
+  all 38 ear ticks from 40b's page again, plus 3 more on 40d's.
+- **All of 40d's lost likenesses are two dogs:** Sunny 4 to 0 and Duke 4 to 0, with
+  Max 0 to 1. Sunny's ears went from "upright with folded tips", right 4 of 4,
+  to "upright pointed", right 0 of 4. Duke's went from a folded pair to a pointed
+  ear with a hanging flap beside it, which Logan read as "unatural looking like
+  two ears".
+- **Two things Claude said were wrong.** That the six ear labels were "close to a
+  toss" and three shapes the "real fix": the six got more ears right (47 to 44).
+  And that Max's 40d paintings would come out wrong because the reader read his
+  ears as hanging: Logan ticked his ears right 4 of 4.
+- **Why Duke got two pairs is not settled.** Claude called the prompt naming the
+  ears twice "the cause", but 12 of 40b's 13 prompts do too, Duke's among them,
+  and his 40b paintings have one pair. What differs is the phrase, "folded-over"
+  against "soft ears that hang down beside the cheeks", set against the breed's
+  pointed ears. Naming the ears once is untested, and the same risk stands under
+  40b's wording on a breed or seed these 52 didn't show.
+- **Why 40d wins head to head is not settled either.** The shade wording is the
+  obvious difference from 40b, and untested alone.
+- **Decided: 40b's wording ships** (Logan: "ship 40b"). `comfyui/read.py` holds its
+  exact question, and all 13 of its prompts' words rebuild exactly from the saved
+  answers. Next, after the go-live, needing only a worker restart: the shade wording
+  alone, then Duke's ears and Max's colour.
+- **Found while checking the words stay in the prompt:** each of ComfyUI's output
+  PNGs embeds its prompt in its metadata, so `forget` now removes the run's output
+  folder too. The marked paintings carry none. Removing `runs.jsonl` also stops a
+  retry with different words accepting an earlier attempt's paintings, since
+  `paintedFor` matches the axis name "listing", not the words.
+
 ### Batches 14a–14b — Logan's picks (2026-10-28)
 
 "I might be picky but I know what these dogs look like." His likeness

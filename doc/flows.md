@@ -776,6 +776,15 @@ else.
        │                                        ART_DETECT=live, otherwise batch
        │                                        11's crops (keepsake-crew.json)
        ▼
+  the photo reader  (built, a dog's listing)    Painter.read → comfyui/read.py in
+       │   Qwen3-VL-4B on the CPU reads the     the explore container, its weights
+       │   photo that leads: the head, face     verified against models.manifest
+       │   and ears only, never the chest or    as it loads them, offline; its
+       │   body · its phrase follows the        words reach only the prompt, and
+       │   listing's words · a failure or no    forget removes them (ADR-0004 as
+       │   words: the listing's alone, and a    amended 2026-11-04). ART_READER=off
+       │   warning                              turns it off; not for a cat yet
+       ▼
   comfyui/guard.sh batch keepsake-<id> 4        built (demo): the spec beside the
        │   explore.py's klein-v1 reference2     run, var/explore/<run>/spec.json;
        │   graph, as the batches Logan read:    the guard kills ComfyUI on a pool

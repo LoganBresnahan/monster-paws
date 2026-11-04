@@ -1,0 +1,169 @@
+{
+  "_": "Batch 40d \u2014 the reader arm again: 40b's head-only question with each colour by its exact shade, and the ears as one of three shapes (standing up, folded at the tip, hanging down) with their length asked on its own, since among six near-synonyms the 4B's pick was close to a toss and 40c's one explained choice took 10 of 13 dogs (Logan, 2026-11-04: \"try the three shape question now\"). Batch 40b \u2014 the reader asked only about the head, face and ears, since its words for the body, paws and tail made klein paint the whole dog and a chest colour reads to it as clothing (Logan, 2026-11-04: \"maybe if we told it to focus on the animals head only\", \"i think describing the chest is a mistake\"); paired on the page with 40a's listing paintings. Batch 40a \u2014 the photo reader's words against the listing's (doc/plans/base-model-candidates.md, \"A local photo reader\"; Logan, 2026-11-04: \"i'm thinking we test with vision models to fix likeness before we deploy\"). Batch 38f's 13 Commons dogs, each at the crew table's prompt and four seeds twice: `listing`, the words batch 38f painted them from (its `describe`), and `reader`, those words plus what Qwen3-VL-4B-Instruct read in the photo on the CPU (comfyui/read.py: the coat and where its colours fall, the fur length, the ears). Everything else as listingSpec builds it.",
+  "animals": {
+    "rusty-11y9m-irish-setter-uthandi-chennai-may21-r16-04758": {
+      "kind": "dog",
+      "describe": "red irish setter",
+      "reader": "red irish setter with rich chestnut on head, face, and ears, long fur and long ears that hang down below the jaw",
+      "one": [
+        "Rusty-11y9m-Irish-Setter-Uthandi-Chennai-May21-R16-04758.jpg"
+      ],
+      "set": "lora-holdout",
+      "name": "Rusty"
+    },
+    "teckel-39": {
+      "kind": "dog",
+      "describe": "black and tan wire-haired dachshund",
+      "reader": "black and tan wire-haired dachshund with black and tan on head, face, and ears, medium fur and soft ears that hang down beside the cheeks",
+      "one": [
+        "Teckel-39.jpg"
+      ],
+      "set": "lora-holdout",
+      "name": "Otto"
+    },
+    "pies-nierasowy-20201003-1644-4305": {
+      "kind": "dog",
+      "describe": "white and tan small mixed-breed dog",
+      "reader": "white and tan small mixed-breed dog with light brown and white on head, ears, and face, long fur and soft ears that hang down beside the cheeks",
+      "one": [
+        "Pies-nierasowy-20201003-1644-4305.jpg"
+      ],
+      "set": "lora-holdout",
+      "name": "Daisy"
+    },
+    "chinese-crested-dog-on-the-beach-13200": {
+      "kind": "dog",
+      "describe": "white chinese crested powderpuff",
+      "reader": "white chinese crested powderpuff with white fur on head, face, and ears, long fur and upright pointed ears",
+      "one": [
+        "Chinese-crested-dog-on-the-beach-13200.jpg"
+      ],
+      "set": "lora-holdout",
+      "name": "Coco"
+    },
+    "emily-maltese": {
+      "kind": "dog",
+      "describe": "white maltese",
+      "reader": "white maltese with white, fluffy, soft, around face and ears, long fur and soft ears that hang down beside the cheeks",
+      "one": [
+        "Emily-Maltese.jpg"
+      ],
+      "set": "lora-holdout",
+      "name": "Emily"
+    },
+    "dog-smiling-at-the-camera-reta-buenos-aires-argentina-04-01": {
+      "kind": "dog",
+      "describe": "white and tan short-haired dog",
+      "reader": "white and tan short-haired dog with white face, tan around ears and forehead, short fur and upright pointed ears",
+      "one": [
+        "Dog-smiling-at-the-camera-Reta-Buenos-Aires-Argentina-04-01-.jpg"
+      ],
+      "set": "lora-holdout",
+      "name": "Sunny"
+    },
+    "2": {
+      "kind": "dog",
+      "describe": "black dog with a white chest",
+      "reader": "black dog with a white chest with black fur on head, face, and ears; white muzzle patch, long fur and soft ears that hang down beside the cheeks",
+      "one": [
+        "2.jpg"
+      ],
+      "set": "lora-train",
+      "name": "Shadow"
+    },
+    "young-mixed-breed-dog-aka": {
+      "kind": "dog",
+      "describe": "tan and black young mixed-breed dog",
+      "reader": "tan and black young mixed-breed dog with brown and black on head, ears, and face, medium fur and soft ears that hang down beside the cheeks",
+      "one": [
+        "Young-mixed-breed-dog-aka.jpg"
+      ],
+      "set": "lora-train",
+      "name": "Biscuit"
+    },
+    "30-09-25-in-litochoro-01": {
+      "kind": "dog",
+      "describe": "white dog with black patches",
+      "reader": "white dog with black patches with black ears, white face, black tip on muzzle, short fur and short ears that hang down",
+      "one": [
+        "30-09-25-in-Litochoro-01.jpg"
+      ],
+      "set": "lora-train",
+      "name": "Clementine"
+    },
+    "20160801-pies-bagan-6550": {
+      "kind": "dog",
+      "describe": "white short-haired dog",
+      "reader": "white short-haired dog with light tan head, dark gray muzzle, white blaze between ears, short fur and upright pointed ears",
+      "one": [
+        "20160801-pies-Bagan-6550.jpg"
+      ],
+      "set": "lora-train",
+      "name": "Luna"
+    },
+    "beagle-in-viroinval-dsc04556": {
+      "kind": "dog",
+      "describe": "tricolour beagle",
+      "reader": "tricolour beagle with white muzzle, tan around eyes, brown ears, medium fur and soft ears that hang down beside the cheeks",
+      "one": [
+        "Beagle-in-Viroinval-DSC04556.jpg"
+      ],
+      "set": "lora-train",
+      "name": "Bailey"
+    },
+    "german-shepherd-aka-alsatian-and-alsatian-wolf-dog-deutscher": {
+      "kind": "dog",
+      "describe": "black and tan german shepherd",
+      "reader": "black and tan german shepherd with brown head, black muzzle, black ears, short fur and soft ears that hang down beside the cheeks",
+      "one": [
+        "German-Shepherd-aka-Alsatian-and-Alsatian-Wolf-Dog-Deutscher.jpg"
+      ],
+      "set": "lora-train",
+      "name": "Max"
+    },
+    "doberman-pinscher-aka-dobermann": {
+      "kind": "dog",
+      "describe": "black and tan doberman pinscher",
+      "reader": "black and tan doberman pinscher with black and tan on muzzle, tan around eyes, black ears, short fur and soft ears that hang down beside the cheeks",
+      "one": [
+        "Doberman-Pinscher-aka-Dobermann.jpg"
+      ],
+      "set": "lora-train",
+      "name": "Duke"
+    }
+  },
+  "photos": [
+    "one"
+  ],
+  "crops": [
+    "grownsubject"
+  ],
+  "aspect": [
+    "landscape"
+  ],
+  "describe": [
+    "reader"
+  ],
+  "families": [
+    "kleinbfl8"
+  ],
+  "graphs": [
+    "reference2"
+  ],
+  "prompts": [
+    "storybook_bust34"
+  ],
+  "denoise": [],
+  "weights": [],
+  "weight_types": [],
+  "end_at": [],
+  "seeds": [
+    23,
+    333,
+    1111,
+    3000
+  ],
+  "heads": [
+    "grownhead"
+  ]
+}
