@@ -15,6 +15,8 @@ import {
   type BrowseScope,
   type FacetCell,
 } from "@/core/browse";
+import { sponsorableShelterIds } from "@/core/donate/intent";
+import { donateConfigFromEnv } from "@/core/donate/link";
 import { browseSearch, parseRadius, ZIP_CODE, type BrowseQuery } from "@/core/facets";
 import { zipPoint, zipsWithin } from "@/core/geo";
 import { getDb } from "@/db/client";
@@ -127,7 +129,10 @@ export default async function BrowsePage({
   const sort = parseSort(typeof params.sort === "string" ? params.sort : null);
   const query: BrowseQuery = { ...filters, zip: origin ? zip : null, miles, shelter: scope.shelter, sort };
 
-  const page = await loadBrowsePage(db, filters, positionFrom(params), asOf, undefined, sort, scope);
+  // The Sponsor button's own gate: with no config there is no button, so nothing leads (ADR-0015 as amended 2026-11-04).
+  const donateConfig = donateConfigFromEnv();
+  const sponsorable = donateConfig ? await sponsorableShelterIds(db, { ...donateConfig, asOf }) : [];
+  const page = await loadBrowsePage(db, filters, positionFrom(params), asOf, undefined, sort, scope, undefined, sponsorable);
   const teaser = waitingTeaser(page.nextNames);
   const display = await loadCardDisplay(
     db,

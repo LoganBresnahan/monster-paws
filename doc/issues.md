@@ -50,6 +50,15 @@ is the record, and a file of ticked boxes stops being read.
 
 ## UI
 
+- **`/animals/[id]`'s `revalidate = 3600` does nothing.** The route has no
+  `generateStaticParams`, so the build lists it as `ƒ`, and production answers
+  `private, no-cache, no-store` with no cache header from Next: every view
+  renders and reads Postgres. ADR-0015's hour (as amended 2026-10-01) and that
+  page's comments describe a cache that isn't there. Keep it per request and
+  correct the words, or make it a real cache, which would let an animal lead
+  `/animals` for up to an hour with no button (ADR-0015 as amended 2026-11-04).
+  Found 2026-11-04.
+
 - **The production server logs "The destination stream closed early"** when a
   page is closed mid-response: three times in one e2e run (2026-10-26, 20/20
   green) and once in dev on `/animals`. It is the browser hanging up on a

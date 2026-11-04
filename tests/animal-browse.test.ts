@@ -16,6 +16,9 @@ import {
   parseSort,
   pickRandomAnimalId,
   type BrowseExclusion,
+  type BrowseFilters,
+  type BrowseScope,
+  type BrowseSort,
 } from "@/core/browse";
 import { loadAnimalDetail } from "@/core/animals";
 import type { ShelterExclusion } from "@/core/shelters";
@@ -64,7 +67,22 @@ describe("ADR-0015 browse cursor", () => {
     expect(parseCursor(encodeCursor(cursor))).toEqual(cursor);
   });
 
-  it.each(["", "nonsense", "2013-04-27T00:00:00.000Z", ",12", "2013-04-27T00:00:00.000Z,x", "not-a-date,12"])(
+  it("marks only the plain list's leading group, so an unmarked cursor reads as it always did (as amended 2026-11-04)", () => {
+    const listedAt = new Date("2013-04-27T00:00:00.000Z");
+    expect(encodeCursor({ listedAt, id: 63963 })).toBe("2013-04-27T00:00:00.000Z,63963");
+    expect(parseCursor(encodeCursor({ listedAt, id: 63963, sponsorable: true }))).toEqual({ listedAt, id: 63963, sponsorable: true });
+  });
+
+  it.each([
+    "",
+    "nonsense",
+    "2013-04-27T00:00:00.000Z",
+    ",12",
+    "2013-04-27T00:00:00.000Z,x",
+    "not-a-date,12",
+    "2013-04-27T00:00:00.000Z,12,0",
+    "2013-04-27T00:00:00.000Z,12,yes",
+  ])(
     "reads %o as page one rather than as an error",
     (raw) => {
       // A cursor is a shared URL and a full canonical rebuild breaks every one
@@ -295,6 +313,104 @@ describe.skipIf(SKIP_DB_TESTS)("ADR-0015 browse page", () => {
       expect(two.nextNames).toEqual([]);
     });
   }
+
+  describe("sponsorable animals lead the plain list (ADR-0015 as amended 2026-11-04)", () => {
+    const OPEN = "rescuegroups:org:1";
+    const OTHER = "rescuegroups:org:2";
+    const pad = (i: number) => String(i).padStart(2, "0");
+    const loadPlain = (position: Parameters<typeof loadBrowsePage>[2], sponsorable: readonly string[] = [OPEN]) =>
+      loadBrowsePage(db, NO_FILTERS, position, NOW, [], "newest", NO_SCOPE, [], sponsorable);
+    /** Every sponsorable animal is listed before all the rest, so only the group can put them first; the rest alternate a shelter and none. */
+    const seedGroups = (ahead: number, rest: number) =>
+      seed([
+        ...Array.from({ length: rest }, (_, i) => ({
+          name: `R${pad(i)}`,
+          listedAt: daysBefore(i + 1),
+          ...(i % 2 ? { shelter: OTHER } : {}),
+        })),
+        ...Array.from({ length: ahead }, (_, i) => ({ name: `S${pad(i)}`, listedAt: daysBefore(rest + i + 1), shelter: OPEN })),
+      ]);
+    const expected = (ahead: number, rest: number) => [
+      ...Array.from({ length: ahead }, (_, i) => `S${pad(i)}`),
+      ...Array.from({ length: rest }, (_, i) => `R${pad(i)}`),
+    ];
+
+    // The boundary between the groups can fall inside a page or exactly on one, either way.
+    it.each([1, BROWSE_PAGE_SIZE - 1, BROWSE_PAGE_SIZE, BROWSE_PAGE_SIZE + 1, 2 * BROWSE_PAGE_SIZE])(
+      "walks %i sponsorable animals and the rest, forward and back, skipping and repeating nobody",
+      async (ahead) => {
+        const rest = BROWSE_PAGE_SIZE + 5;
+        await seedGroups(ahead, rest);
+
+        const pages = [await loadPlain(null)];
+        while (pages.at(-1)!.nextCursor) pages.push(await loadPlain({ after: parseCursor(pages.at(-1)!.nextCursor)! }));
+        expect(pages.flatMap(names)).toEqual(expected(ahead, rest));
+        for (const [i, page] of pages.entries()) {
+          // The teaser under Next names the next page's first animals, across the boundary too.
+          expect(page.nextNames).toEqual(pages[i + 1] ? names(pages[i + 1]).slice(0, 3) : []);
+        }
+        expect(pages[0].prevCursor).toBeNull();
+
+        for (let i = pages.length - 1; i > 0; i--) {
+          const back = await loadPlain({ before: parseCursor(pages[i].prevCursor)! });
+          expect(names(back)).toEqual(names(pages[i - 1]));
+          expect(back.prevCursor).toBe(pages[i - 1].prevCursor);
+          expect(back.nextCursor).toBe(pages[i - 1].nextCursor);
+          expect(back.nextNames).toEqual(pages[i - 1].nextNames);
+        }
+      },
+    );
+
+    it("keeps walking when the row a cursor names has been adopted out", async () => {
+      const ids = await seedGroups(BROWSE_PAGE_SIZE, 3);
+      const one = await loadPlain(null);
+      await db.update(animals).set({ status: "adopted" }).where(eq(animals.id, ids.get(`S${pad(BROWSE_PAGE_SIZE - 1)}`)!));
+      expect(names(await loadPlain({ after: parseCursor(one.nextCursor)! }))).toEqual(["R00", "R01", "R02"]);
+    });
+
+    it("gives today's order and today's cursors with no sponsorable shelter, or one with nothing listed", async () => {
+      await seedGroups(3, BROWSE_PAGE_SIZE + 1);
+      const today = [...expected(0, BROWSE_PAGE_SIZE + 1), ...expected(3, 0)];
+      for (const sponsorable of [[], ["rescuegroups:org:9"]]) {
+        const page = await loadPlain(null, sponsorable);
+        expect(names(page)).toEqual(today.slice(0, BROWSE_PAGE_SIZE));
+        expect(page.nextCursor).toMatch(/^[^,]+,\d+$/);
+      }
+    });
+
+    it("leaves any sort or filter a person picks as it is", async () => {
+      await seedGroups(3, BROWSE_PAGE_SIZE + 1);
+      const picks: [BrowseFilters, BrowseSort, BrowseScope][] = [
+        [NO_FILTERS, "longest", NO_SCOPE],
+        [{ ...NO_FILTERS, species: "dog" }, "newest", NO_SCOPE],
+        [{ ...NO_FILTERS, state: "TX" }, "newest", NO_SCOPE],
+        [NO_FILTERS, "newest", { shelter: OPEN, zips: null }],
+        [NO_FILTERS, "newest", { shelter: null, zips: [] }],
+      ];
+      for (const [filters, sort, scope] of picks) {
+        const today = await loadBrowsePage(db, filters, null, NOW, [], sort, scope, [], []);
+        const picked = await loadBrowsePage(db, filters, null, NOW, [], sort, scope, [], [OPEN]);
+        expect(picked).toEqual(today);
+      }
+    });
+
+    it("reads a cursor from before the change as a row in the rest", async () => {
+      await seedGroups(3, 8);
+      const old = await loadPlain(null, []);
+      const row = old.animals.find((a) => a.name === "R04")!;
+      expect(names(await loadPlain({ after: { listedAt: row.listedAt!, id: row.id } }))).toEqual(["R05", "R06", "R07"]);
+    });
+
+    it("costs a reader a page, never an error, when the group a cursor names has gone", async () => {
+      await seedGroups(BROWSE_PAGE_SIZE + 2, 3);
+      const cursor = parseCursor((await loadPlain(null)).nextCursor)!;
+      expect(cursor.sponsorable).toBe(true);
+      const today = names(await loadPlain(null, []));
+      expect(names(await loadPlain({ after: cursor }, []))).toEqual(today);
+      expect(names(await loadPlain({ before: cursor }, []))).toEqual(today);
+      expect((await loadPlain({ after: cursor }, [])).prevCursor).toBeNull();
+    });
+  });
 
   it("offers no Previous once every animal above the page has left", async () => {
     const ids = await seed(

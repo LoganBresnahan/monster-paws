@@ -446,7 +446,13 @@ Browse (`/animals`) is the same predicate, one page at a time.
        │                                    ignored shows animals nobody asked
        │                                    for; silently applied empties a page
        ▼
-  loadBrowsePage(db, filters, cursor, asOf, exclusions, sort, scope)
+  sponsorableShelterIds(db, donateConfig)   the Sponsor button's own gate (a grant
+       │                                    and a claimed row, sharing mayOffer with
+       │                                    sponsorNonprofit); none without
+       │                                    donateConfig (ADR-0015 as amended
+       │                                    2026-11-04)
+       ▼
+  loadBrowsePage(db, filters, cursor, asOf, exclusions, sort, scope, shelterExclusions, sponsorable)
        │                                    "Surprise me" → GET /animals/random:
        │                                    pickRandomAnimalId, same matchingParts
        │                                    and scope,
@@ -473,6 +479,14 @@ Browse (`/animals`) is the same predicate, one page at a time.
        │                                    silently skips whoever crosses a page
        │                                    boundary. `id` is the tiebreaker the
        │                                    backfill's shared timestamps need
+       ├─ leadingShelters(sponsorable)      the plain default list only: any sort
+       │                                    or filter a person picks gets [], which
+       │                                    is the query above exactly. Otherwise
+       │                                    walk() reads shelter in (…) and then
+       │                                    the rest (null included), two reads on
+       │                                    their indexes, never a computed order
+       │                                    by. A cursor in the leading group ends
+       │                                    `,1`, so it knows which read to resume
        ▼
   order by listed_at desc, id desc          newest first by default; asc, asc for
        │                                    longest waiting — both the source's

@@ -115,10 +115,12 @@ function notExcluded(exclusions: readonly BrowseExclusion[]): SQL {
 export interface BrowseCursor {
   listedAt: Date;
   id: number;
+  /** the row is in the plain list's leading group, part of its sort key; never `false`, so an unmarked cursor means what it always meant (ADR-0015 as amended 2026-11-04) */
+  sponsorable?: true;
 }
 
 export function encodeCursor(cursor: BrowseCursor): string {
-  return `${cursor.listedAt.toISOString()},${cursor.id}`;
+  return `${cursor.listedAt.toISOString()},${cursor.id}${cursor.sponsorable ? ",1" : ""}`;
 }
 
 /**
@@ -129,11 +131,11 @@ export function encodeCursor(cursor: BrowseCursor): string {
  */
 export function parseCursor(raw: string | null | undefined): BrowseCursor | null {
   if (!raw) return null;
-  const [when, id] = raw.split(",");
-  if (!when || !/^\d+$/.test(id ?? "")) return null;
+  const [when, id, group] = raw.split(",");
+  if (!when || !/^\d+$/.test(id ?? "") || (group !== undefined && group !== "1")) return null;
   const listedAt = new Date(when);
   if (Number.isNaN(listedAt.getTime())) return null;
-  return { listedAt, id: Number(id) };
+  return group ? { listedAt, id: Number(id), sponsorable: true } : { listedAt, id: Number(id) };
 }
 
 /**
@@ -224,6 +226,27 @@ export interface BrowsePage {
   nextNames: string[];
 }
 
+/**
+ * Whose animals lead the list: only the plain default list's, because any sort or filter a person
+ * picks keeps today's order, and an empty answer is today's query exactly (ADR-0015 as amended 2026-11-04).
+ */
+function leadingShelters(
+  sponsorable: readonly string[],
+  filters: BrowseFilters,
+  sort: BrowseSort,
+  scope: BrowseScope,
+): readonly string[] {
+  const picked =
+    sort !== DEFAULT_SORT ||
+    filters.species ||
+    filters.state ||
+    filters.age ||
+    filters.sex ||
+    scope.shelter !== null ||
+    scope.zips !== null;
+  return picked ? [] : sponsorable;
+}
+
 /** How many names of the next page the teaser under Next may show. */
 export const NEXT_TEASER_SIZE = 3;
 
@@ -231,7 +254,8 @@ export const NEXT_TEASER_SIZE = 3;
 export type BrowsePosition = { after: BrowseCursor } | { before: BrowseCursor } | null;
 
 /**
- * One page of browse, newest-listed first by default. Measured 2026-09-04 on the live
+ * One page of browse, newest-listed first by default, with `sponsorable` shelters' animals ahead
+ * of the rest on the plain list. Measured 2026-09-04 on the live
  * 64k corpus: 0.55 ms unfiltered at page one, 8.8 ms for a deep cursor with
  * species+state — the filters are not in the sort index, so that number grows
  * with depth into the sort and is the one to re-EXPLAIN if browse slows.
@@ -248,61 +272,74 @@ export async function loadBrowsePage(
   sort: BrowseSort = DEFAULT_SORT,
   scope: BrowseScope = NO_SCOPE,
   shelterExclusions: readonly ShelterExclusion[] = SHELTER_EXCLUSIONS,
+  sponsorable: readonly string[] = [],
 ): Promise<BrowsePage> {
-  const at: BrowsePosition =
+  const leading = leadingShelters(sponsorable, filters, sort, scope);
+  const asked: BrowsePosition =
     position && "listedAt" in position ? { after: position } : (position as BrowsePosition);
+  const askedRow = asked === null ? null : "before" in asked ? asked.before : asked.after;
+  // A marked cursor with no group left to walk, as when the last grant is withdrawn, is page one:
+  // its date means nothing in a list no longer split there.
+  const at = askedRow?.sponsorable && leading.length === 0 ? null : asked;
   const backward = at !== null && "before" in at;
   const anchor = at === null ? null : "before" in at ? at.before : at.after;
 
-  const parts = sortWhere(filters, asOf, exclusions, sort, scope, shelterExclusions);
-  if (anchor) parts.push(beyond(sort, backward ? "before" : "after", anchor));
-  // Walking backward reads the rows just above the anchor nearest-first, so
-  // the order flips; the page is flipped back into display order below.
-  const ascending = (sort === "longest") !== backward;
-  const rows = await db
-    .select()
-    .from(animals)
-    .where(and(...parts)!)
-    // A source that publishes no listing date sorts last and is unreachable by
-    // cursor (nulls sort after every value in `asc`). RescueGroups publishes one
-    // for every visible animal today; a second source that does not needs its
-    // own decision, not a silent tail.
-    .orderBy(
-      ascending
-        ? sql`${animals.listedAt} asc, ${animals.id} asc`
-        : sql`${animals.listedAt} desc, ${animals.id} desc`,
-    )
-    // A few more than the page: the first says "there is more this way" with no
-    // count over the same predicate, and they name the teaser under Next.
-    .limit(BROWSE_PAGE_SIZE + NEXT_TEASER_SIZE);
+  // Rows beyond `from`, nearest first. The plain list's groups are two reads, never an `order by`
+  // on a computed group: that scans the whole visible set on every request, 66 ms against 1.3 ms
+  // on the 60k dev corpus, 2026-11-04 (ADR-0015 as amended 2026-11-04).
+  const walk = async (side: "after" | "before", from: BrowseCursor | null, limit: number) => {
+    const read = (parts: SQL[], count: number) =>
+      db
+        .select()
+        .from(animals)
+        .where(and(...sortWhere(filters, asOf, exclusions, sort, scope, shelterExclusions), ...parts)!)
+        // A source that publishes no listing date sorts last and is unreachable by
+        // cursor (nulls sort after every value in `asc`). RescueGroups publishes one
+        // for every visible animal today; a second source that does not needs its
+        // own decision, not a silent tail.
+        .orderBy(
+          (sort === "longest") === (side === "after")
+            ? sql`${animals.listedAt} asc, ${animals.id} asc`
+            : sql`${animals.listedAt} desc, ${animals.id} desc`,
+        )
+        .limit(count);
+    const keyset = from ? [beyond(sort, side, from)] : [];
+    if (leading.length === 0) return read(keyset, limit);
+
+    const ids = sql.join(leading.map((id) => sql`${id}`), sql`, `);
+    const inGroup = sql`${animals.shelterExternalId} in (${ids})`;
+    // Null stays in the rest: a bare `not in` reads null as unknown and would lose the animal.
+    const rest = sql`(${animals.shelterExternalId} is null or ${animals.shelterExternalId} not in (${ids}))`;
+    const [near, far] = side === "after" ? [inGroup, rest] : [rest, inGroup];
+    const start = from === null ? near : from.sponsorable ? inGroup : rest;
+    const rows = await read([start, ...keyset], limit);
+    if (start !== near || rows.length === limit) return rows;
+    return [...rows, ...(await read([far], limit - rows.length))];
+  };
+
+  // A few more than the page: the first says "there is more this way" with no
+  // count over the same predicate, and they name the teaser under Next.
+  const rows = await walk(backward ? "before" : "after", anchor, BROWSE_PAGE_SIZE + NEXT_TEASER_SIZE);
 
   const more = rows.length > BROWSE_PAGE_SIZE;
   const page = rows.slice(0, BROWSE_PAGE_SIZE);
+  // Walking backward reads the rows just above the anchor nearest-first, so
+  // the page is flipped back into display order here.
   if (backward) page.reverse();
   const first = page[0];
   const last = page[page.length - 1];
 
+  const keyOf = (row: typeof first): BrowseCursor | null => {
+    if (!row?.listedAt) return null;
+    const key = { listedAt: row.listedAt, id: row.id };
+    return row.shelterExternalId && leading.includes(row.shelterExternalId) ? { ...key, sponsorable: true } : key;
+  };
+
   // The side we did not walk is probed, never assumed: rows on it may have
   // been adopted out since the cursor was written.
   const namesBeyond = async (side: "after" | "before", row: typeof first, count: number) => {
-    if (!row?.listedAt) return [];
-    const nearestFirst = (sort === "longest") === (side === "after");
-    const hits = await db
-      .select({ name: animals.name })
-      .from(animals)
-      .where(
-        and(
-          ...sortWhere(filters, asOf, exclusions, sort, scope, shelterExclusions),
-          beyond(sort, side, { listedAt: row.listedAt, id: row.id }),
-        )!,
-      )
-      .orderBy(
-        nearestFirst
-          ? sql`${animals.listedAt} asc, ${animals.id} asc`
-          : sql`${animals.listedAt} desc, ${animals.id} desc`,
-      )
-      .limit(count);
-    return hits.map((h) => h.name);
+    const key = keyOf(row);
+    return key ? (await walk(side, key, count)).map((hit) => hit.name) : [];
   };
   const nextNames = backward
     ? await namesBeyond("after", last, NEXT_TEASER_SIZE)
@@ -310,8 +347,10 @@ export async function loadBrowsePage(
   const hasNext = nextNames.length > 0;
   const hasPrev = backward ? more : anchor !== null && (await namesBeyond("before", first, 1)).length > 0;
 
-  const cursorOf = (row: typeof first) =>
-    row?.listedAt ? encodeCursor({ listedAt: row.listedAt, id: row.id }) : null;
+  const cursorOf = (row: typeof first) => {
+    const key = keyOf(row);
+    return key ? encodeCursor(key) : null;
+  };
   return {
     animals: page,
     nextCursor: hasNext ? cursorOf(last) : null,

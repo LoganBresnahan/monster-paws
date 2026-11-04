@@ -32,6 +32,11 @@ export interface SponsorGate {
   registry?: readonly ShelterEntry[];
 }
 
+function mayOffer(shelterExternalId: string, gate: SponsorGate): boolean {
+  const granted = hasGrant(shelterByExternalId(shelterExternalId, gate.registry ?? SHELTERS), "digify", gate.asOf ?? new Date());
+  return granted || gate.everyorgEnv === "staging";
+}
+
 /**
  * The shelter's Every.org profile, only when a gift can be offered at all: no permission
  * to paint, no Sponsor button (ADR-0002 as amended 2026-11-02), and `unknown` or
@@ -40,14 +45,25 @@ export interface SponsorGate {
  * moves no real money: never widen this to anything that reaches www.every.org.
  */
 export async function sponsorNonprofit(db: Db, shelterExternalId: string, gate: SponsorGate): Promise<ClaimedNonprofit | null> {
-  const granted = hasGrant(shelterByExternalId(shelterExternalId, gate.registry ?? SHELTERS), "digify", gate.asOf ?? new Date());
-  if (!granted && gate.everyorgEnv !== "staging") return null;
+  if (!mayOffer(shelterExternalId, gate)) return null;
   const [row] = await db
     .select({ slug: shelterNonprofits.everyorgSlug, ein: shelterNonprofits.ein })
     .from(shelterNonprofits)
     .where(and(eq(shelterNonprofits.shelterExternalId, shelterExternalId), eq(shelterNonprofits.everyorgClaim, "claimed")))
     .limit(1);
   return row ?? null;
+}
+
+/**
+ * Every shelter `sponsorNonprofit` says yes to, in one query, for the list that leads with them:
+ * never a second definition, or an animal could sort first and then show no button (ADR-0015 as amended 2026-11-04).
+ */
+export async function sponsorableShelterIds(db: Db, gate: SponsorGate): Promise<string[]> {
+  const rows = await db
+    .select({ id: shelterNonprofits.shelterExternalId })
+    .from(shelterNonprofits)
+    .where(eq(shelterNonprofits.everyorgClaim, "claimed"));
+  return rows.map((row) => row.id).filter((id) => mayOffer(id, gate));
 }
 
 export interface Sponsorable {

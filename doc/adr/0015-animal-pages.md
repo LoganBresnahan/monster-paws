@@ -776,3 +776,56 @@ kept when the whole visible set offers it, so narrowing to a zip with no dogs
 shows "none near you", never every animal nearby. One URL builder,
 `browseSearch`, writes every browse link. The new parameters join the
 filtered views robots.ts keeps crawlers off (ADR-0024).
+
+## Amendment (2026-11-04): sponsorable animals lead the plain list
+
+Logan, 2026-11-04: "we want spencer pet rescues animals to be first in the
+animals list. basically the default sorting now puts sponsorable animals before
+all others on "/animals"". It was read back to him as "any sort or filter a
+visitor picks stays as it is", and he didn't object. It goes live with Spencer's
+grant in oplog 0029: "go live together".
+
+### Decisions
+1. **The plain default list puts sponsorable animals first**, each group in
+   today's order (`listed_at desc, id desc`). By rule and never by a shelter's
+   name, so the next shelter that opens gets the same.
+2. **Any sort or filter a person picks stays as it is.** Longest waiting, the
+   four menus, a zip radius and the shelter view read today's query, and
+   "Surprise me" stays uniform.
+3. **Sponsorable means what the Sponsor button means.** `sponsorableShelterIds`
+   reads the claimed rows in one query and keeps those passing `mayOffer`, the
+   same check `sponsorNonprofit` makes, and with no `donateConfig` the page
+   passes none. A test runs both over every mix of claim, environment and grant.
+4. **The group is part of the cursor.** A row in the leading group ends `,1`. An
+   unmarked cursor means what it always meant and reads as a row in the rest, so
+   links shared before this keep working. A marked cursor with no group left is
+   page one, as any broken cursor is.
+5. **Two reads, never a computed `order by`.** `shelter in (…)`, then the rest
+   with null kept in it, each on its index. Ordering by a computed group scanned
+   the whole visible set: 66 ms against today's 1.3 ms on the 60k dev corpus,
+   where the two reads took about 1 ms and 0.06 ms.
+6. **No sponsorable shelter is today's query exactly**, with today's cursors.
+
+### Consequences (added)
+- This doesn't rank animals (bright line 1). It's a fact about the shelter,
+  whether a Sponsor button can be offered, and nobody can pay for it.
+- The page still says "Newest listings first" and the Sort menu "Newest first"
+  above animals who may be older, because this change adds no copy. Picking
+  "Newest first" returns to the plain list, so there's no purely date-ordered
+  list without a filter.
+- **The order and the button change together.** Measured 2026-11-04: the build
+  lists `/animals` and `/animals/[id]` as `ƒ`, and production answers both
+  `private, no-cache, no-store` with `cf-cache-status: DYNAMIC`. So a claim row
+  changes both on the next request, and a registry change at the deploy that
+  carries it. The detail page's `revalidate = 3600` has no effect, so the hour in
+  the 2026-10-01 amendment isn't what's live (`doc/issues.md`), and
+  `loadSponsorable` still re-reads before any money moves.
+- e2e's claimed shelter has no grant, so e2e sees no group. The order and cursor
+  are pinned in `tests/animal-browse.test.ts` and the gate in
+  `tests/donate-intent.test.ts`. No automated test proves the page hands the
+  shelters to the query.
+
+### Revisit triggers (added)
+- Sponsorable animals fill the first pages and the list stops showing new faces,
+  the reason the 2026-10-05 amendment chose newest first.
+- Logan wants them first inside a filter: `leadingShelters` is the one place.

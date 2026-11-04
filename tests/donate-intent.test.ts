@@ -8,6 +8,7 @@ import {
   intentDonorEmail,
   loadSponsorable,
   parseDonorEmail,
+  sponsorableShelterIds,
   sponsorNonprofit,
   thankYouIntent,
   type SponsorGate,
@@ -134,6 +135,24 @@ describe.skipIf(SKIP_DB_TESTS)("who can be sponsored (ADR-0027 §3)", () => {
       const id = await seedAnimal();
       expect(await sponsorNonprofit(db, SHELTER, { ...GATE, registry })).toBeNull();
       expect(await loadSponsorable(db, id, { ...GATE, registry })).toBeNull();
+    });
+
+    // The list that leads with these shelters must never disagree with the button (ADR-0015 as amended 2026-11-04).
+    it("sorts first exactly the shelters the button opens for", async () => {
+      const seen = new Set<boolean>();
+      for (const claim of [null, "unknown", "unclaimed", "claimed"] as const) {
+        await db.delete(shelterNonprofits);
+        if (claim) await mapShelter(claim);
+        for (const everyorgEnv of ["production", "staging"] as const) {
+          for (const [why, registry] of [["a grant", [entry()]] as [string, ShelterEntry[]], ...refused]) {
+            const gate: SponsorGate = { ...GATE, everyorgEnv, registry };
+            const button = (await sponsorNonprofit(db, SHELTER, gate)) !== null;
+            seen.add(button);
+            expect(await sponsorableShelterIds(db, gate), `${claim} ${everyorgEnv} ${why}`).toEqual(button ? [SHELTER] : []);
+          }
+        }
+      }
+      expect(seen).toEqual(new Set([true, false]));
     });
 
     it("needs the claim as well as the grant", async () => {
