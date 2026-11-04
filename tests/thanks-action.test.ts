@@ -76,6 +76,12 @@ describe("fixing the address on the thank-you page", () => {
     await expect(fixDonorEmail(form({ email: ADDRESS, gift: intentRef(COOKIE_ID) }))).rejects.toMatchObject({ url: "/thanks?problem=sent" });
   });
 
+  it("never says the painting went out when the provider refused it: the page says there's a problem", async () => {
+    correctDonorEmail.mockResolvedValue("held");
+    const { fixDonorEmail } = await import("@/app/thanks/actions");
+    await expect(fixDonorEmail(form({ email: ADDRESS, gift: intentRef(COOKIE_ID) }))).rejects.toMatchObject({ url: "/thanks" });
+  });
+
   it("says saved when a bounced gift takes its new address", async () => {
     correctDonorEmail.mockResolvedValue("resending");
     const { fixDonorEmail } = await import("@/app/thanks/actions");

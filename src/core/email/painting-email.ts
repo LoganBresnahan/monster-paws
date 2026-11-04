@@ -53,7 +53,7 @@ export function renderPaintingEmail(input: PaintingEmailInput): OutgoingEmail {
   const lead = `We painted ${name ?? "them"} ${ways} as our thank-you.`;
   const attached = "They're attached to this email too.";
   const share = "You can view the paintings here";
-  const why = `You're getting this because this address was entered when a donation to ${name ? `${name}'s shelter` : "a shelter"} was started on Monster Paws.`;
+  const why = `We sent this because this address was entered when a donation to ${name ? `${name}'s shelter` : "a shelter"} was started on Monster Paws.`;
   const stop = "Don't want email from us?";
   const contact = "Questions? Write to hello@monsterpaws.org.";
 

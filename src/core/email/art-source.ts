@@ -33,11 +33,15 @@ export function mediaArtReader(baseUrl: string, get: typeof fetch = fetch): ArtR
     // mail's "view the paintings" link live: never mail once per set on the images alone.
     if (index === 0) {
       const manifest = await get(`${base}/share/${art.shareToken}/manifest.json`, { signal: AbortSignal.timeout(30_000) });
+      // Never left unread: an open body holds its connection until garbage collection, and a stuck set asks every cycle.
+      await manifest.body?.cancel();
       if (!manifest.ok) throw new Error(`share page not published: ${manifest.status}`);
     }
     const response = await get(`${base}/share/${art.shareToken}/${index + 1}.jpg`, { signal: AbortSignal.timeout(30_000) });
-    if (!response.ok) throw new Error(`painting not readable: ${response.status}`);
-    if (Number(response.headers.get("content-length") ?? 0) > MAX_PAINTING_BYTES) throw new Error("painting too large");
+    if (!response.ok || Number(response.headers.get("content-length") ?? 0) > MAX_PAINTING_BYTES) {
+      await response.body?.cancel();
+      throw new Error(response.ok ? "painting too large" : `painting not readable: ${response.status}`);
+    }
     const bytes = Buffer.from(await response.arrayBuffer());
     if (bytes.length > MAX_PAINTING_BYTES) throw new Error("painting too large");
     return bytes;

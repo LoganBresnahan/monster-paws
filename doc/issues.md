@@ -109,14 +109,6 @@ is the record, and a file of ticked boxes stops being read.
   a donor with two in one browser can't reach the older one's address from there. They write to
   hello@. Found by the 2026-11-02 review.
 
-- **A bounced or corrected address isn't settled for the painting email.** The verifier's cases: a hard bounce followed by a corrected
-  address, a correction after the mail left and before delivery, and a correction to a suppressed address. `correctDonorEmail` refuses once
-  the address is erased (ADR-0027 as amended 2026-11-02). The `emails` session holds the fix, which oplog 0029's image needs; this entry goes with it.
-
-- **A held painting email says it "had already gone out".** `/thanks`' `problem === "sent"` sentence also shows for a `held` row, once the
-  `emails` session's `correctDonorEmail` fix returns `held`, and a held mail hasn't gone. Found by the verifier reading `0989a18`,
-  2026-11-04. Not in that image; to settle with `emails` before oplog 0029.
-
 - **A stuck keepsake alerts every hour for ever.** `sweepKeepsakes`'s `stalled` count stays up for a gift nobody can paint, such as
   a listing with no photo left, and nothing marks it as dealt with, so the alert can't be cleared. Found by the verifier reading
   the sweep, 2026-11-04.

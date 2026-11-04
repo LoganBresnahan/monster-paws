@@ -23,6 +23,18 @@ describe("reading a painting from the media hostname (ADR-0036 decision 5)", () 
     expect(calls).toEqual([`https://media.monsterpaws.org/share/${TOKEN}/manifest.json`]);
   });
 
+  it("closes every response it doesn't read, so a stuck set never holds connections", async () => {
+    const opened: Response[] = [];
+    const get = async (url: string) => {
+      const response = new Response(Buffer.from("x"), { status: url.endsWith("1.jpg") ? 404 : 200 });
+      opened.push(response);
+      return response;
+    };
+    await expect(mediaArtReader("https://media.monsterpaws.org", get as unknown as typeof fetch)(art, 0)).rejects.toThrow(/404/);
+    expect(opened).toHaveLength(2);
+    for (const response of opened) expect(response.body?.locked || response.bodyUsed).toBe(true);
+  });
+
   it("checks the manifest once per set, on the first painting", async () => {
     const calls: string[] = [];
     const get = async (url: string) => {

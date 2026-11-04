@@ -210,7 +210,7 @@ export async function intentDonorEmail(db: Db, intentId: string): Promise<string
   return row?.donorEmail ?? null;
 }
 
-export type AddressFix = "saved" | "resending" | "already-sent" | "erased";
+export type AddressFix = "saved" | "resending" | "already-sent" | "held" | "erased";
 
 /**
  * A donor fixing a typo, which is how the address gets checked without a second email
@@ -222,7 +222,8 @@ export type AddressFix = "saved" | "resending" | "already-sent" | "erased";
 export async function correctDonorEmail(db: Db, intentId: string, donorEmail: string): Promise<AddressFix> {
   return db.transaction(async (tx) => {
     const state = await paintingMailState(tx, intentId);
-    if (state === "on-its-way" || state === "sent" || state === "held") return "already-sent";
+    if (state === "held") return "held";
+    if (state === "on-its-way" || state === "sent") return "already-sent";
     if (state === "bounced") {
       await tx.update(donationIntents).set({ donorEmail }).where(eq(donationIntents.id, intentId));
       await tx

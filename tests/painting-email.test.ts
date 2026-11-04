@@ -44,7 +44,7 @@ describe("the painting email (ADR-0027 as amended 2026-11-02, ADR-0035)", () => 
     expect(mail.text).toContain("We painted Beetle four ways as our thank-you.");
     expect(mail.text).toContain("They're attached to this email too.");
     expect(mail.html).toContain("You can view the paintings here");
-    expect(mail.text).toContain("You're getting this because this address was entered when a donation to Beetle's shelter was started on Monster Paws.");
+    expect(mail.text).toContain("We sent this because this address was entered when a donation to Beetle's shelter was started on Monster Paws.");
   });
 
   it("opens with a title, and the plain text reads whole without it", () => {
@@ -53,7 +53,7 @@ describe("the painting email (ADR-0027 as amended 2026-11-02, ADR-0035)", () => 
   });
 
   it("says why this address got it, in the text and the HTML", () => {
-    const why = "You're getting this because this address was entered when a donation to Beetle's shelter was started on Monster Paws.";
+    const why = "We sent this because this address was entered when a donation to Beetle's shelter was started on Monster Paws.";
     expect(mail.text).toContain(why);
     expect(mail.html).toContain(why.replaceAll("'", "&#39;"));
   });

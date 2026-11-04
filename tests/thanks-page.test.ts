@@ -142,6 +142,13 @@ describe.skipIf(SKIP_DB_TESTS)("the thank-you page", () => {
       expect(html).not.toContain('name="email"');
     });
 
+    it("never says a refused mail went out, even from a stale URL", async () => {
+      await sendRow({ refusedCode: "validation_error" });
+      const html = await render({ problem: "sent" });
+      expect(html).toContain("hit a problem");
+      expect(html).not.toContain("already gone out");
+    });
+
     it("says a late change wasn't saved, in the words that are true", async () => {
       await sendRow({ sentAt: new Date() });
       expect(await render({ problem: "sent" })).toContain("wasn&#x27;t saved");

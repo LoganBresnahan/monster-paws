@@ -287,7 +287,7 @@ describe.skipIf(SKIP_DB_TESTS)("who can be sponsored (ADR-0027 §3)", () => {
       it("never clears a row held for any other refusal", async () => {
         const id = await intent();
         await sendRow(id, { refusedCode: "invalid_idempotent_request" });
-        expect(await correctDonorEmail(db, id, "new@example.org")).toBe("already-sent");
+        expect(await correctDonorEmail(db, id, "new@example.org")).toBe("held");
         expect(await db.select().from(paintingEmailSends)).toHaveLength(1);
         expect(await paintingMailState(db, id)).toBe("held");
       });

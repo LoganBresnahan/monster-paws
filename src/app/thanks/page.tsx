@@ -112,7 +112,7 @@ export default async function ThanksPage({
 
       {mail === "bounced" && (
         <p role="status" className="mt-4 font-semibold text-foreground">
-          We couldn&apos;t deliver {name}&apos;s painting to the address you gave. Tell us a new one and we&apos;ll try again.
+          We couldn&apos;t deliver {name}&apos;s paintings to the address you gave. Tell us a new one and we&apos;ll try again.
         </p>
       )}
 
@@ -136,7 +136,7 @@ export default async function ThanksPage({
 
       {mail === "held" && (
         <p role="status" className="mt-4 font-semibold text-foreground">
-          We hit a problem sending {name}&apos;s painting, and we&apos;re looking into it. You can write to{" "}
+          We hit a problem sending {name}&apos;s paintings, and we&apos;re looking into it. You can write to{" "}
           <a className="underline" href={`mailto:${CONTACT_EMAIL}`}>
             {CONTACT_EMAIL}
           </a>
@@ -174,9 +174,9 @@ export default async function ThanksPage({
         </p>
       )}
 
-      {problem === "sent" && (
+      {problem === "sent" && mailGone && (
         <p role="alert" className="mt-2 text-sm font-semibold text-foreground">
-          {name}&apos;s painting had already gone out, so that change wasn&apos;t saved. If it doesn&apos;t arrive, write to {CONTACT_EMAIL}.
+          {name}&apos;s paintings had already gone out, so that change wasn&apos;t saved. If they don&apos;t arrive, write to {CONTACT_EMAIL}.
         </p>
       )}
 

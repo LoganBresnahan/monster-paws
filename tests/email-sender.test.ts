@@ -5,7 +5,7 @@ import { chooseEmailSender, EmailSendError, type OutgoingEmail, resendSender, sm
 const IMAGE = Buffer.from("not really a jpeg");
 const email: OutgoingEmail = {
   to: "logan@example.org",
-  subject: "Your paintings of Beetle",
+  subject: "We painted Beetle to say thank you",
   text: "text",
   html: '<img src="cid:painting-1@monsterpaws.org">',
   headers: { "List-Unsubscribe": "<https://monsterpaws.org/unsubscribe/t>", "List-Unsubscribe-Post": "List-Unsubscribe=One-Click" },
