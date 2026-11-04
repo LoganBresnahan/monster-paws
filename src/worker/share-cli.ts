@@ -79,12 +79,17 @@ async function takedown(args: string[]): Promise<void> {
     return;
   }
   let urls = 0;
+  let refused = 0;
   for (const token of tokens) {
-    const list = purgeUrls(token, SITE_ORIGIN, publicBase);
-    await purgeCloudflare({ zoneId, token: purgeToken }, list);
-    urls += list.length;
+    const report = await purgeCloudflare({ zoneId, token: purgeToken }, purgeUrls(token, SITE_ORIGIN, publicBase));
+    urls += report.purged;
+    refused += report.refused;
   }
   console.log(`purged ${urls} URLs`);
+  if (refused > 0) {
+    console.error(`NOT PURGED: Cloudflare refused ${refused} bare-? URLs. Any copies there age out within a day (ADR-0036).`);
+    process.exitCode = 2;
+  }
 }
 
 async function main(): Promise<void> {

@@ -168,15 +168,34 @@ export async function deleteShare(store: ObjectStore, token: string): Promise<vo
   }
 }
 
+export interface PurgeReport {
+  purged: number;
+  /** bare-`?` URLs Cloudflare refused: those copies age out within a day (ADR-0036) */
+  refused: number;
+}
+
+/**
+ * The bare `?` forms go in their own call and never with the rest: whether Cloudflare's purge takes that
+ * form is unmeasured, and a refusal must not leave the plain URLs unpurged (ADR-0036).
+ */
 export async function purgeCloudflare(
   config: { zoneId: string; token: string },
   urls: string[],
   fetchImpl: typeof fetch = fetch,
-): Promise<void> {
-  const res = await fetchImpl(`https://api.cloudflare.com/client/v4/zones/${config.zoneId}/purge_cache`, {
-    method: "POST",
-    headers: { authorization: `Bearer ${config.token}`, "content-type": "application/json" },
-    body: JSON.stringify({ files: urls }),
-  });
+): Promise<PurgeReport> {
+  const send = (files: string[]) =>
+    fetchImpl(`https://api.cloudflare.com/client/v4/zones/${config.zoneId}/purge_cache`, {
+      method: "POST",
+      headers: { authorization: `Bearer ${config.token}`, "content-type": "application/json" },
+      body: JSON.stringify({ files }),
+    });
+  const bare = urls.filter((url) => url.endsWith("?"));
+  const plain = urls.filter((url) => !url.endsWith("?"));
+
+  const res = await send(plain);
   if (!res.ok) throw new Error(`Cloudflare purge failed: ${res.status}`);
+  if (bare.length === 0) return { purged: plain.length, refused: 0 };
+
+  const second = await send(bare).catch(() => null);
+  return second?.ok ? { purged: urls.length, refused: 0 } : { purged: plain.length, refused: bare.length };
 }

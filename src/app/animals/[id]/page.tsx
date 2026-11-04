@@ -203,7 +203,7 @@ export default async function AnimalPage({ params }: { params: Promise<{ id: str
         <h2 className="text-xl font-bold">Where {animal.name} is</h2>
         <p className="mt-2 text-muted">
           Listed by {orgLink}
-          {place ? ` in ${place}` : ""}.
+          {place ? ` in ${place}.` : org?.endsWith(".") ? "" : "."}
           {!canSponsor &&
             ` When sponsoring opens, a donation for ${animal.name} will go to ${org ?? "their shelter"}, and we keep $0 — we never hold the money.`}
         </p>

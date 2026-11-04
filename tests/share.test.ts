@@ -306,16 +306,44 @@ describe("taking a share down (ADR-0036)", () => {
     expect(both).toContain(`https://files.example/share/${TOKEN}/4.jpg`);
   });
 
-  it("sends Cloudflare the URLs, and fails on a refusal", async () => {
-    const calls: Array<{ url: string; body: string }> = [];
-    const answer = (status: number): typeof fetch => async (input, init) => {
-      calls.push({ url: String(input), body: String(init?.body) });
-      return new Response("{}", { status });
-    };
-    await purgeCloudflare({ zoneId: "zone", token: "t" }, ["https://a/b"], answer(200));
-    expect(calls[0].url).toContain("/zones/zone/purge_cache");
-    expect(JSON.parse(calls[0].body)).toEqual({ files: ["https://a/b"] });
-    await expect(purgeCloudflare({ zoneId: "zone", token: "t" }, ["https://a/b"], answer(403))).rejects.toThrow(/403/);
+  describe("the Cloudflare purge", () => {
+    const config = { zoneId: "zone", token: "t" };
+    function answering(statuses: Record<"plain" | "bare", number | Error>) {
+      const calls: string[][] = [];
+      const impl: typeof fetch = async (input, init) => {
+        expect(String(input)).toContain("/zones/zone/purge_cache");
+        const { files } = JSON.parse(String(init?.body)) as { files: string[] };
+        calls.push(files);
+        const status = statuses[files[0].endsWith("?") ? "bare" : "plain"];
+        if (status instanceof Error) throw status;
+        return new Response("{}", { status });
+      };
+      return { calls, impl };
+    }
+
+    it("sends the plain URLs, then the bare `?` forms in a call of their own", async () => {
+      const { calls, impl } = answering({ plain: 200, bare: 200 });
+      expect(await purgeCloudflare(config, ["https://a/b", "https://a/b?", "https://a/c"], impl)).toEqual({ purged: 3, refused: 0 });
+      expect(calls).toEqual([["https://a/b", "https://a/c"], ["https://a/b?"]]);
+    });
+
+    it.each([[403], [new Error("network")]])("still purges the plain URLs when the bare form fails: %s", async (failure) => {
+      const { calls, impl } = answering({ plain: 200, bare: failure });
+      expect(await purgeCloudflare(config, ["https://a/b", "https://a/b?"], impl)).toEqual({ purged: 1, refused: 1 });
+      expect(calls[0]).toEqual(["https://a/b"]);
+    });
+
+    it("fails if the plain URLs are refused, and never tries the rest", async () => {
+      const { calls, impl } = answering({ plain: 403, bare: 200 });
+      await expect(purgeCloudflare(config, ["https://a/b", "https://a/b?"], impl)).rejects.toThrow(/403/);
+      expect(calls).toHaveLength(1);
+    });
+
+    it("makes one call when there are no bare forms", async () => {
+      const { calls, impl } = answering({ plain: 200, bare: 200 });
+      expect(await purgeCloudflare(config, ["https://a/b"], impl)).toEqual({ purged: 1, refused: 0 });
+      expect(calls).toHaveLength(1);
+    });
   });
 });
 

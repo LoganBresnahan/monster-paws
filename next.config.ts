@@ -11,10 +11,10 @@ const nextConfig: NextConfig = {
   // Emitted for the source-map upload and deleted before the image is
   // assembled — never served (ADR-0010 as amended 2026-09-30).
   productionBrowserSourceMaps: true,
-  // The webhook's path holds our secret, and the dev server prints every request
-  // path to its terminal (ADR-0027 §4).
   // Only the brand's files, never `/share`: the optimizer keeps its own copy for hours, which a takedown can't reach (ADR-0036).
   images: { localPatterns: [{ pathname: "/brand/**", search: "" }] },
+  // The webhook's path holds our secret, and the dev server prints every request
+  // path to its terminal (ADR-0027 §4).
   logging: { incomingRequests: { ignore: [/\/api\/webhooks\/everyorg\//, /\/test-gift\//, /\/share\//, /\/unsubscribe\//] } },
 };
 

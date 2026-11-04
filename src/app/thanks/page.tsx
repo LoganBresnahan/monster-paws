@@ -15,6 +15,7 @@ import { speciesEmoji, TrackerPixel } from "@/ui/animal";
 import { AnimalGallery } from "@/ui/animal-gallery";
 import { CONTACT_EMAIL } from "@/ui/site";
 import { SiteLogo } from "@/ui/site-logo";
+import { withPeriod } from "@/ui/text";
 import { WaitingRefresh } from "@/ui/waiting-refresh";
 import { fixDonorEmail } from "./actions";
 
@@ -91,7 +92,7 @@ export default async function ThanksPage({
       ) : (
         <>
           <p role="status" className="mt-3 text-lg text-muted">
-            We&apos;re waiting for Every.org to confirm your donation to {shelter}. This page updates when it does.
+            We&apos;re waiting for Every.org to confirm your donation to {withPeriod(shelter)} This page updates when it does.
           </p>
           <WaitingRefresh />
         </>
