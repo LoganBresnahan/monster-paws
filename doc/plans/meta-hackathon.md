@@ -41,6 +41,21 @@ the delineation table in `README.md`.
   the run before a call. We warrant our rights in every input (4.1), so Commons
   photos stay out too, and real gifts to Spencer don't go because it hasn't been
   asked.
+  **Cleaned copies (2026-11-04):** stripping metadata leaves pixels alone. Plum's
+  collar tag, with a personal detail on it, was legible at the size sent in
+  `PXL_20250423_185424061.PORTRAIT.jpg` and `PXL_20250422_224206531.jpg`, and
+  `Stacey/IMG_3110.jpg` showed a readable web address on a screen. All six of
+  those photos had already gone, 4 calls each. Logan, relayed by the moderator:
+  "Its fine all the personal info is just mine for all photos. the arm is my wife.
+  lets just clean the images so they can be used". `comfyui/clean_crew.py` writes
+  opaque-covered, pixels-only copies to `var/explore/crew-clean/` (gitignored), and
+  only those copies are on `SAM3_APPROVED`. A run naming an original sends its clean
+  copy, read by the client itself; `Plum/downloadfile.jpg`, a shelter's photo, stays
+  off. Clean copies went on Logan's plain yes: "yes copies look good". The other 10 photos were read
+  at the size sent and show no legible number or address, as Claude read them. All
+  74 response ids returned 404 on a read-only lookup and `/v1/files` is empty, so
+  nothing is stored for the API to delete; what Meta keeps for safety review is
+  unknown. The measured table below is from the original 16.
 - **The deadline:** 21:00 ET on 11-04, which is 02:00 UTC on 11-05, as ADR-0028
   says. Logan, relayed by the moderator session: "Submissions are due tomorrow:
   Nov 4th at 9:00 PM ET".
@@ -127,6 +142,13 @@ the delineation table in `README.md`.
    out of the IoU row. SAM 2.1's outline on `Marty/IMG_4288` bleeds onto the head
    of the person behind him, which is a reason to try the API's masks. 74 calls
    on these photos plus 2 on a generated image, $0.19.
+
+   The clean copies, 2026-11-04: 24 more calls, $0.06, $0.25 in all. On the six
+   copies the chosen box is the same as on the original (IoU 1.00) and the head box
+   0.98 to 1.00, so the covers changed nothing the painter uses. Sheets safe to
+   show are in `var/explore/detect-sam3-clean/`, from `detect-sam3.json`; they still
+   show people in Ducky's and Marty's photos, which Logan accepted, and a plant web
+   page in `Stacey/IMG_20200516`.
 
 2. **10-30 — the decision, and the open-models session**
    - [ ] `decision-10-30` — Logan. A shelter's grant in hand → the stretch:

@@ -780,7 +780,7 @@ else.
        │   `meta` only, DETECT_PIPELINES=sam3   ── leaves the home ──
        │   (ADR-0028): SAM 3.1 instead of       POST api.meta.ai/v1/responses
        │   OWLv2, one phrase a call, sam3_boxes from sam3_post(): SAM3_APPROVED
-       │   keeps each raw reply for replay;     photos only, pixels alone,
+       │   keeps each raw reply for replay;     clean copies for covered photos,
        │   SAM 2.1 still outlines               store: false, model checked
        ▼
   comfyui/guard.sh batch keepsake-<id> 4        built (demo): the spec beside the

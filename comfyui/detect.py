@@ -94,6 +94,9 @@ def photo_path(ref: str) -> Path:
     # A listing's photo is fetched at paint time beside its run and deleted with it, never kept (src/worker/art.ts; ADR-0022).
     if kind == "held":
         return EXPLORE / rel
+    # A crew photo's clean copy (clean_crew.py), kept out of var/crew because explore.py's prep reads every `*/*` there.
+    if kind == "clean":
+        return EXPLORE / "crew-clean" / rel
     return (CREW if kind == "crew" else PHOTOS / "commons") / rel
 
 
@@ -266,16 +269,20 @@ SAM3_MODEL = "sam-3.1"
 SAM3_BOX = re.compile(r"<\|box;((?:[a-z0-9]+=[0-9.]+;?)+)\|>")
 
 # Only these photos ever go to Meta, which may keep them with no end date and takes our warranty on each (Model API terms 4.1, 4.4; ADR-0028).
-# Logan, 2026-11-04: "i'm okay for all the crew except for the plum photo called downloadfile". Never add a shelter's or a Commons photo.
+# Logan, 2026-11-04: "i'm okay for all the crew except for the plum photo called downloadfile". Plum/downloadfile.jpg is a shelter's photo, so never add it, or any other shelter's or Commons photo.
 SAM3_APPROVED = frozenset(f"crew:{photo}" for photo in (
-    "Plum/PXL_20250410_144425752.jpg", "Plum/PXL_20250422_224206531.jpg", "Plum/PXL_20250422_224209397.jpg",
-    "Plum/PXL_20250423_185424061.PORTRAIT.jpg", "Plum/PXL_20250423_185435181.PORTRAIT.jpg",
     "Ducky/PXL_20241027_160550748.jpg", "Ducky/PXL_20241229_195311064.RAW-01.COVER.jpg", "Ducky/PXL_20250411_123028993.jpg",
     "Ducky/PXL_20250415_182318586.PORTRAIT.jpg", "Ducky/PXL_20250621_160612271.PORTRAIT.jpg",
     "Beetle/IMG_2931.jpg", "Beetle/IMG_3545.jpg",
-    "Stacey/IMG_3110.jpg", "Stacey/IMG_20200516_211507.jpg",
+    "Stacey/IMG_20200516_211507.jpg",
     "Marty/PXL_20210107_162942931.jpg", "Marty/IMG_4288.JPG",
+)) | frozenset(f"clean:{photo}" for photo in (
+    "Plum/PXL_20250410_144425752.jpg", "Plum/PXL_20250422_224206531.jpg", "Plum/PXL_20250422_224209397.jpg",
+    "Plum/PXL_20250423_185424061.PORTRAIT.jpg", "Plum/PXL_20250423_185435181.PORTRAIT.jpg",
+    "Stacey/IMG_3110.jpg",
 ))
+# Never put these originals on the list: stripping metadata leaves pixels alone, and they show Plum's collar tag and readable screens (Logan: "lets just clean the images so they can be used"). A run may still name one, because the painter crops the original, and Meta then gets the clean copy.
+SAM3_CLEANED = {ref.replace("clean:", "crew:", 1): ref for ref in SAM3_APPROVED if ref.startswith("clean:")}
 
 
 def sam3_jpeg(im) -> bytes:
@@ -342,10 +349,24 @@ def sam3_parse(text: str, size: tuple) -> list[dict]:
     return found
 
 
-def sam3_boxes(ref: str, im, phrase: str) -> list[dict]:
-    """A phrase's matches on an approved photo or its crop, with the raw reply kept per (image, phrase) so a run replays offline for free."""
-    if ref not in SAM3_APPROVED:
+_sam3_pixels: dict = {}
+
+
+def sam3_pixels(ref: str):
+    """What Meta gets for a photo, always read here from the approved file and never taken from a caller, so a cleaned photo's original can't leave (ADR-0028)."""
+    source = SAM3_CLEANED.get(ref, ref)
+    if source not in SAM3_APPROVED:
         raise SystemExit(f"sam3: refused {ref}: only photos Logan approved go to Meta (ADR-0028)")
+    if source not in _sam3_pixels:
+        _sam3_pixels[source] = load(source)
+    return _sam3_pixels[source]
+
+
+def sam3_boxes(ref: str, phrase: str, crop: tuple | None = None) -> list[dict]:
+    """A phrase's matches on an approved photo or a crop of it, with the raw reply kept per (image, phrase) so a run replays offline for free."""
+    im = sam3_pixels(ref)
+    if crop:
+        im = im.crop(crop)
     jpeg = sam3_jpeg(im)
     digest = hashlib.sha256(SAM3_MODEL.encode() + b"\0" + phrase.encode() + b"\0" + jpeg).hexdigest()[:16]
     path = OUT / "sam3-raw" / f"{Path(ref.split(':', 1)[1]).stem}__{digest}.json"
@@ -354,16 +375,16 @@ def sam3_boxes(ref: str, im, phrase: str) -> list[dict]:
     else:
         reply = sam3_post(jpeg, phrase)
         path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(json.dumps({"ref": ref, "phrase": phrase, "size": im.size, "reply": reply}))
+        path.write_text(json.dumps({"ref": SAM3_CLEANED.get(ref, ref), "phrase": phrase, "size": im.size, "reply": reply}))
     return sam3_parse(sam3_text(reply), im.size)
 
 
-def sam3_ask(ref: str, im, species: str, colour: str) -> dict:
+def sam3_ask(ref: str, species: str, colour: str, crop: tuple | None = None) -> dict:
     """The four asks, one phrase a call, matched to the species' boxes at IoU 0.5 as grounding_dino matches its two."""
-    matches = sam3_boxes(ref, im, f"a {species}")
-    coloured = sam3_boxes(ref, im, f"a {colour} {species}")
-    heads = sam3_boxes(ref, im, f"the head of a {species}")
-    rivals = [r for o in others(species) for r in sam3_boxes(ref, im, f"a {o}")]
+    matches = sam3_boxes(ref, f"a {species}", crop)
+    coloured = sam3_boxes(ref, f"a {colour} {species}", crop)
+    heads = sam3_boxes(ref, f"the head of a {species}", crop)
+    rivals = [r for o in others(species) for r in sam3_boxes(ref, f"a {o}", crop)]
 
     def best(pool: list[dict], box) -> float:
         return max([r["score"] for r in pool if iou(r["box"], box) >= 0.5], default=0.0)
@@ -376,12 +397,16 @@ def sam3_ask(ref: str, im, species: str, colour: str) -> dict:
 
 
 def sam3(photos: dict) -> dict:
-    refused = sorted({ref for listing, ref, im in photos.values() if ref not in SAM3_APPROVED})
+    refused = sorted({ref for listing, ref, im in photos.values() if SAM3_CLEANED.get(ref, ref) not in SAM3_APPROVED})
     if refused:
         raise SystemExit(f"sam3: nothing sent; these aren't approved for Meta (ADR-0028): {refused}")
+    for k, (listing, ref, im) in photos.items():
+        # A clean copy of another size would put its boxes in the wrong place on the original the painter crops.
+        if sam3_pixels(ref).size != im.size:
+            raise SystemExit(f"sam3: nothing sent; the copy sent for {ref} is {sam3_pixels(ref).size}, the run read {im.size}")
     found = {}
     for k, (listing, ref, im) in photos.items():
-        found[k] = sam3_ask(ref, im, listing["species"], listing["colour"])
+        found[k] = sam3_ask(ref, listing["species"], listing["colour"])
         print(f"  sam3 {k}: {len(found[k]['species'])} boxes, {len(found[k]['heads'])} heads", flush=True)
     return found
 
@@ -570,7 +595,7 @@ def closer_look(im, listing: dict, box, sam3_ref: str | None = None) -> dict:
     x1, y1 = min(im.width, int(box[2] + pad)), min(im.height, int(box[3] + pad))
     crop = im.crop((x0, y0, x1, y1))
     if sam3_ref:
-        found = sam3_ask(sam3_ref, crop, listing["species"], listing["colour"])["species"]
+        found = sam3_ask(sam3_ref, listing["species"], listing["colour"], (x0, y0, x1, y1))["species"]
         # Unlike OWLv2 at floor 0, SAM 3.1 can answer nothing, and nothing on the animal's own crop is its vote.
         if not found:
             return {"species": 0.0, "colour_prompt": 0.0, "other": 0.0}

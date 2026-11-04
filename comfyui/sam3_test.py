@@ -25,6 +25,9 @@ BOX = "<|box;x1=10;y1=20;x2=110;y2=220;w=400;h=300;c=0.875|><|mask;x=0;y=0;c=0.8
 class FakeImage:
     size = (800, 600)
 
+    def crop(self, box):
+        return self
+
 
 def reply(text: str = f"<0f>0{BOX}", model: str = "sam-3.1", status: str = "completed") -> dict:
     return {"model": model, "status": status, "output": [{"type": "message", "content": [{"type": "output_text", "text": text}]}]}
@@ -65,6 +68,8 @@ class Sam3(unittest.TestCase):
             mock.patch.object(detect, "SAM3_URL", f"http://127.0.0.1:{self.server.server_port}/v1/responses"),
             mock.patch.object(detect, "OUT", Path(self.tmp.name)),
             mock.patch.object(detect, "sam3_jpeg", lambda im: b"jpeg-bytes"),
+            mock.patch.object(detect, "load", lambda ref: FakeImage()),
+            mock.patch.object(detect, "_sam3_pixels", {}),
             mock.patch.object(detect.time, "sleep", lambda s: None),
             mock.patch.dict(os.environ, {"MODEL_API_KEY": KEY}),
         ]
@@ -74,16 +79,38 @@ class Sam3(unittest.TestCase):
         self.addCleanup(self.tmp.cleanup)
 
     def test_only_approved_photos_reach_the_network(self):
-        for ref in ("crew:Plum/downloadfile.jpg", "commons:set1/a-dog.jpg", "shelter:spencer/rex.jpg",
-                    "crew:../commons/a-dog.jpg", "crew:Beetle/a-new-file.jpg"):
+        for ref in ("crew:Plum/downloadfile.jpg", "clean:Plum/downloadfile.jpg", "commons:set1/a-dog.jpg", "shelter:spencer/rex.jpg",
+                    "held:run/photos/rex.jpg", "crew:../commons/a-dog.jpg", "crew:Beetle/a-new-file.jpg"):
             with self.assertRaises(SystemExit) as refused:
-                detect.sam3_boxes(ref, FakeImage(), "a dog")
+                detect.sam3_boxes(ref, "a dog")
             self.assertIn("refused", str(refused.exception))
         self.assertEqual(Stub.seen, [])
 
-    def test_downloadfile_stays_out_of_the_allow_list(self):
-        self.assertNotIn("crew:Plum/downloadfile.jpg", detect.SAM3_APPROVED)
-        self.assertTrue(all(ref.startswith("crew:") for ref in detect.SAM3_APPROVED))
+    def test_downloadfile_is_never_listed_or_cleaned(self):
+        self.assertFalse([ref for ref in detect.SAM3_APPROVED | set(detect.SAM3_CLEANED) if "downloadfile" in ref])
+
+    def test_held_originals_stay_off_the_list_and_only_clean_copies_are_read(self):
+        originals = ["crew:Plum/PXL_20250423_185424061.PORTRAIT.jpg", "crew:Plum/PXL_20250422_224209397.jpg", "crew:Stacey/IMG_3110.jpg"]
+        self.assertFalse([ref for ref in detect.SAM3_APPROVED if ref.startswith("crew:Plum/") or ref == "crew:Stacey/IMG_3110.jpg"])
+        read = []
+        Stub.answers = [(200, reply(), {}) for _ in originals]
+        with mock.patch.object(detect, "load", lambda ref: read.append(ref) or FakeImage()):
+            for ref in originals:
+                detect.sam3_boxes(ref, "a dog")
+        self.assertEqual(read, [ref.replace("crew:", "clean:", 1) for ref in originals])
+
+    def test_every_clean_copy_is_on_the_list_and_cleaned_by_the_tool(self):
+        import clean_crew
+        self.assertEqual({f"clean:{rel}" for rel in clean_crew.COVERS}, {ref for ref in detect.SAM3_APPROVED if ref.startswith("clean:")})
+
+    def test_a_clean_copy_of_another_size_stops_the_run_before_any_call(self):
+        class Other(FakeImage):
+            size = (400, 300)
+        photos = {"p": ({"species": "dog", "colour": "grey"}, "crew:Plum/PXL_20250422_224209397.jpg", Other())}
+        with self.assertRaises(SystemExit) as stopped:
+            detect.sam3(photos)
+        self.assertIn("nothing sent", str(stopped.exception))
+        self.assertEqual(Stub.seen, [])
 
     def test_one_refused_photo_stops_the_run_before_any_call(self):
         listing = {"species": "dog", "colour": "black"}
@@ -94,7 +121,7 @@ class Sam3(unittest.TestCase):
 
     def test_the_request_is_one_phrase_unstored_with_confidence(self):
         Stub.answers = [(200, reply(), {})]
-        detect.sam3_boxes(APPROVED, FakeImage(), "a dog")
+        detect.sam3_boxes(APPROVED, "a dog")
         sent = Stub.seen[0]
         self.assertEqual(sent["auth"], f"Bearer {KEY}")
         body = sent["body"]
@@ -109,26 +136,26 @@ class Sam3(unittest.TestCase):
     def test_a_reply_from_another_model_is_refused_and_never_cached(self):
         Stub.answers = [(200, reply(model="muse-spark-1.3-contributor"), {})]
         with self.assertRaises(SystemExit) as refused:
-            detect.sam3_boxes(APPROVED, FakeImage(), "a dog")
+            detect.sam3_boxes(APPROVED, "a dog")
         self.assertIn("muse-spark-1.3-contributor", str(refused.exception))
         self.assertEqual(list(Path(self.tmp.name).rglob("*.json")), [])
 
     def test_transient_errors_retry_and_permanent_ones_do_not(self):
         Stub.answers = [(429, {}, {"Retry-After": "0"}), (503, {}, {}), (200, reply(), {})]
-        self.assertEqual(len(detect.sam3_boxes(APPROVED, FakeImage(), "a dog")), 1)
+        self.assertEqual(len(detect.sam3_boxes(APPROVED, "a dog")), 1)
         self.assertEqual(len(Stub.seen), 3)
         Stub.answers, Stub.seen = [(400, {"error": {"message": "bad"}}, {})], []
         with self.assertRaises(SystemExit) as failed:
-            detect.sam3_boxes(APPROVED, FakeImage(), "a cat")
+            detect.sam3_boxes(APPROVED, "a cat")
         self.assertEqual(len(Stub.seen), 1)
         self.assertNotIn(KEY, str(failed.exception))
 
     def test_a_cached_reply_replays_with_no_call_and_no_key(self):
         Stub.answers = [(200, reply(), {})]
-        first = detect.sam3_boxes(APPROVED, FakeImage(), "a dog")
+        first = detect.sam3_boxes(APPROVED, "a dog")
         with mock.patch.dict(os.environ):
             del os.environ["MODEL_API_KEY"]
-            self.assertEqual(detect.sam3_boxes(APPROVED, FakeImage(), "a dog"), first)
+            self.assertEqual(detect.sam3_boxes(APPROVED, "a dog"), first)
         self.assertEqual(len(Stub.seen), 1)
         self.assertNotIn(KEY, "".join(p.read_text() for p in Path(self.tmp.name).rglob("*.json")))
 
@@ -136,7 +163,7 @@ class Sam3(unittest.TestCase):
         with mock.patch.dict(os.environ):
             del os.environ["MODEL_API_KEY"]
             with self.assertRaises(SystemExit):
-                detect.sam3_boxes(APPROVED, FakeImage(), "a dog")
+                detect.sam3_boxes(APPROVED, "a dog")
         self.assertEqual(Stub.seen, [])
 
     def test_boxes_are_in_the_images_own_pixels(self):
@@ -155,7 +182,7 @@ class Sam3(unittest.TestCase):
             (200, reply(f"<0f>0{BOX.replace('c=0.875', 'c=0.25')}"), {}),
             (200, reply(""), {}),
         ]
-        found = detect.sam3_ask(APPROVED, FakeImage(), "dog", "black and tan")
+        found = detect.sam3_ask(APPROVED, "dog", "black and tan")
         self.assertEqual([s["body"]["input"][0]["content"][0]["text"] for s in Stub.seen],
                          ["a dog", "a black and tan dog", "the head of a dog", "a cat"])
         one = found["species"][0]
