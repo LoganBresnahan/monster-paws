@@ -100,6 +100,15 @@ is the record, and a file of ticked boxes stops being read.
   a donor with two in one browser can't reach the older one's address from there. They write to
   hello@. Found by the 2026-11-02 review.
 
+- **A delivery with an enormous amount is re-decided forever.** `MONEY` (`webhook.ts`) allows unlimited comma groups, so
+  `amount: "1,000,000,000,000"` overflows `numeric(12,2)` and the row comes back `decision_failed` every minute, reported hourly,
+  with no end. It takes the path secret, so only Every.org or someone holding it can send one. Found by the verifier reading
+  oplog 0023, 2026-11-04.
+
+- **The webhook sweep's two repeating alerts share one clock.** `failure` and `staleFiles` both use `lastRepeatAlert`
+  (`startWebhookSweep`, `src/worker/index.ts`), so either can hold the other back for up to an hour. Found by the verifier
+  reading oplog 0023, 2026-11-04.
+
 - **Nothing limits how fast intents can be minted.** `startSponsorship` writes a row with an
   address per POST, and rows last 30 days. Found by the 2026-11-02 review; Cloudflare's rules were
   not read for it, and as documented they can't be the whole answer: `doc/infra.md` opens 443 to
