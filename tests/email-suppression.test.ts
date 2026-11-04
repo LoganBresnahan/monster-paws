@@ -101,6 +101,12 @@ describe.skipIf(SKIP_DB_TESTS)("the never-mail list (ADR-0027 as amended 2026-10
     expect(await isSuppressed(db, "pat@example.org", KEY)).toBe(false);
   });
 
+  it("a bounce on the plain address says nothing about a tagged one", async () => {
+    await db.insert(emailSuppressions).values({ emailHmac: exactDigest("pat@example.org", KEY), reason: "bounce" });
+    expect(await isSuppressed(db, "pat@example.org", KEY)).toBe(true);
+    expect(await isSuppressed(db, "pat+new@example.org", KEY)).toBe(false);
+  });
+
   it("an unsubscribe stops every spelling, writes one row with no address, and erases only that inbox", async () => {
     await intent("a", "pat@example.org");
     await intent("b", "Pat+gift@example.org");

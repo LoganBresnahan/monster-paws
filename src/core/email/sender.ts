@@ -135,7 +135,8 @@ function classifyRefusal(status: number, name: string | null): EmailSendError {
   if (name === "concurrent_idempotent_requests") return new EmailSendError(code, "unknown", true);
   // A different body under a used key: the first may have gone, so a person looks, never a new key.
   if (name === "invalid_idempotent_request") return new EmailSendError(code, "unknown", false);
-  if (status === 429) return new EmailSendError(code, "no", true);
+  // A bad key or a spent quota says nothing about this gift, and holding it would need a person per gift.
+  if (status === 401 || status === 403 || status === 429) return new EmailSendError(code, "no", true);
   if (status >= 500 || status === 200) return new EmailSendError(code, "unknown", true);
   return new EmailSendError(code, "no", false);
 }

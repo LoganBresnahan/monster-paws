@@ -13,7 +13,7 @@ const nextConfig: NextConfig = {
   productionBrowserSourceMaps: true,
   // The webhook's path holds our secret, and the dev server prints every request
   // path to its terminal (ADR-0027 §4).
-  logging: { incomingRequests: { ignore: [/\/api\/webhooks\/everyorg\//, /\/test-gift\//, /\/share\//] } },
+  logging: { incomingRequests: { ignore: [/\/api\/webhooks\/everyorg\//, /\/test-gift\//, /\/share\//, /\/unsubscribe\//] } },
 };
 
 export default withSentryConfig(nextConfig, {

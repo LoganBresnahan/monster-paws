@@ -23,19 +23,22 @@ export function normaliseInbox(address: string): string {
   return `${domain === "gmail.com" ? local.replaceAll(".", "") : local}@${domain}`;
 }
 
-/** The prefix keeps a suppression's digest from matching the same address in any other keyed list (ADR-0035, decision 8). */
-function digest(value: string, key: string): string {
-  return createHmac("sha256", key).update(`suppression\0${value}`).digest("hex");
+/**
+ * The prefix keeps a digest from matching the same address in any other keyed list (ADR-0035, decision 8).
+ * Two of them, or a bounce on `a@x` would read as a stop for `a+new@x`, which it says nothing about.
+ */
+function digest(kind: "exact" | "inbox", value: string, key: string): string {
+  return createHmac("sha256", key).update(`suppression-${kind}\0${value}`).digest("hex");
 }
 
 /** A bounce is written on this one: a server can treat `+` literally, so it says nothing about the rest of the inbox. */
 export function exactDigest(address: string, key: string): string {
-  return digest(address.trim().toLowerCase(), key);
+  return digest("exact", address.trim().toLowerCase(), key);
 }
 
 /** An unsubscribe is written on this one, so it stops every spelling of that inbox. */
 export function inboxDigest(address: string, key: string): string {
-  return digest(normaliseInbox(address), key);
+  return digest("inbox", normaliseInbox(address), key);
 }
 
 /** Looks up both digests, so a stop on any spelling and a bounce on this exact one each refuse the mail. */

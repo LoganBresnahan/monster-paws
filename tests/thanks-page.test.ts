@@ -4,7 +4,7 @@ import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } 
 import ThanksPage from "@/app/thanks/page";
 import { intentRef } from "@/core/donate/intent";
 import { closeDb, type Db } from "@/db/client";
-import { animalDisplay, animalIdentities, animals, donationIntents } from "@/db/schema";
+import { keepsake, paintingEmailSends, animalDisplay, animalIdentities, animals, donationIntents } from "@/db/schema";
 import { SKIP_DB_TESTS, TEST_DATABASE_URL, testDb, truncateCorpus, truncateDonor } from "./support/db";
 
 /**
@@ -104,6 +104,41 @@ describe.skipIf(SKIP_DB_TESTS)("the thank-you page", () => {
     const html = await render();
     expect(html).not.toContain("Not the right address");
     expect(html).not.toContain("Bookmark");
+  });
+
+  describe("once the painting's mail exists (ADR-0027 as amended 2026-11-02, decision 4)", () => {
+    async function sendRow(row: { sentAt?: Date; refusedCode?: string }) {
+      const [made] = await db.insert(keepsake).values({ intentId: INTENT, shareToken: "tok", snapshottedAt: new Date() }).returning({ id: keepsake.id });
+      await db.insert(paintingEmailSends).values({ keepsakeId: made.id, claimedAt: new Date(), providerId: "re_1", ...row });
+    }
+
+    it("after a bounce, says it couldn't be delivered and takes a new address, with the old one gone", async () => {
+      await sendRow({ sentAt: new Date(), refusedCode: "bounced" });
+      await db.update(donationIntents).set({ donorEmail: null }).where(eq(donationIntents.id, INTENT));
+      const html = await render();
+      expect(html).toContain("couldn&#x27;t deliver");
+      expect(html).toContain('name="email"');
+      expect(html).not.toContain("teaching our painter");
+    });
+
+    it("once sent, says it's on its way, with no form and no Saved. from a stale URL", async () => {
+      await sendRow({ sentAt: new Date() });
+      const html = await render({ saved: "1" });
+      expect(html).toContain("on its way");
+      expect(html).not.toContain("Saved.");
+      expect(html).not.toContain("Not the right address");
+      expect(html).not.toContain('name="email"');
+      expect(html).not.toContain("teaching our painter");
+    });
+
+    it("says a late change wasn't saved, in the words that are true", async () => {
+      await sendRow({ sentAt: new Date() });
+      expect(await render({ problem: "sent" })).toContain("wasn&#x27;t saved");
+    });
+  });
+
+  it("refuses a suppressed address in decision 7's words", async () => {
+    expect(await render({ problem: "suppressed" })).toContain("We can&#x27;t send email to that address");
   });
 
   it("doesn't say saved from a bookmarked URL once the address is gone", async () => {

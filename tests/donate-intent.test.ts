@@ -14,7 +14,8 @@ import {
 } from "@/core/donate/intent";
 import type { Grant, ShelterEntry } from "@/core/shelters";
 import type { EveryorgClaim } from "@/db/schema";
-import { animalIdentities, animals, donationIntents, shelterNonprofits } from "@/db/schema";
+import { animalIdentities, animals, donationIntents, keepsake, paintingEmailSends, shelterNonprofits } from "@/db/schema";
+import { paintingMailState } from "@/core/email/painting-state";
 import { closeDb, type Db } from "@/db/client";
 import { SKIP_DB_TESTS, testDb, truncateCorpus, truncateDonor } from "./support/db";
 
@@ -242,12 +243,53 @@ describe.skipIf(SKIP_DB_TESTS)("who can be sponsored (ADR-0027 §3)", () => {
 
     it("can be corrected, but an erased one never comes back", async () => {
       const id = await intent();
-      expect(await correctDonorEmail(db, id, "pat.smith@example.org")).toBe(true);
+      expect(await correctDonorEmail(db, id, "pat.smith@example.org")).toBe("saved");
       expect(await intentDonorEmail(db, id)).toBe("pat.smith@example.org");
 
       await db.update(donationIntents).set({ donorEmail: null }).where(eq(donationIntents.id, id));
-      expect(await correctDonorEmail(db, id, "someone@example.org")).toBe(false);
+      expect(await correctDonorEmail(db, id, "someone@example.org")).toBe("erased");
       expect(await intentDonorEmail(db, id)).toBeNull();
+    });
+
+    describe("once the painting's mail exists (ADR-0027 as amended 2026-11-02, decision 4)", () => {
+      async function sendRow(id: string, row: { sentAt?: Date; refusedCode?: string }) {
+        const [made] = await db.insert(keepsake).values({ intentId: id, shareToken: `tok-${id}`, snapshottedAt: new Date() }).returning({ id: keepsake.id });
+        await db.insert(paintingEmailSends).values({ keepsakeId: made.id, claimedAt: new Date(), providerId: "re_1", ...row });
+        return made.id;
+      }
+
+      it("refuses a fix once the mail has gone, and keeps the address it went to", async () => {
+        const id = await intent();
+        await sendRow(id, { sentAt: new Date() });
+        expect(await correctDonorEmail(db, id, "new@example.org")).toBe("already-sent");
+        expect(await intentDonorEmail(db, id)).toBe("pat@example.org");
+        expect(await paintingMailState(db, id)).toBe("sent");
+      });
+
+      it("refuses a fix while a send is claimed and its outcome unknown", async () => {
+        const id = await intent();
+        await sendRow(id, {});
+        expect(await correctDonorEmail(db, id, "new@example.org")).toBe("already-sent");
+        expect(await paintingMailState(db, id)).toBe("on-its-way");
+      });
+
+      it("takes a new address after a bounce, brings it back from erased, and clears the row so it mails again", async () => {
+        const id = await intent();
+        await sendRow(id, { sentAt: new Date(), refusedCode: "bounced" });
+        await db.update(donationIntents).set({ donorEmail: null }).where(eq(donationIntents.id, id));
+        expect(await paintingMailState(db, id)).toBe("bounced");
+        expect(await correctDonorEmail(db, id, "new@example.org")).toBe("resending");
+        expect(await intentDonorEmail(db, id)).toBe("new@example.org");
+        expect(await db.select().from(paintingEmailSends)).toHaveLength(0);
+        expect(await paintingMailState(db, id)).toBe("not-sent");
+      });
+
+      it("never clears a row held for any other refusal", async () => {
+        const id = await intent();
+        await sendRow(id, { refusedCode: "invalid_idempotent_request" });
+        expect(await correctDonorEmail(db, id, "new@example.org")).toBe("already-sent");
+        expect(await db.select().from(paintingEmailSends)).toHaveLength(1);
+      });
     });
 
     describe("which gift the thank-you page means", () => {

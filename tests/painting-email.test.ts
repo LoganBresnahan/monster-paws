@@ -3,7 +3,7 @@ import { emailLinkOrigin, renderPaintingEmail, type PaintingEmailInput } from "@
 
 const input: PaintingEmailInput = {
   to: "pat@example.org",
-  keepsakeId: 7,
+  sendKey: "tok123",
   animalName: "Beetle",
   paintings: [Buffer.from("1"), Buffer.from("2"), Buffer.from("3"), Buffer.from("4")],
   shareToken: "tok123",
@@ -33,6 +33,11 @@ describe("the painting email (ADR-0027 as amended 2026-11-02, ADR-0035)", () => 
     expect(words).not.toMatch(/\$\d|\bamount\b|received|your donation|choose|pick one|favou?rite/);
   });
 
+  it("opens with a title, and the plain text reads whole without it", () => {
+    expect(mail.html).toMatch(/<h1 [^>]*font-size: 28px[^>]*>Thank you for thinking of Beetle\.<\/h1>/);
+    expect(mail.text.startsWith("Thank you for thinking of Beetle. We painted Beetle four ways, and they're all yours to keep.")).toBe(true);
+  });
+
   it("says why this address got it, in the text and the HTML", () => {
     const why = "You're getting this because this address was entered when a gift for Beetle was started on Monster Paws.";
     expect(mail.text).toContain(why);
@@ -57,7 +62,7 @@ describe("the painting email (ADR-0027 as amended 2026-11-02, ADR-0035)", () => 
 
   it("is byte-identical on a retry, or Resend refuses the same key as a different body", () => {
     expect(renderPaintingEmail(input)).toEqual(mail);
-    expect(mail.idempotencyKey).toBe("painting-email-7");
+    expect(mail.idempotencyKey).toBe("painting-email-tok123");
   });
 
   it("escapes a listing's name in the HTML and keeps a usable file name", () => {

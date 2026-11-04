@@ -45,6 +45,9 @@ describe("the Resend sender (ADR-0027, docs read 2026-11-03)", () => {
 
   it.each([
     [429, { name: "rate_limit_exceeded" }, { sent: "no", retry: true }],
+    [429, { name: "daily_quota_exceeded" }, { sent: "no", retry: true }],
+    [401, { name: "missing_api_key" }, { sent: "no", retry: true }],
+    [403, { name: "invalid_api_key" }, { sent: "no", retry: true }],
     [422, { name: "validation_error" }, { sent: "no", retry: false }],
     [409, { name: "concurrent_idempotent_requests" }, { sent: "unknown", retry: true }],
     [409, { name: "invalid_idempotent_request" }, { sent: "unknown", retry: false }],

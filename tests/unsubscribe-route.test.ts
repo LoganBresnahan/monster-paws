@@ -60,6 +60,26 @@ describe.skipIf(SKIP_DB_TESTS)("the unsubscribe route acts only on POST (ADR-003
     expect(await state()).toEqual({ suppressions: 1, address: null });
   });
 
+  it("takes RFC 8058's multipart form too, the encoding it prefers", async () => {
+    const form = new FormData();
+    form.set("List-Unsubscribe", "One-Click");
+    const response = await route.POST(new Request(URL_BASE, { method: "POST", body: form }), ctx());
+    expect(response.status).toBe(200);
+    expect(await state()).toEqual({ suppressions: 1, address: null });
+  });
+
+  it("refuses an oversized body with no content-length, and writes nothing", async () => {
+    const stream = new ReadableStream({
+      start(controller) {
+        controller.enqueue(new Uint8Array(2048));
+        controller.close();
+      },
+    });
+    const request = new Request(URL_BASE, { method: "POST", body: stream, duplex: "half" } as RequestInit);
+    expect((await route.POST(request, ctx())).status).toBe(413);
+    expect(await state()).toEqual({ suppressions: 0, address: "pat@example.org" });
+  });
+
   it("the page's button writes it and goes on to the done page", async () => {
     const response = await post("confirm=yes");
     expect(response.status).toBe(303);

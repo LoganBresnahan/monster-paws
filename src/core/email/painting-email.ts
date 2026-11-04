@@ -13,7 +13,8 @@ export function emailLinkOrigin(env: Env = process.env): string {
 
 export interface PaintingEmailInput {
   to: string;
-  keepsakeId: number;
+  /** unique across databases, because Resend keeps a key per team and a dev run and production share one team */
+  sendKey: string;
   animalName: string;
   /** JPEG bytes, in the order they are shown */
   paintings: readonly Buffer[];
@@ -47,9 +48,8 @@ export function renderPaintingEmail(input: PaintingEmailInput): OutgoingEmail {
 
   const ways = count === 4 ? "four ways" : `${count} ways`;
   const subject = name ? `Your paintings of ${name}` : "Your paintings from Monster Paws";
-  const opening = name
-    ? `Thank you for thinking of ${name}. We painted ${name} ${ways}, and they're all yours to keep.`
-    : `Thank you for thinking of the animal you chose. We painted them ${ways}, and they're all yours to keep.`;
+  const title = `Thank you for thinking of ${name ?? "the animal you chose"}.`;
+  const lead = `We painted ${name ?? "them"} ${ways}, and they're all yours to keep.`;
   const attached = "They're attached to this email too, so you can save them.";
   const share = name ? `Share ${name}'s painting` : "Share the painting";
   const why = `You're getting this because this address was entered when a gift for ${name ?? "an animal"} was started on Monster Paws.`;
@@ -64,7 +64,7 @@ export function renderPaintingEmail(input: PaintingEmailInput): OutgoingEmail {
   }));
 
   const text = [
-    opening,
+    `${title} ${lead}`,
     attached,
     ...(shareUrl ? [`${share}:\n${shareUrl}`] : []),
     why,
@@ -75,7 +75,8 @@ export function renderPaintingEmail(input: PaintingEmailInput): OutgoingEmail {
   const safeName = escapeHtml(name ?? "the animal you chose");
   const html = [
     `<!doctype html><html><body style="font-family: Georgia, serif; font-size: 16px; line-height: 1.5; color: #2b2320; max-width: 36em; margin: 0 auto; padding: 1em;">`,
-    `<p>${escapeHtml(opening)}</p>`,
+    `<h1 style="font-size: 28px; line-height: 1.25; font-weight: bold; margin: 0 0 8px;">${escapeHtml(title)}</h1>`,
+    `<p style="margin-top: 0;">${escapeHtml(lead)}</p>`,
     ...attachments.map(
       (a, index) =>
         `<p><img src="cid:${a.contentId}" alt="Painting ${index + 1} of ${count} of ${safeName}" width="520" style="width: 100%; max-width: 520px; height: auto; border-radius: 8px;"></p>`,
@@ -98,6 +99,6 @@ export function renderPaintingEmail(input: PaintingEmailInput): OutgoingEmail {
     // RFC 8058: a mail client's one-click POSTs here; its GET only leads to the page with a button.
     headers: { "List-Unsubscribe": `<${unsubscribeUrl}>`, "List-Unsubscribe-Post": "List-Unsubscribe=One-Click" },
     attachments,
-    idempotencyKey: `painting-email-${input.keepsakeId}`,
+    idempotencyKey: `painting-email-${input.sendKey}`,
   };
 }

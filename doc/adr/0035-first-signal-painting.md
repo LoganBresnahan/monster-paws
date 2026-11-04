@@ -273,7 +273,8 @@ the send's own detail, except the first, which changes decision 8.
 - **The unsubscribe link carries a mac over the digest.** Question 6's link carries the HMAC, and any POST to it writes a
   permanent row. Without a mac, a stranger could fill `email_suppressions` with made-up digests.
 - **A claim is good for 23 hours.** Resend keeps an idempotency key for 24 (docs, read 2026-11-03), so a send with an unknown
-  outcome retries under the same key for 23 hours, then stops and reports. A second attempt past the key's life could
+  outcome retries under the same key for 23 hours, then stops and reports. The key is the share token, never the keepsake
+  id: a dev run and production share one Resend team, so production's keepsake 1 under a dev run's key would be refused. A second attempt past the key's life could
   mail twice. A refusal that left nothing clears the claim, so its window starts again, and a refusal that can't be
   retried holds the row for a person.
 - **The sent record is `painting_email_sends`, never a `keepsake_fact`.** Facts are deleted by basis, and the sweep would
@@ -301,4 +302,13 @@ the send's own detail, except the first, which changes decision 8.
   Foster or Adopt Me!" or "A310627". `spokenAnimalName` keeps what reads as a name, and when none survives the mail says
   "the animal you chose" and still sends. The keepsake's `name` fact stays as published.
 - **A complaint is a person's stop, so it covers the inbox,** like an unsubscribe, and erases every gift of it. ADR-0027 didn't
-  say which digest. Only a permanent bounce writes a row: the docs' `Temporary` type never does.
+  say which digest. A bounce writes a row only when its type is `Permanent`: a soft one must never cost a donor's only address.
+  `email.suppressed` counts as permanent, and `email.failed` keeps the address and reports.
+- **A bounce stays visible, as ADR-0027 as amended 2026-11-02, decision 4, says.** A permanent bounce raises an alert and sets
+  `refused_code = 'bounced'` on the send row, and `/thanks` says so and takes a new address, which clears that row and mails
+  again under a key of its own. That is the only case that clears a sent row. Once mail has left with no bounce, a fix is refused
+  and the page says what happened, never "Saved." `email.delivered` erases only the address it was sent to.
+  `npm run email -- bounced | readdress` is the by-hand resend for a donor without that browser.
+- **The sweep walks the owed list, a batch a tick.** Gifts that can't send yet, a suppressed address, a set not yet published,
+  would otherwise hold every place and stop all painting mail with nothing reported. An erased address isn't owed at all.
+  What keeps waiting reports at most hourly. A bad API key or a spent quota retries, since it says nothing about a gift.

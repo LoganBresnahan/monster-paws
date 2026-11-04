@@ -2,6 +2,7 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 import { eq, inArray, isNotNull, isNull, and } from "drizzle-orm";
 import type { Db } from "@/db/client";
 import { donationIntents, emailSuppressions, keepsake, paintingEmailSends, resendWebhookEvents } from "@/db/schema";
+import { BOUNCED_CODE } from "@/core/email/painting-state";
 import { exactDigest, inboxDigest } from "@/core/email/suppression";
 
 /** The docs state no number (read 2026-11-03), so this is ours: long enough for clock drift, short enough to stop a replayed capture. */
@@ -31,7 +32,9 @@ export function verifyResendSignature(rawBody: string, headers: SvixHeaders, sec
   });
 }
 
-type Outcome = "replay" | "unreadable" | "ignored" | "erased" | "suppressed";
+type Outcome = "replay" | "unreadable" | "ignored" | "erased" | "suppressed" | "bounced" | "failed";
+
+const sameAddress = (a: string, b: string) => a.trim().toLowerCase() === b.trim().toLowerCase();
 
 interface ResendEvent {
   type?: unknown;
@@ -57,15 +60,17 @@ async function intentOfEmail(tx: Pick<Db, "select">, emailId: string): Promise<s
  * a bounce stays exact, since a server can treat `+` literally (ADR-0035, question 6).
  */
 export async function receiveResendEvent(db: Db, svixId: string, rawBody: string, key: string): Promise<Outcome> {
-  let event: ResendEvent;
+  let event: ResendEvent | null;
   try {
-    event = JSON.parse(rawBody) as ResendEvent;
+    event = JSON.parse(rawBody) as ResendEvent | null;
   } catch {
     return "unreadable";
   }
-  const type = typeof event.type === "string" ? event.type : "unknown";
-  const emailId = typeof event.data?.email_id === "string" ? event.data.email_id : null;
-  const to = Array.isArray(event.data?.to) && typeof event.data.to[0] === "string" ? (event.data.to[0] as string) : null;
+  if (typeof event !== "object" || event === null) return "unreadable";
+  const { data, type: rawType } = event;
+  const type = typeof rawType === "string" ? rawType : "unknown";
+  const emailId = typeof data?.email_id === "string" ? data.email_id : null;
+  const to = Array.isArray(data?.to) && typeof data.to[0] === "string" ? (data.to[0] as string) : null;
 
   return db.transaction(async (tx) => {
     const fresh = await tx
@@ -77,7 +82,10 @@ export async function receiveResendEvent(db: Db, svixId: string, rawBody: string
 
     if (type === "email.delivered") {
       const intentId = emailId ? await intentOfEmail(tx, emailId) : null;
-      if (!intentId) return "ignored";
+      if (!intentId || !to) return "ignored";
+      // Only the address it went to: a newer one is still waiting for its own painting (ADR-0027 as amended 2026-11-02).
+      const [intent] = await tx.select({ donorEmail: donationIntents.donorEmail }).from(donationIntents).where(eq(donationIntents.id, intentId));
+      if (!intent?.donorEmail || !sameAddress(intent.donorEmail, to)) return "ignored";
       // Only a donor with no account: an account's address is theirs until they delete it (ADR-0027 as amended 2026-11-02).
       await tx
         .update(donationIntents)
@@ -86,13 +94,26 @@ export async function receiveResendEvent(db: Db, svixId: string, rawBody: string
       return "erased";
     }
 
-    if (type === "email.bounced") {
-      // Only a permanent one: the docs' `Temporary` type must never write a permanent row.
-      if (event.data?.bounce?.type === "Temporary") return "ignored";
+    // A failed send never left, so nothing is erased: the row's own report is what a person acts on.
+    if (type === "email.failed") return "failed";
+
+    if (type === "email.bounced" || type === "email.suppressed") {
+      // Only ever `Permanent`: a soft bounce, `Transient` or `Undetermined`, must never write a permanent
+      // row and erase the only address we hold. Resend's own list refusing the mail counts as permanent.
+      if (type === "email.bounced" && data?.bounce?.type !== "Permanent") return "ignored";
       if (to) await tx.insert(emailSuppressions).values({ emailHmac: exactDigest(to, key), reason: "bounce" }).onConflictDoNothing();
       const intentId = emailId ? await intentOfEmail(tx, emailId) : null;
-      if (intentId) await tx.update(donationIntents).set({ donorEmail: null }).where(eq(donationIntents.id, intentId));
-      return "suppressed";
+      if (!intentId) return "suppressed";
+      const [intent] = await tx.select({ donorEmail: donationIntents.donorEmail }).from(donationIntents).where(eq(donationIntents.id, intentId));
+      // Fixed since it was sent: the new address is owed its own mail, so clear the row and keep the address.
+      if (intent?.donorEmail && to && !sameAddress(intent.donorEmail, to)) {
+        await tx.delete(paintingEmailSends).where(eq(paintingEmailSends.providerId, emailId!));
+        return "suppressed";
+      }
+      await tx.update(donationIntents).set({ donorEmail: null }).where(eq(donationIntents.id, intentId));
+      // Kept, not deleted: this row is what lets `/thanks` take a new address (ADR-0027 as amended 2026-11-02, decision 4).
+      await tx.update(paintingEmailSends).set({ refusedCode: BOUNCED_CODE }).where(eq(paintingEmailSends.providerId, emailId!));
+      return "bounced";
     }
 
     if (type === "email.complained") {
@@ -110,4 +131,26 @@ export async function receiveResendEvent(db: Db, svixId: string, rawBody: string
 
     return "ignored";
   });
+}
+
+/**
+ * Resend can report a delivery before the sender has written `provider_id`: the event then found no
+ * gift and its `svix-id` is spent, so no retry would ever erase the address. Called straight after that
+ * write, this finishes the job.
+ */
+export async function settleEarlyDelivery(db: Db, emailId: string, sentTo: string): Promise<void> {
+  const [early] = await db
+    .select({ svixId: resendWebhookEvents.svixId })
+    .from(resendWebhookEvents)
+    .where(and(eq(resendWebhookEvents.emailId, emailId), eq(resendWebhookEvents.eventType, "email.delivered")))
+    .limit(1);
+  if (!early) return;
+  const intentId = await intentOfEmail(db, emailId);
+  if (!intentId) return;
+  const [intent] = await db.select({ donorEmail: donationIntents.donorEmail }).from(donationIntents).where(eq(donationIntents.id, intentId));
+  if (!intent?.donorEmail || !sameAddress(intent.donorEmail, sentTo)) return;
+  await db
+    .update(donationIntents)
+    .set({ donorEmail: null })
+    .where(and(eq(donationIntents.id, intentId), isNull(donationIntents.accountId)));
 }

@@ -175,8 +175,9 @@ async function startKeepsakeSweep(boss: PgBoss): Promise<() => void> {
 const EMAIL_SWEEP_MS = 60_000;
 
 /**
- * Only with `EMAIL_SWEEP=on`, which the droplet's compose must never set until the painting email's
- * carry-ins land: nothing there erases an address on delivery yet (doc/roadmap.md, ADR-0035).
+ * Only with `EMAIL_SWEEP=on`, which the droplet must never set before oplog 0029's first real send
+ * proves delivery and the webhook's erase (ADR-0035). Walks the owed list a batch a tick, so gifts that
+ * can't send yet never hold up the rest.
  */
 function startPaintingEmailSweep(): () => void {
   if (process.env.EMAIL_SWEEP !== "on") return () => {};
@@ -192,21 +193,26 @@ function startPaintingEmailSweep(): () => void {
     return () => {};
   }
   let running = false;
+  let after: number | undefined;
+  let lastAlert = 0;
   const timer = setInterval(async () => {
     if (running) return;
     running = true;
     try {
-      const report = await runPaintingEmailTick(getDb(DATABASE_URL));
-      const { via, sent, noAddress, suppressed, stale, held, incomplete, artUnreadable, failures } = report;
-      const failed = Object.keys(failures).length > 0;
-      if (sent + noAddress + suppressed + stale + held + incomplete + artUnreadable > 0 || failed) {
-        console.log(JSON.stringify({ event: "painting_email.sweep", ...report, via }));
+      const report = await runPaintingEmailTick(getDb(DATABASE_URL), process.env, { afterKeepsakeId: after });
+      after = report.lastKeepsakeId ?? undefined;
+      const { sent, suppressed, stale, held, incomplete, artUnreadable, failures } = report;
+      const failureCodes = Object.keys(failures);
+      if (sent + suppressed + stale + held + incomplete + artUnreadable > 0 || failureCodes.length > 0) {
+        console.log(JSON.stringify({ event: "painting_email.sweep", ...report }));
       }
-      if (failed || stale > 0) {
-        Sentry.captureMessage(`painting email sweep: ${stale} stale, failures ${Object.keys(failures).join(",") || "none"}`, {
-          level: "error",
-          tags: { job: "painting_email.sweep" },
-        });
+      const now = Date.now();
+      if ((failureCodes.length > 0 || stale + incomplete + artUnreadable > 0) && now - lastAlert >= WEBHOOK_REPEAT_ALERT_MS) {
+        lastAlert = now;
+        Sentry.captureMessage(
+          `painting email waiting: ${stale} stale, ${incomplete} incomplete, ${artUnreadable} unreadable, failures ${failureCodes.join(",") || "none"}`,
+          { level: "error", tags: { job: "painting_email.sweep" } },
+        );
       }
     } catch (err) {
       // The code alone: a failed query's message can carry its parameters, here an address (ADR-0010).

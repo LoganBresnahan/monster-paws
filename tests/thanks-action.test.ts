@@ -34,7 +34,7 @@ describe("fixing the address on the thank-you page", () => {
     redirect.mockImplementation((url: string) => {
       throw Object.assign(new Error("NEXT_REDIRECT"), { url });
     });
-    correctDonorEmail.mockResolvedValue(true);
+    correctDonorEmail.mockResolvedValue("saved");
   });
 
   afterEach(() => {
@@ -65,9 +65,21 @@ describe("fixing the address on the thank-you page", () => {
   });
 
   it("doesn't say saved when the address was already erased", async () => {
-    correctDonorEmail.mockResolvedValue(false);
+    correctDonorEmail.mockResolvedValue("erased");
     const { fixDonorEmail } = await import("@/app/thanks/actions");
     await expect(fixDonorEmail(form({ email: ADDRESS, gift: intentRef(COOKIE_ID) }))).rejects.toMatchObject({ url: "/thanks" });
+  });
+
+  it("says the painting has gone, never saved, once the mail has left", async () => {
+    correctDonorEmail.mockResolvedValue("already-sent");
+    const { fixDonorEmail } = await import("@/app/thanks/actions");
+    await expect(fixDonorEmail(form({ email: ADDRESS, gift: intentRef(COOKIE_ID) }))).rejects.toMatchObject({ url: "/thanks?problem=sent" });
+  });
+
+  it("says saved when a bounced gift takes its new address", async () => {
+    correctDonorEmail.mockResolvedValue("resending");
+    const { fixDonorEmail } = await import("@/app/thanks/actions");
+    await expect(fixDonorEmail(form({ email: ADDRESS, gift: intentRef(COOKIE_ID) }))).rejects.toMatchObject({ url: "/thanks?saved=1" });
   });
 
   it("refuses what isn't an address, and writes nothing", async () => {

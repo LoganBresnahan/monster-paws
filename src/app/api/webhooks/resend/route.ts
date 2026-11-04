@@ -1,4 +1,5 @@
 import * as Sentry from "@sentry/nextjs";
+import { readBoundedBody } from "@/core/email/bounded-body";
 import { receiveResendEvent, verifyResendSignature } from "@/core/email/resend-webhook";
 import { suppressionKey } from "@/core/email/suppression";
 import { failureCode } from "@/core/observability";
@@ -7,25 +8,6 @@ import { getDb } from "@/db/client";
 /** No body, whatever happened: this path is on the public internet. */
 const bare = (status: number) => new Response(null, { status });
 const MAX_BODY_BYTES = 256 * 1024;
-
-/** `null` past the limit: a missing or false content-length must not get the whole body into memory. */
-async function readBounded(request: Request): Promise<string | null> {
-  const chunks: Uint8Array[] = [];
-  let bytes = 0;
-  const reader = request.body?.getReader();
-  while (reader) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    bytes += value.byteLength;
-    if (bytes > MAX_BODY_BYTES) {
-      await reader.cancel();
-      return null;
-    }
-    chunks.push(value);
-  }
-  // Never TextDecoder: it strips a BOM, and the signature covers the raw bytes.
-  return Buffer.concat(chunks).toString("utf8");
-}
 
 /**
  * Resend's signed events (ADR-0027 as amended 2026-11-02, ADR-0035). Answers as if nothing lived here
@@ -38,9 +20,9 @@ export async function POST(request: Request) {
   const key = suppressionKey();
   if (!key) return bare(503);
 
-  if (Number(request.headers.get("content-length") ?? 0) > MAX_BODY_BYTES) return bare(413);
-  const body = await readBounded(request);
-  if (body === null) return bare(413);
+  const bytes = await readBoundedBody(request, MAX_BODY_BYTES);
+  if (bytes === null) return bare(413);
+  const body = bytes.toString("utf8");
 
   const headers = {
     id: request.headers.get("svix-id"),
@@ -55,6 +37,9 @@ export async function POST(request: Request) {
   try {
     const outcome = await receiveResendEvent(getDb(), headers.id!, body, key);
     if (outcome === "unreadable") console.warn("[resend-webhook] signed body did not parse");
+    if (outcome === "failed") Sentry.captureMessage("resend reports a painting email failed to send", { level: "error" });
+    // A person acts on this: `npm run email -- bounced` names the keepsake, never the address (ADR-0027 as amended 2026-11-02, decision 4).
+    if (outcome === "bounced") Sentry.captureMessage("a painting email bounced: the donor must give a new address", { level: "error" });
     return bare(200);
   } catch (err) {
     // The code alone: a failed query's message can carry its parameters, here an address (ADR-0010).

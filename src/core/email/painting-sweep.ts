@@ -1,17 +1,17 @@
-import { and, asc, eq, inArray, isNull, or, sql } from "drizzle-orm";
+import { and, asc, eq, gt, inArray, isNotNull, isNull, or, sql } from "drizzle-orm";
 import sharp from "sharp";
 import type { Db } from "@/db/client";
 import { donationIntents, keepsake, keepsakeFact, paintingEmailSends } from "@/db/schema";
 import { type ArtReader, artReaderFromEnv } from "@/core/email/art-source";
 import { emailLinkOrigin, renderPaintingEmail } from "@/core/email/painting-email";
+import { settleEarlyDelivery } from "@/core/email/resend-webhook";
 import { chooseEmailSender, EmailSendError, type EmailSender } from "@/core/email/sender";
-import { isSuppressed, suppressionKey, unsubscribeToken } from "@/core/email/suppression";
+import { exactDigest, isSuppressed, suppressionKey, unsubscribeToken } from "@/core/email/suppression";
 import { FACT, type ArtFact } from "@/core/keepsake";
 
 export interface OwedPainting {
   keepsakeId: number;
-  /** null once erased: nothing can be sent */
-  to: string | null;
+  to: string;
   /** null when the keepsake has no name fact: nothing is sent with a blank where the name goes */
   animalName: string | null;
   /** names the published copy on the media hostname, whether or not the mail links to it */
@@ -34,7 +34,6 @@ export interface SweepOptions {
 /** Counts and codes only, never an address (ADR-0010). */
 export interface SweepReport {
   sent: number;
-  noAddress: number;
   suppressed: number;
   /** claimed, not known to have gone, and past the idempotency window: a person looks */
   stale: number;
@@ -57,13 +56,18 @@ export async function paintingJpeg(bytes: Buffer): Promise<Buffer> {
 }
 
 const PAINTINGS_PER_EMAIL = 4;
+const TICK_BATCH = 10;
 
 /**
- * Four `art` candidates and not yet sent or refused, unclaimed first so a stale claim can't hold up a
- * new gift (doc/plans/demo-chain-contract.md). Facts deleted by basis take the keepsake out of this
- * list, so a purged gift is never mailed.
+ * Four `art` candidates, an address still held, and not yet sent or refused, by keepsake id
+ * (doc/plans/demo-chain-contract.md). Facts deleted by basis take the keepsake out of this list, so a
+ * purged gift is never mailed. Never read from the start every tick: gifts that can't send yet would
+ * hold every place and stop all mail, so the sweep walks on with `afterKeepsakeId`.
  */
-export async function loadOwedPaintings(db: Db, options: { limit?: number; keepsakeId?: number } = {}): Promise<OwedPainting[]> {
+export async function loadOwedPaintings(
+  db: Db,
+  options: { limit?: number; keepsakeId?: number; afterKeepsakeId?: number } = {},
+): Promise<OwedPainting[]> {
   const rows = await db
     .select({ keepsakeId: keepsake.id, shareToken: keepsake.shareToken, to: donationIntents.donorEmail })
     .from(keepsake)
@@ -72,12 +76,14 @@ export async function loadOwedPaintings(db: Db, options: { limit?: number; keeps
     .where(
       and(
         options.keepsakeId === undefined ? undefined : eq(keepsake.id, options.keepsakeId),
+        options.afterKeepsakeId === undefined ? undefined : gt(keepsake.id, options.afterKeepsakeId),
+        isNotNull(donationIntents.donorEmail),
         or(isNull(paintingEmailSends.keepsakeId), and(isNull(paintingEmailSends.sentAt), isNull(paintingEmailSends.refusedCode))),
         sql`(select count(distinct f.value->>'candidate') from ${keepsakeFact} f where f.keepsake_id = ${keepsake.id} and f.field = ${FACT.art}) >= ${PAINTINGS_PER_EMAIL}`,
       ),
     )
-    .orderBy(sql`${paintingEmailSends.keepsakeId} nulls first`, asc(keepsake.id))
-    .limit(options.limit ?? 10);
+    .orderBy(asc(keepsake.id))
+    .limit(options.limit ?? TICK_BATCH);
   if (rows.length === 0) return [];
 
   const facts = await db
@@ -96,7 +102,7 @@ export async function loadOwedPaintings(db: Db, options: { limit?: number; keeps
     const name = own.filter((fact) => fact.field === FACT.name).at(-1)?.value;
     return {
       keepsakeId: row.keepsakeId,
-      to: row.to,
+      to: row.to!,
       animalName: typeof name === "string" && name ? name : null,
       shareToken: row.shareToken,
       artKeys: [...art].sort(([a], [b]) => a - b).slice(0, PAINTINGS_PER_EMAIL).map(([, key]) => key),
@@ -104,7 +110,8 @@ export async function loadOwedPaintings(db: Db, options: { limit?: number; keeps
   });
 }
 
-type Claim = "go" | "stale" | "held" | "sent";
+/** `new` is this attempt's own claim; `retry` means an earlier attempt's outcome may be unknown. */
+type Claim = "new" | "retry" | "stale" | "held" | "sent";
 
 async function claimSend(db: Db, keepsakeId: number, now: Date): Promise<Claim> {
   const inserted = await db
@@ -112,11 +119,11 @@ async function claimSend(db: Db, keepsakeId: number, now: Date): Promise<Claim> 
     .values({ keepsakeId, claimedAt: now })
     .onConflictDoNothing()
     .returning({ keepsakeId: paintingEmailSends.keepsakeId });
-  if (inserted.length > 0) return "go";
+  if (inserted.length > 0) return "new";
   const [row] = await db.select().from(paintingEmailSends).where(eq(paintingEmailSends.keepsakeId, keepsakeId));
   if (row.sentAt) return "sent";
   if (row.refusedCode) return "held";
-  return now.getTime() - row.claimedAt.getTime() > CLAIM_WINDOW_MS ? "stale" : "go";
+  return now.getTime() - row.claimedAt.getTime() > CLAIM_WINDOW_MS ? "stale" : "retry";
 }
 
 /**
@@ -127,13 +134,9 @@ async function claimSend(db: Db, keepsakeId: number, now: Date): Promise<Claim> 
 export async function sendOwedPaintings(db: Db, options: SweepOptions): Promise<SweepReport> {
   const { key, sender, origin, readArt } = options;
   const now = options.now ?? new Date();
-  const report: SweepReport = { sent: 0, noAddress: 0, suppressed: 0, stale: 0, held: 0, incomplete: 0, artUnreadable: 0, failures: {} };
+  const report: SweepReport = { sent: 0, suppressed: 0, stale: 0, held: 0, incomplete: 0, artUnreadable: 0, failures: {} };
 
   for (const owed of options.owed) {
-    if (!owed.to) {
-      report.noAddress++;
-      continue;
-    }
     if (await isSuppressed(db, owed.to, key)) {
       report.suppressed++;
       continue;
@@ -154,11 +157,13 @@ export async function sendOwedPaintings(db: Db, options: SweepOptions): Promise<
     const claim = await claimSend(db, owed.keepsakeId, now);
     if (claim === "stale") report.stale++;
     if (claim === "held") report.held++;
-    if (claim !== "go") continue;
+    if (claim !== "new" && claim !== "retry") continue;
 
     const email = renderPaintingEmail({
       to: owed.to,
-      keepsakeId: owed.keepsakeId,
+      // Never the keepsake id alone: production's keepsake 1 under a dev run's key would be refused for a
+      // day as a different body. The digest gives a bounced gift's new address a key of its own.
+      sendKey: `${owed.shareToken ?? `keepsake-${owed.keepsakeId}`}-${exactDigest(owed.to, key).slice(0, 16)}`,
       animalName: owed.animalName,
       paintings,
       shareToken: owed.displayToken === undefined ? owed.shareToken : owed.displayToken,
@@ -172,6 +177,7 @@ export async function sendOwedPaintings(db: Db, options: SweepOptions): Promise<
         .update(paintingEmailSends)
         .set({ sentAt: new Date(), providerId: sent.id })
         .where(eq(paintingEmailSends.keepsakeId, owed.keepsakeId));
+      await settleEarlyDelivery(db, sent.id, owed.to);
       report.sent++;
     } catch (err) {
       const failure = err instanceof EmailSendError ? err : new EmailSendError("unexpected", "unknown", true);
@@ -181,13 +187,33 @@ export async function sendOwedPaintings(db: Db, options: SweepOptions): Promise<
           .update(paintingEmailSends)
           .set({ refusedCode: failure.code })
           .where(eq(paintingEmailSends.keepsakeId, owed.keepsakeId));
-      } else if (failure.sent === "no") {
-        // Nothing left, so the idempotency window starts again with the next attempt.
+      } else if (failure.sent === "no" && claim === "new") {
+        // Only a claim this attempt made: an earlier attempt's unknown outcome must keep its clock, or a
+        // later send could outlive Resend's key and mail twice.
         await db.delete(paintingEmailSends).where(eq(paintingEmailSends.keepsakeId, owed.keepsakeId));
       }
     }
   }
   return report;
+}
+
+export interface PaintingEmailTickReport extends SweepReport {
+  /** where the next tick starts; null means this tick reached the end, so the next starts over */
+  lastKeepsakeId: number | null;
+}
+
+/** One tick with its parts given, so a test can run the walk with no real sender. */
+export async function paintingEmailTick(
+  db: Db,
+  parts: Omit<SweepOptions, "owed"> & { hideShareLinks?: boolean },
+  only: { keepsakeId?: number; afterKeepsakeId?: number } = {},
+): Promise<PaintingEmailTickReport> {
+  const owed = await loadOwedPaintings(db, { ...only, limit: TICK_BATCH });
+  const report = await sendOwedPaintings(db, {
+    ...parts,
+    owed: parts.hideShareLinks ? owed.map((painting) => ({ ...painting, displayToken: null })) : owed,
+  });
+  return { ...report, lastKeepsakeId: owed.length === TICK_BATCH ? owed[owed.length - 1].keepsakeId : null };
 }
 
 /**
@@ -198,18 +224,15 @@ export async function sendOwedPaintings(db: Db, options: SweepOptions): Promise<
 export async function runPaintingEmailTick(
   db: Db,
   env: Record<string, string | undefined> = process.env,
-  only: { keepsakeId?: number } = {},
-): Promise<SweepReport & { via: EmailSender["via"] }> {
+  only: { keepsakeId?: number; afterKeepsakeId?: number } = {},
+): Promise<PaintingEmailTickReport & { via: EmailSender["via"] }> {
   const key = suppressionKey(env);
   if (!key) throw new Error("EMAIL_SUPPRESSION_KEY is not set: nothing is sent");
   const sender = chooseEmailSender(env);
-  const owed = await loadOwedPaintings(db, only);
-  const report = await sendOwedPaintings(db, {
-    key,
-    sender,
-    origin: emailLinkOrigin(env),
-    owed: env.EMAIL_SHARE_LINKS === "off" ? owed.map((painting) => ({ ...painting, displayToken: null })) : owed,
-    readArt: artReaderFromEnv(env),
-  });
+  const report = await paintingEmailTick(
+    db,
+    { key, sender, origin: emailLinkOrigin(env), readArt: artReaderFromEnv(env), hideShareLinks: env.EMAIL_SHARE_LINKS === "off" },
+    only,
+  );
   return { ...report, via: sender.via };
 }

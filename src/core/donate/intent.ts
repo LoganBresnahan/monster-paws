@@ -1,7 +1,8 @@
 import { createHash, randomBytes } from "node:crypto";
-import { and, desc, eq, isNotNull, isNull, lt, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, isNotNull, isNull, lt, sql } from "drizzle-orm";
 import { visibleAnimalById } from "@/core/animals";
 import type { EveryorgEnv } from "@/core/donate/link";
+import { paintingMailState } from "@/core/email/painting-state";
 import {
   hasGrant,
   SHELTER_EXCLUSIONS,
@@ -12,7 +13,7 @@ import {
 } from "@/core/shelters";
 import type { Source } from "@/core/sources";
 import type { Db } from "@/db/client";
-import { animalIdentities, animals, donationIntents, shelterNonprofits } from "@/db/schema";
+import { animalIdentities, animals, donationIntents, keepsake, paintingEmailSends, shelterNonprofits } from "@/db/schema";
 
 /** 128 CSPRNG bits, never sequential: knowing an id is what lets a forged webhook land (ADR-0027 §4). */
 export function mintIntentId(): string {
@@ -209,18 +210,33 @@ export async function intentDonorEmail(db: Db, intentId: string): Promise<string
   return row?.donorEmail ?? null;
 }
 
+export type AddressFix = "saved" | "resending" | "already-sent" | "erased";
+
 /**
  * A donor fixing a typo, which is how the address gets checked without a second email
- * (ADR-0027 as amended 2026-11-02). Never writes over an erased address: that would
- * bring back a row we told the donor was gone.
+ * (ADR-0027 as amended 2026-11-02). Never writes over an erased address, which would bring back a row
+ * we told the donor was gone, except after a bounce, when the page asks for a new one and the send row
+ * is cleared so it mails again (decision 4). Never changes the address once the mail has left: nothing
+ * would go to the new one, and the page would say "Saved." about a painting already gone.
  */
-export async function correctDonorEmail(db: Db, intentId: string, donorEmail: string): Promise<boolean> {
-  const changed = await db
-    .update(donationIntents)
-    .set({ donorEmail })
-    .where(and(eq(donationIntents.id, intentId), isNotNull(donationIntents.donorEmail)))
-    .returning({ id: donationIntents.id });
-  return changed.length > 0;
+export async function correctDonorEmail(db: Db, intentId: string, donorEmail: string): Promise<AddressFix> {
+  return db.transaction(async (tx) => {
+    const state = await paintingMailState(tx, intentId);
+    if (state === "on-its-way" || state === "sent") return "already-sent";
+    if (state === "bounced") {
+      await tx.update(donationIntents).set({ donorEmail }).where(eq(donationIntents.id, intentId));
+      await tx
+        .delete(paintingEmailSends)
+        .where(inArray(paintingEmailSends.keepsakeId, tx.select({ id: keepsake.id }).from(keepsake).where(eq(keepsake.intentId, intentId))));
+      return "resending";
+    }
+    const changed = await tx
+      .update(donationIntents)
+      .set({ donorEmail })
+      .where(and(eq(donationIntents.id, intentId), isNotNull(donationIntents.donorEmail)))
+      .returning({ id: donationIntents.id });
+    return changed.length > 0 ? "saved" : "erased";
+  });
 }
 
 export const ABANDONED_AFTER_DAYS = 30;

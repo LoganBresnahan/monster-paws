@@ -631,10 +631,12 @@ after it, if at all.
        ▼
   art email                         sendOwedPaintings(), ADR-0035: isSuppressed() on
        │                            both digests, no key no send; a painting_email_sends claim
-       │                            before the send, Idempotency-Key painting-email-<keepsake>;
+       │                            before the send, Idempotency-Key painting-email-<share token>;
        │                            to donor_email: all four paintings inline, a Share link to
        │                            /share/<token>, one-click unsubscribe; the gift's only
-       │                            email. art-source: the store, or the media hostname by token.
+       │                            email, unless a permanent bounce sets refused_code='bounced', when
+       │                            /thanks takes a new address and correctDonorEmail() clears that
+       │                            row. art-source: the store, or the media hostname by token.
        │                            Mailpit by default; EMAIL_LIVE=1 Resend to one allowed address;
        │                            production on the droplet. Only EMAIL_SWEEP=on sends on its own;
        │                            otherwise npm run email -- send-owed. (planned) confirmed first, never
@@ -650,7 +652,7 @@ after it, if at all.
        │                            the raw body → receiveResendEvent(), one resend_webhook_events
        │                            row per svix-id, no address in it. No account: null on
        │                            email.delivered, never email.sent. A permanent email.bounced
-       │                            writes the exact digest and erases this gift's; email.complained
+       │                            or email.suppressed writes the exact digest and erases this gift's; email.complained
        │                            writes the inbox's and erases all of it. A suppression stays.
        │                            (planned) the address off Resend's list
        ▼

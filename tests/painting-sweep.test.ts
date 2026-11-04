@@ -2,9 +2,11 @@ import { eq } from "drizzle-orm";
 import sharp from "sharp";
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { closeDb, type Db } from "@/db/client";
-import { donationIntents, emailSuppressions, keepsake, keepsakeFact, paintingEmailSends } from "@/db/schema";
+import { donationIntents, emailSuppressions, keepsake, keepsakeFact, paintingEmailSends, resendWebhookEvents } from "@/db/schema";
 import { CREW_BASIS, FACT } from "@/core/keepsake";
-import { CLAIM_WINDOW_MS, loadOwedPaintings, type OwedPainting, paintingJpeg, runPaintingEmailTick, sendOwedPaintings, type SweepOptions } from "@/core/email/painting-sweep";
+import { CLAIM_WINDOW_MS, loadOwedPaintings, type OwedPainting, paintingEmailTick, paintingJpeg, runPaintingEmailTick, sendOwedPaintings, type SweepOptions } from "@/core/email/painting-sweep";
+import { correctDonorEmail } from "@/core/donate/intent";
+import { receiveResendEvent } from "@/core/email/resend-webhook";
 import { EmailSendError, type EmailSender, type OutgoingEmail } from "@/core/email/sender";
 import { inboxDigest } from "@/core/email/suppression";
 import { SKIP_DB_TESTS, testDb, truncateDonor } from "./support/db";
@@ -80,6 +82,40 @@ describe.skipIf(SKIP_DB_TESTS)("the painting email sweep (ADR-0035)", () => {
     expect(JSON.stringify(recorded)).not.toContain("pat@");
   });
 
+  it("keys the send on the share token and the address: never the keepsake id, and new for a new address", async () => {
+    const sender = sending(async () => {
+      throw new EmailSendError("network", "unknown", true);
+    });
+    await run(sender, { owed: [owed({ shareToken: "NIeFjmBKXcQOQzteMmfKgA" })] });
+    await run(sender, { owed: [owed({ shareToken: "NIeFjmBKXcQOQzteMmfKgA" })] });
+    await run(sender, { owed: [owed({ shareToken: "NIeFjmBKXcQOQzteMmfKgA", to: "new@example.org" })] });
+    const [first, retry, moved] = sender.send.mock.calls.map(([mail]) => mail.idempotencyKey);
+    expect(first).toMatch(/^painting-email-NIeFjmBKXcQOQzteMmfKgA-[0-9a-f]{16}$/);
+    expect(retry).toBe(first);
+    expect(moved).not.toBe(first);
+  });
+
+  it("a bounced gift's new address mails again, end to end", async () => {
+    await db.insert(keepsakeFact).values([
+      { keepsakeId, field: FACT.name, value: "Plum", basis: CREW_BASIS, snapshottedAt: new Date() },
+      ...[1, 2, 3, 4].map((candidate) => ({ keepsakeId, field: FACT.art, value: { key: `k/${candidate}.jpg`, candidate }, basis: CREW_BASIS, snapshottedAt: new Date() })),
+    ]);
+    const sender = sending(async (mail) => ({ id: `re_${mail.to}` }));
+    const tick = async () => paintingEmailTick(db, { key: KEY, sender, origin: "https://monsterpaws.org", readArt: async () => png });
+
+    await tick();
+    const bounce = JSON.stringify({ type: "email.bounced", data: { email_id: `re_${ADDRESS}`, to: [ADDRESS], bounce: { type: "Permanent" } } });
+    expect(await receiveResendEvent(db, "m1", bounce, KEY)).toBe("bounced");
+    expect(await loadOwedPaintings(db)).toEqual([]);
+
+    expect(await correctDonorEmail(db, "intent-a", "fixed@example.org")).toBe("resending");
+    await tick();
+    expect(sender.send.mock.calls.map(([mail]) => mail.to)).toEqual([ADDRESS, "fixed@example.org"]);
+    expect((await row()).sentAt).not.toBeNull();
+    await tick();
+    expect(sender.send).toHaveBeenCalledTimes(2);
+  });
+
   it("a second tick never mails again", async () => {
     const sender = sending();
     await run(sender);
@@ -95,12 +131,6 @@ describe.skipIf(SKIP_DB_TESTS)("the painting email sweep (ADR-0035)", () => {
     expect(report.suppressed).toBe(1);
     expect(sender.send).not.toHaveBeenCalled();
     expect(await row()).toBeUndefined();
-  });
-
-  it("skips an erased address", async () => {
-    const sender = sending();
-    expect((await run(sender, { owed: [owed({ to: null })] })).noAddress).toBe(1);
-    expect(sender.send).not.toHaveBeenCalled();
   });
 
   it("leaves a painting it can't read owed, with no claim", async () => {
@@ -133,6 +163,31 @@ describe.skipIf(SKIP_DB_TESTS)("the painting email sweep (ADR-0035)", () => {
     const report = await run(sender, { now: new Date(start.getTime() + CLAIM_WINDOW_MS + 1) });
     expect(report.stale).toBe(1);
     expect(sender.send).toHaveBeenCalledTimes(1);
+  });
+
+  it("keeps an earlier attempt's clock when a later attempt is refused, so a late send can't outlive Resend's key", async () => {
+    const start = new Date("2026-11-04T00:00:00Z");
+    const later = new Date(start.getTime() + 22 * 60 * 60 * 1000);
+    const past = new Date(start.getTime() + 25 * 60 * 60 * 1000);
+    let calls = 0;
+    const sender = sending(async () => {
+      calls += 1;
+      if (calls === 1) throw new EmailSendError("network", "unknown", true);
+      throw new EmailSendError("rate_limit_exceeded", "no", true);
+    });
+    await run(sender, { now: start });
+    await run(sender, { now: later });
+    expect((await row()).claimedAt).toEqual(start);
+    const report = await run(sender, { now: past });
+    expect(report.stale).toBe(1);
+    expect(sender.send).toHaveBeenCalledTimes(2);
+  });
+
+  it("erases at once when Resend reported the delivery before the send was recorded", async () => {
+    await db.insert(resendWebhookEvents).values({ svixId: "m1", eventType: "email.delivered", emailId: "re_early" });
+    await run(sending(async () => ({ id: "re_early" })));
+    const [intent] = await db.select().from(donationIntents).where(eq(donationIntents.id, "intent-a"));
+    expect(intent.donorEmail).toBeNull();
   });
 
   it("releases the claim when nothing left and a retry can work, so the window starts again", async () => {
@@ -183,6 +238,12 @@ describe.skipIf(SKIP_DB_TESTS)("the painting email sweep (ADR-0035)", () => {
       await db.update(paintingEmailSends).set({ refusedCode: "validation_error" });
       expect(await loadOwedPaintings(db)).toEqual([]);
       await db.update(paintingEmailSends).set({ refusedCode: null, sentAt: new Date() });
+      expect(await loadOwedPaintings(db)).toEqual([]);
+    });
+
+    it("an erased address is not owed", async () => {
+      await db.insert(keepsakeFact).values([fact(FACT.name, "Plum"), ...fourArt()]);
+      await db.update(donationIntents).set({ donorEmail: null });
       expect(await loadOwedPaintings(db)).toEqual([]);
     });
 
@@ -240,5 +301,104 @@ describe.skipIf(SKIP_DB_TESTS)("the painting email sweep (ADR-0035)", () => {
     const jpeg = await paintingJpeg(png);
     expect(jpeg.subarray(0, 2).toString("hex")).toBe("ffd8");
     expect(await paintingJpeg(jpeg)).toBe(jpeg);
+  });
+
+  describe("gifts that can't send yet never stop the rest", () => {
+    const seeded: number[] = [];
+
+    async function gift(n: number, address: string | null): Promise<number> {
+      const intentId = `intent-walk-${n}`;
+      await db.insert(donationIntents).values({
+        id: intentId,
+        animalSource: "rescuegroups",
+        animalExternalId: `${n}`,
+        nonprofitSlug: "quiet-hollow",
+        nonprofitEin: "000000000",
+        donorEmail: address,
+      });
+      const [row] = await db
+        .insert(keepsake)
+        .values({ intentId, shareToken: `walk-token-${n}`, snapshottedAt: new Date() })
+        .returning({ id: keepsake.id });
+      await db.insert(keepsakeFact).values([
+        { keepsakeId: row.id, field: FACT.name, value: "Plum", basis: CREW_BASIS, snapshottedAt: new Date() },
+        ...[1, 2, 3, 4].map((candidate) => ({
+          keepsakeId: row.id,
+          field: FACT.art,
+          value: { key: `keepsakes/${row.id}/${candidate}.jpg`, candidate },
+          basis: CREW_BASIS,
+          snapshottedAt: new Date(),
+        })),
+      ]);
+      return row.id;
+    }
+
+    async function walk(sender: EmailSender, readArt: SweepOptions["readArt"], ticks: number) {
+      let after: number | undefined;
+      const reports = [];
+      for (let tick = 0; tick < ticks; tick++) {
+        const report = await paintingEmailTick(
+          db,
+          { key: KEY, sender, origin: "https://monsterpaws.org", readArt },
+          { afterKeepsakeId: after },
+        );
+        after = report.lastKeepsakeId ?? undefined;
+        reports.push(report);
+      }
+      return reports;
+    }
+
+    beforeEach(() => {
+      seeded.length = 0;
+    });
+
+    it("10 unreadable sets ahead of a good gift: the good one goes within two ticks", async () => {
+      for (let n = 0; n < 10; n++) seeded.push(await gift(n, `stuck${n}@example.org`));
+      const good = await gift(10, "good@example.org");
+      const sender = sending();
+      const readArt: SweepOptions["readArt"] = async (art) => {
+        if (art.shareToken !== "walk-token-10") throw new Error("not published");
+        return png;
+      };
+      await walk(sender, readArt, 2);
+      expect(sender.send.mock.calls.map(([mail]) => mail.to)).toEqual(["good@example.org"]);
+      expect((await db.select().from(paintingEmailSends).where(eq(paintingEmailSends.keepsakeId, good)))[0].sentAt).not.toBeNull();
+    });
+
+    it("10 suppressed gifts ahead of a good gift: the good one goes within two ticks", async () => {
+      for (let n = 0; n < 10; n++) {
+        const address = `stop${n}@example.org`;
+        await gift(n, address);
+        await db.insert(emailSuppressions).values({ emailHmac: inboxDigest(address, KEY), reason: "unsubscribe" });
+      }
+      await gift(10, "good@example.org");
+      const sender = sending();
+      await walk(sender, async () => png, 2);
+      expect(sender.send.mock.calls.map(([mail]) => mail.to)).toEqual(["good@example.org"]);
+    });
+
+    it("erased gifts take no place at all", async () => {
+      for (let n = 0; n < 10; n++) await gift(n, null);
+      await gift(10, "good@example.org");
+      const sender = sending();
+      await walk(sender, async () => png, 1);
+      expect(sender.send.mock.calls.map(([mail]) => mail.to)).toEqual(["good@example.org"]);
+    });
+
+    it("starts over after the end, so a gift that becomes readable is reached again", async () => {
+      await gift(0, "later@example.org");
+      let readable = false;
+      const sender = sending();
+      const readArt: SweepOptions["readArt"] = async () => {
+        if (!readable) throw new Error("not published");
+        return png;
+      };
+      const [first] = await walk(sender, readArt, 1);
+      expect(first.artUnreadable).toBe(1);
+      expect(first.lastKeepsakeId).toBeNull();
+      readable = true;
+      await walk(sender, readArt, 1);
+      expect(sender.send).toHaveBeenCalledTimes(1);
+    });
   });
 });

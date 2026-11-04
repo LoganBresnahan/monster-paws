@@ -3,7 +3,8 @@
 import * as Sentry from "@sentry/nextjs";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { correctDonorEmail, INTENT_COOKIE, intentIdsOf, intentRef, parseDonorEmail } from "@/core/donate/intent";
+import { type AddressFix, correctDonorEmail, INTENT_COOKIE, intentIdsOf, intentRef, parseDonorEmail } from "@/core/donate/intent";
+import { isSuppressed, suppressionKey } from "@/core/email/suppression";
 import { failureCode } from "@/core/observability";
 import { getDb } from "@/db/client";
 
@@ -18,11 +19,15 @@ export async function fixDonorEmail(formData: FormData): Promise<void> {
   if (!donorEmail) redirect("/thanks?problem=email");
 
   const db = getDb();
-  let saved = false;
+  let fix: AddressFix | null = null;
+  let suppressed = false;
   try {
     const ids = intentIdsOf((await cookies()).get(INTENT_COOKIE)?.value);
     const shown = ids.find((id) => intentRef(id) === formData.get("gift"));
-    if (shown) saved = await correctDonorEmail(db, shown, donorEmail);
+    // Refused here, or the sweep would skip this gift forever with nobody told (ADR-0027 as amended 2026-11-02, decision 7).
+    const key = suppressionKey();
+    suppressed = Boolean(shown) && key !== null && (await isSuppressed(db, donorEmail, key));
+    if (shown && !suppressed) fix = await correctDonorEmail(db, shown, donorEmail);
   } catch (err) {
     // Uncaught, this reaches error reporting with the donor's address in its message.
     const code = failureCode(err);
@@ -30,5 +35,7 @@ export async function fixDonorEmail(formData: FormData): Promise<void> {
     Sentry.captureMessage(`thanks address not changed: ${code}`, { level: "error" });
     redirect("/thanks?problem=retry");
   }
-  redirect(saved ? "/thanks?saved=1" : "/thanks");
+  if (suppressed) redirect("/thanks?problem=suppressed");
+  if (fix === "already-sent") redirect("/thanks?problem=sent");
+  redirect(fix === "saved" || fix === "resending" ? "/thanks?saved=1" : "/thanks");
 }

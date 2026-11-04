@@ -3,10 +3,12 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vites
 import { closeDb, type Db } from "@/db/client";
 import { donationIntents, emailSuppressions, keepsake, paintingEmailSends, resendWebhookEvents } from "@/db/schema";
 import { receiveResendEvent, verifyResendSignature } from "@/core/email/resend-webhook";
+import { paintingMailState } from "@/core/email/painting-state";
 import { exactDigest, inboxDigest, isSuppressed } from "@/core/email/suppression";
 import { SKIP_DB_TESTS, TEST_DATABASE_URL, testDb, truncateDonor } from "./support/db";
 
-vi.mock("@sentry/nextjs", () => ({ captureMessage: vi.fn() }));
+const captureMessage = vi.hoisted(() => vi.fn());
+vi.mock("@sentry/nextjs", () => ({ captureMessage }));
 
 const KEY = "test-key-never-used-anywhere-real";
 const SECRET = `whsec_${Buffer.from("resend-test-signing-secret").toString("base64")}`;
@@ -99,9 +101,8 @@ describe.skipIf(SKIP_DB_TESTS)("what an event does (ADR-0027 as amended 2026-11-
     expect(await addressOf("intent-a")).toBe(ADDRESS);
   });
 
-  it("keeps the address on a delay or a failure", async () => {
+  it("keeps the address on a delay", async () => {
     await receive("m1", event("email.delivery_delayed"));
-    await receive("m2", event("email.failed"));
     expect(await addressOf("intent-a")).toBe(ADDRESS);
   });
 
@@ -113,7 +114,7 @@ describe.skipIf(SKIP_DB_TESTS)("what an event does (ADR-0027 as amended 2026-11-
 
   it("a permanent bounce suppresses the exact address and erases this gift's, leaving the rest of the inbox", async () => {
     await intent("intent-b", "pat@example.org");
-    expect(await receive("m1", event("email.bounced", { bounce: { type: "Permanent", subType: "Suppressed", message: "x" } }))).toBe("suppressed");
+    expect(await receive("m1", event("email.bounced", { bounce: { type: "Permanent", subType: "Suppressed", message: "x" } }))).toBe("bounced");
     const [row] = await db.select().from(emailSuppressions);
     expect(row.reason).toBe("bounce");
     expect(row.emailHmac).toBe(exactDigest(ADDRESS, KEY));
@@ -122,9 +123,43 @@ describe.skipIf(SKIP_DB_TESTS)("what an event does (ADR-0027 as amended 2026-11-
     expect(await isSuppressed(db, "pat@example.org", KEY)).toBe(false);
   });
 
-  it("a temporary bounce writes no permanent row", async () => {
-    expect(await receive("m1", event("email.bounced", { bounce: { type: "Temporary" } }))).toBe("ignored");
-    expect(await db.select().from(emailSuppressions)).toHaveLength(0);
+  it.each([["Transient"], ["Undetermined"], ["Temporary"], ["temporary"], [undefined]])(
+    "a soft or unnamed bounce (%s) writes no permanent row and keeps the address",
+    async (bounceType) => {
+      expect(await receive("m1", event("email.bounced", bounceType ? { bounce: { type: bounceType } } : {}))).toBe("ignored");
+      expect(await db.select().from(emailSuppressions)).toHaveLength(0);
+      expect(await addressOf("intent-a")).toBe(ADDRESS);
+    },
+  );
+
+  it("Resend's own list refusing the mail counts as a permanent bounce", async () => {
+    expect(await receive("m1", event("email.suppressed"))).toBe("bounced");
+    expect((await db.select().from(emailSuppressions))[0].reason).toBe("bounce");
+    expect(await addressOf("intent-a")).toBeNull();
+  });
+
+  it("marks the send bounced, which is what lets /thanks take a new address", async () => {
+    await receive("m1", event("email.bounced", { bounce: { type: "Permanent" } }));
+    const [row] = await db.select().from(paintingEmailSends);
+    expect(row.refusedCode).toBe("bounced");
+    expect(await paintingMailState(db, "intent-a")).toBe("bounced");
+  });
+
+  it("a delivery to the old address leaves a corrected one alone", async () => {
+    await db.update(donationIntents).set({ donorEmail: "fixed@example.org" });
+    expect(await receive("m1", event("email.delivered"))).toBe("ignored");
+    expect(await addressOf("intent-a")).toBe("fixed@example.org");
+  });
+
+  it("a bounce of the old address keeps a corrected one and clears the row, so that one gets its mail", async () => {
+    await db.update(donationIntents).set({ donorEmail: "fixed@example.org" });
+    expect(await receive("m1", event("email.bounced", { bounce: { type: "Permanent" } }))).toBe("suppressed");
+    expect(await addressOf("intent-a")).toBe("fixed@example.org");
+    expect(await db.select().from(paintingEmailSends)).toHaveLength(0);
+  });
+
+  it("reports a failed send and keeps the address", async () => {
+    expect(await receive("m1", event("email.failed"))).toBe("failed");
     expect(await addressOf("intent-a")).toBe(ADDRESS);
   });
 
@@ -155,8 +190,10 @@ describe.skipIf(SKIP_DB_TESTS)("what an event does (ADR-0027 as amended 2026-11-
     expect(JSON.stringify(rows)).not.toContain("example.org");
   });
 
-  it("a signed body that won't parse stores nothing", async () => {
+  it("a signed body that won't parse, or isn't an object, stores nothing", async () => {
     expect(await receive("m1", "not json")).toBe("unreadable");
+    expect(await receive("m2", "null")).toBe("unreadable");
+    expect(await receive("m3", "7")).toBe("unreadable");
     expect(await db.select().from(resendWebhookEvents)).toHaveLength(0);
   });
 
@@ -189,6 +226,15 @@ describe.skipIf(SKIP_DB_TESTS)("what an event does (ADR-0027 as amended 2026-11-
       const body = event("email.delivered");
       expect((await post(body, signed(body))).status).toBe(200);
       expect(await addressOf("intent-a")).toBeNull();
+    });
+
+    it("raises an alert a person sees on a bounce of a painting, with no address in it", async () => {
+      captureMessage.mockClear();
+      const body = event("email.bounced", { bounce: { type: "Permanent" } });
+      expect((await post(body, signed(body))).status).toBe(200);
+      expect(captureMessage).toHaveBeenCalledTimes(1);
+      expect(JSON.stringify(captureMessage.mock.calls)).toContain("bounced");
+      expect(JSON.stringify(captureMessage.mock.calls)).not.toContain("example.org");
     });
 
     it("a tampered body stores nothing and erases nothing", async () => {

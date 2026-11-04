@@ -1,4 +1,5 @@
 import * as Sentry from "@sentry/nextjs";
+import { readBoundedBody } from "@/core/email/bounded-body";
 import { hasTokenShape, suppressionKey, unsubscribe } from "@/core/email/suppression";
 import { failureCode } from "@/core/observability";
 import { getDb } from "@/db/client";
@@ -17,6 +18,20 @@ export async function GET(_request: Request, ctx: { params: Promise<{ token: str
   return new Response(null, { status: 303, headers: { Location: `/unsubscribe/${token}/confirm` } });
 }
 
+/** RFC 8058 allows multipart or urlencoded, and prefers multipart, so a mail client's stop can come as either. */
+async function askedToStop(body: Buffer, contentType: string): Promise<"one-click" | "button" | null> {
+  let form: FormData | URLSearchParams;
+  try {
+    form = contentType.startsWith("multipart/form-data")
+      ? await new Response(new Uint8Array(body), { headers: { "content-type": contentType } }).formData()
+      : new URLSearchParams(body.toString("utf8").trim());
+  } catch {
+    return null;
+  }
+  if (form.get("List-Unsubscribe") === "One-Click") return "one-click";
+  return form.get("confirm") === "yes" ? "button" : null;
+}
+
 /**
  * Acts on two bodies only: RFC 8058's from a mail client, answered blank as it asks, and the page's
  * form, sent on to the page saying it's done.
@@ -24,10 +39,10 @@ export async function GET(_request: Request, ctx: { params: Promise<{ token: str
 export async function POST(request: Request, ctx: { params: Promise<{ token: string }> }) {
   const { token } = await ctx.params;
   if (!hasTokenShape(token)) return bare(404);
-  if (Number(request.headers.get("content-length") ?? 0) > MAX_BODY_BYTES) return bare(413);
-  const body = (await request.text()).trim();
-  const oneClick = body === "List-Unsubscribe=One-Click";
-  if (!oneClick && body !== "confirm=yes") return bare(400);
+  const body = await readBoundedBody(request, MAX_BODY_BYTES);
+  if (body === null) return bare(413);
+  const asked = await askedToStop(body, request.headers.get("content-type") ?? "");
+  if (!asked) return bare(400);
 
   const key = suppressionKey();
   if (!key) return bare(503);
@@ -41,5 +56,5 @@ export async function POST(request: Request, ctx: { params: Promise<{ token: str
     Sentry.captureMessage(`unsubscribe not written: ${code}`, { level: "error" });
     return bare(500);
   }
-  return oneClick ? bare(200) : new Response(null, { status: 303, headers: { Location: `/unsubscribe/${token}/confirm?done=1` } });
+  return asked === "one-click" ? bare(200) : new Response(null, { status: 303, headers: { Location: `/unsubscribe/${token}/confirm?done=1` } });
 }
