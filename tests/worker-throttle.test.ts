@@ -149,6 +149,51 @@ describe("a skipped painting", () => {
   });
 });
 
+describe("a job holding its slot for memory", () => {
+  const job = { data: { keepsakeId: 7 } };
+  const low = "Windows free 18 GB, under 22 GB before a model load";
+  const waits = (outcome: object) => state.generate.mockImplementationOnce(async (_db: unknown, _job: unknown, _painter: unknown, opts: { onWaiting: (r: string) => void }) => {
+    opts.onWaiting(low);
+    return outcome;
+  });
+
+  it("says it's waiting and what to do, once, and the skip at its limit doesn't say it again within the hour", async () => {
+    await boot("art");
+    const run = state.work["art.generate"];
+    waits({ status: "skipped", reason: low });
+    await run([job]);
+    expect(sentry.captureMessage.mock.calls).toEqual([[`art waiting for memory, up to 30 minutes: close something and it paints by itself: ${low}`, { level: "warning", tags: { job: "art.generate" } }]]);
+    vi.setSystemTime(T0 + 60 * MIN);
+    waits({ status: "painted", keys: [], waitedSeconds: 90 });
+    await run([job]);
+    expect(sentry.captureMessage).toHaveBeenCalledTimes(2);
+  });
+
+  it("logs the wait, never the job's photos", async () => {
+    await boot("art");
+    waits({ status: "painted", keys: [] });
+    await state.work["art.generate"]([{ data: { keepsakeId: 7, photos: [{ url: "https://cdn.example/secret.jpg" }] } }]);
+    expect(console.log).toHaveBeenCalledWith(JSON.stringify({ event: "art.generate.waiting", keepsakeId: 7, reason: low }));
+    expect(JSON.stringify(vi.mocked(console.log).mock.calls)).not.toContain("secret.jpg");
+  });
+
+  it("raises no alert for a shutdown's skip, and a SIGTERM ends the wait first", async () => {
+    await boot("art");
+    let signal: AbortSignal | undefined;
+    state.generate.mockImplementationOnce(async (_db: unknown, _job: unknown, _painter: unknown, opts: { signal: AbortSignal }) => {
+      signal = opts.signal;
+      return { status: "skipped", reason: "the worker is stopping" };
+    });
+    await state.work["art.generate"]([job]);
+    expect(sentry.captureMessage).not.toHaveBeenCalled();
+    expect(signal?.aborted).toBe(false);
+    const exit = vi.spyOn(process, "exit").mockImplementation((() => undefined) as never);
+    await (process.listeners("SIGTERM").at(-1) as () => Promise<void>)();
+    expect(signal?.aborted).toBe(true);
+    exit.mockRestore();
+  });
+});
+
 describe("a crew set painted with a stand-in head", () => {
   it("is a warning to see, every time, since the crew's photos were vetted with their heads", async () => {
     await boot("art");

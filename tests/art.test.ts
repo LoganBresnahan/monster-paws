@@ -7,11 +7,11 @@ import sharp from "sharp";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { mintIntentId } from "@/core/donate/intent";
 import { receiveWebhook } from "@/core/donate/webhook";
-import { artFilePath, CREW_BASIS, crewExternalId, FACT, grantBasis, mintShareToken, snapshotKeepsake } from "@/core/keepsake";
+import { ART_QUEUE_OPTIONS, artFilePath, CREW_BASIS, crewExternalId, FACT, grantBasis, mintShareToken, snapshotKeepsake } from "@/core/keepsake";
 import { closeDb, type Db } from "@/db/client";
 import { donationIntents, keepsake, keepsakeFact } from "@/db/schema";
 import { CREW } from "@/ui/crew";
-import { bindArtStore, comfyData, crewSpec, generateArt, guardPainter, hostFreeGb, inQuietWindow, lastRunLine, listingWords, liveCropsArgs, LOAD_FREE_GB, loadCrewTable, paintedFor, photoHosts, readArgs, READER, runName, type CrewTable, type PaintSpec, type Painter } from "@/worker/art";
+import { ART_STOPPING, bindArtStore, comfyData, crewSpec, generateArt, guardPainter, hostFreeGb, inQuietWindow, lastRunLine, listingWords, liveCropsArgs, LOAD_FREE_GB, loadCrewTable, MEMORY_WAIT_MS, paintedFor, photoHosts, readArgs, READER, runName, type CrewTable, type PaintSpec, type Painter } from "@/worker/art";
 import { SKIP_DB_TESTS, TEST_DATABASE_URL, testDb, truncateDonor } from "./support/db";
 
 const TABLE: CrewTable = {
@@ -250,6 +250,7 @@ describe("the busy check before a load", () => {
     process.env.PATH = `${bin}:${PATH}`;
     try {
       expect(await guardPainter(root).busy()).toBeNull();
+      expect(await guardPainter(root).freeGb()).toBe(LOAD_FREE_GB);
     } finally {
       process.env.PATH = PATH;
       rmSync(root, { recursive: true, force: true });
@@ -399,7 +400,7 @@ describe.skipIf(SKIP_DB_TESTS)("art.generate (doc/plans/demo-chain-contract.md)"
   const NOON = new Date("2026-11-04T12:00:00Z");
 
   function painter(paint: string[] | Error = pngs, busy: string | null = null, cut?: (photos: string[]) => { file: string; head: boolean }[],
-    look: (file: string) => string | null | Error = () => null) {
+    look: (file: string) => string | null | Error = () => null, free: () => number | null = () => null) {
     const p: Painter & { calls: number; detected: unknown[]; specs: PaintSpec[]; fetched: unknown[]; forgotten: string[]; reads: unknown[] } = {
       calls: 0,
       reads: [],
@@ -408,6 +409,7 @@ describe.skipIf(SKIP_DB_TESTS)("art.generate (doc/plans/demo-chain-contract.md)"
       fetched: [],
       forgotten: [],
       busy: async () => busy,
+      freeGb: async () => free(),
       fetchPhotos: async (name, photos) => {
         p.fetched.push({ name, photos });
         return photos.map((_, i) => `${i + 1}.jpg`);
@@ -697,6 +699,109 @@ describe.skipIf(SKIP_DB_TESTS)("art.generate (doc/plans/demo-chain-contract.md)"
     expect(await generateArt(db, { keepsakeId: cat, photos: PHOTOS }, c, { table: TABLE, now: NOON, nightly: null, reader: true })).not.toHaveProperty("warning");
     expect(c.reads).toEqual([]);
     expect(c.specs[0].animals[await nameOf(cat)].describe).toBe("female domestic short hair cat");
+  });
+
+  describe("holding a job for memory (Logan, 2026-11-04: \"if i close apps and then we have enough ram it works?\")", () => {
+    function fakeClock(start: string) {
+      let at = new Date(start).getTime();
+      const c = {
+        naps: 0,
+        now: () => new Date(at),
+        advance: (ms: number) => { at += ms; },
+        sleep: async (ms: number) => { c.naps += 1; at += ms; },
+      };
+      return c;
+    }
+    const readings = <T,>(...values: T[]) => () => (values.length > 1 ? values.shift()! : values[0]);
+    const job = async () => ({ keepsakeId: await crewKeepsake() });
+
+    it("paints as soon as free reaches the floor, saying once that it waited", async () => {
+      const clock = fakeClock("2026-11-04T12:00:00Z");
+      const p = painter(pngs, null, undefined, undefined, readings(18, 21.9, LOAD_FREE_GB));
+      const told: string[] = [];
+      expect(await generateArt(db, await job(), p, { table: TABLE, nightly: null, clock, onWaiting: (r) => told.push(r) }))
+        .toMatchObject({ status: "painted", waitedSeconds: 60 });
+      expect(told).toEqual(["Windows free 18 GB, under 22 GB before a model load"]);
+      expect(p.calls).toBe(1);
+    });
+
+    it("doesn't wait, or mention waiting, when free is enough or unread", async () => {
+      for (const free of [30, null]) {
+        const clock = fakeClock("2026-11-04T12:00:00Z");
+        const told: string[] = [];
+        const outcome = await generateArt(db, await job(), painter(pngs, null, undefined, undefined, () => free), { table: TABLE, nightly: null, clock, onWaiting: (r) => told.push(r) });
+        expect(outcome).toMatchObject({ status: "painted" });
+        expect(outcome).not.toHaveProperty("waitedSeconds");
+        expect(clock.naps).toBe(0);
+        expect(told).toEqual([]);
+      }
+    });
+
+    it("skips at the limit, as it did before, having painted nothing", async () => {
+      const clock = fakeClock("2026-11-04T12:00:00Z");
+      const p = painter(pngs, null, undefined, undefined, () => 18);
+      expect(await generateArt(db, await job(), p, { table: TABLE, nightly: null, clock }))
+        .toEqual({ status: "skipped", reason: "Windows free 18 GB, under 22 GB before a model load" });
+      expect(clock.now().getTime() - new Date("2026-11-04T12:00:00Z").getTime()).toBe(MEMORY_WAIT_MS);
+      expect(p.calls).toBe(0);
+    });
+
+    it("never waits past the job's expiry, leaving a job's own length to spare", () => {
+      expect(MEMORY_WAIT_MS + 15 * 60 * 1000).toBeLessThanOrEqual(ART_QUEUE_OPTIONS.expireInSeconds * 1000);
+    });
+
+    it("gives way to a guard batch or ComfyUI that comes up during the wait", async () => {
+      const clock = fakeClock("2026-11-04T12:00:00Z");
+      const p = painter(pngs, null, undefined, undefined, () => 18);
+      const passes = readings<string | null>(null, null, "a guard batch is running");
+      p.busy = async () => passes();
+      expect(await generateArt(db, await job(), p, { table: TABLE, nightly: null, clock })).toEqual({ status: "skipped", reason: "a guard batch is running" });
+      expect(clock.naps).toBe(2);
+      expect(p.calls).toBe(0);
+    });
+
+    it("never holds a job into the nightly window, even when memory recovers as it opens", async () => {
+      const low = fakeClock("2026-11-04T06:44:00Z");
+      expect(await generateArt(db, await job(), painter(pngs, null, undefined, undefined, () => 18), { table: TABLE, nightly: null, clock: low }))
+        .toEqual({ status: "skipped", reason: "the nightly poll's quiet window" });
+      expect(low.now().toISOString()).toBe("2026-11-04T06:45:00.000Z");
+
+      // the drop takes its minute, and the window opens during it, with plenty free at the end
+      const late = fakeClock("2026-11-04T06:44:30Z");
+      const p = painter(pngs, null, undefined, undefined, () => { late.advance(60_000); return 30; });
+      expect(await generateArt(db, await job(), p, { table: TABLE, nightly: null, clock: late }))
+        .toEqual({ status: "skipped", reason: "the nightly poll's quiet window" });
+      expect(p.calls).toBe(0);
+    });
+
+    it("ends at once on a shutdown, as a skip the sweep sends again, on the real clock too", async () => {
+      const clock = fakeClock("2026-11-04T12:00:00Z");
+      const stop = new AbortController();
+      const asleep = clock.sleep;
+      clock.sleep = async (ms) => { await asleep(ms); stop.abort(); };
+      const p = painter(pngs, null, undefined, undefined, () => 18);
+      expect(await generateArt(db, await job(), p, { table: TABLE, nightly: null, clock, signal: stop.signal })).toEqual({ status: "skipped", reason: ART_STOPPING });
+      expect(clock.naps).toBe(1);
+      expect(p.calls).toBe(0);
+
+      // no fake clock: its 30 s sleep has to wake on the signal
+      const real = new AbortController();
+      setTimeout(() => real.abort(), 20);
+      const t0 = Date.now();
+      expect(await generateArt(db, await job(), painter(pngs, null, undefined, undefined, () => 18), { table: TABLE, now: NOON, nightly: null, signal: real.signal }))
+        .toEqual({ status: "skipped", reason: ART_STOPPING });
+      expect(Date.now() - t0).toBeLessThan(5000);
+    });
+
+    it("has nothing of a listing's to forget while it waits, since no photo is fetched first", async () => {
+      const clock = fakeClock("2026-11-04T12:00:00Z");
+      const stop = new AbortController();
+      stop.abort();
+      const p = painter(pngs, null, undefined, undefined, () => 18);
+      await generateArt(db, { keepsakeId: await listingKeepsake(), photos: PHOTOS }, p, { table: TABLE, nightly: null, clock, signal: stop.signal });
+      expect(p.fetched).toEqual([]);
+      expect(p.forgotten).toEqual([]);
+    });
   });
 
   it("stops a crew pet's live run that loses one of its two photos", async () => {

@@ -754,8 +754,10 @@ else.
        │   registerArtGenerate → generateArt    one job at a time, as home_worker on
        │   (src/worker/art.ts); exits at once   production (ADR-0004 as amended
        │   on any art fact · skips the nightly  2026-11-04, oplog 0028). Planned:
-       │   poll's window, a busy card and under its own distro and Windows user
-       │   22 GB free after the cache drop
+       │   poll's window and a busy card; under its own distro and Windows user
+       │   22 GB free after the cache drop it
+       │   holds the slot and rechecks, 30 min at
+       │   most (MEMORY_WAIT_MS), then skips
        ▼
   a listing's photos  (built)                   fetched from the job's URLs to
        │   two at most, beside the run          var/explore/<run>/photos/; they,

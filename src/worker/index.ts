@@ -12,7 +12,7 @@ import { runIngest } from "@/core/ingest/pipeline";
 import { createRescueGroupsAdapter, rescueGroupsNormalizer } from "@/core/ingest/rescuegroups";
 import { eraseAbandonedAddresses } from "@/core/donate/intent";
 import { ART_GENERATE, ART_QUEUE_OPTIONS, sweepKeepsakes, type ArtGenerateJob } from "@/core/keepsake";
-import { bindArtStore, generateArt, guardPainter, sharePublisher } from "@/worker/art";
+import { ART_STOPPING, MEMORY_WAIT_MS, bindArtStore, generateArt, guardPainter, sharePublisher } from "@/worker/art";
 import { sweepWebhookSpool } from "@/core/donate/webhook-replay";
 import { artReaderFromEnv } from "@/core/email/art-source";
 import { runPaintingEmailTick } from "@/core/email/painting-sweep";
@@ -238,6 +238,8 @@ const ART_SKIP_ALERT_MS = 60 * 60 * 1000;
  * `ART_SWEEP=on` beside it runs the crew sweep in this same process, the demo's one-process chain on the dev box;
  * never under `home_worker`, which may not read the donor tables the sweep reads (oplog 0027).
  */
+const artStopping = new AbortController();
+
 async function registerArtGenerate(boss: PgBoss) {
   // Before any job: a store without a database of its own would mix two databases' keepsake 1 (verify, 2026-11-04).
   console.log(`[worker] art store bound to database ${await bindArtStore(getDb(DATABASE_URL))}`);
@@ -246,16 +248,27 @@ async function registerArtGenerate(boss: PgBoss) {
   // Built at registration, so a missing write key stops the worker at start rather than after a set is painted.
   const publish = sharePublisher(() => getDb(DATABASE_URL));
   let lastSkipAlert = 0;
+  const alert = (text: string) => {
+    if (Date.now() - lastSkipAlert < ART_SKIP_ALERT_MS) return;
+    lastSkipAlert = Date.now();
+    Sentry.captureMessage(text, { level: "warning", tags: { job: ART_GENERATE } });
+  };
   await boss.work<ArtGenerateJob>(ART_GENERATE, { batchSize: 1 }, async ([job]) => {
     try {
-      const outcome = await generateArt(getDb(DATABASE_URL), job.data, painter, { live: process.env.ART_DETECT === "live", reader: process.env.ART_READER !== "off", publish });
+      const outcome = await generateArt(getDb(DATABASE_URL), job.data, painter, {
+        live: process.env.ART_DETECT === "live",
+        reader: process.env.ART_READER !== "off",
+        publish,
+        signal: artStopping.signal,
+        onWaiting: (reason) => {
+          console.log(JSON.stringify({ event: "art.generate.waiting", keepsakeId: job.data.keepsakeId, reason }));
+          alert(`art waiting for memory, up to ${MEMORY_WAIT_MS / 60_000} minutes: close something and it paints by itself: ${reason}`);
+        },
+      });
       // Never the job's data: a listing's photo URLs stay out of the log.
       console.log(JSON.stringify({ event: "art.generate", keepsakeId: job.data.keepsakeId, ...outcome }));
       // A skip for the card or the memory says why, at most hourly: donate's "waiting past 30 minutes" alert can't (ART_SKIP_ALERT_MS).
-      if (outcome.status === "skipped" && !outcome.reason.includes("quiet window") && Date.now() - lastSkipAlert >= ART_SKIP_ALERT_MS) {
-        lastSkipAlert = Date.now();
-        Sentry.captureMessage(`art skipped: ${outcome.reason}`, { level: "warning", tags: { job: ART_GENERATE } });
-      }
+      if (outcome.status === "skipped" && !outcome.reason.includes("quiet window") && outcome.reason !== ART_STOPPING) alert(`art skipped: ${outcome.reason}`);
       if (outcome.status === "painted" && outcome.warning) {
         Sentry.captureMessage(`art painted with a warning: ${outcome.warning}`, { level: "warning", tags: { job: ART_GENERATE } });
       }
@@ -325,6 +338,8 @@ async function main() {
   //   attestation.publish — sign + R2 mirror (roadmap item 7)
 
   const shutdown = async () => {
+    // First, since pg-boss aborts a job only after its graceful timeout: a job holding its slot for memory ends now, and the sweep sends it again.
+    artStopping.abort();
     stopWebhookSweep();
     stopPaintingEmailSweep();
     stopKeepsakeSweep();

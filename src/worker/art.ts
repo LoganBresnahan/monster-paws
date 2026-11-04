@@ -57,6 +57,8 @@ export interface PaintSpec {
 export interface Painter {
   /** a reason the card is not free, or null: one driver at a time (doc/infra.md, Home GPU) */
   busy(): Promise<string | null>;
+  /** Windows free in GB after the guard's cache drop, which is the memory a load really has, or null if it printed none */
+  freeGb(): Promise<number | null>;
   /** fetches a listing's photos beside run `name` (`var/explore/<name>/photos/`) and returns their file names */
   fetchPhotos(name: string, photos: DisplayPhoto[]): Promise<string[]>;
   /** deletes run `name`'s fetched photos and everything cut from them */
@@ -101,7 +103,7 @@ export interface CutPhoto {
 }
 
 export type ArtOutcome =
-  | { status: "painted"; keys: string[]; published?: boolean; publishError?: string; warning?: string }
+  | { status: "painted"; keys: string[]; published?: boolean; publishError?: string; warning?: string; waitedSeconds?: number }
   | { status: "has-art" }
   | { status: "skipped"; reason: string };
 
@@ -240,6 +242,35 @@ const QUIET_CAP_MIN = 10 * 60;
  * No painting from 06:45 UTC until the main checkout's nightly poll log says `== exit`, capped at
  * 10:00, its three-hour limit: the poll and a guard batch must never share the box (doc/infra.md).
  */
+/**
+ * How long a job holds the one slot for memory before it skips, so that closing apps paints it without waiting for the
+ * sweep's next hour (Logan, 2026-11-04). Never past the job's expiry, or pg-boss runs a second copy beside it; a test pins that.
+ */
+export const MEMORY_WAIT_MS = 30 * 60 * 1000;
+const MEMORY_RECHECK_MS = 30 * 1000;
+
+/** A skip that is no fault: the wait ended for a shutdown, and the sweep sends the job again. */
+export const ART_STOPPING = "the worker is stopping";
+
+export interface ArtClock {
+  now(): Date;
+  sleep(ms: number, signal?: AbortSignal): Promise<void>;
+}
+
+const REAL_CLOCK: ArtClock = {
+  now: () => new Date(),
+  sleep: (ms, signal) =>
+    new Promise((resolveSleep) => {
+      const done = () => {
+        clearTimeout(timer);
+        signal?.removeEventListener("abort", done);
+        resolveSleep();
+      };
+      const timer = setTimeout(done, ms);
+      signal?.addEventListener("abort", done, { once: true });
+    }),
+};
+
 export function inQuietWindow(now: Date, todaysNightlyLog: string | null): boolean {
   const minutes = now.getUTCHours() * 60 + now.getUTCMinutes();
   if (minutes < QUIET_START_MIN || minutes >= QUIET_CAP_MIN) return false;
@@ -266,6 +297,12 @@ export async function generateArt(
     live?: boolean;
     reader?: boolean;
     publish?: (keepsakeId: number) => Promise<void>;
+    /** the fake clock of a test; a fixed `now` alone never advances, so a wait needs this */
+    clock?: ArtClock;
+    /** ends a wait for memory at once, for a shutdown */
+    signal?: AbortSignal;
+    /** called once, when a job starts holding its slot for memory */
+    onWaiting?: (reason: string) => void;
   } = {},
 ): Promise<ArtOutcome> {
   const { keepsakeId, photos = [] } = job;
@@ -283,12 +320,32 @@ export async function generateArt(
   const basis = source?.basis ?? facts[0]?.basis;
   if (!crew && (!basis || basis === CREW_BASIS)) throw new Error(`keepsake ${keepsakeId}'s photos come with no listing's basis`);
 
-  const now = opts.now ?? new Date();
-  if (inQuietWindow(now, opts.nightly !== undefined ? opts.nightly : nightlyLog(now))) {
-    return { status: "skipped", reason: "the nightly poll's quiet window" };
+  const clock = opts.clock ?? REAL_CLOCK;
+  const timeNow = () => (opts.clock ? opts.clock.now() : (opts.now ?? new Date()));
+  const quiet = () => {
+    const now = timeNow();
+    return inQuietWindow(now, opts.nightly !== undefined ? opts.nightly : nightlyLog(now));
+  };
+  const started = clock.now().getTime();
+  let waited = false;
+  // Memory is the only reason worth holding the slot for, and every other reason wins over it at each pass.
+  for (;;) {
+    if (quiet()) return { status: "skipped", reason: "the nightly poll's quiet window" };
+    const busy = await painter.busy();
+    if (busy) return { status: "skipped", reason: busy };
+    const free = await painter.freeGb();
+    // the drop can take a minute, and the window may have opened during it
+    if (quiet()) return { status: "skipped", reason: "the nightly poll's quiet window" };
+    if (free === null || free >= LOAD_FREE_GB) break;
+    const reason = `Windows free ${free} GB, under ${LOAD_FREE_GB} GB before a model load`;
+    if (clock.now().getTime() - started >= MEMORY_WAIT_MS) return { status: "skipped", reason };
+    if (!waited) opts.onWaiting?.(reason);
+    waited = true;
+    if (opts.signal?.aborted) return { status: "skipped", reason: ART_STOPPING };
+    await clock.sleep(MEMORY_RECHECK_MS, opts.signal);
+    if (opts.signal?.aborted) return { status: "skipped", reason: ART_STOPPING };
   }
-  const busy = await painter.busy();
-  if (busy) return { status: "skipped", reason: busy };
+  const waitedSeconds = waited ? Math.round((clock.now().getTime() - started) / 1000) : undefined;
   await bindArtStore(db);
 
   const table = opts.table ?? loadCrewTable();
@@ -363,7 +420,7 @@ export async function generateArt(
   });
   if (!wrote) return { status: "has-art" };
   const keys = arts.map((a) => a.key);
-  const painted = { status: "painted" as const, keys, ...(warning ? { warning } : {}) };
+  const painted = { status: "painted" as const, keys, ...(warning ? { warning } : {}), ...(waitedSeconds !== undefined ? { waitedSeconds } : {}) };
   if (!opts.publish) return painted;
   try {
     await opts.publish(keepsakeId);
@@ -484,11 +541,12 @@ export function guardPainter(root: string): Painter {
       const names = await capture("docker", ["ps", "--format", "{{.Names}}"]);
       if (/comfyui-comfyui|comfyui-explore-run/.test(names)) return "a ComfyUI container is up";
       if ((await capture("pgrep", ["-f", "guard[.]sh batch"])).trim()) return "a guard batch is running";
+      return null;
+    },
+    async freeGb() {
       // after the cache drop the guard does at every start, so this is the memory a load really has; the drop waits for
       // this floor, never its own lower one, since freed pages reach Windows 20–27 s late (the moderator, 2026-11-04)
-      const free = hostFreeGb(await capture(join(root, "comfyui/guard.sh"), ["drop"], { WAIT_GB: String(LOAD_FREE_GB) }));
-      if (free !== null && free < LOAD_FREE_GB) return `Windows free ${free} GB, under ${LOAD_FREE_GB} GB before a model load`;
-      return null;
+      return hostFreeGb(await capture(join(root, "comfyui/guard.sh"), ["drop"], { WAIT_GB: String(LOAD_FREE_GB) }));
     },
     async fetchPhotos(name, photos) {
       const dir = join(explore, name, "photos");

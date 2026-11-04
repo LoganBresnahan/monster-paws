@@ -1038,6 +1038,10 @@ deadline. The second distro and Windows account of the 2026-10-05 amendment wait
 - Those keys sit on a machine that also holds `pass` and every dev session, which is the risk the separate account was there to remove. They
   are rolled when the real home distro is built.
 - A job waits while a guard batch has the card, and from 06:45 UTC until the nightly poll's log shows `== exit`.
+- A job short of memory holds the slot and rechecks for up to 30 minutes, then skips as before, so that closing apps paints it without
+  waiting for the sweep's next hour. Logan: "if i close apps and then we have enough ram it works?", "lets build it". Holding the one slot
+  is the point, and other jobs queue behind it. Every other reason to skip ends the wait, and a shutdown ends it as a skip the sweep sends
+  again. The wait stays inside the job's 60-minute expiry, which a test pins, because past it pg-boss would run a second copy beside it.
 
 Revisit: when gifts arrive with nobody watching, or a dev session and a painting collide.
 

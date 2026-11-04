@@ -1013,7 +1013,16 @@ What was load-bearing, in the order it was found:
   33 GB in ~40 s and painted. Sampled every 9 s from a fresh export
   (2026-11-04, 22:00 UTC), free dips to 19.7 GB for one sample during each
   klein load, then holds 22 GB and up, against the guard's 10 GB floor. So a
-  reader must exit before the drop, never run beside a paint. `memory=32GB`
+  reader must exit before the drop, never run beside a paint. A job short of
+  that 22 GB holds its slot and rechecks for up to 30 minutes, each pass a drop
+  of up to a minute and then 30 s, about 90 s when memory stays short, and it
+  paints the moment free reaches 22 GB: closing apps is all it takes, and a
+  Sentry warning says so, at most hourly. **Waiting holds the one slot on
+  purpose, so other jobs queue behind it**, and a queue short of memory can wait
+  30 minutes a job. At the limit it skips and the sweep sends it again in the next
+  hourly slot. The nightly window, a guard batch or ComfyUI coming up ends the wait
+  at once with that skip, and a SIGTERM ends it as a skip too (ADR-0004 as amended
+  2026-11-04). `memory=32GB`
   stays. `autoMemoryReclaim=dropCache` (WSL drops the cache when the VM
   is idle) is untried here; the 10-10 freezes were under `gradual`.
   Still unmeasured: a model load also takes several GB outside the VM
