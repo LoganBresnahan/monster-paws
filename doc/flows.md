@@ -613,8 +613,8 @@ after it, if at all.
   first signal                      (planned, ADR-0035) closed_at, or GET /thanks/<token>:
        │                            one conditional UPDATE of the return time, nothing else
        │  sweepKeepsakes (ART_SWEEP=on, dark until a shelter holds a grant): closed_at, a donation,
-       │  a crew pet or a digify grant as of the gift's date, no keepsake → snapshotKeepsake;
-       │  no art fact → boss.send, a key and a one-hour slot; 30 minutes with no art → an alert
+       │  a crew pet or a digify grant as of created_at, no keepsake → snapshotKeepsake;
+       │  no art fact → boss.send, a key and a one-hour slot; 30 minutes after the gift → an alert
        │  (planned) droplet worker sweep: intents with a signal and no keepsake, confirmed
        │  first, never counted; then a return 2 minutes old, newest first, at most 25
        │  cycles a rolling day and none while its normalised address has 3 waiting; over
@@ -686,7 +686,7 @@ may be purged, rebuilt or merged without touching it.
        │                                     not written; under a grant, no photo field
        │  reads, once, at a recorded gift:
        │    crew: src/ui/crew.ts, on CREW_BASIS
-       │    listing: animals + the shelter registry, grant as of the gift's date
+       │    listing: animals + the shelter registry, grant as of created_at
        ▼
   keepsake            (built, dark)          intent_id NOT NULL UNIQUE, its donation
        │                                     reached through the intent (ADR-0035 decision 9);

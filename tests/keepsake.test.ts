@@ -151,6 +151,19 @@ describe.skipIf(SKIP_DB_TESTS)("the keepsake sweep (ADR-0035 decisions 6 and 9)"
     expect(await db.select().from(keepsake)).toEqual([]);
   });
 
+  it("takes no place in the batch for a crew slug that doesn't exist", async () => {
+    await recorded("manual", crewExternalId("nobody"));
+    const later = new Date(Date.now() + 31 * 60 * 1000);
+    expect(await sweepKeepsakes(db, send, later)).toEqual({ written: 0, sent: 0, stalled: 0 });
+  });
+
+  it("sends for every owed keepsake, so a stuck hundred at the front can't starve the next", async () => {
+    const ids = Array.from({ length: 101 }, () => mintIntentId());
+    await db.insert(donationIntents).values(ids.map((id) => ({ id, animalSource: "manual" as const, animalExternalId: crewExternalId("plum"), nonprofitSlug: SLUG, nonprofitEin: EIN, closedAt: new Date() })));
+    await db.insert(keepsake).values(ids.map((intentId) => ({ intentId, shareToken: mintShareToken(), snapshottedAt: new Date() })));
+    expect(await sweepKeepsakes(db, send)).toMatchObject({ sent: 101 });
+  });
+
   it("sends until art exists, so a lost job is sent again, and never after", async () => {
     await recorded("manual", crewExternalId("plum"));
     await sweepKeepsakes(db, send);
@@ -214,19 +227,58 @@ describe.skipIf(SKIP_DB_TESTS)("the keepsake sweep (ADR-0035 decisions 6 and 9)"
       expect(sent).toEqual([{ keepsakeId: id, photos: [PHOTO] }]);
     });
 
-    it("reads the grant as of the gift's date: a withdrawal after it still paints, and a gift before the grant doesn't", async () => {
+    const LATER = new Date(Date.now() + 31 * 60 * 1000);
+
+    async function began(intentId: string, at: string) {
+      await db.update(donationIntents).set({ createdAt: new Date(at) }).where(eq(donationIntents.id, intentId));
+    }
+
+    it("reads the grant as of when the gift began, so a charge after a withdrawal still paints (ADR-0035 question 4)", async () => {
+      await listing();
+      const id = await recorded("rescuegroups", "rg-7");
+      await began(id, "2026-10-01");
+      expect(await sweepKeepsakes(db, send, LATER, granted("2026-01-01", "2026-10-02"))).toMatchObject({ written: 1 });
+    });
+
+    it("leaves a gift begun outside the grant alone, with no alert, however long it waits", async () => {
+      await listing();
+      const id = await recorded("rescuegroups", "rg-7");
+      await began(id, "2026-10-03");
+      expect(await sweepKeepsakes(db, send, LATER, granted("2026-01-01", "2026-10-02"))).toEqual({ written: 0, sent: 0, stalled: 0 });
+      expect(await sweepKeepsakes(db, send, LATER, granted("2026-11-01"))).toEqual({ written: 0, sent: 0, stalled: 0 });
+      expect(await sweepKeepsakes(db, send, LATER, granted("not a date"))).toEqual({ written: 0, sent: 0, stalled: 0 });
+      expect(await db.select().from(keepsake)).toEqual([]);
+    });
+
+    it("lets a full batch of gifts from before the grant starve nothing behind it", async () => {
+      await listing();
+      for (let i = 0; i < 100; i += 1) await began(await recorded("rescuegroups", "rg-7"), "2026-01-15");
+      const good = await recorded("rescuegroups", "rg-7");
+      const report = await sweepKeepsakes(db, send, LATER, granted("2026-06-01"));
+      expect(report).toMatchObject({ written: 1, sent: 1 });
+      expect((await db.select({ intentId: keepsake.intentId }).from(keepsake)).map((row) => row.intentId)).toEqual([good]);
+    }, 60_000);
+
+    it("starts the stall clock at the gift, so a gift first seen late says so at once", async () => {
+      await listing([]);
+      await recorded("rescuegroups", "rg-7");
+      expect(await sweepKeepsakes(db, send, LATER, granted("2026-01-01"))).toEqual({ written: 1, sent: 0, stalled: 1 });
+    });
+
+    it("says so when a listing's gift has lost its identity row, and never for a test gift", async () => {
       await listing();
       await recorded("rescuegroups", "rg-7");
-      const after = new Date("2026-12-01");
-      expect((await sweepKeepsakes(db, send, after, granted("2026-12-01"))).written).toBe(0);
-      expect((await sweepKeepsakes(db, send, after, granted("2026-01-01", "2026-11-20"))).written).toBe(1);
+      await recorded("manual", "test-gift");
+      await db.delete(animalIdentities);
+      expect(await sweepKeepsakes(db, send, new Date(), granted("2026-01-01"))).toEqual({ written: 0, sent: 0, stalled: 0 });
+      expect(await sweepKeepsakes(db, send, LATER, granted("2026-01-01"))).toEqual({ written: 0, sent: 0, stalled: 1 });
     });
 
     it("never touches another shelter's gift", async () => {
       await listing();
       await recorded("rescuegroups", "rg-7");
       const other = granted("2026-01-01").map((entry) => ({ ...entry, shelterExternalIds: ["rescuegroups:org:2"] }));
-      expect((await sweepKeepsakes(db, send, new Date(), other)).written).toBe(0);
+      expect(await sweepKeepsakes(db, send, LATER, other)).toEqual({ written: 0, sent: 0, stalled: 0 });
     });
 
     it("sends no job for a listing with no photo, and says so once it has waited 30 minutes", async () => {

@@ -1,13 +1,13 @@
 import { randomBytes } from "node:crypto";
 import { resolve, sep } from "node:path";
-import { and, asc, eq, inArray, isNotNull, isNull, like, notExists, or, sql } from "drizzle-orm";
+import { and, asc, count, eq, gte, inArray, isNotNull, isNull, lt, ne, notExists, or, sql, type SQL } from "drizzle-orm";
 import { pickLicensedDisplay } from "@/core/display";
 import type { DisplayPhoto } from "@/core/ingest/pipeline";
 import { hasGrant, SHELTERS, shelterByExternalId, type ShelterEntry } from "@/core/shelters";
 import type { Source } from "@/core/sources";
 import type { Db } from "@/db/client";
 import { animalDisplay, animalIdentities, animals, donationIntents, donations, keepsake, keepsakeFact } from "@/db/schema";
-import { crewPet, type CrewPet } from "@/ui/crew";
+import { CREW, crewPet, type CrewPet } from "@/ui/crew";
 
 export const ART_GENERATE = "art.generate";
 
@@ -110,10 +110,10 @@ function crewSnapshot(pet: CrewPet): Snapshot {
   };
 }
 
-/** The grant as of the gift's date, never today's: a gift made before a withdrawal still gets its painting (ADR-0022 as amended 2026-11-02). */
+/** The grant as of `created_at`, when the button was open, never today's or the charge's: a confirmed gift started under a live grant always paints (ADR-0035 question 4). */
 async function listingSnapshot(
   db: Db,
-  gift: { source: Source; externalId: string; donatedAt: Date },
+  gift: { source: Source; externalId: string; createdAt: Date },
   registry: readonly ShelterEntry[],
 ): Promise<Snapshot | null> {
   const [animal] = await db
@@ -124,7 +124,7 @@ async function listingSnapshot(
     .limit(1);
   if (!animal?.shelterExternalId) return null;
   const shelter = shelterByExternalId(animal.shelterExternalId, registry);
-  if (!shelter || !hasGrant(shelter, "digify", gift.donatedAt)) return null;
+  if (!shelter || !hasGrant(shelter, "digify", gift.createdAt)) return null;
   const facts: [string, string | null][] = [
     [FACT.name, animal.name],
     [FACT.species, animal.species],
@@ -138,7 +138,7 @@ async function listingSnapshot(
 
 /**
  * Writes one keepsake and its facts, or nothing: only a recorded gift, to a crew pet or an animal whose
- * shelter held a `digify` grant that day. Never widen this: the staging gate skips the grant, so a staging
+ * shelter held a `digify` grant when the gift began. Never widen this: the staging gate skips the grant, so a staging
  * gift on an ungranted listing must still paint nothing (ADR-0006 decision 6). Returns the new id, or null
  * when it wrote nothing; the share token is read from the row, because a losing sweep's token is thrown away.
  */
@@ -149,7 +149,7 @@ export async function snapshotKeepsake(
   registry: readonly ShelterEntry[] = SHELTERS,
 ): Promise<number | null> {
   const [gift] = await db
-    .select({ source: donationIntents.animalSource, externalId: donationIntents.animalExternalId, donatedAt: donations.donatedAt })
+    .select({ source: donationIntents.animalSource, externalId: donationIntents.animalExternalId, createdAt: donationIntents.createdAt })
     .from(donationIntents)
     .innerJoin(donations, eq(donations.intentId, donationIntents.id))
     .where(eq(donationIntents.id, intentId))
@@ -175,6 +175,7 @@ export async function snapshotKeepsake(
 }
 
 const SWEEP_BATCH = 100;
+const CREW_IDS = CREW.map((pet) => crewExternalId(pet.slug));
 const STALLED_MS = 30 * 60 * 1000;
 
 export type SendArtJob = (name: string, data: ArtGenerateJob, options: ReturnType<typeof artJobOptions>) => Promise<string | null>;
@@ -196,6 +197,29 @@ async function listingPhotos(db: Db, source: Source, externalId: string, asOf: D
 }
 
 /**
+ * Gifts begun inside a `digify` grant, in SQL and matching `isActive`, because a gift the snapshot refuses would
+ * otherwise hold a place in the batch for ever and starve the gifts behind it. An unparseable date denies.
+ */
+function grantedGifts(registry: readonly ShelterEntry[]): SQL | undefined {
+  const windows = registry.flatMap((shelter) =>
+    shelter.grants.flatMap((grant) => {
+      const keys = shelter.shelterExternalIds ?? [];
+      const from = Date.parse(grant.grantedAt);
+      const until = grant.revokedAt === undefined ? null : Date.parse(grant.revokedAt);
+      if (grant.permission !== "digify" || keys.length === 0 || Number.isNaN(from) || Number.isNaN(until)) return [];
+      return [
+        and(
+          inArray(animals.shelterExternalId, [...keys]),
+          gte(donationIntents.createdAt, new Date(from)),
+          until === null ? undefined : lt(donationIntents.createdAt, new Date(until)),
+        ),
+      ];
+    }),
+  );
+  return windows.length > 0 ? or(...windows) : undefined;
+}
+
+/**
  * One tick: a recorded gift gets its keepsake, and every keepsake with no art gets a job. Never queue only on
  * the insert that wrote: a send lost there would lose a paid painting (ADR-0035 decision 6). Only a recorded gift
  * counts here, so ADR-0035's limits, which count unconfirmed gifts, have nothing to count until slice C.
@@ -206,7 +230,6 @@ export async function sweepKeepsakes(
   asOf: Date = new Date(),
   registry: readonly ShelterEntry[] = SHELTERS,
 ): Promise<KeepsakeSweepReport> {
-  const grantedKeys = registry.filter((shelter) => shelter.grants.some((grant) => grant.permission === "digify")).flatMap((shelter) => shelter.shelterExternalIds ?? []);
   const pending = await db
     .select({ id: donationIntents.id, closedAt: donationIntents.closedAt })
     .from(donationIntents)
@@ -221,10 +244,7 @@ export async function sweepKeepsakes(
       and(
         isNotNull(donationIntents.closedAt),
         isNull(keepsake.id),
-        or(
-          and(eq(donationIntents.animalSource, CREW_SOURCE), like(donationIntents.animalExternalId, `${CREW_ID_PREFIX}%`)),
-          grantedKeys.length > 0 ? inArray(animals.shelterExternalId, grantedKeys) : undefined,
-        ),
+        or(and(eq(donationIntents.animalSource, CREW_SOURCE), inArray(donationIntents.animalExternalId, CREW_IDS)), grantedGifts(registry)),
       ),
     )
     .orderBy(asc(donationIntents.closedAt))
@@ -238,9 +258,11 @@ export async function sweepKeepsakes(
     else if (closedAt && closedAt.getTime() < cutoff) stalled += 1;
   }
 
+  // Unlimited, because only a paid gift gets here, so nothing can flood it, and a limit would let stuck keepsakes starve the rest.
   const owed = await db
     .select({
       id: keepsake.id,
+      closedAt: donationIntents.closedAt,
       snapshottedAt: keepsake.snapshottedAt,
       source: donationIntents.animalSource,
       externalId: donationIntents.animalExternalId,
@@ -255,12 +277,11 @@ export async function sweepKeepsakes(
           .where(and(eq(keepsakeFact.keepsakeId, keepsake.id), eq(keepsakeFact.field, FACT.art))),
       ),
     )
-    .orderBy(asc(keepsake.id))
-    .limit(SWEEP_BATCH);
+    .orderBy(asc(keepsake.id));
 
   let sent = 0;
-  for (const { id, snapshottedAt, source, externalId } of owed) {
-    if (snapshottedAt.getTime() < cutoff) stalled += 1;
+  for (const { id, closedAt, snapshottedAt, source, externalId } of owed) {
+    if ((closedAt ?? snapshottedAt).getTime() < cutoff) stalled += 1;
     const data: ArtGenerateJob = { keepsakeId: id };
     if (!crewPetOf(source, externalId)) {
       data.photos = await listingPhotos(db, source, externalId, asOf, registry);
@@ -268,5 +289,24 @@ export async function sweepKeepsakes(
     }
     if (await send(ART_GENERATE, data, artJobOptions(id))) sent += 1;
   }
-  return { written, sent, stalled };
+
+  // A listing's identity row gone means no shelter to read and no pending row, so this count is all that would ever say so.
+  const [{ lost }] = await db
+    .select({ lost: count() })
+    .from(donationIntents)
+    .innerJoin(donations, eq(donations.intentId, donationIntents.id))
+    .leftJoin(keepsake, eq(keepsake.intentId, donationIntents.id))
+    .leftJoin(
+      animalIdentities,
+      and(eq(animalIdentities.source, donationIntents.animalSource), eq(animalIdentities.externalId, donationIntents.animalExternalId)),
+    )
+    .where(
+      and(
+        lt(donationIntents.closedAt, new Date(cutoff)),
+        isNull(keepsake.id),
+        isNull(animalIdentities.id),
+        ne(donationIntents.animalSource, CREW_SOURCE),
+      ),
+    );
+  return { written, sent, stalled: stalled + lost };
 }
