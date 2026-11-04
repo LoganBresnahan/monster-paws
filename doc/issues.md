@@ -101,6 +101,11 @@ is the record, and a file of ticked boxes stops being read.
   page covers how the two fit. A question for Every.org or a lawyer, not one to answer here, and it is in the email to
   support@every.org. It bears on whether the painting is promised (ADR-0035, open question 7). Found 2026-11-03, while
   Logan and the moderator discussed that line.
+  Logan, to the moderator, 2026-11-04: "i think we just need to audit our words to never say something like 'exchange' etc. everything has
+  to be uh whats the word...kinda like 'try' of 'our own volition'. basically we need to audit our words everywhere". The moderator reads
+  that as opening anyway with careful wording, and has asked him to confirm. So every donor-facing sentence goes through one table for
+  him to approve, and that audit is a requirement for oplog 0029's image. This doesn't answer the question above: no lawyer or
+  Every.org has read it, and whether the email to support@every.org has gone out is his to say.
 
 - **Only the newest of two paid gifts can have its address fixed.** `/thanks` shows one gift, so
   a donor with two in one browser can't reach the older one's address from there. They write to

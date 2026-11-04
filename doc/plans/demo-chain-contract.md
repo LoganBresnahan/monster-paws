@@ -3,7 +3,7 @@
 From a recorded gift to an email: a crew pet on the dev box, or a listing whose shelter holds a `digify` grant. It lands on
 topdog and stays dark: the sweep starts only with `ART_SWEEP=on`, a line in that machine's `.env` with its own oplog entry, and
 `SHELTERS` holds no grant. Only a recorded gift paints, so the donate link offers card and PayPal until slice C ships (ADR-0035 as amended 2026-11-04). Deadline:
-2026-11-04 21:00 UTC.
+2026-11-05 02:00 UTC, which is 9pm ET on 2026-11-04 (ADR-0028).
 
 ## Database
 
