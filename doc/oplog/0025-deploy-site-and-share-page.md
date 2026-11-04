@@ -1,7 +1,7 @@
 # 0025: Deploy `0989a18` — the site's demo pages, the share page and the keepsake schema, with nothing painted
 
-Status: planned
-Planned: 2026-11-04 · Run: —
+Status: run
+Planned: 2026-11-04 · Run: 2026-11-04, 04:17 to 04:22 UTC
 Why: social sites build a preview only from a public page, so the share page has to be live (ADR-0036), and the home and `/demo` changes ship for the Meta
 demo (ADR-0028 as amended 2026-11-03). Roadmap: Accounts and donating (item 4)
 Commit deployed: `0989a18`, named by the moderator, 2026-11-04: Logan's new crew portraits with Plum's new painting, the mail with its review fixes, the art worker job, the real-paintings commit and every word he approved. Logan chose to carry these over `9d297c9`: "wait". This entry follows in its own push so the image tag is the code commit
@@ -29,9 +29,9 @@ Who does what: **Logan gives the word for step 1, in the session that runs it.**
       PW_BASE_URL=http://127.0.0.1:3200 npm run e2e:prod
       docker stop mp-e2e
 - [x] Migrations `0017` and `0018` rehearsed on a scratch restore of the newest dump, then dropped, 2026-11-04 03:28 UTC: 0 restore errors, 12 to 19 migrations (the dump predates production's 17), animals 112123 before and after, `keepsake` holds `id`, `intent_id`, `share_token` and `snapshotted_at`, and `painting_email_sends` and `resend_webhook_events` are empty.
-- [ ] `pass` unlocked by Logan.
-- [ ] Not within an hour of 06:00, 07:00 or 08:30 UTC, and nothing in the main checkout from 06:45 UTC until that night's log shows `== exit`.
-- [ ] The dev box free: nobody on `:3100`/`:3200` or `monsterpaws_e2e`, no batch on the card. The moderator holds the card.
+- [x] `pass` unlocked by Logan.
+- [x] Not within an hour of 06:00, 07:00 or 08:30 UTC, and nothing in the main checkout from 06:45 UTC until that night's log shows `== exit`.
+- [x] The dev box free: no batch on the card, read and held by the moderator at 04:17 UTC. **Short of the line:** the UI chat's vitest and e2e ran through this entry, CPU only in their own database, which the moderator allowed with load at 0.6.
 - [x] Oplog 0026's domain answers: steps 1 to 3 run, 2026-11-04 00:08 UTC. Its step 4, the first published set, isn't needed here. Step 6 checks a set only if one is up.
 - [x] `604a76c`, the UI chat's scrub, is in this sha, so a non-404 from media can't put a token in an error report.
 - [x] Oplog 0023's two proof reports reached Better Stack: read 2026-11-04 00:32 UTC, 2 reports in the last 30 minutes, both `kept, not acted on: unparsable`. Counts only.
@@ -129,7 +129,29 @@ Stop if: a hash differs after a second read a minute later. It's a look at Cloud
 Rollback: n/a. A purge only makes the edge fetch again.
 
 ## Run
-<filled in as it happens>
+Logan, directly, in the session that ran it, after "wait" for an earlier sha: "check with mod but we should be ready for deploy". I took that as his word, conditional on the moderator, and told him so. The moderator confirmed at 04:17 UTC: the card free, origin held at `11a07f1`. Commit deployed `0989a18`, from the checkout at `11a07f1`.
+
+**Changed from the steps above, none as a new commit:**
+- Step 3 made sure `.env` ended in a newline before appending, so the new key couldn't join the last line.
+- Step 7's files went to the session's scratchpad, not `/tmp`, and were deleted after.
+- Step 6 also read that `/privacy` holds no "gift", and read one published set.
+
+**Step 1, 04:17 UTC.** `IMAGE_TAG` `12c451f8588136b877cdb48976c686ff20dc3228`, the rollback. Checkout `3bcb2dd`. All three containers up; health 200 on `12c451f`. All seven keys counted `0`.
+
+**Step 2, 04:17 UTC.** `keepsake 0`, `keepsake_fact 0`, `manual_display 0`, `manual_identity 0`, `migrations 17`.
+
+**Step 3, 04:17 to 04:18 UTC.** Checkout `11a07f1`; `SHARE_BASE_URL` counts `1`; app and worker pulled at `0989a18cf020f1211dde8a2d8dd2e24c1ef4ea2a`; all three still on the old containers.
+
+**Step 4, 04:18 UTC.** npm notices hid the success line again, so the read-back is the proof: 19 migrations; `keepsake` holds `id`, `intent_id`, `share_token` and `snapshotted_at`; `painting_email_sends` answers `0`; health 200 on `12c451f`.
+
+**Step 5, 04:19 UTC.** The roll took 2.63 s by `time`, 04:19:17 to 04:19:21. 180 POSTs, 180 `404`, **no 5xx**, slowest 8.45 s. Health 200 on `0989a18`. Caddy not recreated. The worker was still up about a minute on, with the log grep at `0`.
+
+**Step 6, 04:21 UTC.** Five pages 200. Share routes: an unknown token, its `/1` and its `/1/painting.jpg` all 404, a bad-shape token 404, and **the encoded traversal `/share/..%2f..%2fetc` 400 and not the planned 404**: still a refusal, and it reached no key. `/privacy` holds the line, 0 "account", 0 "gift". "Paying by bank" `0`. Resend's webhook 404; `/unsubscribe` with no token 404. Both containers print the media URL and `0`. Log grep `0`. `keepsake 0`, `painting_email_sends 0`, no `art.generate` queue.
+Keepsake 1's published set, its token given by `paintings` and kept out of this file: the page 200 with the name, an `og:image` naming its own `/1/painting.jpg`, and that image 200, `image/jpeg`, 142,648 bytes. Health 200 on `0989a18`.
+
+**Step 7, 04:21 UTC.** `{"success":true}`. Seven files 200 and every hash the same as this commit's. Looked at `plum-photo.jpg` and `plum-thumb.jpg`: Plum's collar tag is blurred in both. A browser that already held an old file can show it for up to 4 hours.
+
+Better Stack read afterwards, a count only: 0 reports in the 15 minutes around the roll. Nothing failed, and nothing was rolled back. No delivery was seen during the roll: 2.63 s under Caddy's hold, and no webhook row was read.
 
 ## Follow-ups
 - Tick nothing in the plan: the art path's slices finish with oplog 0029.
