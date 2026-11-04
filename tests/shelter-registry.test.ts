@@ -114,8 +114,8 @@ describe("shelter registry (ADR-0006 as amended)", () => {
     ]);
   });
 
-  it("holds no opt-outs yet — outreach is ADR-0029", () => {
-    expect(SHELTER_EXCLUSIONS).toHaveLength(0);
+  it("holds Cat Town's opt-out, well formed (ADR-0029 §5)", () => {
+    expect(SHELTER_EXCLUSIONS.map((exclusion) => exclusion.shelterExternalId)).toEqual(["rescuegroups:org:5818"]);
     expect(exclusionProblems()).toEqual([]);
   });
 

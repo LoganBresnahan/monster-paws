@@ -206,7 +206,15 @@ export const EVIDENCE = /^<[^\s<>]+@[^\s<>]+>\s+sha256:[0-9a-f]{64}$/;
  * donation path alike, and the outreach list skips the shelter. Committed and
  * deployed the day the request arrives.
  */
-export const SHELTER_EXCLUSIONS: readonly ShelterExclusion[] = [];
+export const SHELTER_EXCLUSIONS: readonly ShelterExclusion[] = [
+  {
+    shelterExternalId: "rescuegroups:org:5818",
+    name: "Cat Town",
+    askedBy: "its Development & Deputy Director",
+    askedAt: "2026-11-04",
+    evidence: "<CAGPrCU0WTEk_G-FK3=m6F-4fEku14=53p+RFjqAi0f+ocbhoSw@mail.gmail.com> sha256:ef6e69b7e108975cd2bc1c8e2baa317f7250c10bab619038833b66f1127c2261",
+  },
+];
 
 /** The shape `animals.shelter_external_id` takes: `<source>:org:<id>` (src/core/ingest/rescuegroups.ts). */
 const SHELTER_KEY = /^[a-z0-9-]+(?::[a-z0-9-]+)?:org:[^\s]+$/;
