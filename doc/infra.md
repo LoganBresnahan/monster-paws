@@ -647,6 +647,55 @@ curl -X POST "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/purge_cache" \
 # token (or make a dedicated one) the first time this is actually needed.
 ```
 
+## After a restart of this box
+
+Claude runs this list, on Logan's word that the box has restarted. The same list follows a `wsl --shutdown` or a freeze. Logan's part is step 0 and reopening
+the chats, which no session can do for him. Say "restart it" in the session running the list: a session's permission check can read the worker's start as a
+production deploy and refuse it until he has (oplog 0028's Run). If it's between 06:45 UTC and that night's `== exit`, finish the poll first.
+
+```
+comes back by itself                         doesn't
+-------------------------------------------  --------------------------------------------
+the nightly poll: a Windows task starts      `pass`: Logan unlocks it (1 h idle, 3 h at most)
+  the distro, and uses nothing from `pass`   monsterpaws-db-1, monsterpaws-mailpit-1 (restart policy no)
+dockerd and containerd (systemd)             the tunnel to production's database
+/etc/hosts's line, generateHosts = false,    the art worker
+  var/do-ca.crt, the exports                 every Claude session
+production: it needs this box only to paint
+  and for the nightly poll
+```
+
+While the worker is down a paid donation waits and nothing is lost: the sweep sends its job again within the hour, and the "waiting past 30 minutes" alert fires.
+
+0. **Logan** reopens this session, then unlocks `pass`: `! pass show digitalocean/api-token | wc -c`. The tunnel and the worker read `pass` only when they start.
+1. `npm run db:up`, from the main checkout. Verify: `docker ps` shows both up. The sessions' tests and the dev site need them; production doesn't.
+2. `/gpu-health`: read-only apart from the smoke, and it reads the crash that caused the restart, if there was one.
+3. The tunnel, from the newest export. It must hold every shelter in `SHELTERS`, because the worker reads them from its own code and publish refuses otherwise; if topdog has
+   gained a shelter since, `paintings` exports the tip first.
+
+       pgrep -f 'monsterpaws-home-worker|src/worker/index' && echo "ALREADY RUNNING: stop here"
+       cd "$(ls -dt ~/monsterpaws-art-* | head -1)" && cat EXPORTED_FROM
+       nohup scripts/home-worker-tunnel.sh >> ~/monsterpaws/var/home-worker-tunnel.log 2>&1 &
+
+   Verify: `pgrep -f monsterpaws-home-worker` answers, and the log's last line isn't `down at`. Never run `scripts/poll-via-home.sh` while it's up: it forwards the same local port.
+4. The art worker, from the same export, as one worker, never two:
+
+       DATABASE_URL="$(pass show digitalocean/pg-home-worker-url | head -n1)" \
+       NODE_EXTRA_CA_CERTS=/home/oof/monsterpaws/var/do-ca.crt \
+       WORKER_MODE=art ART_STORE_DIR=/home/oof/monsterpaws/var/keepsakes-production \
+       SHARE_PUBLISH=on SHARE_WRITE_BUCKET=monsterpaws-media \
+       SHARE_WRITE_ENDPOINT="$(pass show cloudflare/r2-endpoint | head -n1)" \
+       SHARE_WRITE_ACCESS_KEY_ID="$(pass show cloudflare/r2-access-key-id | head -n1)" \
+       SHARE_WRITE_SECRET_ACCESS_KEY="$(pass show cloudflare/r2-secret-access-key | head -n1)" \
+       SENTRY_DSN="$(pass show betterstack/errors-dsn | head -n1)" \
+       RESCUEGROUPS_API_KEY= ART_SWEEP= \
+       nohup npm run worker >> var/explore/art-worker-production.log 2>&1 &
+
+   Verify: its first lines read `art store bound to database <name>`, then `art.generate registered (WORKER_MODE=art)`, with no error after 2 minutes. Stop it by PID with SIGTERM.
+5. **Logan** reopens the other chats he wants. `git worktree list` names their checkouts.
+
+Then close Windows' heavy apps while donations may come in: a paint starts only with 22 GB free (`comfyui/guard.sh mem`).
+
 ## Home GPU — the Arc A770 through WSL2 (ADR-0004 as amended 2026-10-05)
 
 Verified 2026-10-05 on Logan's main rig. Everything reproducible lives in
