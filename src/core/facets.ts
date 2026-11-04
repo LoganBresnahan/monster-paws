@@ -95,8 +95,8 @@ export function facetOptions(cells: readonly FacetCell[], filters: BrowseFilters
 
 /**
  * Browse orders (ADR-0015 as amended 2026-10-05). The first is the default and
- * is never written into a URL. Never add an order that ranks animals by
- * appeal: these sort by the source's listing date and nothing else (bright line 1).
+ * isn't written into a URL, unless `defaultSort` says the list's default is Sponsorable first.
+ * Never add an order that ranks animals by appeal: these sort by the source's listing date and nothing else (bright line 1).
  */
 export const BROWSE_SORTS = [
   { value: "newest", label: "Newest first" },

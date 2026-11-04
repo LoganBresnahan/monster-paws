@@ -121,12 +121,15 @@ function MenuSelect({
   options: FacetOption[];
   onPick: (value: string) => void;
 }) {
+  // A pick the scope holds none of stays at 0: with no option to select, the browser shows the
+  // first, and "Anywhere" over an empty page reads as nothing anywhere (ADR-0015 as amended 2026-11-04).
+  const shown = value && !options.some((o) => o.value === value) ? [{ value, count: 0 }, ...options] : options;
   return (
     <label className="flex flex-col gap-1 text-sm font-medium">
       {label}
       <select name={name} value={value} onChange={(e) => onPick(e.target.value)} className={control}>
         <option value="">{any}</option>
-        {options.map((option) => (
+        {shown.map((option) => (
           <option key={option.value} value={option.value}>
             {option.value} ({option.count.toLocaleString("en-US")})
           </option>

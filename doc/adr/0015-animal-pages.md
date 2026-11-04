@@ -866,6 +866,12 @@ sponserable filter". The first two sentences are the amendment above.
 ### Consequences (added)
 - A pick that leaves nothing, such as a state with no sponsorable animal, shows the
   page's "No animals match" line, as a zip with no dogs does. The form can't clear
-  that pick itself, because its grid has no shelter in it.
-- e2e has no sponsorable shelter, so it pins only the absent case. The checked case
-  is pinned at `loadBrowsePage` and was looked at in a browser.
+  that pick itself, because its grid has no shelter in it, so the pick stays in its
+  menu at 0 ("CA (0)"). With no option to select, the browser would show "Anywhere"
+  over an empty page, which reads as nothing being sponsorable anywhere. The verify
+  chat found this in `6fbce04`.
+- A zip we can't place still limits nothing and still says so, but it stays in the
+  query, so it counts as a filter: today's order, its menu, and a way to clear it.
+- e2e has no sponsorable shelter, so it pins only the absent case.
+  `tests/animals-page.test.ts` renders the real page and query with one, ticked box
+  included, which closes the gap the amendment above names.

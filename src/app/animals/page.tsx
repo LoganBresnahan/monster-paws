@@ -137,7 +137,8 @@ export default async function BrowsePage({
   const filters = filtersFrom(params, scoped ? await loadFacetGrid(db, asOf) : grid);
   const unsorted = {
     ...filters,
-    zip: origin ? zip : null,
+    // Kept when we can't place it, or the form believes it's on a filtered list while this renders the plain one.
+    zip,
     miles,
     shelter: scope.shelter,
     sponsorable: sponsorableOnly,
