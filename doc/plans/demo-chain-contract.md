@@ -2,7 +2,7 @@
 
 From a recorded gift to an email: a crew pet on the dev box, or a listing whose shelter holds a `digify` grant. It lands on
 topdog and stays dark: the sweep starts only with `ART_SWEEP=on`, a line in that machine's `.env` with its own oplog entry, and
-`SHELTERS` holds no grant. Only a recorded gift paints, so a bank donor waits for the webhook until slice C ships. Deadline:
+`SHELTERS` holds no grant. Only a recorded gift paints, so the donate link offers card and PayPal until slice C ships (ADR-0035 as amended 2026-11-04). Deadline:
 2026-11-04 21:00 UTC.
 
 ## Database
@@ -78,9 +78,14 @@ Leave `RESCUEGROUPS_API_KEY` unset in any worker pointed here, or `npm run worke
 `art.generate` needs an art-only worker mode, which `paintings` owns. Guard batches stop from 06:45 UTC until the
 main checkout's poll log says `== exit`.
 
+## The look before the mail
+
+`emails`' sweep stays off while `EMAIL_SWEEP` is unset: a person reads the four paintings from `npm run email -- list` and sends that one with
+`send-owed --keepsake <id>`. Logan's answer on keeping it for day one is owed. Nothing else holds a mail.
+
 ## Cut for now, and owed
 
-Slice C's return signal and ADR-0035's limits, which count only unconfirmed gifts. The photo hold on the droplet: the photos are
-fetched at paint time at home instead. Oplog 0021 stays due, and the sweep can't reach `test-gift`, which has no animal. ADR-0022's
-"no public paintings" stands until Logan decides on real paintings on share pages. The art worker's own distro and Windows account
-(ADR-0004 as amended 2026-10-05) need his word to skip.
+Slice C's return signal, ADR-0035's limits, which count only unconfirmed gifts, and `bank`. The photo hold on the droplet: the photos are fetched at
+paint time at home instead. Oplog 0021 stays due, and the sweep can't reach `test-gift`, which has no animal. Real paintings go on share pages (Logan, to
+the moderator: "yes real paintings on the share page is what we want"), which reverses ADR-0022's "no public paintings" for what's published; ADR-0036
+records the takedown. The art worker's own distro and Windows account wait (ADR-0004 as amended 2026-11-04).

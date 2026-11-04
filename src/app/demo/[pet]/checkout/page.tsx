@@ -34,8 +34,8 @@ export default async function DemoCheckout({
           ${amount} for {pet.name}&apos;s shelter
         </h1>
         <p className="mt-4 leading-relaxed text-muted">
-          For a real sponsorship, Every.org&apos;s secure checkout opens here. You pay by bank, card,
-          PayPal or Venmo, Every.org emails your receipt, and you come straight back to Monster Paws.
+          For a real sponsorship, Every.org&apos;s secure checkout opens here. You pay by card or
+          PayPal, Every.org emails your receipt, and you come straight back to Monster Paws.
           We never see your card.
         </p>
         <Link

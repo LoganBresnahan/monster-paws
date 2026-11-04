@@ -89,7 +89,7 @@ export default async function SponsorPage({
           <h2 className="font-bold">Where it goes</h2>
           <p className="mt-2 text-sm leading-relaxed text-muted">
             To {shelter} through Every.org, a nonprofit that sends it on and emails your tax receipt.{" "}
-            <span className="font-semibold text-foreground">We keep $0.</span> Paying by bank sends every cent. With a
+            <span className="font-semibold text-foreground">We keep $0.</span> With a
             card, the processor&apos;s fee comes out of your gift, not on top of it: about 30¢ plus 2%, so about 40¢ of
             a $5 gift.
           </p>

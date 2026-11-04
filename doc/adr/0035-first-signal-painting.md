@@ -255,3 +255,10 @@ bounces thats fine, if they actually went through the process their intentions w
 Question 2's answer stands for `/thanks`: that page never shows the painting. Its "there are no public
 paintings" no longer holds for a keepsake published under ADR-0036, whose page has its own token, never
 this ADR's.
+
+## Amendment (2026-11-04): no bank option until the return signal ships
+
+To reach real gifts by the Meta deadline, a painting starts at the webhook alone for now, and slice C follows (`doc/plans/demo-chain-contract.md`).
+A bank gift confirms days later, and Logan's own had no webhook after 4 minutes, so a bank donor would wait days: what this ADR set out to stop.
+Logan, to the moderator: "if not yes we can just do card and paypal right now". The donate link offers card and PayPal, and the sponsor page stops
+mentioning bank. **Slice C puts `bank` back in `method`, and the sentence with it:** "Paying by bank sends every cent."

@@ -19,9 +19,9 @@ Who does what: **Logan gives the word for step 1, in the session that runs it.**
 (the droplet's ufw `LIMIT` on 22/tcp).
 
 ## Prerequisites
-- [ ] Logan's word to run the worker on the dev distro for now, and not the separate distro and Windows account of ADR-0004 as amended
-      2026-10-05, recorded as an amendment there first. Its keys live beside dev's on this box, so they're made for this role alone and
-      rolled when the real home distro exists.
+- [x] Logan's word to run the worker on the dev distro for now, to the moderator, 2026-11-04: "yes we can run the worker on this dev setup".
+      ADR-0004 as amended 2026-11-04 records it. Its keys live beside dev's on this box, so they're made for this role alone and rolled when the
+      real home distro exists.
 - [ ] Oplog 0025 has run: the grants name `keepsake.share_token`, which migration 0017 adds. Read back in step 1.
 - [ ] `pass` unlocked by Logan.
 - [ ] Not within an hour of 06:00, 07:00 or 08:30 UTC, and nothing in the main checkout from 06:45 UTC until that night's log shows `== exit`.

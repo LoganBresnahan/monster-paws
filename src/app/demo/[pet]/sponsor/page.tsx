@@ -60,7 +60,7 @@ export default async function DemoSponsor({
           <p className="mt-2 text-sm leading-relaxed text-muted">
             Straight to {pet.name}&apos;s shelter through Every.org, a nonprofit that sends it on and
             emails your tax receipt. <span className="font-semibold text-foreground">We keep $0.</span>{" "}
-            Paying by bank sends every cent. With a card, the processor&apos;s fee comes out of your gift, not on top
+            With a card, the processor&apos;s fee comes out of your gift, not on top
             of it: about 30¢ plus 2%, so about 40¢ of a $5 gift.
           </p>
         </div>

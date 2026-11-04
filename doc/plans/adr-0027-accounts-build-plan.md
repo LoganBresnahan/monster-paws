@@ -143,7 +143,7 @@ Check items off as they ship.
      published image with compose's real volume against a private Postgres (never the shared dev one), a listener
      that never answers for the hang, and `nonprofit_mismatch` and `charge_on_other_intent` never re-run. Before migrating,
      oplog 0023 reads every row with a completed event and no donation, and accounts for each: the backfill marks them decided.
-   - [ ] `first-signal-return` (slice C; ADR-0035) — medium, moderate ⚠ verify. Migration 0018. `success_url` = `/thanks/<token>`; one conditional UPDATE of the return time; the no-cookie
+   - [ ] `first-signal-return` (slice C; ADR-0035) — medium, moderate ⚠ verify. Migration 0019. Puts `bank` back in the donate link's `method`, and its sentence on the sponsor page (ADR-0035 as amended 2026-11-04). `success_url` = `/thanks/<token>`; one conditional UPDATE of the return time; the no-cookie
      view, with the listing's photo under `/thanks`'s existing rule and never the painting (ADR-0035 question 2); plain `/thanks` listing only gifts with a return or a donation; `thankYouIntent`; the eraser unchanged, returned or not (question 5);
      `/privacy`, with the line on kept paintings; the
      daily check; the comments and copy ADR-0035 names. Verify: the staging

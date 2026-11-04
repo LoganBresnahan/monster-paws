@@ -47,7 +47,7 @@ describe("the donate link (ADR-0027 §3)", () => {
       amount: "25",
       frequency: "ONCE",
       min_value: "2",
-      method: "card,bank,paypal",
+      method: "card,paypal",
       email: "pat+dogs@example.org",
       partner_donation_id: gift.intentId,
       webhook_token: "tok123",

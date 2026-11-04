@@ -48,9 +48,8 @@ export function donateLink(
   url.searchParams.set("amount", String(gift.amount));
   url.searchParams.set("frequency", "ONCE");
   url.searchParams.set("min_value", String(MIN_AMOUNT));
-  // Every other method is unknown. Only the card is proven on staging: bank and PayPal are
-  // proven by production's real test gifts, before any donor sees this (ADR-0027 as amended 2026-11-02).
-  url.searchParams.set("method", "card,bank,paypal");
+  // Never add `bank` back before ADR-0035's return signal ships: a bank gift confirms days later, and only a confirmation paints (ADR-0035 as amended 2026-11-04).
+  url.searchParams.set("method", "card,paypal");
   // So the donor types it once (Logan, 2026-11-02). It rides in a URL Every.org sees,
   // which never reaches our logs: this link goes straight to the browser.
   url.searchParams.set("email", gift.donorEmail);

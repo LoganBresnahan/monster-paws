@@ -969,3 +969,16 @@ because we can't guarantee a clean body."
   (an anatomy check that rejects a painting, never repairs it): a full
   body could return as an amendment.
 - Donors asking for the whole animal.
+
+## Amendment (2026-11-04): the art worker runs on the dev setup for now
+
+Logan, to the moderator, 2026-11-04: "yes we can run the worker on this dev setup", so that real gifts can be painted by the Meta
+deadline. The second distro and Windows account of the 2026-10-05 amendment wait.
+
+- The worker runs on the dev distro, in a container, under a Postgres role and an SSH key made for it alone (oplog 0027), never dev's.
+  The role can't read a donor's address or a donation.
+- Those keys sit on a machine that also holds `pass` and every dev session, which is the risk the separate account was there to remove. They
+  are rolled when the real home distro is built.
+- A job waits while a guard batch has the card, and from 06:45 UTC until the nightly poll's log shows `== exit`.
+
+Revisit: when gifts arrive with nobody watching, or a dev session and a painting collide.

@@ -577,7 +577,7 @@ after it, if at all.
        │  intent id → httpOnly cookie on this browser
        ▼
   every.org donate link             partner_donation_id = intent id, email prefilled,
-       │                            method=card,bank,paypal,
+       │                            method=card,paypal,
        │                            webhook_token (EVERYORG_WEBHOOK_TOKEN)
        │                            a separate way in: /test-gift/<secret>, startTestGift(),
        │                            Logan's real-money tests, one named nonprofit, no
