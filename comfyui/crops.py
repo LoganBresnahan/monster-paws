@@ -190,9 +190,9 @@ def main() -> None:
         print(f"  {r['photo'][:60]}: " + " | ".join(f"{m} {[round(v) for v in b]}" for m, b in zip(METHODS, boxes)), flush=True)
 
     (detect.OUT / "grown.json").write_text(json.dumps(regrown, indent=1) + "\n")
-    # the detector's head (yellow) and the grown head (green), each cut as the painter reads it
+    # the detector's head (yellow) and the grown head (green), each cut as the painter reads it; no head, no sheet
     hc = 260
-    hs = Image.new("RGB", (hc * 3, (hc + 18) * len(heads)), "white")
+    hs = Image.new("RGB", (hc * 3, (hc + 18) * max(len(heads), 1)), "white")
     hd = ImageDraw.Draw(hs)
     for i, (k, im, hb, gb) in enumerate(heads):
         y = i * (hc + 18)

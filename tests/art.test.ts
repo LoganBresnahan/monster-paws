@@ -10,7 +10,7 @@ import { artFilePath, CREW_BASIS, crewExternalId, FACT, grantBasis, mintShareTok
 import { closeDb, type Db } from "@/db/client";
 import { donationIntents, keepsake, keepsakeFact } from "@/db/schema";
 import { CREW } from "@/ui/crew";
-import { bindArtStore, crewSpec, generateArt, hostFreeGb, inQuietWindow, listingWords, LOAD_FREE_GB, loadCrewTable, paintedFor, runName, type CrewTable, type PaintSpec, type Painter } from "@/worker/art";
+import { bindArtStore, comfyData, crewSpec, generateArt, guardPainter, hostFreeGb, inQuietWindow, lastRunLine, listingWords, liveCropsArgs, LOAD_FREE_GB, loadCrewTable, paintedFor, photoHosts, runName, type CrewTable, type PaintSpec, type Painter } from "@/worker/art";
 import { SKIP_DB_TESTS, TEST_DATABASE_URL, testDb, truncateDonor } from "./support/db";
 
 const TABLE: CrewTable = {
@@ -39,8 +39,12 @@ describe("the crew's painting table (ADR-0004 as amended 2026-11-03)", () => {
     const table = loadCrewTable();
     expect(Object.keys(table.pets).sort()).toEqual(CREW.map((pet) => pet.slug).sort());
     expect(table.seeds).toHaveLength(4);
+    // the three-quarter view, the winner of batches 38d–38f (Logan, 2026-11-04: "yes to three quarter"; ADR-0004 as amended 2026-11-03, later)
+    expect(table.prompt).toBe("storybook_bust34");
     const spec = (batch: string) => JSON.parse(readFileSync(`comfyui/explore/${batch}.json`, "utf8")).animals;
-    expect(table.pets.plum).toMatchObject({ describe: spec("batch38c").Plum.bare, two: spec("batch38c").Plum.two });
+    // never batch 38c's pair: its second, downloadfile.jpg, is Plum's shelter listing photo (2026-11-04)
+    expect(table.pets.plum).toMatchObject({ describe: spec("batch38g").Plum.bare, two: spec("batch38g").Plum.two });
+    expect(Object.values(table.pets).flatMap((pet) => pet.two)).not.toContain("downloadfile.jpg");
     expect(table.pets.beetle).toMatchObject({ describe: spec("batch35a").Beetle.describe, two: spec("batch35a").Beetle.two });
     expect(table.pets.marty).toMatchObject({ describe: spec("batch37a").Marty.crew, two: spec("batch37a").Marty.two });
   });
@@ -48,9 +52,13 @@ describe("the crew's painting table (ADR-0004 as amended 2026-11-03)", () => {
 
 describe("a listing's words, from its own fields", () => {
   const f = (pairs: [string, string][]) => pairs.map(([field, value]) => ({ field, value }));
-  it("are its sex and kind, lower case, the species when it has no kind, and no unknown sex", () => {
-    expect(listingWords(f([[FACT.sex, "female"], [FACT.kind, "Pit Bull Terrier Mix"], [FACT.species, "dog"]]))).toBe("female pit bull terrier mix");
-    expect(listingWords(f([[FACT.sex, "unknown"], [FACT.species, "cat"]]))).toBe("cat");
+  // Fixture provenance: sex, breed and species as the corpus writes them ("Male" 57,263, "Female" 57,095; species lower case), read 2026-11-04.
+  it("are its sex and kind in lower case, with its species when the kind doesn't name it, and no unknown sex", () => {
+    expect(listingWords(f([[FACT.sex, "Female"], [FACT.kind, "Pit Bull Terrier Mix"], [FACT.species, "dog"]]))).toBe("female pit bull terrier mix dog");
+    expect(listingWords(f([[FACT.sex, "Male"], [FACT.kind, "Domestic Short Hair"], [FACT.species, "cat"]]))).toBe("male domestic short hair cat");
+    expect(listingWords(f([[FACT.sex, "Female"], [FACT.kind, "Tuxedo"], [FACT.species, "cat"]]))).toBe("female tuxedo cat");
+    expect(listingWords(f([[FACT.sex, "Male"], [FACT.kind, "Siamese Cat"], [FACT.species, "cat"]]))).toBe("male siamese cat");
+    expect(listingWords(f([[FACT.sex, "Unknown"], [FACT.species, "cat"]]))).toBe("cat");
   });
 });
 
@@ -74,6 +82,53 @@ describe("a run's paintings", () => {
   it("are named for the keepsake's own token, never its id alone, which every database starts at 1", () => {
     expect(runName(1, "tokenA")).not.toBe(runName(1, "tokenB"));
     expect(runName(1, "tokenA")).toMatch(/^keepsake-1-[0-9a-f]{12}$/);
+  });
+});
+
+
+describe("the detector a run uses (ADR-0028 §1)", () => {
+  it("says why a detection stopped, in live_crops' own words for the run", () => {
+    const log = "owlv2-raw-v4: 8s\nkeepsake-1-abc: 0 of 1 photos cut\nkeepsake-1-abc: no animal chosen in any photo; nothing to paint from\nother: x\n";
+    expect(lastRunLine(log, "keepsake-1-abc")).toBe("no animal chosen in any photo; nothing to paint from");
+    expect(lastRunLine(log, "keepsake-2-def")).toBeNull();
+  });
+
+  it("is the local one, set on the container whatever the worker's environment names", () => {
+    const before = process.env.DETECT_PIPELINES;
+    process.env.DETECT_PIPELINES = "sam3";
+    try {
+      const args = liveCropsArgs("keepsake-1-abc");
+      expect(args).toContain("DETECT_PIPELINES=owlv2");
+      expect(args.join(" ")).not.toContain("sam3");
+    } finally {
+      if (before === undefined) delete process.env.DETECT_PIPELINES;
+      else process.env.DETECT_PIPELINES = before;
+    }
+  });
+});
+
+
+describe("a listing's photos, fetched (verify, 2026-11-04)", () => {
+  const root = mkdtempSync(join(tmpdir(), "art-fetch-"));
+  const fetchPhotos = guardPainter(root).fetchPhotos;
+  const photo = (url: string) => ({ url, width: 500, height: 375 });
+
+  it("come only from RescueGroups' CDN unless the worker names another host", () => {
+    expect(photoHosts({})).toEqual(["cdn.rescuegroups.org"]);
+    expect(photoHosts({ ART_PHOTO_HOSTS: "upload.wikimedia.org, cdn.rescuegroups.org" })).toEqual(["upload.wikimedia.org", "cdn.rescuegroups.org"]);
+  });
+
+  it("refuses another host, plain http and a URL that won't parse, naming the photo by number, never by URL", async () => {
+    await expect(fetchPhotos("r", [photo("https://evil.example/a.jpg")])).rejects.toThrow("photo 1 is not from an allowed host");
+    await expect(fetchPhotos("r", [photo("http://cdn.rescuegroups.org/a.jpg")])).rejects.toThrow("photo 1 is not from an allowed host");
+    const bad = fetchPhotos("r", [photo("https://cdn.rescuegroups.org/a.jpg"), photo("not a url at all")]);
+    await expect(bad).rejects.not.toThrow("not a url at all");
+  });
+
+  it("resolves ComfyUI's data root as the compose file does", () => {
+    expect(comfyData("/repo", {})).toBe("/repo/var/comfyui");
+    expect(comfyData("/repo", { COMFYUI_DATA: "../data" })).toBe("/repo/data");
+    expect(comfyData("/repo", { COMFYUI_DATA: "/mnt/comfy" })).toBe("/mnt/comfy");
   });
 });
 
@@ -283,7 +338,7 @@ describe.skipIf(SKIP_DB_TESTS)("art.generate (doc/plans/demo-chain-contract.md)"
       nonprofitSlug: "a-staging-nonprofit", nonprofitEin: "12-3456789", donorEmail: "pat@example.org" });
     const [row] = await db.insert(keepsake).values({ intentId, shareToken: mintShareToken(), snapshottedAt: NOON }).returning({ id: keepsake.id });
     await db.insert(keepsakeFact).values(
-      ([[FACT.name, "Hopper - (Courtesy Post) - Adopt Me!"], [FACT.species, "dog"], [FACT.kind, "Pit Bull Terrier Mix"], [FACT.sex, "female"],
+      ([[FACT.name, "Hopper - (Courtesy Post) - Adopt Me!"], [FACT.species, "dog"], [FACT.kind, "Pit Bull Terrier Mix"], [FACT.sex, "Female"],
         [FACT.shelter, "Spencer Pet Rescue"]] as const).map(([field, value]) => ({ keepsakeId: row.id, field, value, basis: SPENCER, snapshottedAt: NOON })),
     );
     return row.id;
@@ -297,9 +352,9 @@ describe.skipIf(SKIP_DB_TESTS)("art.generate (doc/plans/demo-chain-contract.md)"
     const name = await nameOf(id);
     // two at most, as klein-v1 reads them
     expect(p.fetched).toEqual([{ name, photos: PHOTOS.slice(0, 2) }]);
-    expect(p.detected).toEqual([{ name, listing: { species: "dog", colour: "", subject: `${name}, the female pit bull terrier mix`,
+    expect(p.detected).toEqual([{ name, listing: { species: "dog", colour: "", subject: `${name}, the female pit bull terrier mix dog`,
       photos: [`held:${name}/photos/1.jpg`, `held:${name}/photos/2.jpg`] } }]);
-    expect(p.specs[0].animals).toEqual({ [name]: { kind: "dog", describe: "female pit bull terrier mix", two: ["1.jpg", "2.jpg"] } });
+    expect(p.specs[0].animals).toEqual({ [name]: { kind: "dog", describe: "female pit bull terrier mix dog", two: ["1.jpg", "2.jpg"] } });
     expect(p.specs[0].photos).toEqual(["two"]);
     expect(p.forgotten).toEqual([name]);
     expect(new Set((await artOf(id)).map((r) => r.basis))).toEqual(new Set([SPENCER]));
@@ -336,15 +391,22 @@ describe.skipIf(SKIP_DB_TESTS)("art.generate (doc/plans/demo-chain-contract.md)"
     expect(await artOf(other)).toHaveLength(4);
   });
 
-  it("paints a listing from the photos the detector found the animal in, a head first, and stops with none", async () => {
+  it("paints a listing from the photos the detector found the animal in, its own head first, and stops with none", async () => {
     const id = await listingKeepsake();
     const one = painter(pngs, null, () => [{ file: "1.jpg", head: false }, { file: "2.jpg", head: true }]);
     await generateArt(db, { keepsakeId: id, photos: PHOTOS }, one, { table: TABLE, now: NOON, nightly: null });
     expect(one.specs[0].animals[await nameOf(id)].two).toEqual(["2.jpg", "1.jpg"]);
 
+    // a close-up's subject stands in for its head (the listing rehearsal's cat, 2026-11-04), so it still paints
+    const closeUp = await listingKeepsake();
+    const headless = painter(pngs, null, () => [{ file: "1.jpg", head: false }]);
+    expect(await generateArt(db, { keepsakeId: closeUp, photos: PHOTOS.slice(0, 1) }, headless, { table: TABLE, now: NOON, nightly: null }))
+      .toMatchObject({ status: "painted" });
+    expect(headless.specs[0].animals[await nameOf(closeUp)].one).toEqual(["1.jpg"]);
+
     const other = await listingKeepsake();
-    const none = painter(pngs, null, () => [{ file: "1.jpg", head: false }]);
-    await expect(generateArt(db, { keepsakeId: other, photos: PHOTOS }, none, { table: TABLE, now: NOON, nightly: null })).rejects.toThrow("its head");
+    const none = painter(pngs, null, () => []);
+    await expect(generateArt(db, { keepsakeId: other, photos: PHOTOS }, none, { table: TABLE, now: NOON, nightly: null })).rejects.toThrow("no photo with the animal");
     expect(none.calls).toBe(0);
     expect(none.forgotten).toEqual([await nameOf(other)]);
   });
@@ -382,5 +444,20 @@ describe.skipIf(SKIP_DB_TESTS)("art.generate (doc/plans/demo-chain-contract.md)"
     const outcomes = await Promise.all([1, 2, 3].map(() => generateArt(db, { keepsakeId: id }, painter(), { table: TABLE, now: NOON, nightly: null })));
     expect(outcomes.filter((o) => o.status === "painted")).toHaveLength(1);
     expect(await artOf(id)).toHaveLength(4);
+  });
+
+  it("paints a listing through the local detector even when the worker's environment names sam3", async () => {
+    const before = process.env.DETECT_PIPELINES;
+    process.env.DETECT_PIPELINES = "sam3";
+    try {
+      const id = await listingKeepsake();
+      const p = painter();
+      await generateArt(db, { keepsakeId: id, photos: PHOTOS }, p, { table: TABLE, now: NOON, nightly: null });
+      // the painter's crops take no detector at all: guardPainter's are liveCropsArgs', owlv2 alone (above)
+      expect(p.detected).toHaveLength(1);
+    } finally {
+      if (before === undefined) delete process.env.DETECT_PIPELINES;
+      else process.env.DETECT_PIPELINES = before;
+    }
   });
 });

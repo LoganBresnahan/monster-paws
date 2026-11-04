@@ -970,6 +970,47 @@ because we can't guarantee a clean body."
   body could return as an amendment.
 - Donors asking for the whole animal.
 
+### Later (2026-11-04): the portrait in three-quarter view
+Logan, after batch 35's portrait: "one issue we have sometimes is that the
+shoulders often look too wide. its very evident on plum. He almost looks like a
+puppy head on a human body", and "so same goes for all dogs". "A
+head-and-shoulders portrait" is how a person's bust is described. Batches
+38d–38f painted two framings without those words on every dog at four seeds,
+blind beside the portrait he had read (`doc/plans/base-model-candidates.md`):
+
+| Framing | Acceptable of 68 | Shoulders too wide | Best of three |
+| --- | --- | --- | --- |
+| "a head-and-shoulders portrait from the chest up" | 45 | 9 | 10 |
+| "a close portrait of its head and neck" | 47 | 7 | 11 |
+| "in three-quarter view, a portrait from the chest up" | 57 | 0 | 42 |
+
+Logan: "yes to three quarter". **Decision 1's words become "a gentle storybook
+illustration of a {kind}, in three-quarter view, a portrait from the chest up,
+looking toward the viewer, soft watercolor, warm pastel palette, plain
+background"**, still chest up, so decision 4's framing guarantee holds. The
+likeness harness (`npm run explore:score`) scores it a mean 0.584 on those
+batches, against 0.572 for the close head and 0.581 for the portrait it
+replaces on the same dogs (batch 35), so no likeness is lost by the score.
+Seeds 23, 333, 1111 and 3000 passed 13, 13, 11 and 13 of 15 in it, and stay
+the four; Logan settles prompt and seeds when he is happy with them
+(2026-11-04: "we will work till its right"). `comfyui/keepsake-crew.json` holds
+both.
+
+### Later (2026-11-04): a listing's words and a close-up's head
+A listing paints from the photos its job carries, by live detection
+(ADR-0026), with words from its own fields, its sex and kind and, when the kind
+doesn't name it, its species ("female tuxedo cat"), never a breed alone. When
+the detector finds the animal in a photo but no head inside it, as in a
+close-up that fills the frame, **the animal's own crop stands in for the head
+reference** rather than the photo painting nothing. The evidence, a rehearsal
+through the real job on two Wikimedia Commons photos as a listing's
+(`doc/plans/base-model-candidates.md`, 2026-11-04 03:30–03:48 UTC): a dog from
+two photos painted as before; a long-haired cat from one close-up, its head
+not found, failed, then painted with the fallback. The likeness harness against
+the Commons originals: the cat a mean 0.640, the dog 0.601, against 0.584 for
+the three-quarter view's batches; it cannot see a wrong coat or wrong ears, so
+Logan's eye decided: "these look great".
+
 ## Amendment (2026-11-04): the art worker runs on the dev setup for now
 
 Logan, to the moderator, 2026-11-04: "yes we can run the worker on this dev setup", so that real gifts can be painted by the Meta

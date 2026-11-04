@@ -6,8 +6,8 @@ Runs in the `explore` container on the CPU:
 
 Reads explore/<run>/detect.json, one listing in detect.py's own shape written by the handler; runs detect.py's
 rules with DETECT_OUT at explore/<run>/detect and crops.py's growth on what they chose; then cuts each photo's
-subject and head into input/crew/<run>/ as `explore.py prep` cuts the crew's, and writes explore/<run>/cut.json:
-the photos cut, each with whether a head was found. DETECT_PIPELINES chooses the detector, as for the
+subject and head into input/crew/<run>/ as `explore.py prep` cuts the crew's (with no head found, the subject
+stands in for it), and writes explore/<run>/cut.json: the photos cut, each with whether its own head was found. DETECT_PIPELINES chooses the detector, as for the
 comparison runs, so a new detector is a stage-1 function in detect.py and nothing here.
 """
 import json
@@ -43,13 +43,20 @@ def main() -> None:
             print(f"{run}: no animal chosen in {ref}", flush=True)
             continue
         src = detect.photo_path(ref)
+        boxes = {c: found[c] for c in CROPS if found.get(c)}
+        # No head chosen inside the animal, as in a close-up that fills the frame (the listing rehearsal's cat, 2026-11-04):
+        # the animal's own box stands in for its head, as klein reads a close-up anyway, rather than no painting at all.
+        stood_in = "grownhead" not in boxes
+        if stood_in:
+            boxes["dethead"], boxes["grownhead"] = boxes["detsubject"], boxes["grownsubject"]
+            print(f"{run}: no head chosen in {ref}; its subject stands in for the head", flush=True)
         # Under the run's own name, never the pet's: the crew's batch-11 crops are kept, and a live run is never mistaken for one.
-        explore.cut(run, src, {"full": None, **{c: found[c] for c in CROPS if found.get(c)}}, f"{run}/{src.stem}")
-        cut.append({"ref": ref, "file": src.name, "head": bool(found.get("grownhead"))})
+        explore.cut(run, src, {"full": None, **boxes}, f"{run}/{src.stem}")
+        cut.append({"ref": ref, "file": src.name, "head": not stood_in})
     (out / "cut.json").write_text(json.dumps(cut, indent=1) + "\n")
     print(f"{run}: {len(cut)} of {len(asked)} photos cut into input/crew/{run}/, {sum(c['head'] for c in cut)} with a head", flush=True)
-    if not any(c["head"] for c in cut):
-        sys.exit(f"{run}: no photo with an animal and its head; nothing to paint from")
+    if not cut:
+        sys.exit(f"{run}: no animal chosen in any photo; nothing to paint from")
 
 
 if __name__ == "__main__":

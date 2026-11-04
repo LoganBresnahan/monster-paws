@@ -67,11 +67,28 @@ Verify, final publish: as the first, and once oplog 0025 has put the route live,
 Rollback: `npm run share -- takedown <token>`.
 
 ## Run
-Steps 1 to 3, 2026-11-04 00:07 to 00:08 UTC, by the moderator; Logan connected the domain with minimum TLS 1.2. Step 4 waits on its prerequisites.
+Steps 1 to 3, 2026-11-04 00:07 to 00:08 UTC, by the moderator; Logan connected the domain with minimum TLS 1.2. Step 4's publish, takedown and
+publish, 2026-11-04 02:41 to 02:45 UTC, by `paintings`, on Logan's "ok for beetle" and the moderator's go; its bot `curl` waits on oplog 0025's route.
 
 - **Step 1:** 0 objects and 0 bytes, read before the domain served anything.
 - **Step 2:** the worker pair wrote, read and deleted `probe/0026`. `rclone rcat` reported a 501 though the object landed, and `rclone copyto` needed a second attempt, both with `RCLONE_S3_NO_CHECK_BUCKET=true`, because a token scoped to objects can't check a bucket. The share tool's own PUT is what step 4 proves.
 - **Step 3:** for about the first minute every request answered 403 with Cloudflare's `error code: 1014`, then it cleared by itself at 00:08:08. Root 404 and a missing key 404, with no listing in the body. The probe answered 200 with no credentials, and to `Twitterbot/1.0` and `facebookexternalhit/1.1`. TLS 1.0 and 1.1 are refused, 1.2 connects. After the delete: 404, and the bucket back to 0 objects.
+
+- **Step 4, prerequisites:** the set is keepsake 1 in `monsterpaws_demo`, Beetle, painted by the chain 2026-11-04 00:46 to 00:52 UTC, four
+  marked JPEGs at 1216×832 with no metadata; Logan's OK in `paintings`' chat; the crew's consent line on topdog ("Extended 2026-11-03"); `pass`
+  unlocked, its four entries read inside each command and never printed; the zone id looked up as `doc/infra.md` does, never printed.
+- **Step 4, first publish, 02:41:18 to 02:41:24:** `npm run share -- publish 1` wrote `1.jpg` to `4.jpg` (142,648, 205,714, 194,372 and
+  201,837 bytes) and then `manifest.json` (37 bytes), each read back and matched by sha256. With no credentials all five answered 200, the
+  bytes matching the hashes the tool printed; `manifest.json` held exactly `{"name":"Beetle","kind":"Bloodhound"}`; no JPEG held EXIF, XMP,
+  an ICC profile or generator text.
+- **Step 4, takedown, 02:41:55 to 02:42:00:** `npm run share -- takedown <token>` deleted the share, read every object back as absent, and
+  purged 14 URLs. With no credentials `manifest.json`, `1.jpg` and `4.jpg` answered 404, none from cache.
+- **Step 4, final publish, 02:42:21 to 02:42:26:** the same five objects and hashes as the first. **Found:** `1.jpg` and `4.jpg` then answered
+  404 to a GET for about three minutes while `2.jpg`, `3.jpg` and the manifest answered 200: `cf-cache-status: HIT`, age 55 s at 02:43:04,
+  the 404s the takedown's own check fetched at 02:42:10 and the edge kept, as Cloudflare keeps a 404 on a `.jpg` (it doesn't cache
+  `.json`). A HEAD answered 200 throughout. They cleared at 02:45:10 with nothing done, and at 02:45:29 all five answered 200 with the
+  first publish's checks. So a GET of a share's JPEG before it exists, or in the minutes after a takedown, holds a 404 at the edge for
+  about three minutes; a republish soon after a takedown wants a purge of its URLs, or the wait.
 
 ## Follow-ups
 - The dedicated media write pair in `doc/infra.md` still comes with the real home worker, because the pair used here can also write the corpus.

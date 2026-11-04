@@ -3708,6 +3708,12 @@ On Logan's "commit and realign" (this stream's work landed on topdog as
   Plum paints on the local detector or with a different second photo.
   The glue's refs are `crew:<Name>/<file>` with the pet's capitalised
   folder, the only form the allow-list takes.
+  Later (2026-11-04, the `sam3` chat): on Logan's word, cleaned copies of
+  Plum's five photos and one of Stacey's are what `meta`'s `sam3` client
+  sends (`var/explore/crew-clean/`), mapped from the same `crew:` refs, so
+  a crew run under `sam3` covers all five pets with the crew table's new
+  pair for Plum; the crops still come from the originals on the box, and
+  `downloadfile.jpg` stays off for good.
 - **Owed after the realign onto donate's widened contract (`f29142f`):** a
   listing's photos arrive in the job (`{ keepsakeId, photos }`, never a
   fact, ADR-0022 as amended 2026-10-27), fetched at paint time and deleted
@@ -3732,6 +3738,10 @@ On Logan's "commit and realign" (this stream's work landed on topdog as
   (a token in a message is the page), and is never retried, so it is a hand
   rerun of `npm run share -- publish`. Checked on the CPU: a Commons photo
   as a held one, no colour, cut with its head in 13 s. Tests: twenty.
+- **Logan's OK on keepsake 1, and no freeze (2026-11-04):** "ok for beetle,
+  we don't need a freeze time we will work till its right". Beetle's four
+  from the first real run are approved for oplog 0026's first publish; the
+  prompt, framing and seeds stay open until he is happy with them.
 - **The verifier's review of `ac90f6f` and `8cc3c7e`, fixed (2026-11-04):**
   a run folder named for the keepsake's token (`runName`), since ids start
   at 1 in every database and the demo's keepsake 1 would have shared
@@ -3747,6 +3757,74 @@ On Logan's "commit and realign" (this stream's work landed on topdog as
   so the guard's arithmetic holds after a spec changes; ADR-0028's note
   reconciled with real gifts. Deferred, in `doc/issues.md`: a failed
   publish is never retried. Tests: twenty-five.
+- **The detector, set by the handler (2026-11-04, the `sam3` chat's trap):**
+  with `DETECT_PIPELINES=sam3` in a worker's environment a listing's run would
+  stop on `SAM3_APPROVED` and fail a real gift. On topdog the handler passes
+  `DETECT_PIPELINES=owlv2` to the container for every run, never the worker's
+  own; the crew's `sam3` choice lives on `meta` (ADR-0028 §1), as a patch for
+  the `sam3` chat (`scratch/art-detector-meta.patch`), first committed here as
+  `9067220` and taken back out at the moderator's word.
+- **The verifier's second review (2026-11-04):** listing words take "Male" and
+  "Female" in any case and the species when the kind doesn't name it, as a
+  whole word ("female tuxedo cat", "male domestic short hair cat"): a
+  prompt change for listings, so the listing rehearsal is its harness run.
+  The photo fetch takes only `ART_PHOTO_HOSTS` (default
+  `cdn.rescuegroups.org`), https, no redirect, a 25 MB cap, and names a
+  photo by its number, never its URL. `forget` resolves `COMFYUI_DATA` as
+  compose does; `crops.py` no longer dies on no heads. A failing `forget`
+  fails the job on purpose. The production art worker is a host process
+  (it drives docker and the guard), agreed with donate: its own store
+  (`var/keepsakes-production`, bound by its marker), `SHARE_PUBLISH=on`,
+  `ART_SWEEP` and `ART_CREW_DETECTOR` unset, started after 0028 makes the
+  queue, restarted by this stream after 0029's grant. Its database name
+  wants a hosts line (WSL rewrites `/etc/hosts` unless `generateHosts =
+  false`) or a `DB_SSL_SERVERNAME`, donate's choice. Tests: thirty-one.
+- **A real gift on the day: what Logan sees (2026-11-04).** A gift paints in
+  about four to five minutes when the card is free and Windows has 22 GB
+  after the guard's cache drop. Otherwise the job is skipped, never failed:
+  in the nightly window (06:45 UTC to the poll's `== exit`), while a guard
+  batch or ComfyUI runs, or under 22 GB (Logan's own apps count: at 03:17
+  UTC Firefox held 7.8 GB and Windows had 21.7 GB free of 63.7). The sweep
+  sends it again in the next hour's slot, so each skip can cost up to an
+  hour. What shows it: donate's Sentry error "paid paintings waiting past
+  30 minutes", once an hour; and the art worker's own Sentry warning "art
+  skipped: <reason>", at most hourly, the nightly window left out. Its
+  log has every outcome. What to do: close a heavy app, or wait; the next
+  slot paints. The worker also reports pg-boss errors at most once per ten
+  minutes with the count held back, so a dropped tunnel can't flood the
+  error service. The demo's store bound to `monsterpaws_demo` 03:27 UTC.
+  The listing rehearsal skipped twice at 21.5 GB (03:16 UTC) and waits for
+  the moderator after oplog 0025.
+- **The listing rehearsal, 2026-11-04 03:30–03:40 UTC** (Logan's apps closed,
+  28.5 GB free), through the real `generateArt` and `guardPainter` on
+  `monsterpaws_lora_test`, its own store, two Wikimedia Commons originals as
+  a listing's photos (`ART_PHOTO_HOSTS=upload.wikimedia.org` for this run
+  only), the three-quarter view, no publish. **Two photos, a dog** ("male
+  mixed breed dog", one photo twice): painted in 223 s, four JPEGs and four
+  art facts on the listing's grant, its photos, overlays and crops deleted.
+  **One photo, a cat** ("female domestic long hair cat"): stopped in 23 s,
+  OWLv2 choosing the cat (margin 0.25) as the whole frame and no head inside
+  it, so `live_crops.py` found nothing to paint from; its photo and crops
+  deleted too. A shelter's close-up would fail a real gift the same way. So
+  a photo with an animal and no head now paints with its subject standing
+  in for the head (`live_crops.py`), and a stopped detection carries
+  `live_crops`' own last line into the error (`lastRunLine`). The cat runs
+  again, with the likeness harness against its Commons photo and Logan's
+  eye, before the fallback is recorded in ADR-0004.
+- **The cat again, 03:45–03:48 UTC** (Logan: "okay lets rerun whenever we are
+  ready"; 26 GB free): painted in 182 s, its subject standing in for its
+  head. **Likeness** against the Commons originals (`likeness.py`'s encoder,
+  the job's crops being deleted): the cat 0.646, 0.637, 0.637, 0.639, mean
+  0.640; the dog 0.576, 0.612, 0.595, 0.622, mean 0.601; 38e–38f's
+  three-quarter mean was 0.584. Both sets beside their photos for Logan's
+  eye: `var/explore/index-all/listing-rehearsal.html`. Found: my ship bar's
+  vitest had truncated `monsterpaws_lora_test`, so the cat took id 2 again
+  and its JPEGs overwrote the dog's in the rehearsal store; the marker
+  stops two databases sharing a store, but a database whose ids restart (a
+  test one) meets its own old files. Production's ids never restart.
+- **Logan's eye on the rehearsal:** "these look great". The head fallback
+  and the listing words are recorded in ADR-0004 as amended 2026-11-03's
+  later note, with these runs as the evidence.
 
 ### The crew for the site — Logan's picks (2026-11-04)
 
@@ -3767,6 +3845,69 @@ Logan on Plum's: "are the new framings for plum the ones with a slight
 head turn? those definitely look good. I wonder if that should be the
 framing for all the photos moving forward or if we should keep a
 variety?" Open, with the shoulder page's ticks (`shoulders-38.html`).
+
+**Plum's pick withdrawn, and batch 38g (2026-11-04).** The `sam3` chat found
+that `Plum/downloadfile.jpg` is Plum's actual shelter listing photo
+(`doc/plans/the-look-exploration.md`), a source no painting may have; it is
+the second of Plum's two in `comfyui/keepsake-crew.json`, in batches 38a,
+38c and 38d, and so in the 38d 015 Logan picked for the site. Logan,
+relayed: "i guess we need to get rid of the download photo and regenerate
+the plum photos". **38g, 32:** his first original
+(`PXL_20250423_185424061.PORTRAIT`) with either `PXL_20250422_224209397`
+(facing the camera, Ducky's face in a corner) or `PXL_20250422_224206531`
+(three-quarter head) as the second, both collared so the collarless
+`bare` words, in the short portrait and the three-quarter framing, at
+38c's eight seeds; the spec is checked to name no `downloadfile.jpg`.
+Logan picks Plum again from it; the crew table then takes the photo pair
+he picks. `var/crew/Plum/downloadfile.jpg` stays where it is unless he
+says, and the older specs stay as history.
+
+**38g, run 2026-11-04 02:48–03:01 UTC:** 32 of 32, two ComfyUI starts at
+chunk 16 (the guard's fix, first real batch), 22.9 GB free after the drop,
+no kill; all marked; on the crew page in place of the withdrawn 40, none from
+`downloadfile.jpg`. **Caution (the `sam3` chat):** two of the four sources,
+`PXL_20250423_185424061.PORTRAIT` and `PXL_20250422_224206531`, show a
+personal detail; their crops, overlays and sheets stay off anything public or
+committed, and the painting Logan picks is looked at full size for a painted
+tag or detail before its path goes to the site.
+
+**Logan's new Plum pick: batch 38g, 011** (saved as
+`crew-portraits-37-picks-2026-11-04b.txt`): the three-quarter view, collarless,
+seed 5150, from `PXL_20250423_185424061.PORTRAIT` and
+`PXL_20250422_224209397`. Claude looked at it at full size and sees no collar,
+tag or personal detail, and asked Logan to look too; the file holds only `IHDR`,
+`IDAT` and `IEND`. The crew table now paints Plum from that pair, and a test
+holds that no pet's photos include `downloadfile.jpg`.
+
+### Batches 38d–38f — Logan's read of the shoulders (2026-11-04)
+
+Logan's ticks saved as `var/explore/index-all/shoulders-38-picks-2026-11-04.txt`,
+decoded through `var/explore/shoulders38-blind/key.json`; with them: "the
+beagle just didn't have great likeness probably an outliar to be fixed when
+we have a vision model".
+
+| Framing | Acceptable of 68 | Shoulders too wide | Best of three |
+| --- | --- | --- | --- |
+| `storybook_bust` (the portrait he read) | 45 | 9 | 10 |
+| `storybook_head` (close head and neck) | 47 | 7 | 11 |
+| `storybook_bust34` (three-quarter view) | 57 | 0 | 42 |
+
+- **The three-quarter view wins on every count**, and never had shoulders
+  too wide. Without Plum, whose eight seeds weigh double: best in 36 of the
+  15 dogs' 60 threes, against 10 and 10. Plum's wide shoulders (7 of 8 on
+  the portrait) are gone in three-quarter (0), and it was his best 6 times.
+- **It holds across the seeds:** 13, 13, 11 and 13 of 15 acceptable at 23,
+  333, 1111 and 3000.
+- **Bailey** (the beagle) is acceptable once in twelve whatever the framing:
+  a likeness outlier for the photo reader, not the framing (Logan).
+- Plum's threes here were painted from `downloadfile.jpg` (38c, 38d), since
+  withdrawn as a source; they still read the framing.
+- **Decided: the three-quarter view for every keepsake** (Logan: "yes to
+  three quarter"). `comfyui/keepsake-crew.json`'s prompt is
+  `storybook_bust34`, real gifts' too, at the same four seeds; ADR-0004 as
+  amended 2026-11-03 gains its "Later (2026-11-04)" note. The likeness
+  harness agrees: a mean 0.584 on 38e–38f, against 0.572 for the close
+  head and 0.581 for batch 35's portrait on the same dogs.
 
 ### Batches 14a–14b — Logan's picks (2026-10-28)
 

@@ -226,6 +226,12 @@ function startPaintingEmailSweep(): () => void {
   return () => clearInterval(timer);
 }
 
+/** pg-boss errors from the art worker, one report in this long (the count held back rides with it). */
+const BOSS_REPORT_MS = 10 * 60 * 1000;
+
+/** The nightly window is expected; a skip for the card or Windows' memory is what someone must see and act on (close an app, wait). */
+const ART_SKIP_ALERT_MS = 60 * 60 * 1000;
+
 /**
  * Only with `WORKER_MODE=art`, on the box with the card, and then no other job registers: the droplet has no GPU and
  * never sets it (ADR-0004 as amended 2026-10-05), and a RescueGroups key in the same `.env` must not start a poll here.
@@ -239,11 +245,17 @@ async function registerArtGenerate(boss: PgBoss) {
   const painter = guardPainter(process.cwd());
   // Built at registration, so a missing write key stops the worker at start rather than after a set is painted.
   const publish = sharePublisher(() => getDb(DATABASE_URL));
+  let lastSkipAlert = 0;
   await boss.work<ArtGenerateJob>(ART_GENERATE, { batchSize: 1 }, async ([job]) => {
     try {
       const outcome = await generateArt(getDb(DATABASE_URL), job.data, painter, { live: process.env.ART_DETECT === "live", publish });
       // Never the job's data: a listing's photo URLs stay out of the log.
       console.log(JSON.stringify({ event: "art.generate", keepsakeId: job.data.keepsakeId, ...outcome }));
+      // A skip for the card or the memory says why, at most hourly: donate's "waiting past 30 minutes" alert can't (ART_SKIP_ALERT_MS).
+      if (outcome.status === "skipped" && !outcome.reason.includes("quiet window") && Date.now() - lastSkipAlert >= ART_SKIP_ALERT_MS) {
+        lastSkipAlert = Date.now();
+        Sentry.captureMessage(`art skipped: ${outcome.reason}`, { level: "warning", tags: { job: ART_GENERATE } });
+      }
       if (outcome.status === "painted" && outcome.published === false) {
         // The art stands; nothing retries the publish, so this is the alert to run `npm run share -- publish` by hand.
         Sentry.captureMessage(`art painted but not published: ${outcome.publishError}`, { level: "error", tags: { job: ART_GENERATE } });
@@ -279,9 +291,19 @@ async function main() {
   const boss = artOnly
     ? new PgBoss({ connectionString: DATABASE_URL, migrate: devChain, supervise: devChain, schedule: false, max: 2 })
     : new PgBoss(DATABASE_URL);
+  // The art worker reaches the cluster through a tunnel from home: a dropped tunnel makes pg-boss error several times
+  // a second (verify, 2026-11-04), so it reports one an interval with the count it held back, never each.
+  let lastBossReport = 0;
+  let heldBack = 0;
   boss.on("error", (err: Error) => {
     console.error("[pg-boss]", err);
-    Sentry.captureException(err, { tags: { component: "worker", source: "pg-boss" } });
+    if (artOnly && Date.now() - lastBossReport < BOSS_REPORT_MS) {
+      heldBack += 1;
+      return;
+    }
+    lastBossReport = Date.now();
+    Sentry.captureException(err, { tags: { component: "worker", source: "pg-boss" }, extra: { heldBack } });
+    heldBack = 0;
   });
   await boss.start();
 

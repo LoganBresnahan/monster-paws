@@ -1,7 +1,7 @@
 import { spawn } from "node:child_process";
 import { createHash } from "node:crypto";
 import { createWriteStream, existsSync, mkdirSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
-import { basename, dirname, extname, isAbsolute, join } from "node:path";
+import { basename, dirname, extname, isAbsolute, join, resolve } from "node:path";
 import { and, asc, eq, sql } from "drizzle-orm";
 import sharp from "sharp";
 import { spokenAnimalName } from "@/core/email/animal-name";
@@ -67,6 +67,15 @@ export interface Painter {
   paint(name: string, spec: PaintSpec): Promise<string[]>;
 }
 
+/**
+ * `live_crops.py` in the explore container on the local detector, set here and never inherited from the worker's
+ * `DETECT_PIPELINES`: a listing's photo never leaves the machine (ADR-0004 as amended 2026-08-02; ADR-0028 §1).
+ */
+export function liveCropsArgs(name: string): string[] {
+  return ["compose", "-f", "comfyui/compose.yml", "run", "--rm", "--no-deps", "-e", "DETECT_PIPELINES=owlv2",
+    "--entrypoint", "python", "explore", "/home/comfy/harness/live_crops.py", name];
+}
+
 /** A photo `comfyui/live_crops.py` cut: an animal was chosen in it, and maybe its head. */
 export interface CutPhoto {
   file: string;
@@ -113,12 +122,29 @@ function text(facts: { field: string; value: unknown }[], field: string): string
   return typeof value === "string" && value.trim() ? value.trim() : undefined;
 }
 
-/** A listing's words from its own fields, "female pit bull terrier mix": the reviewed words table is not built, and no one reads a shelter's photo to write them. */
+/**
+ * A listing's words from its own fields, "female tuxedo cat": the reviewed words table is not built, and no one reads
+ * a shelter's photo to write them. The corpus says "Male" and "Female"; a breed that doesn't name its species gets it,
+ * since "tuxedo" or "domestic short hair" alone is not an animal (verify, 2026-11-04).
+ */
 export function listingWords(facts: { field: string; value: unknown }[]): string {
-  const sex = text(facts, FACT.sex);
-  const kind = text(facts, FACT.kind) ?? text(facts, FACT.species) ?? "animal";
-  return [sex === "female" || sex === "male" ? sex : null, kind].filter(Boolean).join(" ").toLowerCase();
+  const sex = text(facts, FACT.sex)?.toLowerCase();
+  const species = text(facts, FACT.species)?.toLowerCase();
+  const kind = text(facts, FACT.kind)?.toLowerCase();
+  const words = [sex === "female" || sex === "male" ? sex : null, kind];
+  if (species && !(kind ?? "").split(/\W+/).includes(species)) words.push(species);
+  return words.filter(Boolean).join(" ") || "animal";
 }
+
+/** Where a listing's photos may come from: RescueGroups' CDN, the only host in the corpus (287,526 of 287,526, verify). */
+export function photoHosts(env: Record<string, string | undefined> = process.env): string[] {
+  return (env.ART_PHOTO_HOSTS ?? "cdn.rescuegroups.org").split(",").map((h) => h.trim()).filter(Boolean);
+}
+
+const MAX_PHOTO_BYTES = 25 * 1024 * 1024;
+
+/** An honest client name and a contact, as Wikimedia asks of every client and the outreach tool already sends (ADR-0029). */
+const ART_USER_AGENT = "MonsterPawsArtBot/0.1 (https://monsterpaws.org)";
 
 /** A listing painted from its own photos, one or two, by the crew table's prompt and four seeds. */
 export function listingSpec(table: CrewTable, name: string, species: string, words: string, files: string[], keepsakeId: number): PaintSpec {
@@ -213,7 +239,13 @@ export async function generateArt(
   db: Db,
   job: ArtGenerateJob,
   painter: Painter,
-  opts: { table?: CrewTable; now?: Date; nightly?: string | null; live?: boolean; publish?: (keepsakeId: number) => Promise<void> } = {},
+  opts: {
+    table?: CrewTable;
+    now?: Date;
+    nightly?: string | null;
+    live?: boolean;
+    publish?: (keepsakeId: number) => Promise<void>;
+  } = {},
 ): Promise<ArtOutcome> {
   const { keepsakeId, photos = [] } = job;
   const [row] = await db.select({ token: keepsake.shareToken }).from(keepsake).where(eq(keepsake.id, keepsakeId)).limit(1);
@@ -246,8 +278,8 @@ export async function generateArt(
     if (opts.live && pet) {
       const cut = await painter.crops(name, { ...pet.detect, photos: pet.two.map((file) => `crew:${pet.name}/${file}`) });
       // The crew's two are vetted photos of the pet: one the detector can't find is a fault to see, never a set from the other.
-      if (pet.two.some((file) => !cut.some((c) => c.file === file)) || !cut.find((c) => c.file === pet.two[0])?.head) {
-        throw new Error(`keepsake ${keepsakeId}: live detection lost one of ${pet.name}'s photos or its first's head`);
+      if (pet.two.some((file) => !cut.some((c) => c.file === file))) {
+        throw new Error(`keepsake ${keepsakeId}: live detection lost one of ${pet.name}'s photos`);
       }
     }
     pngs = await painter.paint(name, crewSpec(table, crew.pet, keepsakeId, opts.live ? name : undefined));
@@ -259,9 +291,10 @@ export async function generateArt(
       const files = await painter.fetchPhotos(name, photos.slice(0, 2));
       // No colour: `animals` holds none, so the detector's colour vote abstains (ADR-0026).
       const cut = await painter.crops(name, { species, colour: "", subject: `${name}, the ${words}`, photos: files.map((f) => `held:${name}/photos/${f}`) });
-      // A photo with no animal chosen is left out; the head is read from the first photo, so one with a head leads.
+      // A photo with no animal chosen is left out; the head is read from the first photo, so one with its own head leads,
+      // and a photo whose subject stands in for its head (`live_crops.py`) still paints.
       const usable = [...cut].sort((a, b) => Number(b.head) - Number(a.head));
-      if (!usable[0]?.head) throw new Error(`keepsake ${keepsakeId}: no photo with the animal and its head`);
+      if (usable.length === 0) throw new Error(`keepsake ${keepsakeId}: no photo with the animal in it`);
       pngs = await painter.paint(name, listingSpec(table, name, species, words, usable.map((c) => c.file), keepsakeId));
     } finally {
       // The photos and everything cut from them go when the attempt ends, painted or not: they are fetched again for a retry (ADR-0022 as amended 2026-11-02).
@@ -375,6 +408,18 @@ export function paintedFor(runsJsonl: string, spec: PaintSpec): (string | null)[
   return spec.seeds.map((seed) => runs.findLast((r) => r.seed === seed)?.output ?? null);
 }
 
+/** The last line a run's own scripts wrote about it (`<name>: …`), without the name, or null. */
+export function lastRunLine(log: string, name: string): string | null {
+  const line = log.split("\n").filter((l) => l.startsWith(`${name}: `)).at(-1);
+  return line ? line.slice(name.length + 2).trim() : null;
+}
+
+/** ComfyUI's data root as `comfyui/compose.yml` resolves it: COMFYUI_DATA, relative to `comfyui/`, or `var/comfyui`. */
+export function comfyData(root: string, env: Record<string, string | undefined> = process.env): string {
+  const set = env.COMFYUI_DATA;
+  return set ? resolve(join(root, "comfyui"), set) : join(root, "var", "comfyui");
+}
+
 /**
  * Paints through `comfyui/guard.sh batch`, never a ComfyUI of its own: the guard restarts ComfyUI and
  * kills it when the driver's pool leaks, and nothing drives the Arc except through it (doc/infra.md, Home GPU).
@@ -394,20 +439,46 @@ export function guardPainter(root: string): Painter {
     async fetchPhotos(name, photos) {
       const dir = join(explore, name, "photos");
       mkdirSync(dir, { recursive: true });
+      const hosts = photoHosts();
       const files: string[] = [];
+      // Every message names the photo by its number, never its URL: a URL is the shelter's, and it reaches the log.
       for (const [i, photo] of photos.entries()) {
-        if (!photo.url.startsWith("https://")) throw new Error(`${name}: photo ${i + 1} is not an https URL`);
-        const res = await fetch(photo.url, { signal: AbortSignal.timeout(30_000) });
+        let url: URL;
+        try {
+          url = new URL(photo.url);
+        } catch {
+          throw new Error(`${name}: photo ${i + 1} has no valid URL`);
+        }
+        if (url.protocol !== "https:" || !hosts.includes(url.hostname)) throw new Error(`${name}: photo ${i + 1} is not from an allowed host`);
+        let res: Response;
+        try {
+          // No redirect is followed: one could leave the CDN for any address at all (verify, 2026-11-04).
+          res = await fetch(url, { redirect: "error", headers: { "User-Agent": ART_USER_AGENT }, signal: AbortSignal.timeout(30_000) });
+        } catch {
+          throw new Error(`${name}: photo ${i + 1} could not be fetched`);
+        }
         const type = res.headers.get("content-type") ?? "";
-        if (!res.ok || !type.startsWith("image/")) throw new Error(`${name}: photo ${i + 1} answered ${res.status} ${type}`);
+        if (!res.ok || !type.startsWith("image/") || !res.body) throw new Error(`${name}: photo ${i + 1} answered ${res.status} ${type}`);
+        const chunks: Uint8Array[] = [];
+        let size = 0;
+        const reader = res.body.getReader();
+        for (let part = await reader.read(); !part.done; part = await reader.read()) {
+          size += part.value.byteLength;
+          if (size > MAX_PHOTO_BYTES) {
+            await reader.cancel();
+            throw new Error(`${name}: photo ${i + 1} is over ${MAX_PHOTO_BYTES} bytes`);
+          }
+          chunks.push(part.value);
+        }
         const file = `${i + 1}.${type.includes("png") ? "png" : type.includes("webp") ? "webp" : "jpg"}`;
-        writeFileSync(join(dir, file), Buffer.from(await res.arrayBuffer()));
+        writeFileSync(join(dir, file), Buffer.concat(chunks));
         files.push(file);
       }
       return files;
     },
     async forget(name) {
-      for (const dir of [join(explore, name, "photos"), join(explore, name, "detect"), join(root, "var", "comfyui", "input", "crew", name)]) {
+      // A failure here fails the job on purpose: the photos must go, and a retry fetches and paints again.
+      for (const dir of [join(explore, name, "photos"), join(explore, name, "detect"), join(comfyData(root), "input", "crew", name)]) {
         rmSync(dir, { recursive: true, force: true });
       }
     },
@@ -415,8 +486,14 @@ export function guardPainter(root: string): Painter {
       const dir = join(explore, name);
       mkdirSync(dir, { recursive: true });
       writeFileSync(join(dir, "detect.json"), JSON.stringify({ _: `${name}: one listing for live detection`, listings: { [name]: { ...listing, photos } } }, null, 2) + "\n");
-      await run("docker", ["compose", "-f", "comfyui/compose.yml", "run", "--rm", "--no-deps", "--entrypoint", "python", "explore",
-        "/home/comfy/harness/live_crops.py", name], root, join(explore, `${name}.log`));
+      const log = join(explore, `${name}.log`);
+      try {
+        await run("docker", liveCropsArgs(name), root, log);
+      } catch (err) {
+        // live_crops says why in its own last line (no photo, no animal): carried into the error, so the alert says it too.
+        const why = lastRunLine(existsSync(log) ? readFileSync(log, "utf8") : "", name);
+        throw new Error(why ? `${name}: detection stopped: ${why}` : String(err instanceof Error ? err.message : err));
+      }
       return JSON.parse(readFileSync(join(dir, "cut.json"), "utf8")) as CutPhoto[];
     },
     async paint(name, spec) {

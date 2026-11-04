@@ -1,0 +1,58 @@
+{
+  "_": "Batch 38g — Plum without his shelter listing photo: downloadfile.jpg is Plum's actual shelter listing photo (doc/plans/the-look-exploration.md), so it can never be a painting's source, and the crew pick from 38d came from it. Logan, relayed 2026-11-04: \"i guess we need to get rid of the download photo and regenerate the plum photos\". His first original kept, two candidates for the second (the sam3 chat's suggestion): PXL_20250422_224209397 (faces the camera, Ducky's face in a corner) as `two`, and PXL_20250422_224206531 (three-quarter head) as `twob`; both wear a collar, so the collarless `bare` words (Logan: \"no i want to collarless\"). The short portrait and the three-quarter framing Logan liked on Plum (38d), at 38c's eight seeds.",
+  "animals": {
+    "Plum": {
+      "kind": "dog",
+      "describe": "male grey cane corso puppy",
+      "bare": "male grey cane corso puppy with a bare neck and nothing around it",
+      "two": [
+        "PXL_20250423_185424061.PORTRAIT.jpg",
+        "PXL_20250422_224209397.jpg"
+      ],
+      "twob": [
+        "PXL_20250423_185424061.PORTRAIT.jpg",
+        "PXL_20250422_224206531.jpg"
+      ]
+    }
+  },
+  "photos": [
+    "two",
+    "twob"
+  ],
+  "crops": [
+    "grownsubject"
+  ],
+  "aspect": [
+    "landscape"
+  ],
+  "describe": [
+    "bare"
+  ],
+  "families": [
+    "kleinbfl8"
+  ],
+  "graphs": [
+    "reference2"
+  ],
+  "prompts": [
+    "storybook_bust",
+    "storybook_bust34"
+  ],
+  "denoise": [],
+  "weights": [],
+  "weight_types": [],
+  "end_at": [],
+  "seeds": [
+    88,
+    1357,
+    4242,
+    5150,
+    6060,
+    8642,
+    9119,
+    31337
+  ],
+  "heads": [
+    "grownhead"
+  ]
+}
