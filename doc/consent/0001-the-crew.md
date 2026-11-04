@@ -31,12 +31,14 @@
 
 | Pet | Painting (Logan's pick) | Made by |
 | --- | --- | --- |
-| Plum | batch 12g, 007 | klein-v1 (11c), the anatomy traced out and repainted by klein Base |
-| Marty | batch 11b, 020 | klein-v1, as painted |
-| Beetle | batch 12g, 029 | klein-v1 (11b), the anatomy traced out and repainted by klein Base |
-| Stacey | batch 11c, 023 | klein-v1, as painted |
-| Ducky | batch 12h, 022 (w0.0018) | klein-v1 (11a), the anatomy traced out, repainted by klein Base, a line inked after |
+| Plum | batch 38d, 015 | klein-v1, as painted: three-quarter view, collarless words |
+| Marty | batch 37a, 004 | klein-v1, as painted: colour reworded as batch 11b |
+| Beetle | batch 35a, 039 | klein-v1, as painted |
+| Stacey | batch 37a, 020 | klein-v1, as painted |
+| Ducky | batch 35a, 023 | klein-v1, as painted |
 
-The batches are read in `doc/plans/base-model-candidates.md` (ADR-0004 as
-amended 2026-10-23). Revoking is deleting the files and this section in one
+Portraits since 2026-11-03. Logan: "we are going to do portraits because we can't guarantee a clean body.
+so the crew photos need updated." Only the paintings changed, and the real photos and thumbs are as they
+were. None of these went through the hand step, unlike the earlier picks, which git keeps. The batches are
+read in `doc/plans/base-model-candidates.md` (ADR-0004 as amended 2026-11-03). Revoking is deleting the files and this section in one
 commit.

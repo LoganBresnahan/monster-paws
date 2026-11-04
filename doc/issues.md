@@ -50,6 +50,13 @@ is the record, and a file of ticked boxes stops being read.
 
 ## UI
 
+- **"How it works" cuts off the end of the painting's mark.** The Keepsake card
+  in `src/app/page.tsx` shows Ducky's painting with `object-cover` in a 4:3
+  frame, which trims the sides of the 1216×832 canvas, so the corner reads
+  "monsterpaws.org · 2" instead of "monsterpaws.org · 2026". It did this before
+  the portraits too. Cosmetic: the whole mark shows on the crew card above it
+  and in the lightbox. Found 2026-11-04 looking at the new portraits.
+
 - **The production server logs "The destination stream closed early"** when a
   page is closed mid-response: three times in one e2e run (2026-10-26, 20/20
   green) and once in dev on `/animals`. It is the browser hanging up on a
