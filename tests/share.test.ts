@@ -4,7 +4,6 @@ import {
   createR2ObjectStore,
   deleteShare,
   encodePainting,
-  newShareToken,
   publishShare,
   purgeCloudflare,
   purgeUrls,
@@ -49,13 +48,6 @@ async function jpeg(width = 1216, height = 832, withMetadata = false): Promise<B
 }
 
 describe("share tokens (ADR-0036)", () => {
-  it("are 128 random bits in the 22 characters the routes accept", () => {
-    const token = newShareToken();
-    expect(token).toHaveLength(22);
-    expect(isShareToken(token)).toBe(true);
-    expect(newShareToken()).not.toBe(token);
-  });
-
   it.each(["", "short", `${TOKEN}x`, "../../etc/passwd00000", "abcdefghij klmnopq-rst", "abcdefghij/klmnopq-rst"])(
     "refuses %j",
     (bad) => {
@@ -73,13 +65,19 @@ describe("share tokens (ADR-0036)", () => {
 });
 
 describe("the manifest (ADR-0036)", () => {
-  it("keeps the name and kind, and drops whatever else the file holds", () => {
+  it("keeps the name, kind and shelter, and drops whatever else the file holds", () => {
     expect(
-      parseManifest({ name: " Beetle ", kind: "Bloodhound", email: "a@b.org", amount: 5, intentId: "x", donorName: "y" }),
-    ).toEqual({ name: "Beetle", kind: "Bloodhound" });
+      parseManifest({ name: " Beetle ", kind: "Bloodhound", shelter: "A Shelter", email: "a@b.org", amount: 5, intentId: "x", donorName: "y" }),
+    ).toEqual({ name: "Beetle", kind: "Bloodhound", shelter: "A Shelter" });
   });
 
-  it.each([[null], ["text"], [{ name: "Beetle" }], [{ name: "", kind: "Dog" }], [{ name: 1, kind: "Dog" }], [{ name: "B".repeat(81), kind: "Dog" }]])(
+  it("needs only a name: a listing with no breed has no kind, and a crew pet no shelter", () => {
+    expect(parseManifest({ name: "Sparrow" })).toEqual({ name: "Sparrow" });
+    expect(parseManifest({ name: "Sparrow", kind: "  ", shelter: 7 })).toEqual({ name: "Sparrow" });
+    expect(parseManifest({ name: "Sparrow", kind: "K".repeat(121) })).toEqual({ name: "Sparrow" });
+  });
+
+  it.each([[null], ["text"], [{ kind: "Dog" }], [{ name: "", kind: "Dog" }], [{ name: 1, kind: "Dog" }], [{ name: "B".repeat(121), kind: "Dog" }]])(
     "refuses %j",
     (raw) => {
       expect(parseManifest(raw)).toBeNull();
@@ -122,7 +120,7 @@ describe("the base-URL source (ADR-0036)", () => {
   });
 
   it("reports a malformed manifest", async () => {
-    const { source } = sourceAnswering(200, JSON.stringify({ name: "Beetle" }));
+    const { source } = sourceAnswering(200, JSON.stringify({ kind: "Dog" }));
     await expect(source.manifest(TOKEN)).rejects.toThrow(/malformed/);
   });
 
@@ -152,11 +150,11 @@ describe("publishing (ADR-0036)", () => {
     await expect(encodePainting(await jpeg(1024, 1024))).rejects.toThrow(/1216×832/);
   });
 
-  it("writes the paintings, then the manifest last, with only the name and kind in it", async () => {
+  it("writes the paintings, then the manifest last, under the keepsake's own token, with only the named fields in it", async () => {
     const { store, objects, log } = memoryStore();
     const paintings = await Promise.all([1, 2, 3, 4].map(() => jpeg()));
-    const { token, files } = await publishShare(store, { name: "Beetle", kind: "Bloodhound" }, paintings, TOKEN);
-    expect(token).toBe(TOKEN);
+    const hostile = { name: "Beetle", kind: "Bloodhound", email: "a@b.org" } as { name: string; kind: string };
+    const files = await publishShare(store, hostile, paintings, TOKEN);
     expect(log.at(-1)).toBe(`put ${manifestKey(TOKEN)}`);
     expect(log.slice(0, 4)).toEqual([1, 2, 3, 4].map((n) => `put share/${TOKEN}/${n}.jpg`));
     expect(JSON.parse(Buffer.from(objects.get(manifestKey(TOKEN))!).toString())).toEqual({ name: "Beetle", kind: "Bloodhound" });
@@ -169,6 +167,13 @@ describe("publishing (ADR-0036)", () => {
     const paintings = await Promise.all([1, 2, 3, 4].map(() => jpeg()));
     await expect(publishShare(store, { name: "Beetle", kind: "Bloodhound" }, paintings, TOKEN)).rejects.toThrow(/read-back/);
     expect(log).toEqual([`put share/${TOKEN}/1.jpg`]);
+  });
+
+  it("writes nothing for a manifest with no usable name", async () => {
+    const { store, log } = memoryStore();
+    const paintings = await Promise.all([1, 2, 3, 4].map(() => jpeg()));
+    await expect(publishShare(store, { name: "  " }, paintings, TOKEN)).rejects.toThrow(/no usable name/);
+    expect(log).toEqual([]);
   });
 
   it("refuses anything but four paintings", async () => {

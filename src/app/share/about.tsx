@@ -18,3 +18,9 @@ export function AboutMonsterPaws() {
     </section>
   );
 }
+
+/** ADR-0006 decision 5's credit in plain words, on a shelter's animal only; a crew pet has no shelter (ADR-0036). */
+export function ShelterCredit({ shelter }: { shelter: string | undefined }) {
+  if (!shelter) return null;
+  return <p className="mt-1 text-sm text-muted">Painted with permission from {shelter}.</p>;
+}

@@ -10,8 +10,8 @@ import {
 } from "@/core/share/source";
 import { SITE_ORIGIN } from "@/ui/site";
 import { SiteLogo } from "@/ui/site-logo";
-import { AboutMonsterPaws } from "../../about";
-import { loadShare, paintingOr404, shareMetadata } from "../../load";
+import { AboutMonsterPaws, ShelterCredit } from "../../about";
+import { loadShare, paintedLine, paintingOr404, shareMetadata } from "../../load";
 import { ShareActions } from "../../share-actions";
 
 type Params = { params: Promise<{ token: string; n: string }> };
@@ -28,7 +28,7 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
     token,
     n,
     title: `${name}, painted in watercolour — Monster Paws`,
-    description: `${name}, ${kind}, painted in watercolour. A Monster Paws keepsake.`,
+    description: `${name}${kind ? `, ${kind}` : ""}, painted in watercolour. A Monster Paws keepsake.`,
     alt: `${name}, painted in watercolour`,
   });
 }
@@ -36,7 +36,7 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
 export default async function SharePaintingPage({ params }: Params) {
   const { token, n: raw } = await params;
   const n = paintingOr404(raw);
-  const { name, kind } = await loadShare(token);
+  const { name, kind, shelter } = await loadShare(token);
   const fileName = `${name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-monster-paws-${n}.jpg`;
 
   return (
@@ -48,7 +48,8 @@ export default async function SharePaintingPage({ params }: Params) {
       </Link>
 
       <h1 className="mt-4 text-3xl font-bold">{name}</h1>
-      <p className="mt-1 text-lg text-muted">{kind} · painted in watercolour</p>
+      <p className="mt-1 text-lg text-muted">{paintedLine(kind)}</p>
+      <ShelterCredit shelter={shelter} />
 
       <div className="mt-6 rounded-cuddly border-2 border-paw/30 bg-card p-3 shadow-sm">
         <Image

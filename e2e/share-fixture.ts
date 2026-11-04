@@ -17,18 +17,23 @@ export const SHARE_MANIFEST = {
   donorName: "Fixture Donor",
 };
 
+/** A shelter's animal: no kind on the listing, and the shelter's credit. */
+export const SHARE_GIFT_TOKEN = "giftFixtureToken-000_B";
+export const SHARE_GIFT_MANIFEST = { name: "Sparrow", shelter: "A Test Shelter", email: "fixture-donor@example.com" };
+
+const MANIFESTS: Record<string, unknown> = { [SHARE_TOKEN]: SHARE_MANIFEST, [SHARE_GIFT_TOKEN]: SHARE_GIFT_MANIFEST };
 const PAINTINGS = ["beetle", "plum", "marty", "stacey"];
 const CREW_DIR = path.resolve(__dirname, "..", "public", "brand", "crew");
 
 export async function startShareFixture(port: number): Promise<() => Promise<void>> {
   const server = createServer(async (req, res) => {
     const match = /^\/share\/([^/]+)\/(manifest\.json|([1-4])\.jpg)$/.exec(req.url ?? "");
-    if (!match || match[1] !== SHARE_TOKEN) {
+    if (!match || !MANIFESTS[match[1]]) {
       res.writeHead(404).end();
       return;
     }
     if (match[2] === "manifest.json") {
-      res.writeHead(200, { "content-type": "application/json" }).end(JSON.stringify(SHARE_MANIFEST));
+      res.writeHead(200, { "content-type": "application/json" }).end(JSON.stringify(MANIFESTS[match[1]]));
       return;
     }
     const file = path.join(CREW_DIR, `${PAINTINGS[Number(match[3]) - 1]}-painting.jpg`);

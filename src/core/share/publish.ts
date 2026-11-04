@@ -1,4 +1,4 @@
-import { createHash, randomBytes } from "node:crypto";
+import { createHash } from "node:crypto";
 import { AwsClient } from "aws4fetch";
 import sharp from "sharp";
 import {
@@ -6,6 +6,7 @@ import {
   paintingImagePath,
   paintingKey,
   paintingPagePath,
+  parseManifest,
   PAINTING_NUMBERS,
   SHARE_PAINTING,
   sharePagePath,
@@ -65,11 +66,6 @@ export function createR2ObjectStore(config: R2StoreConfig, fetchImpl: typeof fet
   };
 }
 
-/** 128 bits, and never the intent id or the `/thanks` token (ADR-0036). */
-export function newShareToken(): string {
-  return randomBytes(16).toString("base64url");
-}
-
 /** Re-encoded from pixels alone: ComfyUI writes its whole workflow into a painting's file (ADR-0036). */
 export async function encodePainting(file: string | Buffer): Promise<Buffer> {
   const { data, info } = await sharp(file)
@@ -103,25 +99,27 @@ async function putAndReadBack(store: ObjectStore, key: string, body: Uint8Array,
 }
 
 /**
- * The manifest goes last and never first: its presence is what makes the page
- * exist, so a failed upload leaves no page with a missing painting (ADR-0036).
+ * The token is the keepsake's own, never minted here. The manifest goes last and
+ * never first: its presence is what makes the page exist, so a failed upload leaves
+ * no page with a missing painting (ADR-0036).
  */
 export async function publishShare(
   store: ObjectStore,
   manifest: ShareManifest,
   paintings: readonly Buffer[],
-  token: string = newShareToken(),
-): Promise<{ token: string; files: PublishedFile[] }> {
+  token: string,
+): Promise<PublishedFile[]> {
   if (paintings.length !== PAINTING_NUMBERS.length) {
     throw new Error(`a keepsake is ${PAINTING_NUMBERS.length} paintings, got ${paintings.length}`);
   }
+  const clean = parseManifest(manifest);
+  if (!clean) throw new Error("the manifest has no usable name");
   const files: PublishedFile[] = [];
   for (const n of PAINTING_NUMBERS) {
     files.push(await putAndReadBack(store, paintingKey(token, n), paintings[n - 1], "image/jpeg"));
   }
-  const body = Buffer.from(JSON.stringify({ name: manifest.name, kind: manifest.kind }));
-  files.push(await putAndReadBack(store, manifestKey(token), body, "application/json"));
-  return { token, files };
+  files.push(await putAndReadBack(store, manifestKey(token), Buffer.from(JSON.stringify(clean)), "application/json"));
+  return files;
 }
 
 /** Every URL a takedown must purge; `publicBase` is the source's own hostname when it has one (ADR-0036). */

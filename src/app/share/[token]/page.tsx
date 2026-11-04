@@ -8,8 +8,8 @@ import {
   SHARE_PAINTING,
 } from "@/core/share/source";
 import { SiteLogo } from "@/ui/site-logo";
-import { AboutMonsterPaws } from "../about";
-import { loadShare, shareMetadata } from "../load";
+import { AboutMonsterPaws, ShelterCredit } from "../about";
+import { loadShare, paintedLine, shareMetadata } from "../load";
 
 export async function generateMetadata({ params }: { params: Promise<{ token: string }> }): Promise<Metadata> {
   const { token } = await params;
@@ -18,7 +18,7 @@ export async function generateMetadata({ params }: { params: Promise<{ token: st
     token,
     n: 1,
     title: `${name}'s keepsake — Monster Paws`,
-    description: `Watercolour paintings of ${name}, ${kind}. A Monster Paws keepsake.`,
+    description: `Watercolour paintings of ${name}${kind ? `, ${kind}` : ""}. A Monster Paws keepsake.`,
     alt: `${name}, painted in watercolour`,
   });
 }
@@ -30,16 +30,15 @@ export async function generateMetadata({ params }: { params: Promise<{ token: st
  */
 export default async function SharePage({ params }: { params: Promise<{ token: string }> }) {
   const { token } = await params;
-  const { name, kind } = await loadShare(token);
+  const { name, kind, shelter } = await loadShare(token);
 
   return (
     <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col px-6 py-12">
       <SiteLogo />
 
       <h1 className="mt-8 text-3xl font-bold">{name}&apos;s keepsake</h1>
-      <p className="mt-2 text-lg text-muted">
-        {kind} · painted in watercolour. Pick one to save or share it.
-      </p>
+      <p className="mt-2 text-lg text-muted">{paintedLine(kind)}. Pick one to save or share it.</p>
+      <ShelterCredit shelter={shelter} />
 
       <ul className="mt-8 grid gap-6 sm:grid-cols-2">
         {PAINTING_NUMBERS.map((n) => (

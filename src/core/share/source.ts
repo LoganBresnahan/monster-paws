@@ -9,7 +9,10 @@ export type PaintingNumber = (typeof PAINTING_NUMBERS)[number];
 
 export interface ShareManifest {
   name: string;
-  kind: string;
+  /** a listing's breed field as published; absent when it has none, never guessed */
+  kind?: string;
+  /** the shelter that gave permission, for the card's credit (ADR-0006 decision 5); a crew pet has none */
+  shelter?: string;
 }
 
 export interface ShareSource {
@@ -19,7 +22,7 @@ export interface ShareSource {
 }
 
 const TOKEN = /^[A-Za-z0-9_-]{22}$/;
-const FIELD_MAX = 80;
+const FIELD_MAX = 120;
 const FETCH_TIMEOUT_MS = 10_000;
 
 export function isShareToken(raw: string): boolean {
@@ -56,14 +59,21 @@ export function paintingImagePath(token: string, n: PaintingNumber): string {
   return `/share/${checked(token)}/${n}/painting.jpg`;
 }
 
-/** Keeps the name and kind only: never let another field of a published file reach a page (ADR-0036). */
+function field(raw: unknown): string | undefined {
+  if (typeof raw !== "string") return undefined;
+  const clean = raw.trim();
+  return clean && clean.length <= FIELD_MAX ? clean : undefined;
+}
+
+/** Keeps three named fields only: never let another field of a published file reach a page (ADR-0036). */
 export function parseManifest(raw: unknown): ShareManifest | null {
   if (!raw || typeof raw !== "object") return null;
-  const { name, kind } = raw as Record<string, unknown>;
-  if (typeof name !== "string" || typeof kind !== "string") return null;
-  const clean = { name: name.trim(), kind: kind.trim() };
-  if (!clean.name || !clean.kind || clean.name.length > FIELD_MAX || clean.kind.length > FIELD_MAX) return null;
-  return clean;
+  const fields = raw as Record<string, unknown>;
+  const name = field(fields.name);
+  if (!name) return null;
+  const kind = field(fields.kind);
+  const shelter = field(fields.shelter);
+  return { name, ...(kind ? { kind } : {}), ...(shelter ? { shelter } : {}) };
 }
 
 export function createHttpShareSource(baseUrl: string, fetchImpl: typeof fetch = fetch): ShareSource {

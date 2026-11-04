@@ -938,19 +938,23 @@ run needs a person at a terminal.
 
 ## Share page — a keepsake's own URL, no donor on it (ADR-0036)
 
-Built 2026-11-03, proposed. Crew only, and nothing is published for real yet. `SHARE_BASE_URL` is
-`monsterpaws-media`, public through `https://media.monsterpaws.org` (oplog 0026); only the loader knows it.
+Built 2026-11-03, proposed, and nothing is published for real yet. `SHARE_BASE_URL` is `monsterpaws-media`,
+public through `https://media.monsterpaws.org` (oplog 0026); only the loader knows it.
 
 ```
-  a person with the write key                   four paintings, a CREW slug
-       │  npm run share -- publish
+  npm run share -- publish <keepsake-id>
+       │
+       ▼
+  keepsakeShare                                 as home_worker: keepsake and its facts
+       │  keepsake.share_token, never minted    only, never donations; a shelter needs
+       │  spokenAnimalName                      a digify grant today; art facts through
+       │                                        artFilePath; no donor field
        ▼
   encodePainting                                pixels only, 1216×832 or refused
        │
        ▼
-  publishShare  →  the share source             share/<token>/1…4.jpg, each read
-       │  (newShareToken: 128 bits)             back by hash; manifest.json last,
-       │                                        { name, kind } and nothing else
+  publishShare  →  SHARE_BUCKET                 share/<token>/1…4.jpg, each read
+       │                                        back by hash; manifest.json last
        ▼
   the email's link  (planned, the emails chat)  https://monsterpaws.org/share/<token>
 
@@ -968,13 +972,13 @@ Built 2026-11-03, proposed. Crew only, and nothing is published for real yet. `S
        ▼
   shareSourceFromEnv  →  createHttpShareSource  GET SHARE_BASE_URL/share/<token>/…
        │                                        404 = not published; else reported
-       │  parseManifest                         keeps name and kind only
+       │  parseManifest                         keeps name, kind and shelter only
        ▼
   /share/<token>/<n>/painting.jpg               our route, X-Robots-Tag: noindex
 
 
-  npm run share -- takedown <token>
-       │
+  npm run share -- takedown <token>             or --shelter <slug>:
+       │                                        shelterShareTokens, by the facts' basis
        ▼
   deleteShare                                   manifest first, then the paintings,
        │                                        each read back as absent

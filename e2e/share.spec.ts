@@ -1,6 +1,6 @@
 import type { Page } from "@playwright/test";
 import { expect, test } from "./fixtures";
-import { SHARE_MANIFEST, SHARE_TOKEN } from "./share-fixture";
+import { SHARE_GIFT_MANIFEST, SHARE_GIFT_TOKEN, SHARE_MANIFEST, SHARE_TOKEN } from "./share-fixture";
 
 const BASE = "https://monsterpaws.org";
 // Bluesky's card fetcher, off Next's default bot list: the case where metadata could be streamed (ADR-0036).
@@ -72,6 +72,17 @@ test("a preview bot off Next's list gets the card in <head>", async ({ request }
   const html = await (await request.get(`${SHARE}/2`, { headers: { "user-agent": OFF_THE_LIST } })).text();
   expect(html.indexOf(`${BASE}${SHARE}/2/painting.jpg`)).toBeGreaterThan(-1);
   expect(html.indexOf('property="og:image"')).toBeLessThan(html.indexOf("</head>"));
+});
+
+test("a shelter's animal carries the shelter's credit and no guessed kind; a crew pet has no credit", async ({ page }) => {
+  for (const path of [`/share/${SHARE_GIFT_TOKEN}`, `/share/${SHARE_GIFT_TOKEN}/2`]) {
+    await page.goto(path);
+    await expect(page.getByText("Painted with permission from A Test Shelter.")).toBeVisible();
+    await expect(page.getByText(/^Painted in watercolour/)).toBeVisible();
+    await expect(page.locator("main")).not.toContainText(SHARE_GIFT_MANIFEST.email);
+  }
+  await page.goto(SHARE);
+  await expect(page.getByText(/Painted with permission/)).toHaveCount(0);
 });
 
 test("nothing about a donor reaches the page, whatever the file holds, and no cookie is set", async ({ request }) => {

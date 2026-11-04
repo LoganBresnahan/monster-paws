@@ -21,6 +21,11 @@ export const loadShare = cache(async (token: string): Promise<ShareManifest> => 
   return manifest;
 });
 
+/** A listing with no breed says only how it was painted: a kind is never guessed (ADR-0036). */
+export function paintedLine(kind: string | undefined): string {
+  return kind ? `${kind} · painted in watercolour` : "Painted in watercolour";
+}
+
 export function paintingOr404(raw: string): PaintingNumber {
   const n = paintingNumber(raw);
   if (!n) notFound();

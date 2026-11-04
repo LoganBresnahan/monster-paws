@@ -213,10 +213,11 @@ the monthly check in infra.md's Recurring ops.
   `send --wave <name>` rehearsed into Mailpit and rolled back, `--live` only
   with the Gmail pair, a terminal and the wave's name typed back; the flow is
   in `doc/flows.md`
-- `npm run share -- publish <crew-slug> <4 paintings> | takedown <token>` — a
-  keepsake's public page (ADR-0036): publish re-encodes from pixels alone, reads
-  each upload back by hash and writes the manifest last; takedown deletes the
-  files and purges Cloudflare. Crew only; real writes go under an oplog entry
+- `npm run share -- publish <keepsake-id> | takedown <token> | takedown --shelter <slug>`
+  — a keepsake's public page (ADR-0036): publish takes the token and files from
+  the keepsake's rows, re-encodes from pixels alone, reads each upload
+  back by hash and writes the manifest last; takedown deletes the files and purges
+  Cloudflare. Writes only to `monsterpaws-media`; real writes go under an oplog entry
 - `npm run email -- list | send-owed [--keepsake <id>]` — the painting email by
   hand (ADR-0035 as amended 2026-11-03): Mailpit unless `EMAIL_LIVE` is set, and
   it prints no address. With `EMAIL_SWEEP=on` the worker sends these itself; this
