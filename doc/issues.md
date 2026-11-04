@@ -135,9 +135,6 @@ is the record, and a file of ticked boxes stops being read.
   a listing with no photo left, and nothing marks it as dealt with, so the alert can't be cleared. Found by the verifier reading
   the sweep, 2026-11-04.
 
-- **Three scratch databases are waiting on a decision.** `monsterpaws_verify_0016`, `monsterpaws_verify_0016b` and
-  `monsterpaws_verify_sweep` sit on the shared dev Postgres from the verifier's runs, 2026-11-04. Logan decides whether they go.
-
 - **A delivery with an enormous amount is re-decided forever.** `MONEY` (`webhook.ts`) allows unlimited comma groups, so
   `amount: "1,000,000,000,000"` overflows `numeric(12,2)` and the row comes back `decision_failed` every minute, reported hourly,
   with no end. It takes the path secret, so only Every.org or someone holding it can send one. Found by the verifier reading
@@ -153,6 +150,9 @@ is the record, and a file of ticked boxes stops being read.
   everyone and records no Authenticated Origin Pulls, so a direct hit on the droplet skips them
   (the live firewall not read). ADR-0035's limits don't close this, since the form still creates
   rows. Matters once a real Sponsor button is open.
+  Logan, 2026-11-04: "yes accept it for day one". Nothing paints or mails without a payment, so a flood
+  costs rows and holds typed addresses for up to 30 days; watch the count when Spencer opens, and add a
+  limit if it spikes.
 
 - **Bytes are corrupted between home and the droplet, and the bridge's SSH
   connection drops on them.** Twice in four days: oplog 0012's rerun
@@ -178,9 +178,11 @@ is the record, and a file of ticked boxes stops being read.
   worker, though, `fetchPage` in `src/core/ingest/rescuegroups.ts` still
   never retries, so one bad page costs a new 27-minute attempt rather than
   seconds. And the CLI prints only `err.message`, so the night of 2026-10-30
-  logged the single word `terminated`. Both ship with the next deploy: a
-  page whose fetch or body read fails is fetched again (the same page,
-  never a skipped one, ADR-0014), and the CLI prints `err.cause` as well.
+  logged the single word `terminated`. Neither fix is built (read 2026-11-04
+  at `0989a18`). When it is, a page whose fetch or body read fails is fetched
+  again (the same page, never a skipped one, ADR-0014), and the CLI prints
+  `err.cause` as well. Not on the eve of a night's poll: the whole-run retry
+  has recovered every time so far.
   Smaller: each failed attempt pings `/fail`, so a night that completes on
   a retry opens a Better Stack incident and closes it, as 2026-11-02 did
   (read in oplog 0016). Pinging only on the
