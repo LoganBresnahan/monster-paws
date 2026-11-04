@@ -31,6 +31,7 @@ is an ADR; the daily numbers brief is `doc/ops/` (ADR-0010 as amended).
 | [0018](0018-bot-fight-mode-off.md) | Bot Fight Mode off for the zone, because it challenged Every.org's webhook; the click came before this entry was committed; two real staging deliveries landed (ADR-0027 as amended 2026-11-02) | run | 2026-11-02 |
 | [0019](0019-deploy-donate-loop-production-webhook.md) | Deploy `cc8ca32`: the donate loop, the production webhook on the main domain, the error-report fix; opens nothing for a real donor; the first real gift recorded | run | 2026-11-02 |
 | [0020](0020-purge-old-error-reports.md) | Old error reports purged, by lowering `errors_retention` to 1 day and restoring it; stopped at the scratch application, which refused 1 day. Nothing removed | abandoned | 2026-11-02 |
+| [0021](0021-remove-test-gifts.md) | Remove Logan's test gifts, and close `/test-gift` | planned | — |
 | [0022](0022-purge-old-error-reports-7-days.md) | Old error reports purged, by lowering `errors_retention` to 7 days; stopped at the scratch application, because the setting must be 90. Nothing removed | abandoned | 2026-11-03 |
 | [0023](0023-deploy-webhook-hold-and-spool.md) | Deploy `12c451f`: Caddy holds a request during a roll, deliveries the database can't take go to a spool volume, migration `0016` (ADR-0027 as amended 2026-11-03) | run | 2026-11-04 |
 | [0025](0025-deploy-site-and-share-page.md) | Deploy `0989a18`: the site's demo pages, the share page and the keepsake schema, with nothing painted | run | 2026-11-04 |
