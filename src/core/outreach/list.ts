@@ -134,18 +134,61 @@ export const WAVE_NAME = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
 /**
  * One wave: a name Logan chose, and a region — shelters within `miles` of a
- * zip, or in the named states. Never both absent: a wave with no region is
- * the whole list.
+ * zip, or in the named states — or a list of shelters by name. Never all
+ * absent: a wave with none of them is the whole list.
  */
 export interface WaveSpec {
   name: string;
   within?: { zip: string; miles: number };
   states?: readonly string[];
+  /** with the EIN already found for each, so `prepare` never asks a person to find it again (ADR-0029 as amended 2026-11-04) */
+  shelters?: readonly { key: string; ein: string }[];
+  /** false leaves the ask's timing paragraph out, whatever the date */
+  timing?: false;
   limit?: number;
 }
 
 /** The first wave (ADR-0029 §1): shelter zips within 50 miles of Lincoln Park. */
 export const CHICAGOLAND: WaveSpec = { name: "chicagoland-1", within: { zip: "60614", miles: 50 } };
+
+/**
+ * The rescues on a claimed Every.org profile, from our search of `browse/animals` on 2026-11-02, `hasAdmin`
+ * true (ADR-0029 as amended 2026-11-04). Never add Anne Arundel's listing under its Friends-of charity's EIN: that
+ * charity can't speak for the shelter. MSPCA is one nonprofit, so it gets one email, under Boston.
+ */
+export const CLAIMED_1: WaveSpec = {
+  name: "claimed-1",
+  timing: false,
+  shelters: [
+    { key: "rescuegroups:org:7832", ein: "742355124" }, // Humane Society of Central Texas
+    { key: "rescuegroups:org:4394", ein: "237228287" }, // Helen Woodward Animal Center
+    { key: "rescuegroups:org:3112", ein: "596002321" }, // Humane Society of Broward County
+    { key: "rescuegroups:org:1792", ein: "352302714" }, // Cat Matchers
+    { key: "rescuegroups:org:2836", ein: "042103597" }, // MSPCA-Angell
+    { key: "rescuegroups:org:10399", ein: "942692384" }, // The Rabbit Haven
+    { key: "rescuegroups:org:1776", ein: "941243665" }, // Peninsula Humane Society & SPCA
+    { key: "rescuegroups:org:1915", ein: "430699783" }, // Animal Protective Association of Missouri (APA)
+    { key: "rescuegroups:org:4774", ein: "264657471" }, // Doggie Harmony Rescue
+    { key: "rescuegroups:org:11696", ein: "990978241" }, // Three Eye Blind Animal Rescue
+    { key: "rescuegroups:org:5818", ein: "273838132" }, // Cat Town
+    { key: "rescuegroups:org:9691", ein: "854269560" }, // Our Underdog Rescue Squad
+    { key: "rescuegroups:org:2158", ein: "650597008" }, // The Cat Network,Inc
+    { key: "rescuegroups:org:4716", ein: "274393020" }, // Baja Dog Rescue
+    { key: "rescuegroups:org:6420", ein: "431977921" }, // A Forever Home Rescue Foundation
+    { key: "rescuegroups:org:5472", ein: "460673295" }, // Only Maine Coons Rescue
+    { key: "rescuegroups:org:10968", ein: "233098089" }, // Animal House Project
+    { key: "rescuegroups:org:4463", ein: "272775999" }, // Taysia Blue Husky & Malamute Rescue
+    { key: "rescuegroups:org:7003", ein: "840405254" }, // Denver Dumb Friends League
+    { key: "rescuegroups:org:7852", ein: "475050634" }, // Yorkie Rescue Houston
+    { key: "rescuegroups:org:4821", ein: "954347009" }, // C.A.R.E. aka: Cat/Canine Assistance, Referral &
+    { key: "rescuegroups:org:9626", ein: "852719806" }, // Peace Love and Poms Rescue
+    { key: "rescuegroups:org:11183", ein: "881794651" }, // Rainbow Bridge Hospice Rescue
+    { key: "rescuegroups:org:5366", ein: "861080529" }, // Cocker Spaniel Adoption Center
+    { key: "rescuegroups:org:5770", ein: "262929324" }, // Black Cat Rescue
+    { key: "rescuegroups:org:10262", ein: "951643344" }, // Pasadena Humane
+    { key: "rescuegroups:org:9140", ein: "811599145" }, // Ruff Redemption Rescue
+  ],
+};
 
 /** Every shelter any wave has already written to — never approached twice with the same ask. */
 export async function approachedShelters(db: Db): Promise<Set<string>> {
@@ -171,8 +214,8 @@ export function selectWave(
   if (!(Number.isInteger(limit) && limit > 0 && limit <= WAVE_MAX)) {
     throw new Error(`a wave is at most ${WAVE_MAX} shelters (ADR-0029 §1), not ${spec.limit}`);
   }
-  if (!spec.within && !spec.states?.length) {
-    throw new Error(`wave '${spec.name}' names no region — a radius or states, never the whole list (ADR-0029 §1)`);
+  if (!spec.within && !spec.states?.length && !spec.shelters?.length) {
+    throw new Error(`wave '${spec.name}' names no region — a radius, states or a list of shelters, never the whole list (ADR-0029 §1)`);
   }
   if (!WAVE_NAME.test(spec.name)) {
     throw new Error(`wave name '${spec.name}' is not lowercase kebab-case`);
@@ -191,6 +234,9 @@ export function selectWave(
   } else if (spec.states) {
     const states = new Set(spec.states.map((s) => s.toUpperCase()));
     inside = (shelter) => shelter.state !== null && states.has(shelter.state.toUpperCase());
+  } else if (spec.shelters) {
+    const named = new Set(spec.shelters.map((s) => s.key));
+    inside = (shelter) => named.has(shelter.shelterExternalId);
   }
 
   return shelters

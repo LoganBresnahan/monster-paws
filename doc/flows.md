@@ -898,8 +898,9 @@ run needs a person at a terminal.
        │  ↳ SHELTER_EXCLUSIONS      city, state, zip, website, count, the live
        │    applied INSIDE it       shelter-view link; never raw_payloads
        ▼
-  selectWave()                      a named wave: 50 mi of 60614 or states,
-       │                            ≤200, the already-approached dropped
+  selectWave()                      a named wave: 50 mi of 60614, states or a
+       │                            list (which brings its EINs, so no IRS
+       │                            step), ≤200, the already-approached dropped
        │
        ├──► match ──────────────────────────────────────────────────────────
        │     ensureBmf()            ── IRS boundary: eo_<state>.csv, public

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { evidenceOf } from "@/core/outreach/evidence";
-import { CHICAGOLAND } from "@/core/outreach/list";
+import { CHICAGOLAND, CLAIMED_1 } from "@/core/outreach/list";
 import { HACKATHON_ENDS, confirmLiveSend, parseOutreachArgs, senderFromEnv, timingFor } from "@/worker/outreach-args";
 
 /**
@@ -35,6 +35,7 @@ describe("ADR-0029 parseOutreachArgs", () => {
     expect(() => parseOutreachArgs(["send", "--wave", "chicagoland-1", "--skip", "11266"])).toThrow(/--skip takes shelter keys/);
     expect(parseOutreachArgs(["send", "--wave", "midwest-1", "--states", "il, wi"])).toMatchObject({ wave: { name: "midwest-1", states: ["IL", "WI"] } });
     expect(parseOutreachArgs(["send", "--wave", "chicagoland-1"])).toMatchObject({ wave: CHICAGOLAND });
+    expect(parseOutreachArgs(["prepare", "--wave", "claimed-1"])).toMatchObject({ wave: CLAIMED_1 });
     expect(() => parseOutreachArgs(["send", "--wave", "elsewhere-1"])).toThrow(/names no region/);
     expect(() => parseOutreachArgs(["send", "--wave", "x-1", "--zip", "60614", "--miles", "50", "--states", "IL"])).toThrow(/not both/);
     expect(() => parseOutreachArgs(["send", "--wave", "x-1", "--zip", "60614"])).toThrow(/go together/);

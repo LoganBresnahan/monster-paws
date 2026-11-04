@@ -2,6 +2,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { recordOutreachEvent } from "@/core/outreach/events";
 import {
   CHICAGOLAND,
+  CLAIMED_1,
   WAVE_MAX,
   approachedShelters,
   loadOutreachShelters,
@@ -50,6 +51,22 @@ describe("ADR-0029 wave selection", () => {
 
   it("leaves out a shelter already written to — a follow-up is its own wave", () => {
     expect(selectWave(all, CHICAGOLAND, new Set(["rescuegroups:org:2"])).map((s) => s.name)).toEqual(["Lincoln Park"]);
+  });
+
+  it("takes a wave by named shelters, and still leaves out one already written to (ADR-0029 as amended 2026-11-04)", () => {
+    const named = { name: "named-1", shelters: [{ key: "rescuegroups:org:2", ein: "111111111" }, { key: "rescuegroups:org:5", ein: "222222222" }] };
+    expect(selectWave(all, named).map((s) => s.name)).toEqual(["Evanston", "Milwaukee"]);
+    expect(selectWave(all, named, new Set(["rescuegroups:org:2"])).map((s) => s.name)).toEqual(["Milwaukee"]);
+    expect(() => selectWave(all, { name: "empty-1", shelters: [] })).toThrow(/names no region/);
+  });
+
+  it("writes to each nonprofit in claimed-1 once, with no Friends-of charity speaking for a shelter", () => {
+    const shelters = CLAIMED_1.shelters!;
+    expect(shelters).toHaveLength(27);
+    expect(new Set(shelters.map((s) => s.key)).size).toBe(27);
+    expect(new Set(shelters.map((s) => s.ein)).size).toBe(27);
+    for (const s of shelters) expect(s.ein).toMatch(/^\d{9}$/);
+    expect(shelters.map((s) => s.key)).not.toContain("rescuegroups:org:5772");
   });
 
   it("takes a wave by states too, case aside", () => {

@@ -36,6 +36,11 @@ describe("ADR-0029 the ask", () => {
     expect(ask.text).toContain("https://monsterpaws.org/animals?shelter=rescuegroups%3Aorg%3A77");
   });
 
+  it("links the privacy page after the term, in both parts (ADR-0029 as amended 2026-11-04)", () => {
+    expect(ask.text).toContain("can't be recalled. Our privacy page has the details:\nhttps://monsterpaws.org/privacy");
+    expect(ask.html).toContain(`<a href="https://monsterpaws.org/privacy">https://monsterpaws.org/privacy</a>`);
+  });
+
   it("shows the crew and the demo as the example, by link to our site", () => {
     expect(ask.text).toContain("https://monsterpaws.org/#crew");
     expect(ask.text).toContain("https://monsterpaws.org/demo");
@@ -58,7 +63,7 @@ describe("ADR-0029 the ask", () => {
   });
 
   it("never says a donor gets a painting in exchange, or calls a donation a gift (Logan, 2026-11-04)", () => {
-    expect(ask.text).toContain("As our thank-you, we try to send them a small painting of that animal.");
+    expect(ask.text).toContain("As our thank-you, we try to paint that animal and email them the paintings, with a public page they can share.");
     expect(ask.text).not.toMatch(/\bgifts?\b|\bgets a\b|keepsake/i);
   });
 
@@ -113,7 +118,7 @@ describe("ADR-0029 the ask", () => {
     expect(ask.html).toContain(`<a href="https://monsterpaws.org/demo">https://monsterpaws.org/demo</a>.`);
     expect(ask.html).toContain(`(<a href="https://monsterpaws.org">https://monsterpaws.org</a>)`);
     expect(ask.html).toContain(`<a href="https://monsterpaws.org/animals?shelter=rescuegroups%3Aorg%3A77">`);
-    expect(ask.html.match(/<a href=/g)).toHaveLength(5);
+    expect(ask.html.match(/<a href=/g)).toHaveLength(6);
   });
 
   it("loads images only from monsterpaws.org, and never a listing's photo", () => {

@@ -82,7 +82,7 @@ export function renderAsk(input: AskInput): RenderedAsk {
       link: shelter.shelterViewUrl,
     },
     {
-      text: `The idea: a donor picks one of your animals and gives what they like to you. As our thank-you, we try to send them a small painting of that animal. You can see it with our own pets at ${origin}/#crew, and walk through the whole thing at ${origin}/demo.`,
+      text: `The idea: a donor picks one of your animals and gives what they like to you. As our thank-you, we try to paint that animal and email them the paintings, with a public page they can share. You can see paintings of our own pets at ${origin}/#crew, and walk through the whole thing at ${origin}/demo.`,
     },
   ];
 
@@ -101,7 +101,8 @@ export function renderAsk(input: AskInput): RenderedAsk {
   }
 
   paragraphs.push({
-    text: `One plain term, so there is no surprise later: if you withdraw permission, we take the Sponsor button off your animals and take down their public pages. For a donation already made, we still try to paint our thank-you, and we delete the photos once that's done. Paintings already sent, with the animal's name, breed and age, can't be recalled.`,
+    text: `One plain term, so there is no surprise later: if you withdraw permission, we take the Sponsor button off your animals and take down their public pages. For a donation already made, we still try to paint our thank-you, and we delete the photos once that's done. Paintings already sent, with the animal's name, breed and age, can't be recalled. Our privacy page has the details:`,
+    link: `${origin}/privacy`,
   });
 
   if (input.timing) {

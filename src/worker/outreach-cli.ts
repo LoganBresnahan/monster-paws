@@ -75,8 +75,19 @@ function quitOn(answer: string): string {
 
 type MatchOutcome = { written: true; message: string; recorded: { ein: string; slug: string; claim: string } } | { written: false; message: string };
 
-/** The IRS rows for the name, a person's pick, Every.org by that EIN, and one row only after a second yes. */
-async function matchShelter(db: Db, shelter: OutreachShelter, io: LiveConsole, checkedBy: string): Promise<MatchOutcome> {
+/** The EIN from a named wave or a person's pick from the IRS rows, Every.org by that EIN, and one row only after a yes. */
+async function matchShelter(db: Db, shelter: OutreachShelter, io: LiveConsole, checkedBy: string, knownEin?: string): Promise<MatchOutcome> {
+  const ein = knownEin ?? (await pickEinFromIrs(shelter, io));
+  if (typeof ein !== "string") return ein;
+  const nonprofit = await everyorgClientFromEnv(process.env).nonprofitByEin(ein);
+  if (!nonprofit) return { written: false, message: `Every.org holds nothing under EIN ${ein} — nothing written` };
+  console.error(`Every.org: ${nonprofit.name}  ${nonprofit.profileUrl}  ${nonprofit.claim}  ${nonprofit.locationAddress ?? ""}`);
+  if ((await io.ask("Record this match? [y/n]: ")).trim().toLowerCase() !== "y") return { written: false, message: "not recorded" };
+  await recordShelterNonprofit(db, { shelterExternalId: shelter.shelterExternalId, nonprofit, checkedBy, fetchedAt: new Date() });
+  return { written: true, message: `recorded ${nonprofit.ein} ${nonprofit.slug} (${nonprofit.claim})`, recorded: { ein: nonprofit.ein, slug: nonprofit.slug, claim: nonprofit.claim } };
+}
+
+async function pickEinFromIrs(shelter: OutreachShelter, io: LiveConsole): Promise<string | { written: false; message: string }> {
   if (!shelter.name || !shelter.state) return { written: false, message: "no listed name or state to match on — nothing written" };
   const { file, fetchedAt } = await ensureBmf(shelter.state);
   const candidates = matchEin({ name: shelter.name, city: shelter.city, state: shelter.state, website: shelter.website }, readBmf(file));
@@ -89,12 +100,7 @@ async function matchShelter(db: Db, shelter: OutreachShelter, io: LiveConsole, c
   if (matchConfidence(candidates) === "weak") console.error("  WEAK: none of these may be right — n writes nothing");
   const pick = Number((await io.ask("Which is it? [number, or n]: ")).trim());
   if (!(Number.isInteger(pick) && pick >= 1 && pick <= candidates.length)) return { written: false, message: "no pick — nothing written" };
-  const nonprofit = await everyorgClientFromEnv(process.env).nonprofitByEin(candidates[pick - 1].ein);
-  if (!nonprofit) return { written: false, message: `Every.org holds nothing under EIN ${candidates[pick - 1].ein} — nothing written` };
-  console.error(`Every.org: ${nonprofit.name}  ${nonprofit.profileUrl}  ${nonprofit.claim}  ${nonprofit.locationAddress ?? ""}`);
-  if ((await io.ask("Record this match? [y/n]: ")).trim().toLowerCase() !== "y") return { written: false, message: "not recorded" };
-  await recordShelterNonprofit(db, { shelterExternalId: shelter.shelterExternalId, nonprofit, checkedBy, fetchedAt: new Date() });
-  return { written: true, message: `recorded ${nonprofit.ein} ${nonprofit.slug} (${nonprofit.claim})`, recorded: { ein: nonprofit.ein, slug: nonprofit.slug, claim: nonprofit.claim } };
+  return candidates[pick - 1].ein;
 }
 
 type AddressOutcome = { written: true; message: string; email: string } | { written: false; message: string };
@@ -151,7 +157,7 @@ async function main(argv: string[]) {
           const status = statuses.get(shelter.shelterExternalId)!;
           console.error(`\n[${i + 1}/${shelters.length}] ${shelter.name ?? shelter.shelterExternalId}  (${shelter.city ?? "?"}, ${shelter.state ?? "?"})  ${shelter.visibleCount} animals  ${shelter.website ?? "no website"}  ${shelter.shelterExternalId}`);
           if (status.everyorgProfileUrl) console.error(`  match: already recorded — ${status.claim}, ${status.everyorgProfileUrl}`);
-          else console.error(`  ${(await matchShelter(db, shelter, quitting, sender.name)).message}`);
+          else console.error(`  ${(await matchShelter(db, shelter, quitting, sender.name, args.wave.shelters?.find((s) => s.key === shelter.shelterExternalId)?.ein)).message}`);
           if (status.confirmedAddress) console.error(`  address: already confirmed — ${status.confirmedAddress}`);
           else console.error(`  ${(await findShelterAddress(db, shelter, quitting, sender.name)).message}`);
           done++;
@@ -171,7 +177,7 @@ async function main(argv: string[]) {
       const skip = new Set(args.skip);
       const shelters = (await waveShelters(db, args.wave)).filter((s) => !skip.has(s.shelterExternalId));
       if (skip.size) console.error(`held out by --skip: ${[...skip].join(" ")}`);
-      const messages = await assembleWave(db, shelters, { sender, from, timing: timingFor(new Date()) });
+      const messages = await assembleWave(db, shelters, { sender, from, timing: args.wave.timing === false ? null : timingFor(new Date()) });
       if (!args.live) {
         printReport(await rehearseWave(db, args.wave.name, messages, { transport: mailpitTransport(process.env) }), true);
         console.error(`rehearsal only — the record is unchanged; the messages are in Mailpit (${process.env.MAILPIT_API_URL ?? "http://localhost:8025"})`);

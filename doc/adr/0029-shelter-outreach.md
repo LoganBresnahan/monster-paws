@@ -265,3 +265,27 @@ to the shelter through Every.org, and we never process a payment. He said "yes" 
 opens: "if you withdraw permission, we take the Sponsor button off your animals and take down their public pages." The rest of
 the term is unchanged, `/privacy` says the same, and the note above stays as recorded. The 46 emails already sent keep the
 older words.
+
+## Amendment (2026-11-04, later): a wave can name its shelters, and the ask links `/privacy`
+
+### Context
+§1 says every wave names a region. Logan wants the rescues on a claimed Every.org profile written to next, and our search of
+2026-11-02 already found them, across the country: "previosuly we found all the shelters in our rescuegroups listing that do
+have every.org profiles. those are the shelters i want to send emails to". He also wants the page linked: "in this email I want
+a link to our privacy page". The ask had never said that a donor's paintings go by email, or that they have a public page.
+
+### Decision
+- **A wave is a region or a list of named shelters, and never neither.** `CLAIMED_1` holds 27 shelters. The approached are still
+  dropped, and the guard still judges every send.
+- **A named list brings the EIN our search found, so `prepare` skips the IRS step.** It still reads Every.org live by that EIN,
+  shows the claim as it stands, and records nothing without a person's yes. The address is still confirmed by a person.
+- **Anne Arundel's listing is left out.** The claimed profile belongs to a separate Friends-of charity, which can't speak for
+  the shelter. **MSPCA gets one email, under Boston,** because Boston and Cape Cod are one nonprofit. Logan: "yes stay out".
+- **The ask links `/privacy` after the withdrawal term, and says the paintings are emailed, with a public page.** Logan read it
+  in Mailpit: "wording is good".
+- **`claimed-1` leaves the timing paragraph out,** because the deadline is the same day. Logan: "yes".
+- **A listing's name stays as listed,** so the Waco shelter's greeting stays long. Logan: "no" to shortening it.
+
+### Consequences
+- The list is fixed in code, so it doesn't grow by itself: another named wave is another list, and another commit.
+- A shelter that has since lost its claim shows as unclaimed at `prepare`, and gets the two-part ask if that match is recorded.

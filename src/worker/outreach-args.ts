@@ -1,4 +1,4 @@
-import { CHICAGOLAND, WAVE_MAX, WAVE_NAME, type WaveSpec } from "@/core/outreach/list";
+import { CHICAGOLAND, CLAIMED_1, WAVE_MAX, WAVE_NAME, type WaveSpec } from "@/core/outreach/list";
 import { isOutreachEventKind } from "@/core/outreach/events";
 import type { OutreachEventKind } from "@/db/schema";
 
@@ -98,6 +98,7 @@ function waveSpec(flag: Map<string, string | true>, required: boolean): WaveSpec
   }
   if (!spec.within && !spec.states) {
     if (name === CHICAGOLAND.name) return { ...CHICAGOLAND, limit: spec.limit };
+    if (name === CLAIMED_1.name) return { ...CLAIMED_1, limit: spec.limit };
     throw new Error(`wave '${name}' names no region — --zip/--miles or --states (ADR-0029 §1)`);
   }
   return spec;
