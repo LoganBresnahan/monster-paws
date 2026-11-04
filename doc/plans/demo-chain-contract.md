@@ -78,10 +78,9 @@ Leave `RESCUEGROUPS_API_KEY` unset in any worker pointed here, or `npm run worke
 `art.generate` needs an art-only worker mode, which `paintings` owns. Guard batches stop from 06:45 UTC until the
 main checkout's poll log says `== exit`.
 
-## The look before the mail
+## No look before the mail
 
-`emails`' sweep stays off while `EMAIL_SWEEP` is unset: a person reads the four paintings from `npm run email -- list` and sends that one with
-`send-owed --keepsake <id>`. Logan's answer on keeping it for day one is owed. Nothing else holds a mail.
+Logan, to the moderator, 2026-11-04: "no i wont look before the first day emails. they will just go out and hopefully we do a good job. i can review the images from the media bucket throughout the day". So oplog 0028 sets `EMAIL_SWEEP=on`, and a painting mails itself. With it unset, nothing goes on its own, and a person uses `npm run email -- list` and `send-owed --keepsake <id>`, which is the way to stop mail if a set goes wrong.
 
 ## Cut for now, and owed
 
