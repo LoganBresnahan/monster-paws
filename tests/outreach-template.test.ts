@@ -48,8 +48,8 @@ describe("ADR-0029 the ask", () => {
     expect(ask.text).toContain("confirm the photos are yours to license");
   });
 
-  it("states the withdrawal term up front: a gift already made still gets its painting, and the photos are deleted once those are done (ADR-0022 as amended 2026-11-02)", () => {
-    expect(ask.text).toContain("A gift already made still gets its painting, and we delete the photos once those are done.");
+  it("states the withdrawal term up front: a gift already made can still get its painting, and the photos are deleted once those are done (ADR-0022 as amended 2026-11-02, ADR-0035)", () => {
+    expect(ask.text).toContain("A gift already made can still get its painting, and we delete the photos once those are done.");
     expect(ask.text).not.toContain("paintings down");
     expect(ask.text).toContain(
       "Keepsakes already given to donors — the animal's name, breed, age and painting — stay with those donors.",

@@ -201,3 +201,50 @@ ADR-0028 read of the formal three-grant letter after the first yes is a
 separate line and is not changed here. The remaining gate on the first live
 wave was the Gmail pair in `pass`, in since the same day.
 
+
+## Amendment (2026-11-02): the ask follows the claim, the withdrawal term and the Sponsor rule
+
+### Context
+§3 describes one ask with two parts, and a retention sentence that said we stop
+painting. Three things moved it on 2026-11-02. Logan wanted the shelters whose
+Every.org profile is already claimed written to without the claim: "we don't
+need to say the part about claiming every.org for these shelters". ADR-0022 as
+amended 2026-11-02 keeps a paid gift's painting after a withdrawal, which made
+"we stop painting" false. ADR-0002 as amended 2026-11-02, later, requires an
+active `digify` grant for a Sponsor button, which made the claimed branch's
+sentence false; Logan: "we need to get rid of "donations can reach you today"".
+
+### Decision
+- **A shelter with a claimed profile is asked one thing, may we paint, and never
+  hears about Every.org.** The claim line stays only when the profile is
+  unclaimed or unknown, as §3 says.
+- **The withdrawal term replaces §3's "stoppable any time" and "the retention
+  terms in one plain sentence".** The ask says "You can withdraw at any time."
+  (Logan, 2026-11-02), then, as its one plain term: "if you withdraw permission,
+  we stop offering gifts for your animals. A gift already made can still get its
+  painting, and we delete the photos once those are done. Keepsakes already given
+  to donors — the animal's name, breed, age and painting — stay with those
+  donors." (ADR-0022 as amended 2026-11-02; Logan, 2026-11-03: "change it to can
+  still get", in ADR-0035). Both branches carry the same words.
+  In the 2026-10-27 (later) amendment's list of the ask's clauses, this takes the
+  place of ADR-0022 §5 as amended 2026-10-27.
+- **A yes to painting is now part of what opens a Sponsor button.** A button needs
+  the claimed profile and an active `digify` grant (ADR-0002 as amended 2026-11-02,
+  later). So §5's yes has one more hand step: the registry entry carries
+  `ShelterEntry.shelterExternalIds`, the shelter's keys as a person checked them. A
+  grant entered without it opens no button.
+- **A shelter answering one of the 46 emails already sent isn't told the new term
+  separately.** `/privacy` is the official statement (Logan, 2026-11-02: "no its
+  fine. privacy page should be the 'official'"). A grant recorded from such a reply
+  records which term we hold it to (ADR-0022 as amended 2026-11-02).
+
+### Consequences
+- The 46 emails sent 2026-10-28 to 2026-10-30 keep the old sentence, so for those
+  shelters the email and `/privacy` disagree until they read the page.
+- `renderAsk` is the only renderer, so the next send carries the new words, and so
+  will a follow-up once that path is built.
+- The term now lives in two places, the ask and `/privacy`. A test pins the ask's
+  words and none pins the page's, so a change to the term changes both by hand.
+- `claim` is read from `shelter_nonprofits`, so a shelter gets the one-question ask
+  only after a person confirms its match. Until then it counts as unknown and gets
+  the claim line, even if its profile is claimed.

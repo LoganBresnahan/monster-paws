@@ -101,7 +101,7 @@ export function renderAsk(input: AskInput): RenderedAsk {
   }
 
   paragraphs.push({
-    text: `One plain term, so there is no surprise later: if you withdraw permission, we stop offering gifts for your animals. A gift already made still gets its painting, and we delete the photos once those are done. Keepsakes already given to donors — the animal's name, breed, age and painting — stay with those donors.`,
+    text: `One plain term, so there is no surprise later: if you withdraw permission, we stop offering gifts for your animals. A gift already made can still get its painting, and we delete the photos once those are done. Keepsakes already given to donors — the animal's name, breed, age and painting — stay with those donors.`,
   });
 
   if (input.timing) {
