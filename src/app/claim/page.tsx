@@ -28,9 +28,9 @@ export default function ClaimPage() {
       <h1 className="mt-8 text-3xl font-bold">Is this your shelter?</h1>
 
       <p className="mt-6 text-lg text-muted">
-        Monster Paws is <span className="font-semibold text-foreground">not affiliated</span> with
-        the shelters and rescues listed here. We show animals from public adoption listings, the
-        same way a business directory shows a shop that never signed up — and we would rather you
+        We work with the shelters whose animals you can sponsor here, and each has given us permission. Monster Paws is{" "}
+        <span className="font-semibold text-foreground">not affiliated</span> with the other shelters and rescues listed
+        here. We show their animals from public adoption listings, the same way a business directory shows a shop that never signed up — and we would rather you
         found out from us than from a supporter.
       </p>
 

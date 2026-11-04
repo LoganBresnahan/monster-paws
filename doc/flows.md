@@ -579,9 +579,6 @@ after it, if at all.
   every.org donate link             partner_donation_id = intent id, email prefilled,
        │                            method=card,paypal,
        │                            webhook_token (EVERYORG_WEBHOOK_TOKEN)
-       │                            a separate way in: /test-gift/<secret>, startTestGift(),
-       │                            Logan's real-money tests, one named nonprofit, no
-       │                            animal, no painting, gone once they're done
        │                            (planned, ADR-0035) success_url = /thanks/<token>,
        │                            its own 128-bit value, never the intent id
        │  ── Every.org boundary: the money and the receipt are theirs ──

@@ -127,7 +127,7 @@ Check items off as they ship.
      and removes the address from Resend's list. The Playwright donor-flow e2e lands
      here. Built ahead of it: `/thanks` with the address and its fix, `/privacy`, the
      30-day erasure of an unfinished gift's address. Carry-in before any real gift: a
-     by-hand deletion tool, which finds a gift by nonprofit, amount and date within a day because a receipt shows no id and its date isn't UTC's, `/test-gift` and its rows gone (oplog 0021, selected only on
+     by-hand deletion tool, which finds a gift by nonprofit, amount and date within a day because a receipt shows no id and its date isn't UTC's, `/test-gift` and its rows gone (done: oplog 0021, selected only on
      `animal_external_id = 'test-gift'`, never on slug or EIN, which Spencer's real gifts will
      share; before Spencer's button opens, and before `snapshotKeepsake` or `art.generate`
      ship, or a worker could pick up a gift with no animal), and the go-live commit removing the footer's "Donations
@@ -156,7 +156,7 @@ Check items off as they ship.
    - [ ] `keepsake-on-intent` (slice D; ADR-0035) — medium, moderate ⚠ verify. The rest waits on oplog 0021. Migration 0017; the crew-only start is `doc/plans/demo-chain-contract.md`. `keepsake.intent_id`; `snapshotKeepsake`; the droplet sweep with decision 7's limits, its guard by normalised address and its bounded read; the photo hold per listing, after
      oplog 0023's HEAD and `paintings`' answer on which photos it needs. Stops at "owed": the `art.generate` handler has
      no owner yet. Verify: simultaneous hits, a webhook and two sweeps give one keepsake.
-   - [ ] Slice E: the deploy of C and D with `/test-gift` removed, oplog 0024. The bank webhook doesn't hold it for safety:
+   - [ ] Slice E: the deploy of C and D, oplog 0024 (`/test-gift`'s code is already gone, in oplog 0029's image). The bank webhook doesn't hold it for safety:
      after oplog 0021 a late delivery lands as `no_intent`, its raw row still holding `netAmount`. The cost is never seeing
      a bank row decided, so it goes on Logan's word if the bank takes long.
 

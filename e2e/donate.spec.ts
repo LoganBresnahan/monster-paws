@@ -18,9 +18,8 @@ test("its sponsor page isn't there either", async ({ request, seed }) => {
   expect((await request.get(`/animals/${seed.stowaway}/sponsor`)).status()).toBe(404);
 });
 
-test("the hidden test page answers 404 with no secret configured", async ({ request }) => {
+test("the hidden test page is gone (oplog 0021)", async ({ request }) => {
   expect((await request.get("/test-gift/anything")).status()).toBe(404);
-  expect((await request.get("/test-gift/undefined")).status()).toBe(404);
 });
 
 test("the privacy page is reached from the footer and states what it promises", async ({ page }) => {
