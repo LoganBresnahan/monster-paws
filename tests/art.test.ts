@@ -5,6 +5,7 @@ import { eq } from "drizzle-orm";
 import sharp from "sharp";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { mintIntentId } from "@/core/donate/intent";
+import { receiveWebhook } from "@/core/donate/webhook";
 import { artFilePath, CREW_BASIS, crewExternalId, FACT, mintShareToken, snapshotKeepsake } from "@/core/keepsake";
 import { closeDb, type Db } from "@/db/client";
 import { donationIntents, keepsake, keepsakeFact } from "@/db/schema";
@@ -126,6 +127,21 @@ describe.skipIf(SKIP_DB_TESTS)("art.generate (doc/plans/demo-chain-contract.md)"
     const intentId = mintIntentId();
     await db.insert(donationIntents).values({ id: intentId, animalSource: "manual", animalExternalId: crewExternalId(slug),
       nonprofitSlug: "a-staging-nonprofit", nonprofitEin: "12-3456789", donorEmail: "pat@example.org" });
+    // A keepsake is written only for a recorded gift (ADR-0035 as amended 2026-11-04), so this goes through the real decision.
+    const delivery = JSON.stringify({
+      event: "donation.completed",
+      chargeId: `charge-${intentId}`,
+      partnerDonationId: intentId,
+      toNonprofit: { slug: "a-staging-nonprofit", ein: "123456789", name: "A Staging Nonprofit" },
+      amount: "5",
+      netAmount: "4.50",
+      currency: "USD",
+      frequency: "ONCE",
+      donationDate: "2026-11-03T12:00:00.000Z",
+      paymentMethod: "STRIPE",
+    });
+    const { outcome } = await receiveWebhook(db, { body: delivery, headers: [], secrets: {} });
+    expect(outcome).toBe("recorded");
     const id = await snapshotKeepsake(db, intentId);
     expect(id).not.toBeNull();
     return id!;
