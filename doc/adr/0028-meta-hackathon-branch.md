@@ -420,3 +420,7 @@ confirmation and third-party disclosure rest, for this grant, on those words and
 Meta's API: its answer to that question was never given, so SAM 3.1 stays on the crew and real gifts use the local detector.
 
 **If it withdraws:** the newer rule, in which a gift already made can still get its painting. Logan: "use the newer rule for spencers".
+
+## Amendment (2026-11-04, later): the video closes on the table
+
+Logan, on the video's first slide: "it should start directly with monster paws", then "how about we just move it to right before the last slide. no need to change the other slides". So the video opens on the product, and the built-in-the-hackathon table shows right before its close. That changes the 2026-10-26 amendment's "the video opens on the same table"; the README's table and the git history stand. He had the rule's words in front of him when he chose: "Failure to clearly identify your original contributions will result in immediate disqualification."
