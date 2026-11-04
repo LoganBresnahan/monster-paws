@@ -1,4 +1,4 @@
-# 0026: `monsterpaws-media` goes public, the media write key is made, and the crew's first set is published
+# 0026: `monsterpaws-media` goes public, and the crew's first set is published
 
 Status: planned
 Planned: 2026-11-03 · Run: —
@@ -7,15 +7,15 @@ page and image it fetches. Logan, 2026-11-03: "yes bucket okay. its currently pr
 publicly (ADR-0011, ADR-0004 as amended 2026-10-29), and public access is off on every bucket until this entry.
 Roadmap: Accounts and donating (item 4)
 
-What changes: a new R2 token and its pair, for media only; public access on `monsterpaws-media` through `media.monsterpaws.org`, and with it a new
+What changes: public access on `monsterpaws-media` through `media.monsterpaws.org`, and with it a new
 Cloudflare DNS record; one crew pet's set under `share/<token>/`. Nothing on the droplet, in its `.env` or in the database: `SHARE_BASE_URL` reaches the
 droplet in oplog 0025.
 
 What this opens: anything in the bucket, to anyone who has its key. The bucket lists nothing through a custom domain, and a token can't be guessed. **Never
 put a photo held for painting in this bucket, or a shelter animal's painting, until Logan has decided what a withdrawal does to a shared painting (ADR-0036).**
 
-Who does what: **Logan does steps 2 and 3 in the Cloudflare dashboard**, because our tokens can't configure a bucket: `cloudflare/r2-token` answered 403 on the
-bucket's domain settings, 2026-11-03 23:56 UTC, and `doc/infra.md` says the same. The moderator runs steps 1, 2's check and 3's check. `paintings` runs step 4.
+Who does what: **Logan does step 3 in the Cloudflare dashboard**, because our tokens can't configure a bucket: `cloudflare/r2-token` answered 403 on the
+bucket's domain settings, 2026-11-03 23:56 UTC, and `doc/infra.md` says the same. The moderator runs steps 1 and 2 and step 3's check. `paintings` runs step 4.
 
 ## Prerequisites
 - [x] The bucket holds nothing: `rclone size`, 0 objects and 0 bytes, 2026-11-03 23:47 UTC. Step 1 reads it again.
@@ -34,15 +34,12 @@ bucket's domain settings, 2026-11-03 23:56 UTC, and `doc/infra.md` says the same
 Verify: `"count":0`. Stop if anything is there: say what, by prefix, before public access goes on.
 Rollback: n/a — a read.
 
-### 2. The media write pair (Logan)
-R2 → Manage API tokens → Create Account API token: Object Read & Write, `monsterpaws-media` only, no expiry, no IP filter (`doc/infra.md`, step b). Then:
-
-    pass insert cloudflare/r2-media-write-token
-    pass insert cloudflare/r2-media-write-access-key-id
-    pass insert cloudflare/r2-media-write-secret-access-key
-Verify, by the moderator: the pair writes, reads and deletes `probe/0026` in media, and gets 403 on `monsterpaws-corpus`, `monsterpaws-vault` and
-`monsterpaws-models`. Statuses only.
-Rollback: roll or delete the token in the dashboard.
+### 2. The write key: the worker pair, no new token
+Logan, 2026-11-03: "the cloudflare api tokens are already in pass. they are the generic named ones not models or vault. these apply to monsterpaws-corpus and monsterpaws-media".
+So `cloudflare/r2-access-key-id` and `cloudflare/r2-secret-access-key` publish, on the dev box only. **That pair can also write the corpus, so `SHARE_WRITE_BUCKET` is fixed to
+`monsterpaws-media`, and the pair never goes on the droplet for this.**
+Verify, by the moderator: the pair writes, reads and deletes `probe/0026` in media. Statuses only.
+Rollback: n/a — no credential changes.
 
 ### 3. Public access (Logan)
 R2 → `monsterpaws-media` → Settings → Public access → Custom domains → Connect domain: `media.monsterpaws.org`. Leave the `r2.dev` URL off.
@@ -56,7 +53,7 @@ Rollback: disconnect the domain on the same page. The bucket is private again, a
 
 ### 4. Publish one crew pet's set (`paintings`)
 Both commands have only run against fakes, so this is their first real write. Run them on a throwaway set first, then publish the real one (ADR-0036 decision 10).
-Publishing takes `SHARE_WRITE_ENDPOINT`, `SHARE_WRITE_BUCKET=monsterpaws-media` and the media write pair:
+Publishing takes `SHARE_WRITE_ENDPOINT`, `SHARE_WRITE_BUCKET=monsterpaws-media` and step 2's pair:
 
     npm run share -- publish <crew-slug> <4 files>
 It refuses a slug not in `CREW` and any size but 1216×832. Takedown also takes `SHARE_BASE_URL=https://media.monsterpaws.org`, `CLOUDFLARE_ZONE_ID` (the lookup in
@@ -71,7 +68,8 @@ Rollback: `npm run share -- takedown`, which deletes the objects and purges Clou
 <filled in as it happens>
 
 ## Follow-ups
-- `doc/infra.md`: the media write pair's rows lose "not created yet", public access is recorded as on for media, and its diagram gains `media.monsterpaws.org` and loses "original photos" from this bucket. `doc/flows.md`'s keepsake-art box stops sending a donor's art here until ADR-0036's rules are settled.
+- The dedicated media write pair in `doc/infra.md` still comes with the real home worker, because the pair used here can also write the corpus.
+- `doc/infra.md`: public access is recorded as on for media, and its diagram gains `media.monsterpaws.org` and loses "original photos" from this bucket. `doc/flows.md`'s keepsake-art box stops sending a donor's art here until ADR-0036's rules are settled.
 - `SHARE_BASE_URL=https://media.monsterpaws.org` in the droplet's `.env`, in oplog 0025.
 - Before a real donor's painting is ever published: the takedown rule, the `/privacy` line and telling shelters (ADR-0036). Photos held for painting go somewhere
   private, never here (ADR-0035 decision 11).
