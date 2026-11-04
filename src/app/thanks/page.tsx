@@ -176,7 +176,7 @@ export default async function ThanksPage({
           {problem === "suppressed" && (
             <p role="alert" className="mt-2 font-semibold text-foreground">
               We can&apos;t send email to that address, so {name}&apos;s painting wouldn&apos;t reach you. This can happen when an
-              earlier message bounced or was marked as spam. Please use another address, or write to {CONTACT_EMAIL} and
+              earlier message bounced or was marked as spam, or you unsubscribed. Please use another address, or write to {CONTACT_EMAIL} and
               we&apos;ll sort it out.
             </p>
           )}

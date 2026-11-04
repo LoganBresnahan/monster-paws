@@ -59,7 +59,7 @@ export function SponsorForm({
           {problem === "suppressed" && (
             <p role="alert" className="mt-2 text-sm font-semibold text-foreground">
               We can&apos;t send email to that address, so {name}&apos;s painting wouldn&apos;t reach you. This can happen when
-              an earlier message bounced or was marked as spam. Please use another address, or write to{" "}
+              an earlier message bounced or was marked as spam, or you unsubscribed. Please use another address, or write to{" "}
               <a href="mailto:hello@monsterpaws.org" className="underline">
                 hello@monsterpaws.org
               </a>{" "}

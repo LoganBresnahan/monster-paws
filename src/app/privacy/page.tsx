@@ -69,7 +69,7 @@ export default function PrivacyPage() {
         </li>
         <li>Totals with nothing about you in them (animal, shelter, amount and day). We keep these permanently, even if you ask us to delete everything else.</li>
         <li>
-          If an email to you bounces or is marked as spam, we keep a scrambled marker so we don&apos;t email that address
+          If an email to you bounces or is marked as spam, or you unsubscribe, we keep a scrambled marker so we don&apos;t email that address
           again. It isn&apos;t your address, and only someone who already has your address could match it.
         </li>
       </ul>
