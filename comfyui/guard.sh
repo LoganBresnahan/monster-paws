@@ -96,11 +96,13 @@ batch() {
     kill $w 2>/dev/null || true
     down
     echo "guard: chunk finished, $(mem)"
-    # the harness reports how many runs remain before it starts the chunk
+    # the harness reports how many runs this chunk takes (after --limit) before it starts it: 0 only when none remain
     if grep -q " 0 to go" "$out"; then rm -f "$out"; break; fi
-    # a chunk that painted every run left, none failed, is the last: a fresh ComfyUI only to read "0 to go" costs a load
-    local togo made; togo=$(grep -oE "[0-9]+ to go" "$out" | head -1 | cut -d" " -f1 || true); made=$(grep -cE "^\[[0-9]+/[0-9]+\] .* [0-9.]+s$" "$out" || true)
-    if [ -n "$togo" ] && [ "$togo" -le "$chunk" ] && [ "$made" -ge "$togo" ]; then rm -f "$out"; break; fi
+    # A chunk that painted every run left, none failed, is the last: a fresh ComfyUI only to read "0 to go" costs a load.
+    # "N to go" is after --limit, so it is the chunk; what is left is "N runs in spec" less "D done" (verify, 2026-11-04).
+    local inspec finished made; inspec=$(grep -oE "[0-9]+ runs in spec" "$out" | head -1 | cut -d" " -f1 || true)
+    finished=$(grep -oE "[0-9]+ done," "$out" | head -1 | cut -d" " -f1 || true); made=$(grep -cE "^\[[0-9]+/[0-9]+\] .* [0-9.]+s$" "$out" || true)
+    if [ -n "$inspec" ] && [ -n "$finished" ] && [ $((inspec - finished)) -le "$chunk" ] && [ "$made" -ge $((inspec - finished)) ]; then rm -f "$out"; break; fi
     # a chunk that produced nothing would be retried forever (the bf16 Z-Image cells, 2026-10-11): stop instead
     if ! grep -qE "^\[[0-9]+/[0-9]+\] .* [0-9.]+s$" "$out"; then echo "guard: chunk made no progress — stopping; fix the spec or the graph" >&2; rm -f "$out"; exit 6; fi
     rm -f "$out"

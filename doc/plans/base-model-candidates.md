@@ -3690,8 +3690,24 @@ On Logan's "commit and realign" (this stream's work landed on topdog as
   chunk that painted every run left with none failed, instead of starting a
   fresh ComfyUI only to read "0 to go" (about a minute and a model load on
   every keepsake and every batch's end); a failure still goes round again,
-  and the no-progress stop is unchanged. Untried on the card until the
-  hold for oplog 0025 is released.
+  and the no-progress stop is unchanged. **Its first form was wrong** (the
+  verifier, 2026-11-04, by `explore.run_batch` dry and `guard.sh` with
+  docker, npm and the Windows calls stubbed): it read "N to go" as what was
+  left, but `explore.py` prints it after `--limit`, so it is the chunk,
+  and a batch bigger than its chunk stopped after one chunk with exit 0
+  (12 at chunk 4 painted 4; 104 at chunk 8 painted 8). The keepsake run is
+  4 at chunk 4 and was unaffected, and no batch ran under it (the guard
+  changed at 01:02 UTC, the last run ended 00:51). Fixed: what is left is
+  "N runs in spec" less "D done"; simulated on the verifier's cases,
+  every batch paints in full with one start fewer.
+- **Never to Meta: `Plum/downloadfile.jpg`** (Logan's ruling, through the
+  `sam3` chat; every other crew photo asked about approved). It is one of
+  Plum's two in `comfyui/keepsake-crew.json`, so with `DETECT_PIPELINES=sam3`
+  a Plum keepsake is refused before any call by `detect.py`'s
+  `SAM3_APPROVED` and the job fails visibly; it is never worked around.
+  Plum paints on the local detector or with a different second photo.
+  The glue's refs are `crew:<Name>/<file>` with the pet's capitalised
+  folder, the only form the allow-list takes.
 - **Owed after the realign onto donate's widened contract (`f29142f`):** a
   listing's photos arrive in the job (`{ keepsakeId, photos }`, never a
   fact, ADR-0022 as amended 2026-10-27), fetched at paint time and deleted
@@ -3700,6 +3716,26 @@ On Logan's "commit and realign" (this stream's work landed on topdog as
   capped. And publishing, crew and real gifts alike, through the UI chat's
   `npm run share -- publish` (Logan: "yes real paintings on the share page
   is what we want"; "yes we can run the worker on this dev setup").
+
+### The crew for the site — Logan's picks (2026-11-04)
+
+Saved as `var/explore/index-all/crew-portraits-37-picks-2026-11-04.txt`,
+decoded through `var/explore/crew-37-pick/key.json`. Logan: "remember we
+don't want meta data on them": each picked file holds only `IHDR`, `IDAT`
+and `IEND`, 1216×832, the mark in its pixels.
+
+| Pet | Painting | Made by |
+| --- | --- | --- |
+| Plum | batch 38d, 015 | klein-v1, as painted: three-quarter view (`storybook_bust34`), collarless words, seed 31337 |
+| Ducky | batch 35a, 023 | klein-v1, as painted: the short portrait, seed 7321 |
+| Beetle | batch 35a, 039 | klein-v1, as painted: the short portrait, seed 7321 |
+| Marty | batch 37a, 004 | klein-v1, as painted: the short portrait, batch 11b's reworded colour, seed 47 |
+| Stacey | batch 37a, 020 | klein-v1, as painted: the short portrait, seed 47 |
+
+Logan on Plum's: "are the new framings for plum the ones with a slight
+head turn? those definitely look good. I wonder if that should be the
+framing for all the photos moving forward or if we should keep a
+variety?" Open, with the shoulder page's ticks (`shoulders-38.html`).
 
 ### Batches 14a–14b — Logan's picks (2026-10-28)
 
