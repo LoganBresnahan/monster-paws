@@ -1,7 +1,7 @@
 # 0026: `monsterpaws-media` goes public, and the crew's first set is published
 
-Status: planned
-Planned: 2026-11-03 · Run: —
+Status: run
+Planned: 2026-11-03 · Run: 2026-11-04
 Why: the Meta demo's share page (ADR-0036, ADR-0028), which needs a painting at a public address, because a social site builds its preview from the
 page and image it fetches. Logan, 2026-11-03: "yes bucket okay. its currently private switch it if you can". `monsterpaws-media` was built to be served
 publicly (ADR-0011, ADR-0004 as amended 2026-10-29), and public access is off on every bucket until this entry.
@@ -68,7 +68,8 @@ Rollback: `npm run share -- takedown <token>`.
 
 ## Run
 Steps 1 to 3, 2026-11-04 00:07 to 00:08 UTC, by the moderator; Logan connected the domain with minimum TLS 1.2. Step 4's publish, takedown and
-publish, 2026-11-04 02:41 to 02:45 UTC, by `paintings`, on Logan's "ok for beetle" and the moderator's go; its bot `curl` waits on oplog 0025's route.
+publish, 2026-11-04 02:41 to 02:45 UTC, by `paintings`, on Logan's "ok for beetle" and the moderator's go; its bot check 04:23 UTC, once oplog 0025
+had put the route live (04:22 UTC, on `0989a18`).
 
 - **Step 1:** 0 objects and 0 bytes, read before the domain served anything.
 - **Step 2:** the worker pair wrote, read and deleted `probe/0026`. `rclone rcat` reported a 501 though the object landed, and `rclone copyto` needed a second attempt, both with `RCLONE_S3_NO_CHECK_BUCKET=true`, because a token scoped to objects can't check a bucket. The share tool's own PUT is what step 4 proves.
@@ -89,10 +90,15 @@ publish, 2026-11-04 02:41 to 02:45 UTC, by `paintings`, on Logan's "ok for beetl
   `.json`). A HEAD answered 200 throughout. They cleared at 02:45:10 with nothing done, and at 02:45:29 all five answered 200 with the
   first publish's checks. So a GET of a share's JPEG before it exists, or in the minutes after a takedown, holds a 404 at the edge for
   about three minutes; a republish soon after a takedown wants a purge of its URLs, or the wait.
+- **Step 4, bot check, 04:23:33 to 04:23:46:** with no credentials, `/share/<token>` answered 200 `text/html` to `Twitterbot/1.0` and to
+  `facebookexternalhit/1.1`, its `og:title` "Beetle's paintings — Monster Paws" and its `og:image` `/share/<token>/1/painting.jpg`, which
+  answered 200 `image/jpeg`, 142,648 bytes, the published `1.jpg`'s sha256. `/share/<token>/<n>/painting.jpg` for n = 1 to 4 each answered 200,
+  byte for byte the published `1.jpg` to `4.jpg`. The route is per painting: `/share/<token>/painting.jpg` without the number answers 404.
+- **The demo's store:** `/home/oof/monsterpaws/var/keepsakes/.database` reads `monsterpaws_demo`, written by `bindArtStore` 2026-11-04 03:27 UTC,
+  so a republish of keepsake 1 from topdog's tip passes `checkArtStore`. Frozen here; a correction is a new entry.
 
 ## Follow-ups
 - The dedicated media write pair in `doc/infra.md` still comes with the real home worker, because the pair used here can also write the corpus.
 - `doc/infra.md`: public access is recorded as on for media, and its diagram gains `media.monsterpaws.org` and loses "original photos" from this bucket. `doc/flows.md`'s keepsake-art box stops sending a donor's art here until ADR-0036's rules are settled.
 - `SHARE_BASE_URL=https://media.monsterpaws.org` in the droplet's `.env`, in oplog 0025.
 - A real donor's set publishes through the handler under ADR-0036, not this entry. Photos held for painting go somewhere private, never here (ADR-0035 decision 11).
-  private, never here (ADR-0035 decision 11).

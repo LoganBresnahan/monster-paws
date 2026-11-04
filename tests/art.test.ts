@@ -90,7 +90,19 @@ describe("the detector a run uses (ADR-0028 §1)", () => {
   it("says why a detection stopped, in live_crops' own words for the run", () => {
     const log = "owlv2-raw-v4: 8s\nkeepsake-1-abc: 0 of 1 photos cut\nkeepsake-1-abc: no animal chosen in any photo; nothing to paint from\nother: x\n";
     expect(lastRunLine(log, "keepsake-1-abc")).toBe("no animal chosen in any photo; nothing to paint from");
-    expect(lastRunLine(log, "keepsake-2-def")).toBeNull();
+    expect(lastRunLine("", "keepsake-2-def")).toBeNull();
+  });
+
+  it("finds the run's own line under a progress bar or docker's chatter, and else the script's own last words", () => {
+    const noisy = "keepsake-1-abc: 1 of 1 photos cut\nLoading weights: 100%|██████████| 357/357 [00:00<00:00, 1871.42it/s]\n Container comfyui-explore-run-1 Stopping\n";
+    expect(lastRunLine(noisy, "keepsake-1-abc")).toBe("1 of 1 photos cut");
+    const died = "owlv2-raw-v4: 8s\nTraceback (most recent call last):\n  File \"detect.py\", line 1\nRuntimeError: sam3: MODEL_API_KEY is not set\nLoading weights:  42%|████▏     | 222/529 [00:00<00:00, 2215.91it/s]\n";
+    expect(lastRunLine(died, "keepsake-1-abc")).toBe("RuntimeError: sam3: MODEL_API_KEY is not set");
+  });
+
+  it("carries 200 characters at most, since a detector's error can quote a remote reply", () => {
+    expect(lastRunLine(`keepsake-1-abc: ${"x".repeat(400)}`, "keepsake-1-abc")).toHaveLength(200);
+    expect(lastRunLine(`ValueError: ${"y".repeat(400)}`, "keepsake-1-abc")).toHaveLength(200);
   });
 
   it("is the local one, set on the container whatever the worker's environment names", () => {

@@ -3620,6 +3620,9 @@ against the code, before any build:
 - **Oplog 0026's check after the first real publish** (the UI chat):
   `curl` `/share/<token>` and its `painting.jpg` on the live site with a
   bot user agent, since the e2e image run does not cover those routes.
+  Run 2026-11-04 04:23 UTC once oplog 0025 had the route live: page and
+  `og:image` 200 to two bots, each `/share/<token>/<n>/painting.jpg` byte for
+  byte the published JPEG; 0026 frozen as run.
 - **Donate's contract** is on topdog as `fa00bd9`
   (`doc/plans/demo-chain-contract.md`; `FACT`, `artKey`, `artFilePath`,
   `ART_QUEUE_OPTIONS` in `src/core/keepsake.ts`); the art-only worker mode
@@ -3822,6 +3825,11 @@ On Logan's "commit and realign" (this stream's work landed on topdog as
   and its JPEGs overwrote the dog's in the rehearsal store; the marker
   stops two databases sharing a store, but a database whose ids restart (a
   test one) meets its own old files. Production's ids never restart.
+- **Why a detection stopped, widened (the `sam3` chat):** `lastRunLine` falls
+  back to the log's last line that isn't a progress bar or docker's chatter
+  (Python's own message when a script died, `sam3: MODEL_API_KEY is not set`
+  on `meta`), reads only this attempt's part of the appended log, and carries
+  200 characters at most, since a detector's error can quote a remote reply.
 - **Logan's eye on the rehearsal:** "these look great". The head fallback
   and the listing words are recorded in ADR-0004 as amended 2026-11-03's
   later note, with these runs as the evidence.

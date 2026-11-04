@@ -1,6 +1,6 @@
 import { spawn } from "node:child_process";
 import { createHash } from "node:crypto";
-import { createWriteStream, existsSync, mkdirSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
+import { createWriteStream, existsSync, mkdirSync, readFileSync, realpathSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { basename, dirname, extname, isAbsolute, join, resolve } from "node:path";
 import { and, asc, eq, sql } from "drizzle-orm";
 import sharp from "sharp";
@@ -408,10 +408,20 @@ export function paintedFor(runsJsonl: string, spec: PaintSpec): (string | null)[
   return spec.seeds.map((seed) => runs.findLast((r) => r.seed === seed)?.output ?? null);
 }
 
-/** The last line a run's own scripts wrote about it (`<name>: …`), without the name, or null. */
+/** A progress bar, docker's own chatter or a library's notice: never the reason a run stopped. */
+const LOG_NOISE = /it\/s\]|%\||^Container |^Loading weights|^WARN|level=warn|^\[transformers\]/;
+
+/**
+ * Why a run stopped, for its error and its alert: the last line its own scripts wrote about it (`<name>: …`),
+ * else the log's last line that isn't noise, which is Python's own message when a script died. At most 200
+ * characters: a detector's error can quote a remote service's reply, and nothing outside the code may rely on
+ * what that holds (the sam3 chat, 2026-11-04).
+ */
 export function lastRunLine(log: string, name: string): string | null {
-  const line = log.split("\n").filter((l) => l.startsWith(`${name}: `)).at(-1);
-  return line ? line.slice(name.length + 2).trim() : null;
+  const lines = log.split("\n").map((l) => l.trim()).filter(Boolean);
+  const own = lines.filter((l) => l.startsWith(`${name}: `)).at(-1);
+  const line = own ? own.slice(name.length + 2) : lines.filter((l) => !LOG_NOISE.test(l)).at(-1);
+  return line ? line.slice(0, 200) : null;
 }
 
 /** ComfyUI's data root as `comfyui/compose.yml` resolves it: COMFYUI_DATA, relative to `comfyui/`, or `var/comfyui`. */
@@ -487,11 +497,13 @@ export function guardPainter(root: string): Painter {
       mkdirSync(dir, { recursive: true });
       writeFileSync(join(dir, "detect.json"), JSON.stringify({ _: `${name}: one listing for live detection`, listings: { [name]: { ...listing, photos } } }, null, 2) + "\n");
       const log = join(explore, `${name}.log`);
+      // The log is appended across attempts, so only this attempt's part may say why it stopped; bytes, since bars are not ASCII.
+      const from = existsSync(log) ? statSync(log).size : 0;
       try {
         await run("docker", liveCropsArgs(name), root, log);
       } catch (err) {
         // live_crops says why in its own last line (no photo, no animal): carried into the error, so the alert says it too.
-        const why = lastRunLine(existsSync(log) ? readFileSync(log, "utf8") : "", name);
+        const why = lastRunLine(existsSync(log) ? readFileSync(log).subarray(from).toString("utf8") : "", name);
         throw new Error(why ? `${name}: detection stopped: ${why}` : String(err instanceof Error ? err.message : err));
       }
       return JSON.parse(readFileSync(join(dir, "cut.json"), "utf8")) as CutPhoto[];
