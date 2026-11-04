@@ -1,0 +1,119 @@
+{
+ "Rusty": {
+  "fields": {
+   "coat": "Rich reddish-brown, long, flowing around face and ears",
+   "length": "long",
+   "ears": "long hanging",
+   "eyes": "brown"
+  },
+  "phrase": "with rich reddish-brown, long, flowing around face and ears, long fur and long hanging ears"
+ },
+ "Otto": {
+  "fields": {
+   "coat": "Black and tan on head, face, and ears with soft, drooping edges.",
+   "length": "Medium",
+   "ears": "Long hanging with soft, drooping edges",
+   "eyes": "Dark brown"
+  },
+  "phrase": "with black and tan on head, face, and ears with soft, drooping edges, medium fur and long hanging ears"
+ },
+ "Daisy": {
+  "fields": {
+   "coat": "Brown and white markings on head and ears",
+   "length": "medium",
+   "ears": "folded-over",
+   "eyes": "brown"
+  },
+  "phrase": "with brown and white markings on head and ears, medium fur and folded-over ears"
+ },
+ "Coco": {
+  "fields": {
+   "coat": "White, long, flowing fur on head and face",
+   "length": "long",
+   "ears": "upright with folded tips",
+   "eyes": "dark"
+  },
+  "phrase": "with white, long, flowing fur on head and face, long fur and upright with folded tips ears"
+ },
+ "Emily": {
+  "fields": {
+   "coat": "White fluffy fur on head, face, and ears",
+   "length": "long",
+   "ears": "folded-over",
+   "eyes": "black"
+  },
+  "phrase": "with white fluffy fur on head, face, and ears, long fur and folded-over ears"
+ },
+ "Sunny": {
+  "fields": {
+   "coat": "White face with brown patches around eyes and ears",
+   "length": "short",
+   "ears": "upright with folded tips",
+   "eyes": "closed"
+  },
+  "phrase": "with white face with brown patches around eyes and ears, short fur and upright with folded tips ears"
+ },
+ "Shadow": {
+  "fields": {
+   "coat": "Black, with white muzzle and ear tips",
+   "length": "medium",
+   "ears": "folded-over",
+   "eyes": "dark"
+  },
+  "phrase": "with black, with white muzzle and ear tips, medium fur and folded-over ears"
+ },
+ "Biscuit": {
+  "fields": {
+   "coat": "Brown and black on head, ears, and face",
+   "length": "medium",
+   "ears": "folded-over",
+   "eyes": "dark brown"
+  },
+  "phrase": "with brown and black on head, ears, and face, medium fur and folded-over ears"
+ },
+ "Clementine": {
+  "fields": {
+   "coat": "Black patches on head, ears, and face",
+   "length": "short",
+   "ears": "folded-over",
+   "eyes": "black"
+  },
+  "phrase": "with black patches on head, ears, and face, short fur and folded-over ears"
+ },
+ "Luna": {
+  "fields": {
+   "coat": "Tan and white face with dark muzzle and ears",
+   "length": "short",
+   "ears": "tall upright pointed",
+   "eyes": "dark brown"
+  },
+  "phrase": "with tan and white face with dark muzzle and ears, short fur and tall upright pointed ears"
+ },
+ "Bailey": {
+  "fields": {
+   "coat": "White face, brown ears, brown eyes, white muzzle",
+   "length": "short",
+   "ears": "short floppy",
+   "eyes": "brown"
+  },
+  "phrase": "with white face, brown ears, brown eyes, white muzzle, short fur and short floppy ears"
+ },
+ "Max": {
+  "fields": {
+   "coat": "Brown and black on head, ears, and face",
+   "length": "short",
+   "ears": "upright with folded tips",
+   "eyes": "dark"
+  },
+  "phrase": "with brown and black on head, ears, and face, short fur and upright with folded tips ears"
+ },
+ "Duke": {
+  "fields": {
+   "coat": "Black and tan markings on head and face, ears black",
+   "length": "short",
+   "ears": "folded-over",
+   "eyes": "dark brown"
+  },
+  "phrase": "with black and tan markings on head and face, ears black, short fur and folded-over ears"
+ }
+}

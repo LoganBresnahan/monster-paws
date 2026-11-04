@@ -1065,7 +1065,10 @@ photo reader, tried").
    are the exact words he judged, and any change goes back in front of his eye: two rewordings read worse (batches 40c-40d).
 3. **Dogs only**, until a cat batch has been looked at. A cat keeps its listing's words.
 4. **A reader that fails, or gives no words, never costs the painting:** the set is painted from the listing's words, and the outcome
-   carries a warning to Sentry. `ART_READER=off` on the worker turns the reader off with a restart, for words that come back bad.
+   carries a warning to Sentry. A read past 600 s, against a measured 80, is a failure (`timeout` in `readArgs`), because one that hung
+   would hold the job's slot and make every later job skip as busy. A coat that isn't plain words of at most 16, or a `none`, gives no
+   words, because nobody reads them before the mail. `ART_READER=off` on the worker turns the reader off with a restart, for words
+   that come back bad.
 5. **The words are read from a shelter's photo, so they reach only the prompt:** never the log (`read.py` prints "read" for a held
    photo), never a donor or shelter. `forget` removes `read.json`, `spec.json`, `runs.jsonl`, the run's sheet and ComfyUI's own output,
    whose PNGs embed the prompt in their metadata, with the photos and the crops. It keeps only the marked paintings the set is written

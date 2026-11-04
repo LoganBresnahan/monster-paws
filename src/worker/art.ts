@@ -84,10 +84,14 @@ export const READER = "qwen3-vl-4b-instruct";
 /** Only the species Logan has judged the reader on: a cat keeps the listing's words until a cat batch has been looked at. */
 export const READER_SPECIES = ["dog"];
 
-/** `read.py` in the explore container on the CPU, its weights read offline from the models store, never a hosted reader (ADR-0004 as amended 2026-08-02). */
+/**
+ * `read.py` in the explore container on the CPU, its weights read offline from the models store, never a hosted reader
+ * (ADR-0004 as amended 2026-08-02). Never without its time limit, 600 s against a measured 80: a read that hangs holds the
+ * job's slot and its container, so every later job skips as busy and this one's photos are never forgotten (verify, 2026-11-04).
+ */
 export function readArgs(name: string, species: string, file: string): string[] {
   return ["compose", "-f", "comfyui/compose.yml", "run", "--rm", "--no-deps", "-e", `READER=${READER}`, "-e", "OMP_NUM_THREADS=6",
-    "--entrypoint", "python", "explore", "/home/comfy/harness/read.py", `/home/comfy/explore/${name}/read.json`, species, `held:${name}/photos/${file}`];
+    "--entrypoint", "timeout", "explore", "-k", "30", "600", "python", "/home/comfy/harness/read.py", `/home/comfy/explore/${name}/read.json`, species, `held:${name}/photos/${file}`];
 }
 
 /** A photo `comfyui/live_crops.py` cut: an animal was chosen in it, and maybe its head. */

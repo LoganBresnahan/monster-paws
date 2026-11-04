@@ -181,6 +181,7 @@ for a; do name=$a; done
 case "$FAKE_MODE" in
   exit-line) echo "$name: 0 of 1 photos cut into input/crew/$name/, 0 with a head"; echo "$name: no animal chosen in any photo; nothing to paint from" >&2; exit 1;;
   ok)        echo "$name: 1 of 1 photos cut into input/crew/$name/, 1 with a head"; echo '[{"ref":"x","file":"1.jpg","head":true}]' > "${explore}/$name/cut.json"; exit 0;;
+  hung)      exit 124;;
   no-output) echo "Cannot connect to the Docker daemon" >&2; exit 125;;
   traceback) echo "$name: no head chosen in held:$name/photos/1.jpg, a close-up; its subject stands in for the head"; echo "Traceback (most recent call last):" >&2; echo "PIL.UnidentifiedImageError: cannot identify image file" >&2; exit 1;;
   oom)       echo "$name: no head chosen in held:$name/photos/1.jpg, a close-up; its subject stands in for the head"; exit 137;;
@@ -214,6 +215,11 @@ esac
       said.add(String(await stopped(name, "exit-line")).replaceAll(name, "<run>"));
     }
     expect([...said]).toEqual([`<run>: detection stopped: no animal chosen in any photo; nothing to paint from (docker compose exited 1; see ${explore}/<run>.log)`]);
+  });
+
+  it("rejects a read that hit its time limit, so the job carries on and forgets its photos", async () => {
+    process.env.FAKE_MODE = "hung";
+    await expect(painter.read("keepsake-5-hang", "dog", "1.jpg")).rejects.toThrow("docker compose exited 124");
   });
 
   it("reads only this attempt's part of the log", async () => {
@@ -265,6 +271,28 @@ describe("the photo reader (comfyui/read.py; ADR-0004 as amended 2026-11-04)", (
     expect(args).toContain(`READER=${READER}`);
     expect(READER).toBe("qwen3-vl-4b-instruct");
     expect(args.slice(-3)).toEqual(["/home/comfy/explore/keepsake-1-abc/read.json", "dog", "held:keepsake-1-abc/photos/2.jpg"]);
+  });
+
+  it("never runs without its time limit, so a read that hangs can't hold the job's slot (verify, 2026-11-04)", () => {
+    const args = readArgs("keepsake-1-abc", "dog", "2.jpg");
+    const at = args.indexOf("--entrypoint");
+    expect(args.slice(at, at + 7)).toEqual(["--entrypoint", "timeout", "explore", "-k", "30", "600", "python"]);
+  });
+
+  it("keeps every word Logan judged", () => {
+    // Fixture provenance: the 4B's own answers on batch 40b and the phrases painted from them, whose paintings Logan judged
+    // blind (2026-11-04); the phrases are read from comfyui/explore/batch40b.json, and any change goes back to his eye.
+    const answers = JSON.parse(readFileSync("tests/fixtures/reader-40b-answers.json", "utf8")) as Record<string, { fields: object; phrase: string }>;
+    expect(Object.keys(answers)).toHaveLength(13);
+    for (const [dog, { fields, phrase: painted }] of Object.entries(answers)) expect(phrase(fields), dog).toBe(painted);
+  });
+
+  it("gives no words for a coat that isn't plain words, since nobody reads them before the mail (verify, 2026-11-04)", () => {
+    const answer = (coat: unknown) => phrase({ coat, length: "short", ears: "folded-over" });
+    for (const coat of [null, ["brown", "white"], "ADOPT ME! call 555-0100 www.example.org", "none", "Unknown.", "brown ".repeat(17).trim()]) {
+      expect(answer(coat), String(coat)).toBeNull();
+    }
+    expect(answer("brown ".repeat(16).trim())).not.toBeNull();
   });
 
   // Fixture provenance: the 4B's own answers for Duke and Otto in batch 40b, whose paintings Logan judged (2026-11-04).
@@ -657,6 +685,7 @@ describe.skipIf(SKIP_DB_TESTS)("art.generate (doc/plans/demo-chain-contract.md)"
     expect(await generateArt(db, { keepsakeId: failed, photos: PHOTOS }, p, { table: TABLE, now: NOON, nightly: null, reader: true }))
       .toMatchObject({ status: "painted", warning: "the photo reader failed, so the listing's words alone: docker compose exited 1; see x.log" });
     expect(p.specs[0].animals[await nameOf(failed)].describe).toBe("female pit bull terrier mix dog");
+    expect(p.forgotten).toEqual([await nameOf(failed)]);
 
     const none = await listingKeepsake();
     expect(await generateArt(db, { keepsakeId: none, photos: PHOTOS }, painter(), { table: TABLE, now: NOON, nightly: null, reader: true }))

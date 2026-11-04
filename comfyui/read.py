@@ -22,6 +22,10 @@ MODEL = STORE / "read" / os.environ.get("READER", "qwen3-vl-4b-instruct")
 PHOTOS, EXPLORE, CREW = Path("/home/comfy/photos"), Path("/home/comfy/explore"), Path("/home/comfy/crew")
 # The long side the reader sees: its image tokens grow with the square of it, and the CPU pays for each.
 SIDE = 768
+# Nothing outside the prompt checks these words, and nobody looks before the mail once EMAIL_SWEEP is on: a coat that isn't
+# plain words ("ADOPT ME! call 555-0100") gives no phrase at all, so the listing's words stand alone (verify, 2026-11-04).
+COAT = re.compile(r"[a-z][a-z ,'-]*")
+COAT_WORDS = 16
 # Choices, not examples: a small reader copies an example's colours into every answer. Logan judged exactly these words on
 # batch 40b, and two rewordings read worse (batches 40c-40d): any change here goes back in front of his eye.
 EARS = ["tall upright pointed", "upright with folded tips", "folded-over", "long hanging", "short floppy", "cropped upright"]
@@ -52,7 +56,11 @@ def parse(answer: str) -> dict:
 
 def phrase(fields: dict) -> str | None:
     """The reader's look as words after the listing's: "with <coat>, <length> fur and <ears> ears"."""
+    if not isinstance(fields.get("coat"), str):
+        return None
     coat, length, ears = (str(fields.get(k, "")).strip().rstrip(".").lower() for k in ("coat", "length", "ears"))
+    if not COAT.fullmatch(coat) or len(coat.split()) > COAT_WORDS or coat in ("none", "unknown"):
+        return None
     # a reader can run past its choice ("long hanging with soft, drooping edges"): the choice it starts with is the answer
     ears = next((e for e in EARS if ears.startswith(e)), ears)
     if not coat or length not in ("short", "medium", "long") or ears not in EARS:
@@ -68,6 +76,10 @@ def verify(model: Path) -> None:
     entries = [e for e in models.parse((Path(__file__).resolve().parent / "models.manifest").read_text()) if e.path.startswith(f"{rel}/")]
     if not entries:
         sys.exit(f"{rel} has no line in models.manifest; it never runs")
+    listed = {e.path for e in entries}
+    for extra in (f.relative_to(STORE).as_posix() for f in model.rglob("*") if f.is_file()):
+        if extra not in listed:
+            sys.exit(f"{extra} has no line in models.manifest; refusing to read")
     for e in entries:
         if not (STORE / e.path).exists() or models.digest(STORE / e.path) != e.sha256:
             sys.exit(f"{e.path} disagrees with models.manifest; refusing to read")
@@ -75,6 +87,7 @@ def verify(model: Path) -> None:
 
 def main() -> None:
     out, species, refs = Path(sys.argv[1]), sys.argv[2], sys.argv[3:]
+    os.environ["HF_HUB_OFFLINE"] = "1"
     import torch
     from PIL import Image, ImageOps
     from transformers import AutoProcessor, Qwen3VLForConditionalGeneration

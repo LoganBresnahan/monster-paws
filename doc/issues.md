@@ -69,6 +69,14 @@ is the record, and a file of ticked boxes stops being read.
 
 ## Ops
 
+- **`crops` and `paint` in the painting job have no time limit, where the reader
+  now does.** A hung `live_crops.py` or guard batch would hold the art worker's
+  one slot, and every later job would skip as busy until someone kills it, with
+  the listing's photos left on disk. `job.signal` could end any attempt at the
+  hour. Not new with the reader, and left for after the go-live. Pin `transformers`
+  at the next `comfy:build` too, since the reader's question was judged on 5.20.2.
+  Found by `verify` reading `d7f90c8`, 2026-11-04.
+
 - **A painted keepsake whose publish failed is never published again.**
   `art.generate` publishes through the share tool after writing the four
   art facts (`sharePublisher`, `src/worker/art.ts`); a failure keeps the art
