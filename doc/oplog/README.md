@@ -41,6 +41,7 @@ is an ADR; the daily numbers brief is `doc/ops/` (ADR-0010 as amended).
 | [0029](0029-spencer-grant-and-go-live.md) | Spencer's grant, the Sponsor button opens, and the first real donation | planned | — |
 | [0030](0030-deploy-wording-before-the-outreach-wave.md) | Deploy `83b2bc9`: the wording and fixes, before the claimed-shelter wave | run | 2026-11-04 |
 | [0031](0031-remove-old-images.md) | Remove old images from the droplet, before oplog 0029 pulls another | run | 2026-11-04 |
+| [0032](0032-deploy-cat-town-opt-out.md) | Deploy Cat Town's opt-out, ahead of the go-live | planned | — |
 
 ## Entry format
 

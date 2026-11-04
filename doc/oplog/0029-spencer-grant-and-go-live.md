@@ -3,7 +3,7 @@
 Status: planned
 Planned: 2026-11-04 · Run: —
 Why: "beetle painting is the backup, i want real donations working" (Logan, to the moderator, 2026-11-03), on a plain yes from Spencer Pet Rescue: "all we need is a yes from her and its good enough. shes an admin of the shelter she runs the every.org page. she already knows the plan about making art for people when they donate. i think its fine. I will send the email myself" (Logan, in the `emails` session, 2026-11-03). Roadmap: Accounts and donating (item 4)
-Commit deployed: `2377033`, named by the moderator with Spencer's reply in. This entry follows in its own push so the image tag is the code commit.
+Commit deployed: `cc6e8df`, named by the moderator: Spencer's grant from `2377033` and the new default sort on `/animals`, together on Logan's word: "go live together". This entry follows in its own push so the image tag is the code commit.
 
 What changes on the droplet: the app and worker images; any new migration; one `shelter_nonprofits` row; `EMAIL_SWEEP=on`, last. On this box: the art worker restarted from a checkout holding the grant.
 
@@ -13,7 +13,7 @@ Who does what: **Logan gives the word for step 1 and for the donation in step 8 
 
 ## Prerequisites
 - [x] **Spencer's yes:** "Yes you may", at 15:29:35 UTC on 2026-11-04, from Kristen, answering "may we use the photos in your listings to make art of your animals for your donors?". Read by the `emails` session, which checked DKIM, SPF and DMARC as passing, and that those words are all she wrote. Its `evidence` line is in the registry, with the hash read again here against the raw file.
-- [x] The commit on `2377033` holds, together:
+- [x] The commit on `2377033`, in `cc6e8df`, holds, together:
   - The registry entry in `src/core/shelters.ts`: slug `spencer-pet-rescue`, `shelterExternalIds: ["rescuegroups:org:11756"]`, checked by a person, one `digify` grant with its words as `basis` and `<Message-ID> sha256:<hex>` as `evidence`.
   - An ADR-0028 amendment on §5 and §6: a listing's photo under this grant, citing the reply.
   - An ADR-0004 note: Logan's words above change what its photo-rights confirmation and disclosure rest on, and they name that.
@@ -21,14 +21,14 @@ Who does what: **Logan gives the word for step 1 and for the donation in step 8 
   - The go-live: the footer's "Donations coming soon!" and `/animals/[id]`'s "When sponsoring opens" sentence removed.
 - [x] That image also holds `37f1ce1`, `604a76c`, `e018831`, the `emails` session's fixes and the plural `/thanks` lines, and "We stop taking donations" reworded: each read at the sha.
 - [x] `paintings`' fixes to the head-fallback path and its log throttle are on topdog, for step 7's checkout: it reports its export at `a081344`, holding the grant and `993a4cb`.
-- [x] CI green on `2377033`: `verify`, `images`, `sourcemaps`, run 41860066512.
-- [x] Ship bar on `2377033`, in a temporary checkout at exactly that sha, 2026-11-04 15:40 to 15:47 UTC: vitest 917 of 917 twice with `--maxWorkers=2`, typecheck clean, `npm run e2e` 59 of 59.
-- [x] e2e against the published app image, Every.org set to production, 2026-11-04 15:47 UTC: 46 passed in 10.8 s, 13 skipped under `PW_BASE_URL`; the footer's line gone, `/test-gift` 404. The published worker image booted on a throwaway database: up after 24 s, 0 fatal lines, no `art.generate` queue.
+- [ ] CI green on `cc6e8df`: `verify`, `images`, `sourcemaps`.
+- [ ] Ship bar on `cc6e8df`, in a temporary checkout at exactly that sha: vitest twice, typecheck, `npm run e2e`.
+- [ ] e2e against the published app image, Every.org set to production. The published worker image boots on a throwaway database.
 - [x] No new migration: 19 at this sha, the same as production, read.
-- [x] `git diff 12c451f 2377033 -- Caddyfile docker-compose.prod.yml` prints nothing, read; nothing in `public/` changed since `83b2bc9`, so no purge.
+- [x] `git diff 12c451f cc6e8df -- Caddyfile docker-compose.prod.yml` prints nothing, read; nothing in `public/` changed since `83b2bc9`, so no purge: read again on `cc6e8df`.
 - [x] Disk clear for the pull: 12G free after oplog 0031.
 - [x] Every.org's API read on the day, 2026-11-04 15:51 UTC: `spencer-pet-rescue`'s `hasAdmin` and `donationsEnabled` both true, and its EIN `86-1172833`, as read on 2026-11-02.
-- [ ] A listing with Commons-tested painting behaviour: `paintings`' Commons run passed on a listing-shaped job.
+- [x] A listing with Commons-tested painting behaviour: `paintings` ran one listing-shaped job through the real `generateArt` at `a081344`, on its own database, 2026-11-04 15:54 to 15:57 UTC: painted in 209 s, four JPEGs and four art facts, the photos deleted. Its first try skipped on memory at 20.2 GB.
 - [ ] `pass` unlocked by Logan.
 - [ ] Not within an hour of 06:00, 07:00 or 08:30 UTC, and nothing in the main checkout from 06:45 UTC until that night's log shows `== exit`.
 - [ ] The moderator holds the card, and the art worker and tunnel are up: `pgrep -fc '[m]onsterpaws-home-worker'` prints 1.
@@ -52,7 +52,7 @@ Rollback: `rclone deletefile`.
       docker compose -f docker-compose.prod.yml ps --format "{{.Service}} {{.Image}} {{.Status}}" &&
       for k in ART_SWEEP EMAIL_SWEEP WORKER_MODE EMAIL_LIVE; do printf "%s " $k; grep -c "^$k=" .env; done'
     curl -fsS https://monsterpaws.org/api/health
-Verify: `IMAGE_TAG` is `0989a18cf020f1211dde8a2d8dd2e24c1ef4ea2a` or a later recorded sha; `ART_SWEEP` and `EMAIL_LIVE` count `1`; `EMAIL_SWEEP` and `WORKER_MODE` count `0`; health 200.
+Verify: `IMAGE_TAG` is oplog 0032's hotfix sha, recorded; `ART_SWEEP` and `EMAIL_LIVE` count `1`; `EMAIL_SWEEP` and `WORKER_MODE` count `0`; health 200.
 Rollback: n/a — the record.
 
 ### 2. Read what's there
@@ -71,10 +71,10 @@ Rollback: n/a — a read.
 
 ### 3. Pull the release, one SSH session; nothing restarts
     ssh root@$IP 'cd monsterpaws && git pull --ff-only &&
-      sed -i "s/^IMAGE_TAG=.*/IMAGE_TAG=2377033e774f05c3f17cdd24afb6a9b21ac34780/" .env &&
+      sed -i "s/^IMAGE_TAG=.*/IMAGE_TAG=cc6e8df1b38d566157fbcde9e5a8e149df3e08b5/" .env &&
       docker compose -f docker-compose.prod.yml pull app worker &&
       docker compose -f docker-compose.prod.yml config --images'
-Verify: the checkout at this entry's commit; app and worker resolve to `2377033` and are pulled; all three still run the old containers.
+Verify: the checkout at this entry's commit; app and worker resolve to `cc6e8df` and are pulled; all three still run the old containers.
 Rollback: `IMAGE_TAG` back to step 1's sha; `git checkout <step 1's sha>`, then `git checkout topdog` later.
 
 ### 4. Migrate if there's anything new, while the old images serve
@@ -95,9 +95,9 @@ Both are needed for a Sponsor button: the row does nothing without the grant in 
     sleep 5; date -u +%T; ssh root@$IP 'cd monsterpaws && time docker compose -f docker-compose.prod.yml up -d app worker'; date -u +%T; wait $L
     cut -d' ' -f1 roll.log | sort | uniq -c; sort -k2 -n roll.log | tail -1
     curl -fsS https://monsterpaws.org/api/health
-Verify: `INSERT 0 1`; every line 404, the slowest under 30 s; health 200 on `2377033`; the worker up 20 s on with no `fatal`.
+Verify: `INSERT 0 1`; every line 404, the slowest under 30 s; health 200 on `cc6e8df`; the worker up 20 s on with no `fatal`.
 Stop if: any 5xx, or the worker restarting.
-Rollback: `IMAGE_TAG` back to step 1's sha and `up -d app worker`, after listing `/spool`. **That closes the button**, since the old image holds no grant; the row stays and does nothing.
+Rollback: `IMAGE_TAG` back to step 1's sha and `up -d app worker`, after listing `/spool`. **That closes the button**, since the old image holds no grant; the row stays and does nothing. Step 1's sha is the Cat Town hotfix, so a rollback keeps that opt-out.
 
 ### 6. Live: the button is on Spencer's animals and nobody else's
     S=$(ssh root@$IP '...one available animals.id for rescuegroups:org:11756...'); O=$(ssh root@$IP '...one available animals.id for any other shelter...')
@@ -110,17 +110,24 @@ Rollback: `IMAGE_TAG` back to step 1's sha and `up -d app worker`, after listing
     curl -s https://monsterpaws.org/animals/$S/sponsor | grep -cE "Our thank-you|try to paint"
     curl -s https://monsterpaws.org/privacy | sed 's/<[^>]*>//g' | grep -ciE "\bgifts?\b|\baccount\b"
 And the donate link, by reading what a sponsor form submits: `method=card,paypal`, production's Every.org and the production token, with no value printed.
-Verify: all 200 except another shelter's sponsor page and `test-gift`, 404; the partner lines count `0` on Spencer's and at least `1` on the other; footer `0`; sponsor wording at least `1`; `/privacy` `0`. **Logan opens a listing himself.**
+**And Cat Town, the first real opt-out,** `rescuegroups:org:5818` on `SHELTER_EXCLUSIONS` (ADR-0029 §5): one of its animals, by an id read in this step, and its shelter view no longer show.
+
+    C=$(ssh root@$IP '...one animals.id for rescuegroups:org:5818...')
+    curl -s -o /dev/null -w "cat town animal %{http_code}\n" https://monsterpaws.org/animals/$C
+    curl -s https://monsterpaws.org/animals/$C/sponsor -o /dev/null -w "cat town sponsor %{http_code}\n"
+    curl -s "https://monsterpaws.org/animals?shelter=rescuegroups:org:5818" | sed 's/<[^>]*>//g' | grep -ci "cat town"
+**And the Sort menu on `/animals` shows "Sponsorable first", and its first card is one of Spencer's:** e2e can't prove the page passes the shelters to the query, because its claimed shelter has no grant, so if that wiring broke nothing would fail and Spencer just wouldn't lead. The detail page isn't cached (`no-store`, `DYNAMIC`), so the button and the order change on the next request once the row exists.
+Verify: all 200 except another shelter's sponsor page and `test-gift`, 404; `/animals`' Sort menu shows "Sponsorable first" and its first card names one of Spencer's animals; Cat Town's animal and sponsor pages 404, and its shelter view counts `0`; the partner lines count `0` on Spencer's and at least `1` on the other; footer `0`; sponsor wording at least `1`; `/privacy` `0`. **Logan opens a listing himself.**
 Stop if: another shelter's Sponsor page answers 200. Roll back.
 Rollback: step 5's.
 
 ### 7. `paintings` restarts the worker from a checkout holding the grant
-`keepsakeShare` reads `SHELTERS` from its own code, and publish refuses without this. SIGTERM by PID, then 0028's step 8 command, from an export of `2377033` or later.
+`keepsakeShare` reads `SHELTERS` from its own code, and publish refuses without this. SIGTERM by PID, then 0028's step 8 command, from an export of topdog's tip, at or after `paintings`' memory fix, which lands on top of this image and changes only what runs on this box.
 Verify: its two first lines; no error after 2 minutes; 1 connection as `home_worker`.
 Rollback: SIGTERM. Gifts wait, and the sweep alerts after 30 minutes.
 
 ### 8. Logan's first real donation, watched
-On his word, in a real browser, by card or PayPal, to one of Spencer's animals, with his own address. Then read, with no address printed:
+On his word, in a real browser, by card or PayPal, to one of Spencer's animals, with his own address. **Before it, read 22 GB free in Windows:** under that the worker skips the job and the sweep sends it again only on the next hour's slot, so the first painting would wait up to an hour. Then read, with no address printed:
 - **The webhook:** `decided recorded`, the donation row, `closed_at`, its delay from `donationDate`.
 - **The sweep, within 60 s:** one keepsake, its facts on `grant:spencer-pet-rescue:digify`, no `source_photo`; one `art.generate` job carrying `photos`.
 - **The worker:** the job taken, detection on the listing's photo, 4 `art` facts in about 5 minutes, published under the token.
