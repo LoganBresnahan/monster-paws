@@ -52,17 +52,19 @@ Both answer 404, or the root 403, and neither lists anything. An unauthenticated
 Rollback: disconnect the domain on the same page. The bucket is private again, and Cloudflare's cached copies age out or get purged.
 
 ### 4. Publish one crew pet's set (`paintings`)
-Both commands have only run against fakes, so this is their first real write. Run them on a throwaway set first, then publish the real one (ADR-0036 decision 10).
-Publishing takes `SHARE_WRITE_ENDPOINT`, `SHARE_WRITE_BUCKET=monsterpaws-media` and step 2's pair:
+Both commands have only run against fakes, so this is their first real write. A set now comes from a keepsake's own rows (ADR-0036 as of `9d297c9`), so the proof uses a rehearsal
+keepsake painted by the chain in `monsterpaws_demo`, published, taken down, and published again as the set the demo links to. Publishing takes `DATABASE_URL`, `ART_STORE_DIR`,
+`SHARE_WRITE_ENDPOINT`, `SHARE_WRITE_BUCKET=monsterpaws-media` and step 2's pair:
 
-    npm run share -- publish <crew-slug> <4 files>
-It refuses a slug not in `CREW` and any size but 1216×832. Takedown also takes `SHARE_BASE_URL=https://media.monsterpaws.org`, `CLOUDFLARE_ZONE_ID` (the lookup in
+    npm run share -- publish <keepsake-id>
+It refuses a keepsake without four `art` facts, a size other than 1216×832, and a shelter with no `digify` grant today. Takedown also takes `SHARE_BASE_URL=https://media.monsterpaws.org`, `CLOUDFLARE_ZONE_ID` (the lookup in
 `doc/infra.md`'s Cloudflare section) and `CLOUDFLARE_PURGE_TOKEN` (`cloudflare/dns-token` has Cache Purge). Without the purge keys it deletes, says NOT PURGED and exits 2.
-Verify, throwaway set: published and read back, then `takedown`, then its `manifest.json` and a JPEG answer 404 with no credentials.
-Verify, real set: each upload read back and compared by hash; `manifest.json` written last, holding exactly the name and kind; no EXIF, XMP or generator text in any JPEG;
-once oplog 0025 has put the route live, `curl` of `/share/<token>` and its `painting.jpg` with a bot's user agent answers 200, and the page's `og:image` is that
-painting's.
-Rollback: `npm run share -- takedown`, which deletes the objects and purges Cloudflare.
+
+    npm run share -- takedown <token>
+Verify, first publish: each upload read back and compared by hash; `manifest.json` written last, holding exactly the name, kind and any shelter; no EXIF, XMP or generator text in any JPEG; its files answer 200 with no credentials.
+Verify, takedown: its `manifest.json` and a JPEG answer 404 with no credentials.
+Verify, final publish: as the first, and once oplog 0025 has put the route live, `curl` of `/share/<token>` and its `painting.jpg` with a bot's user agent answers 200, and the page's `og:image` is that painting's. The token stays out of this entry.
+Rollback: `npm run share -- takedown <token>`.
 
 ## Run
 Steps 1 to 3, 2026-11-04 00:07 to 00:08 UTC, by the moderator; Logan connected the domain with minimum TLS 1.2. Step 4 waits on its prerequisites.
