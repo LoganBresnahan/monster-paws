@@ -389,9 +389,9 @@ function run(cmd: string, args: string[], cwd: string, log: string): Promise<voi
   });
 }
 
-function capture(cmd: string, args: string[]): Promise<string> {
+function capture(cmd: string, args: string[], env?: Record<string, string>): Promise<string> {
   return new Promise((resolveRun) => {
-    const child = spawn(cmd, args, { stdio: ["ignore", "pipe", "ignore"] });
+    const child = spawn(cmd, args, { stdio: ["ignore", "pipe", "ignore"], env: env && { ...process.env, ...env } });
     let text = "";
     child.stdout.on("data", (d) => (text += d));
     child.on("error", () => resolveRun(""));
@@ -455,8 +455,9 @@ export function guardPainter(root: string): Painter {
       const names = await capture("docker", ["ps", "--format", "{{.Names}}"]);
       if (/comfyui-comfyui|comfyui-explore-run/.test(names)) return "a ComfyUI container is up";
       if ((await capture("pgrep", ["-f", "guard[.]sh batch"])).trim()) return "a guard batch is running";
-      // after the cache drop the guard does at every start, so this is the memory a load really has
-      const free = hostFreeGb(await capture(join(root, "comfyui/guard.sh"), ["drop"]));
+      // after the cache drop the guard does at every start, so this is the memory a load really has; the drop waits for
+      // this floor, never its own lower one, since freed pages reach Windows 20–27 s late (the moderator, 2026-11-04)
+      const free = hostFreeGb(await capture(join(root, "comfyui/guard.sh"), ["drop"], { WAIT_GB: String(LOAD_FREE_GB) }));
       if (free !== null && free < LOAD_FREE_GB) return `Windows free ${free} GB, under ${LOAD_FREE_GB} GB before a model load`;
       return null;
     },

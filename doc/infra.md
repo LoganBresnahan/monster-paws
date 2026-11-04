@@ -990,8 +990,17 @@ What was load-bearing, in the order it was found:
   where batch 7a had hit 9.5 and 7.3. The guard also drops the VM's
   cache as root before each start (`guard.sh drop`, through
   `wsl.exe -u root`), for cache from anything else (a download, a
-  scorer run). Freed pages reach Windows over 10–40 s; the guard waits
-  only when free memory is within 10 GB of the floor. `memory=32GB`
+  scorer run). Freed pages reach Windows over 10–40 s; the guard waits,
+  60 s at most, until free memory reaches `WAIT_GB`: 10 GB over the floor
+  for a batch, and the art worker's `LOAD_FREE_GB` (22) for a job's busy
+  check, which passes it in. Until 2026-11-04 the wait stopped at 20 GB for
+  both, so a job's reading between 20 and 22 GB was refused unwaited (21.5
+  GB at 03:16 UTC, 20.2 at 15:53). Measured by the moderator at 16:12 UTC
+  with 5 s samples: after a drop, `vmmemWSL` fell from 23.8 to 16.0 GB
+  within about 20 s, while Windows free read 25.3, 25.5 at 16 s, 29.0 at
+  21 s and 32.6 at 27 s, a lag of 20–27 s and then a ~7 GB jump;
+  `FreePhysicalMemory` matched `\Memory\Available Bytes` (29.0 and 28.9),
+  so the reading counts standby. `memory=32GB`
   stays. `autoMemoryReclaim=dropCache` (WSL drops the cache when the VM
   is idle) is untried here; the 10-10 freezes were under `gradual`.
   Still unmeasured: a model load also takes several GB outside the VM

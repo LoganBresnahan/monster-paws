@@ -16,6 +16,9 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 FLOOR_GB=${FLOOR_GB:-10}
+# How much Windows free a drop waits for, at most 60 s: never under what its caller then asks for, or a reading
+# between the two gets no wait and is refused anyway (the art worker passes its LOAD_FREE_GB; both 2026-11-04 skips).
+WAIT_GB=${WAIT_GB:-$((FLOOR_GB + 10))}
 SHARED_MAX_GB=${SHARED_MAX_GB:-4}
 COMPOSE="docker compose -f comfyui/compose.yml"
 
@@ -47,7 +50,7 @@ drop() {
   # Windows gets the pages back over ~10–40 s, not at once: wait only while a load would start near the floor
   for _ in $(seq 1 12); do
     now=$(host_free_gb)
-    awk -v n="$now" -v f="$FLOOR_GB" 'BEGIN{exit !(n >= f + 10)}' && break
+    awk -v n="$now" -v w="$WAIT_GB" 'BEGIN{exit !(n >= w)}' && break
     sleep 5
   done
   echo "guard: dropped ${cached} GB of file cache; Windows free ${before} → $(host_free_gb) GB"

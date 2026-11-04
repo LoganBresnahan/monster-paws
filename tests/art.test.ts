@@ -228,6 +228,30 @@ esac
 });
 
 
+describe("the busy check before a load", () => {
+  it("has the guard's drop wait for its own floor, never the guard's lower one", async () => {
+    const root = mkdtempSync(join(tmpdir(), "art-busy-"));
+    const bin = join(root, "bin");
+    mkdirSync(join(root, "comfyui"), { recursive: true });
+    mkdirSync(bin);
+    // the guard's reading is whatever floor its drop was asked to wait for, so only a passed floor clears the check
+    writeFileSync(join(root, "comfyui", "guard.sh"), '#!/bin/sh\necho "host_free=${WAIT_GB:-0}GB shared=1.0GB dedicated=0.0GB fds=-"\n');
+    for (const name of ["comfyui/guard.sh", "bin/docker", "bin/pgrep"]) {
+      if (name !== "comfyui/guard.sh") writeFileSync(join(root, name), "#!/bin/sh\nexit 0\n");
+      chmodSync(join(root, name), 0o755);
+    }
+    const PATH = process.env.PATH;
+    process.env.PATH = `${bin}:${PATH}`;
+    try {
+      expect(await guardPainter(root).busy()).toBeNull();
+    } finally {
+      process.env.PATH = PATH;
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+});
+
+
 describe("a listing's photos, fetched (verify, 2026-11-04)", () => {
   const root = mkdtempSync(join(tmpdir(), "art-fetch-"));
   const fetchPhotos = guardPainter(root).fetchPhotos;
