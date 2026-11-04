@@ -13,7 +13,8 @@ Who does what: **Logan gives the word for step 1, in the session that runs it.**
 
 ## Prerequisites
 - [ ] Oplog 0025 has run: this needs migrations `0017` and `0018` and its image.
-- [ ] Oplog 0027 has run, and `paintings`' worker has taken a job on the dev database under the same options, so a job sent here has somewhere to go. Its queries fit the role: read 2026-11-04 in `src/worker/art.ts` and `src/core/share/keepsake.ts`, which select `keepsake`'s id and token and `keepsake_fact`, and insert into `keepsake_fact`, and nothing else.
+- [ ] Oplog 0027 has run, and `paintings`' worker has taken a job on the dev database under the same options, so a job sent here has somewhere to go. Its queries fit the role: read 2026-11-04 in `src/worker/art.ts` and `src/core/share/keepsake.ts`, which select `keepsake`'s id and token and `keepsake_fact`, insert into `keepsake_fact`, and call `pg_advisory_xact_lock` and `current_database()`, and nothing else.
+- [ ] `ART_PHOTO_HOSTS` is on topdog, since step 8 runs from its tip. As of 2026-11-04 it exists only uncommitted on `lora`, and without it `fetchPhotos` takes any https host and follows redirects.
 - [ ] Oplog 0026's domain answers: a real gift's art reaches the mail through `media.monsterpaws.org`.
 - [ ] `pass` unlocked by Logan.
 - [ ] Not within an hour of 06:00, 07:00 or 08:30 UTC, and nothing in the main checkout from 06:45 UTC until that night's log shows `== exit`.
@@ -81,7 +82,7 @@ The worker can't run in a container: `guardPainter` needs `docker`, `guard.sh`, 
     ssh root@$IP 'cat monsterpaws/do-ca.crt' > ~/monsterpaws/var/do-ca.crt
     nohup scripts/home-worker-tunnel.sh >> ~/monsterpaws/var/home-worker-tunnel.log 2>&1 &
 Never run `scripts/poll-via-home.sh` while this tunnel is up: it forwards the same local port. The hostname is in `/etc/hosts` and never printed.
-Verify: `grep -c generateHosts /etc/wsl.conf` prints 1; `DATABASE_URL=$(pass show digitalocean/pg-home-worker-url | head -n1) NODE_EXTRA_CA_CERTS=~/monsterpaws/var/do-ca.crt` and node's `pg` answers `select current_user` as `home_worker`, with verification on, by `node -e` from a checkout.
+Verify: `grep -c generateHosts /etc/wsl.conf` prints 1; `DATABASE_URL=$(pass show digitalocean/pg-home-worker-url | head -n1) NODE_EXTRA_CA_CERTS=~/monsterpaws/var/do-ca.crt` and node's `pg` answers `select current_user` as `home_worker`, with verification on, by `node -e` from a checkout. **In that session, also `begin; select pg_advisory_xact_lock(1,1); rollback;`**: the handler's lock has never run under this role, and otherwise the first proof comes after a 5-minute paint on a real donation.
 Rollback: stop the tunnel; delete both lines with sudo.
 
 ### 8. `paintings` starts the art worker
@@ -95,7 +96,7 @@ From a checkout at topdog's tip, with the tunnel up. After this entry's queue ex
     SHARE_WRITE_ACCESS_KEY_ID="$(pass show cloudflare/r2-access-key-id | head -n1)" \
     SHARE_WRITE_SECRET_ACCESS_KEY="$(pass show cloudflare/r2-secret-access-key | head -n1)" \
     SENTRY_DSN="$(pass show betterstack/errors-dsn | head -n1)" \
-    RESCUEGROUPS_API_KEY= ART_SWEEP= ART_CREW_DETECTOR= \
+    RESCUEGROUPS_API_KEY= ART_SWEEP= \
     nohup npm run worker >> var/explore/art-worker-production.log 2>&1 &
 Under `home_worker` it only calls `work`, with no `createQueue`, migrations or upkeep, and its pools at 2. It skips a job, without failing it, in the nightly quiet window, while a guard batch or ComfyUI runs, or under 22 GB free, and the sweep sends it again within the hour. It fetches a listing's photos only over https from `ART_PHOTO_HOSTS`, default `cdn.rescuegroups.org`.
 Verify: its first lines read `art store bound to database <name>`, then `art.generate registered (WORKER_MODE=art)`; no error in the log after 2 minutes; `pgboss.job` still holds 0 `art.generate` rows.

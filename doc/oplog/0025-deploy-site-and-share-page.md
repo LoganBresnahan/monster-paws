@@ -1,12 +1,14 @@
-# 0025: Deploy `993ac71` — the site's demo pages, the share page and the keepsake schema, with nothing painted
+# 0025: Deploy `0989a18` — the site's demo pages, the share page and the keepsake schema, with nothing painted
 
 Status: planned
 Planned: 2026-11-04 · Run: —
 Why: social sites build a preview only from a public page, so the share page has to be live (ADR-0036), and the home and `/demo` changes ship for the Meta
 demo (ADR-0028 as amended 2026-11-03). Roadmap: Accounts and donating (item 4)
-Commit deployed: `993ac71`, named by the moderator, 2026-11-04: Logan's new crew portraits, the mail with its review fixes, the art worker job, the real-paintings commit and the `/privacy` line. Logan chose this over `9d297c9`: "wait". This entry follows in its own push so the image tag is the code commit
+Commit deployed: `0989a18`, named by the moderator, 2026-11-04: Logan's new crew portraits with Plum's new painting, the mail with its review fixes, the art worker job, the real-paintings commit and every word he approved. Logan chose to carry these over `9d297c9`: "wait". This entry follows in its own push so the image tag is the code commit
 
-What changes on the droplet: the app and worker images; migrations `0017` and `0018`; `SHARE_BASE_URL=https://media.monsterpaws.org` in `.env`. Compose and the `Caddyfile` are unchanged since `12c451f` (prerequisite below), so Caddy doesn't restart. At Cloudflare: five cached files purged, because the crew's paintings change in place under the same names.
+What changes on the droplet: the app and worker images; migrations `0017` and `0018`; `SHARE_BASE_URL=https://media.monsterpaws.org` in `.env`. Compose and the `Caddyfile` are unchanged since `12c451f` (prerequisite below), so Caddy doesn't restart. At Cloudflare: seven cached files purged, because the crew's paintings and Plum's photo and thumbnail change in place under the same names.
+
+**Words:** this image puts Logan's approved wording live everywhere, "donation" for "gift", with the sponsor page and `/thanks` saying "we're painting" only where the sweep would paint, which on production is nowhere until oplog 0029.
 
 What this opens: `/share/<token>`, which reads published files from `media.monsterpaws.org`, by a token that can't be guessed. `/unsubscribe` and `/api/webhooks/resend`, whose unset keys leave them doing nothing. The donate link stops offering bank. **Nothing paints and nothing mails:** this image carries `sweepKeepsakes`, the art worker's job and the painting email, and all stay off with `ART_SWEEP`, `WORKER_MODE` and `EMAIL_SWEEP` unset, and `SHELTERS` holds no grant. Migration `0017` reshapes `keepsake`, which step 2 reads as empty. The `manual` display licence is inert while no such row exists, which step 2 also reads.
 
@@ -14,19 +16,19 @@ Who does what: **Logan gives the word for step 1, in the session that runs it.**
 
 ## Prerequisites
 - [x] Logan's words for `/privacy`'s share-page line are in, 2026-11-04 ("yes" to the draft, directly), and pinned by `tests/privacy-page.test.ts`.
-- [x] CI green on `993ac71`: `verify`, `images`, `sourcemaps`, run 41759514629. Both `images` and `sourcemaps` before rolling (ADR-0010 as amended 2026-09-30).
-- [x] Ship bar on `993ac71`, in a temporary checkout at exactly that sha, 2026-11-04 02:16 to 02:24 UTC: vitest 850 of 850 twice, typecheck clean, `npm run e2e` 50 of 50.
-- [x] The published worker image booted, on a throwaway database with no keys, 2026-11-04 02:26 UTC: up after 24 s, 0 fatal lines, no `art.generate` queue. It's the first image to load `sharp` at the worker's boot.
-- [x] `git diff 12c451f 993ac71 -- Caddyfile docker-compose.prod.yml` prints nothing, read 2026-11-04. If it prints, this entry gains Caddy's restart or a compose step before step 1.
-- [x] e2e against the published app image, Every.org set to production, moderator told first, 2026-11-04 02:25 UTC: 40 passed in 12.4 s, 10 skipped, all in `e2e/share.spec.ts`, which skips under `PW_BASE_URL`, so step 6 covers the share routes live. `/privacy` holds the new line.
+- [x] CI green on `0989a18`: `verify`, `images`, `sourcemaps`, run 41766314793. Both `images` and `sourcemaps` before rolling (ADR-0010 as amended 2026-09-30).
+- [x] Ship bar on `0989a18`, in a temporary checkout at exactly that sha, 2026-11-04 03:19 to 03:26 UTC: vitest 890 of 890 twice, typecheck clean, `npm run e2e` 57 of 57. The verifier read this sha and found nothing that stops the deploy.
+- [x] The published worker image booted on a throwaway database with no keys, 2026-11-04 03:28 UTC: up after 24 s, 0 fatal lines, no `art.generate` queue. It's the first image to load `sharp` at the worker's boot.
+- [x] `git diff 12c451f 0989a18 -- Caddyfile docker-compose.prod.yml` prints nothing, read 2026-11-04. If it prints, this entry gains Caddy's restart or a compose step before step 1.
+- [x] e2e against the published app image, Every.org set to production, moderator told first, 2026-11-04 03:27 UTC: 46 passed in 10.9 s, 11 skipped, which skip under `PW_BASE_URL`, so step 6 covers the share routes live. `/privacy` holds the new line and no "account", and `/demo/plum/sponsor` has no "Paying by bank".
 
       docker run --rm -d --name mp-e2e --network host \
         -e DATABASE_URL=postgres://monsterpaws:monsterpaws@localhost:5432/monsterpaws_e2e \
         -e PORT=3200 -e HOSTNAME=127.0.0.1 -e EVERYORG_ENV=production -e EVERYORG_WEBHOOK_TOKEN=e2e-token \
-        ghcr.io/loganbresnahan/monster-paws-app:993ac71baa03ee5fc368f75499244a8a247d3a6b
+        ghcr.io/loganbresnahan/monster-paws-app:0989a18cf020f1211dde8a2d8dd2e24c1ef4ea2a
       PW_BASE_URL=http://127.0.0.1:3200 npm run e2e:prod
       docker stop mp-e2e
-- [x] Migrations `0017` and `0018` rehearsed on a scratch restore of the newest dump, then dropped, 2026-11-04 02:26 UTC: 0 restore errors, 12 to 19 migrations (the dump predates production's 17), animals 112123 before and after, `keepsake` holds `id`, `intent_id`, `share_token` and `snapshotted_at`, and `painting_email_sends` and `resend_webhook_events` are empty.
+- [x] Migrations `0017` and `0018` rehearsed on a scratch restore of the newest dump, then dropped, 2026-11-04 03:28 UTC: 0 restore errors, 12 to 19 migrations (the dump predates production's 17), animals 112123 before and after, `keepsake` holds `id`, `intent_id`, `share_token` and `snapshotted_at`, and `painting_email_sends` and `resend_webhook_events` are empty.
 - [ ] `pass` unlocked by Logan.
 - [ ] Not within an hour of 06:00, 07:00 or 08:30 UTC, and nothing in the main checkout from 06:45 UTC until that night's log shows `== exit`.
 - [ ] The dev box free: nobody on `:3100`/`:3200` or `monsterpaws_e2e`, no batch on the card. The moderator holds the card.
@@ -61,13 +63,13 @@ Rollback: n/a — a read.
 
 ### 3. Pull the release and set the one new key, one SSH session; nothing restarts
     ssh root@$IP 'cd monsterpaws && git pull --ff-only &&
-      sed -i "s/^IMAGE_TAG=.*/IMAGE_TAG=993ac71baa03ee5fc368f75499244a8a247d3a6b/" .env &&
+      sed -i "s/^IMAGE_TAG=.*/IMAGE_TAG=0989a18cf020f1211dde8a2d8dd2e24c1ef4ea2a/" .env &&
       printf "SHARE_BASE_URL=https://media.monsterpaws.org\n" >> .env &&
       grep -c ^SHARE_BASE_URL= .env &&
       docker compose -f docker-compose.prod.yml pull app worker &&
       docker compose -f docker-compose.prod.yml config --images'
 Only `app worker`, so the unpinned `caddy:2-alpine` doesn't move.
-Verify: the checkout at this entry's commit; app and worker resolve to `993ac71` and are pulled; `SHARE_BASE_URL` counts `1`; all three still run the old containers.
+Verify: the checkout at this entry's commit; app and worker resolve to `0989a18` and are pulled; `SHARE_BASE_URL` counts `1`; all three still run the old containers.
 Rollback: `IMAGE_TAG` back to step 1's sha, delete the `SHARE_BASE_URL` line, `git checkout <step 1's sha>`, and later `git checkout topdog`, since that leaves HEAD detached and the next pull fails until then.
 
 ### 4. Migrate, while the old images serve
@@ -111,18 +113,18 @@ Rollback: `IMAGE_TAG` back to step 1's sha, `up -d app worker`, after listing `/
       "psql \"\$DATABASE_URL\" -v ON_ERROR_STOP=1 -At -F \" \" -c \"SELECT count(*) FROM keepsake\" -c \"SELECT count(*) FROM painting_email_sends\" -c \"SELECT count(*) FROM pgboss.queue WHERE name = '"'"'art.generate'"'"'\""'
     curl -fsS https://monsterpaws.org/api/health
 If oplog 0026 has published a set by now, the moderator gives its token on stdin and `/share/<token>` is read once: 200, and an `og:image` naming `/share/<token>/1/painting.jpg`.
-Verify: five pages 200; all five share lines 404; the `/privacy` line counts `1`; "Paying by bank" counts `0`; the resend webhook 404; `/unsubscribe` no 5xx, status recorded; both containers print the media URL and `0`; the log grep counts `0`; `keepsake 0`, `painting_email_sends 0`, no `art.generate` queue; health 200 on `993ac71`.
+Verify: five pages 200; all five share lines 404; the `/privacy` line counts `1`; "Paying by bank" counts `0`; the resend webhook 404; `/unsubscribe` no 5xx, status recorded; both containers print the media URL and `0`; the log grep counts `0`; `keepsake 0`, `painting_email_sends 0`, no `art.generate` queue; health 200 on `0989a18`.
 Stop if: a keepsake, a send or an `art.generate` queue exists: find out why before anything else.
 Rollback: step 5's.
 
-### 7. Purge the five paintings at Cloudflare
+### 7. Purge the seven files at Cloudflare
 They change in place under the same names, and production sends `max-age=14400`, so the edge could serve the old ones for 4 hours. A browser that already has one can show it for up to 4 hours, which nothing here can reach. `/_next/image` is `DYNAMIC` at the edge and needs no purge.
 
+    U=$(for p in plum marty beetle stacey ducky; do printf 'https://monsterpaws.org/brand/crew/%s-painting.jpg\n' $p; done; printf 'https://monsterpaws.org/brand/crew/plum-%s.jpg\n' photo thumb)
     Z=$(curl -fsS -H "Authorization: Bearer $(pass show cloudflare/dns-token | head -n1)" "https://api.cloudflare.com/client/v4/zones?name=monsterpaws.org" | jq -r '.result[0].id')
-    F=$(for p in plum marty beetle stacey ducky; do printf 'https://monsterpaws.org/brand/crew/%s-painting.jpg\n' $p; done | jq -R . | jq -cs '{files:.}')
-    curl -fsS -X POST "https://api.cloudflare.com/client/v4/zones/$Z/purge_cache" -H "Authorization: Bearer $(pass show cloudflare/dns-token | head -n1)" -H 'Content-Type: application/json' --data "$F" | jq -c '{success}'
-    for p in plum marty beetle stacey ducky; do curl -s -o /tmp/0025-$p.jpg -w "$p %{http_code} %header{cf-cache-status}\n" https://monsterpaws.org/brand/crew/$p-painting.jpg; sha256sum /tmp/0025-$p.jpg | cut -c1-16; git show 993ac71:public/brand/crew/$p-painting.jpg | sha256sum | cut -c1-16; rm -f /tmp/0025-$p.jpg; done
-Verify: `{"success":true}`; five 200s; for each pet the two hashes match, so the edge now serves this commit's file.
+    curl -fsS -X POST "https://api.cloudflare.com/client/v4/zones/$Z/purge_cache" -H "Authorization: Bearer $(pass show cloudflare/dns-token | head -n1)" -H 'Content-Type: application/json' --data "$(printf '%s\n' "$U" | jq -R . | jq -cs '{files:.}')" | jq -c '{success}'
+    for u in $U; do f=${u##*/}; curl -s -o /tmp/0025-$f -w "$f %{http_code} " "$u"; a=$(sha256sum < /tmp/0025-$f | cut -c1-16); b=$(git show 0989a18:public/brand/crew/$f | sha256sum | cut -c1-16); [ "$a" = "$b" ] && echo same || echo DIFFERS; done
+Verify: `{"success":true}`; seven 200s, all `same`, so the edge now serves this commit's files. **Then look at `/tmp/0025-plum-photo.jpg` and `/tmp/0025-plum-thumb.jpg`: Plum's collar tag is blurred.** Never paste the old image anywhere. Delete the files after.
 Stop if: a hash differs after a second read a minute later. It's a look at Cloudflare, not a rollback.
 Rollback: n/a. A purge only makes the edge fetch again.
 
