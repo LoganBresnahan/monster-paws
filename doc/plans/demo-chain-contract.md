@@ -80,7 +80,7 @@ main checkout's poll log says `== exit`.
 
 ## No look before the mail
 
-Logan, to the moderator, 2026-11-04: "no i wont look before the first day emails. they will just go out and hopefully we do a good job. i can review the images from the media bucket throughout the day". So oplog 0028 sets `EMAIL_SWEEP=on`, and a painting mails itself. With it unset, nothing goes on its own, and a person uses `npm run email -- list` and `send-owed --keepsake <id>`, which is the way to stop mail if a set goes wrong.
+Logan, to the moderator, 2026-11-04: "no i wont look before the first day emails. they will just go out and hopefully we do a good job. i can review the images from the media bucket throughout the day". So `EMAIL_SWEEP=on` is oplog 0029's last step, after one send by hand on his first real gift, since production has no keepsake before then, and from there a painting mails itself. With it unset, nothing goes on its own, and a person uses `npm run email -- list` and `send-owed --keepsake <id>`, which is the way to stop mail if a set goes wrong.
 
 ## Cut for now, and owed
 

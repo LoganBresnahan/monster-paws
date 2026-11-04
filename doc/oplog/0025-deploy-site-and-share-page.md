@@ -87,7 +87,9 @@ Rollback: forward only.
     sleep 5; date -u +%T; ssh root@$IP 'cd monsterpaws && time docker compose -f docker-compose.prod.yml up -d app worker'; date -u +%T; wait $L
     cut -d' ' -f1 roll.log | sort | uniq -c; sort -k2 -n roll.log | tail -1
     curl -fsS https://monsterpaws.org/api/health
-Verify: every line is 404, with the slowest under Caddy's 30 s, both recorded; the roll's length recorded; health 200 with the new sha; Caddy not recreated.
+    sleep 20; ssh root@$IP 'cd monsterpaws && docker compose -f docker-compose.prod.yml ps worker --format "{{.Status}}" </dev/null; docker compose -f docker-compose.prod.yml logs --tail 40 worker </dev/null | grep -cE "fatal|Cannot find|ERR_DLOPEN"'
+Verify: every line is 404, with the slowest under Caddy's 30 s, both recorded; the roll's length recorded; health 200 with the new sha; Caddy not recreated; **the worker still up 20 s on, with the log grep at `0`**, since this image is the first to load `sharp` at the worker's boot and health reads only the app.
+Stop if: the worker is restarting: step 5's rollback, since it would be crash-looping with polls and the webhook sweep down.
 Stop if: any 5xx. The fix is `request_buffers 128KiB` with `lb_retry_match` (ADR-0027 as amended 2026-11-03), a Caddyfile change in a new entry, not a rollback.
 Rollback: `IMAGE_TAG` back to step 1's sha, `up -d app worker`, after listing `/spool`: a file there waits for a forward roll.
 

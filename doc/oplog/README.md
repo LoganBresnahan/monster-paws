@@ -36,6 +36,7 @@ is an ADR; the daily numbers brief is `doc/ops/` (ADR-0010 as amended).
 | [0025](0025-deploy-site-and-share-page.md) | Deploy the site's demo pages, the share page and the keepsake schema, with nothing painted | planned | — |
 | [0026](0026-media-public-write-key-first-publish.md) | `monsterpaws-media` goes public through `media.monsterpaws.org`, and one crew pet's set is published for the Meta demo's share page (ADR-0036) | planned | — |
 | [0027](0027-home-worker-role-and-tunnel-key.md) | The art worker's way in: the `home_worker` role and a restricted tunnel key | planned | |
+| [0028](0028-painting-chain-keys-and-sweep.md) | The painting chain's keys and the keepsake sweep on, with no shelter to paint for | planned | — |
 
 ## Entry format
 
