@@ -12,6 +12,39 @@ slice or change build order.
 
 ## Now
 
+### Logan's list after the hackathon (2026-11-04)
+
+Submitted 2026-11-04 with real donations live: Spencer Pet Rescue's button open, card and PayPal donations painting and mailing with no one touching them (oplog 0029). Production is on `221b6cd`, and the art worker runs from `~/monsterpaws-art-d15dd23`. `meta` is frozen at `173182b` as what the judges read, so new work goes on topdog. Tick or delete these as they're done.
+
+**Dates**
+- [ ] Nov 8, 23:59 ET: Most Viral closes, if the demo was posted on X. Nov 9, 12:00 ET: closing ceremony and live finals. Nov 16: Community Vote results.
+- [ ] `/gpu-health` before Nov 9, and read Cloudflare's firewall events and the droplet's load around the finals. If traffic comes, upsize the droplet: it's the smallest size, and animal pages aren't cached.
+
+**Your decisions**
+- [ ] Who keeps the art worker up, and whether the button stays open after the hackathon (oplog 0029's follow-ups). This box has to stay on and signed in (`doc/issues.md`, Ops).
+- [ ] `/claim` promises a deletion nothing does: build it or change the sentence (`doc/issues.md`, Compliance).
+- [ ] The old Plum photo in git history: rewrite or leave it. "yeah i'll deal with the image later" (`doc/issues.md`, Compliance).
+- [ ] Every.org's receipt question: has the email to support@every.org gone out? (`doc/issues.md`, Ops.)
+- [ ] The limit on minting intents: accepted for day one only. Watch the count, and decide (`doc/issues.md`, Ops).
+- [ ] Windows' memory setting: try `autoMemoryReclaim=dropCache`, with a `wsl --shutdown` and `/gpu-health` after. It's optional, and the restart list in `doc/infra.md` follows it.
+
+**Tests owed**
+- [ ] A real low-memory run of the memory wait, which has only had fake readings (`doc/issues.md`, Ops). Takes the card for a few minutes.
+- [ ] A rehearsal of `doc/infra.md`'s "After a restart of this box", which has never been run end to end and kills every chat.
+- [ ] The photo reader on other animals, paused at his word: "cancel the other animal test for now. i want the card free for the prod site". 16 of 144 painted (batch 41a), dogs only until he's looked. `READER_SPECIES` is the gate. Birds and reptiles need their own question, and rats and hamsters have no round-ear choice. The spec, the Commons rows and the plan's note are uncommitted in `../monsterpaws-lora`.
+- [ ] A real phone's share sheet (Instagram, TikTok), and the takedown checks on a throwaway set (oplog 0029 step 10), including whether Cloudflare's purge reaches the bare `?`.
+
+**Small fixes, in `doc/issues.md`**
+- [ ] The reader's coat rule refuses a semicolon, so a good answer falls back to the listing's words. Max's colour, Duke's ears and Bailey are the next wording to judge (`doc/plans/base-model-candidates.md`).
+- [ ] `crops` and `paint` have no time limit. A failed publish isn't retried. A stuck painting alerts hourly for ever. Pin `transformers` at the next `comfy:build`.
+- [ ] Poll: `fetchPage`'s retry, `err.cause`, and `/fail` on the last attempt only.
+- [ ] The `emails` session's doc commit: ADR-0029's note that an opt-out names a role and never a person, the roadmap's line, the stale "empty registry" comment at `src/core/animals.ts:51`, and `record`'s suggested entry printing a name and address.
+
+**Tidy**
+- [ ] `everyorg/test-page-secret` leaves `pass` and `doc/infra.md`'s registry.
+- [ ] The droplet's old images after each deploy, by name, keeping the running one and the one before, and never `docker image prune -a` (`doc/infra.md`, Recurring ops). The droplet's pending kernel reboot.
+- [ ] On this box: delete the old exports `~/monsterpaws-art-{08f3dde,a081344,1e401b1,67718d5}` and keep `ab34160` as the last good rollback; delete the `hotfix/cat-town` branch once nothing rolls back to `dea83ba`; the `mp-verify-sshd` container; `doc/flows.md` and DIRECTION's account of the reader if they lag.
+
 ### Active tracks (2026-10-23)
 
 | Track | Item | Next step | Waits on |

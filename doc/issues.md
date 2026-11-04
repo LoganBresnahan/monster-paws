@@ -69,6 +69,16 @@ is the record, and a file of ticked boxes stops being read.
 
 ## Ops
 
+- **Real donations depend on this one box staying up, and nothing says when the worker dies.** The art worker and its tunnel are
+  plain processes on the home box: a reboot, a freeze or Windows signing out stops them, and they don't come back by themselves
+  (`doc/infra.md`, "After a restart of this box", never yet run end to end). A paid donation then waits, and the only alert is
+  "waiting past 30 minutes". The nightly poll also needs Logan signed in. Who keeps it up after the hackathon is Logan's call
+  (oplog 0029's follow-ups). Found 2026-11-04.
+
+- **The memory wait has only had fake readings.** Below 22 GB a job holds its slot for up to 30 minutes and paints when memory
+  returns (`MEMORY_WAIT_MS`, `src/worker/art.ts`). Real jobs have only gone through the path where free was enough, and no real
+  SIGTERM has landed during a wait. One run with memory held low would prove it, and takes the card. Found 2026-11-04.
+
 - **The photo reader's coat rule refuses a semicolon, so a good answer loses its
   words.** `read.py`'s `COAT` allows letters, spaces, commas, apostrophes and hyphens,
   and the 4B sometimes writes "Light tan on head, face, and ears; white under chin"
