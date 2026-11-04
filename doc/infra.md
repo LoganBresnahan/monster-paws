@@ -724,7 +724,7 @@ Each step below is one Bash call, with its own `cd`: a `cd` outside the session'
        RESCUEGROUPS_API_KEY= ART_SWEEP= \
        setsid nohup npm run worker >> var/explore/art-worker-production.log 2>&1 < /dev/null &
 
-   Verify after 2 minutes, reading only this start, because the log is appended: `tac ~/monsterpaws/var/explore/art-worker-production.log | sed '/^== start /q' | tac` shows `art store bound to database <name>` and `art.generate registered (WORKER_MODE=art)`. npm's banner and `.env not found` aren't errors. `DATABASE_URL not set — idling` means `pass` was locked, and `[worker] fatal` means the tunnel. Then record it: `echo ~/monsterpaws-art-<sha> > ~/monsterpaws/var/art-worker-export`. Stop it with SIGTERM to `pgrep -nf '[s]rc/worker/index'`.
+   Verify after 2 minutes, reading only this start, because the log is appended: `tac ~/monsterpaws/var/explore/art-worker-production.log | sed '/^== start /q' | tac` shows `art store bound to database <name>` and `art.generate registered (WORKER_MODE=art)`. npm's banner and `.env not found` aren't errors. `DATABASE_URL not set — idling` means `pass` was locked, and `[worker] fatal` means the tunnel. Then record it: `echo ~/monsterpaws-art-<sha> > ~/monsterpaws/var/art-worker-export`. Stop it with SIGTERM to `pgrep -nf '[s]rc/worker/index'`. To run it without the photo reader, add `ART_READER=off` to its line and start it again: a dog's words go back to the listing's, with no code change (ADR-0004 as amended 2026-11-04).
 6. **Logan** reopens the other chats he wants. `git worktree list` names their checkouts.
 
 Then keep Windows' heavy apps light while donations may come in: a paint starts only with 22 GB free after the cache drop, which `comfyui/guard.sh drop` prints. `guard.sh mem` reads before the drop and can read low.
@@ -1011,7 +1011,13 @@ What was load-bearing, in the order it was found:
   within about 20 s, while Windows free read 25.3, 25.5 at 16 s, 29.0 at
   21 s and 32.6 at 27 s, a lag of 20–27 s and then a ~7 GB jump;
   `FreePhysicalMemory` matched `\Memory\Available Bytes` (29.0 and 28.9),
-  so the reading counts standby. `memory=32GB`
+  so the reading counts standby. The photo reader before a paint (the 4B,
+  2026-11-04, Logan's apps open): it holds ~9.7 GB, its weights
+  as file-backed pages that `docker stats` doesn't count (it showed under 1
+  GB; `free`'s cache column and the process's RSS do). It took Windows free
+  from 28.4 to 20.3 GB while reading, and a job's drop after it then reached
+  33 GB in ~40 s and painted, never under 22 GB through the load. So a reader
+  must exit before the drop, never run beside a paint. `memory=32GB`
   stays. `autoMemoryReclaim=dropCache` (WSL drops the cache when the VM
   is idle) is untried here; the 10-10 freezes were under `gradual`.
   Still unmeasured: a model load also takes several GB outside the VM

@@ -20,7 +20,7 @@ Who does what: **Logan gives the word for step 1 and for the donation in step 8 
   - Spencer's withdrawal term: the newer rule, "A gift already made can still get its painting", from Logan directly: "use the newer rule for spencers". The thread shows the older term, "we stop painting, take the paintings down and delete the photos".
   - The go-live: the footer's "Donations coming soon!" and `/animals/[id]`'s "When sponsoring opens" sentence removed.
 - [x] That image also holds `37f1ce1`, `604a76c`, `e018831`, the `emails` session's fixes and the plural `/thanks` lines, and "We stop taking donations" reworded: each read at the sha.
-- [ ] The vision reader is landed and rehearsed, for step 7's checkout (Logan, to the moderator, 2026-11-04: "yeah i think we should ship it"), with the moderator's word. `paintings`' earlier fixes are on topdog.
+- [x] The vision reader is landed and rehearsed, for step 7's checkout (Logan, to the moderator, 2026-11-04: "yeah i think we should ship it"). `paintings`' rehearsal at 22:07 UTC through the real `generateArt` from `/home/oof/monsterpaws-art-ab34160`: a dog with the reader in 272 s, a cat without in 187 s, 28.9 GB free after the wait, the words left in no file. Publish was off in it, so step 8 is publish's first run under the reader.
 - [x] CI green on `221b6cd`, run 41876839976: `completed success` at 17:46 UTC, through a GitHub Actions incident in which it read `queued` with the images already published. `images` and `sourcemaps` read success. `verify`'s job still reads `in_progress` from that incident, with every step read as success by the moderator. The tested images are unchanged: a fresh pull at 17:46 UTC read "up to date" for both.
 - [x] Ship bar on `221b6cd`, in a temporary checkout at exactly that sha, 2026-11-04 17:24 to 17:32 UTC: vitest 975 of 975 twice with `--maxWorkers=2`, typecheck clean, `npm run e2e` 60 of 60.
 - [x] e2e against the published app image, Every.org set to production, 2026-11-04 17:40 UTC: 47 passed in 10.9 s, 13 skipped, all in `e2e/share.spec.ts`; the footer's line gone, `/privacy` clear of "gift", "account" and "stop taking donations", `/test-gift` 404. The published worker image booted on a throwaway database: up after 24 s, 0 fatal lines, no `art.generate` queue.
@@ -122,7 +122,7 @@ Stop if: another shelter's Sponsor page answers 200. Roll back.
 Rollback: step 5's.
 
 ### 7. `paintings` restarts the worker from a checkout holding the grant
-`keepsakeShare` reads `SHELTERS` from its own code, and publish refuses without this. SIGTERM by PID, then 0028's step 8 command, from an export of topdog's tip, holding the vision reader, the memory fix `8409487` and the grant, which `paintings` names. It runs only on this box, so the droplet's image stays `221b6cd`.
+`keepsakeShare` reads `SHELTERS` from its own code, and publish refuses without this. SIGTERM by PID, then 0028's step 8 command, from an export of topdog's tip, `/home/oof/monsterpaws-art-ab34160`, topdog's tip with the vision reader, the memory fix and the grant, run by `paintings`, messaged directly when the row is in. It runs only on this box, so the droplet's image stays `221b6cd`.
 Verify: its two first lines; no error after 2 minutes; 1 connection as `home_worker`.
 Rollback: SIGTERM. Gifts wait, and the sweep alerts after 30 minutes.
 
@@ -130,7 +130,7 @@ Rollback: SIGTERM. Gifts wait, and the sweep alerts after 30 minutes.
 On his word, in a real browser, by card or PayPal, to one of Spencer's animals, with his own address. **Before it, read 22 GB free in Windows:** under that the worker skips the job and the sweep sends it again only on the next hour's slot, so the first painting would wait up to an hour. Then read, with no address printed:
 - **The webhook:** `decided recorded`, the donation row, `closed_at`, its delay from `donationDate`.
 - **The sweep, within 60 s:** one keepsake, its facts on `grant:spencer-pet-rescue:digify`, no `source_photo`; one `art.generate` job carrying `photos`.
-- **The worker:** the job taken, detection on the listing's photo, the vision reader about 65 s more, 4 `art` facts in about 6 minutes, published under the token. **A Better Stack warning `art painted with a warning` means the reader's words weren't used.**
+- **The worker:** the job taken, detection on the listing's photo, the vision reader about 85 s more for a dog, 4 `art` facts in about 6 minutes, published under the token. **A Better Stack warning `art painted with a warning` means the reader's words weren't used.**
 - **`/thanks`:** waiting, then "we're trying to paint".
 - **Better Stack:** a count, and any error read by key name.
 **Logan looks at the four paintings at `media.monsterpaws.org`.**

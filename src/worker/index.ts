@@ -250,7 +250,7 @@ async function registerArtGenerate(boss: PgBoss) {
     try {
       // The crew's detector only by its own variable: DETECT_PIPELINES in this environment never decides a run (ADR-0028 §6).
       const crewDetector = process.env.ART_CREW_DETECTOR === "sam3" ? "sam3" : "owlv2";
-      const outcome = await generateArt(getDb(DATABASE_URL), job.data, painter, { live: process.env.ART_DETECT === "live", crewDetector, publish });
+      const outcome = await generateArt(getDb(DATABASE_URL), job.data, painter, { live: process.env.ART_DETECT === "live", reader: process.env.ART_READER !== "off", crewDetector, publish });
       // Never the job's data: a listing's photo URLs stay out of the log.
       console.log(JSON.stringify({ event: "art.generate", keepsakeId: job.data.keepsakeId, ...outcome }));
       // A skip for the card or the memory says why, at most hourly: donate's "waiting past 30 minutes" alert can't (ART_SKIP_ALERT_MS).

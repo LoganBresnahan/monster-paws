@@ -1,5 +1,5 @@
 import { execFileSync, spawnSync } from "node:child_process";
-import { mkdtempSync, writeFileSync, copyFileSync, readFileSync } from "node:fs";
+import { mkdtempSync, writeFileSync, copyFileSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
@@ -33,9 +33,9 @@ describe("comfyui/models.manifest (ADR-0004 decision 11)", () => {
       .filter((l) => l.trim() && !l.trim().startsWith("#"));
     for (const line of lines) {
       const [file, source, sha, licence, checked] = line.trim().split(/\s+/);
-      // `detect/` is read by transformers for subject detection (ADR-0026), and `inpaint/` by torch for
-      // comfyui/legmask.py's LaMa (ADR-0004 as amended 2026-10-14), never by ComfyUI.
-      expect(file, line).toMatch(/^(checkpoints|ipadapter|clip_vision|loras|controlnet|diffusion_models|text_encoders|vae|model_patches|detect|inpaint)\//);
+      // `detect/` is read by transformers for subject detection (ADR-0026), `inpaint/` by torch for comfyui/legmask.py's
+      // LaMa (ADR-0004 as amended 2026-10-14), and `read/` by comfyui/read.py's photo reader (as amended 2026-11-04), never by ComfyUI.
+      expect(file, line).toMatch(/^(checkpoints|ipadapter|clip_vision|loras|controlnet|diffusion_models|text_encoders|vae|model_patches|detect|inpaint|read)\//);
       expect(source, line).toMatch(/^(hf:[^/]+\/[^/]+\/.+|r2:.+)$/);
       expect(sha, line).toMatch(/^[0-9a-f]{64}$/);
       expect(licence, line).toMatch(/^[A-Za-z0-9.+-]+$/);
@@ -79,5 +79,20 @@ describe("comfyui/models.manifest (ADR-0004 decision 11)", () => {
   it("refuses a path that escapes the store", () => {
     const r = checkWith(`../x.safetensors hf:a/b/x.safetensors ${"0".repeat(64)} MIT 2026-10-07\n`);
     expect(r.status).not.toBe(0);
+  });
+});
+
+describe("a ComfyUI start's model check (comfyui/entrypoint.sh)", () => {
+  it("leaves the photo reader's weights to read.py, which verifies them when it loads them (ADR-0004 as amended 2026-11-04)", () => {
+    expect(readFileSync("comfyui/entrypoint.sh", "utf8")).toMatch(/^MODELS_SKIP=read\/ python \/home\/comfy\/models\.py fetch$/m);
+    // an empty store: a skipped entry is neither fetched nor reported missing, every other one is
+    const store = mkdtempSync(path.join(tmpdir(), "models-skip-"));
+    try {
+      const r = spawnSync("python3", ["-I", "comfyui/models.py", "verify", store], { encoding: "utf8", env: { ...process.env, MODELS_SKIP: "read/" } });
+      expect(r.stdout).not.toContain("read/qwen3-vl-4b-instruct");
+      expect(r.stdout).toContain("MISSING  detect/");
+    } finally {
+      rmSync(store, { recursive: true, force: true });
+    }
   });
 });

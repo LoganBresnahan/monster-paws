@@ -63,6 +63,8 @@ export interface Painter {
   forget(name: string): Promise<void>;
   /** cuts run `name`'s crops by live detection into `input/crew/<name>/` (`comfyui/live_crops.py`), and returns the photos cut */
   crops(name: string, listing: DetectListing & { photos: string[] }, detector: Detector): Promise<CutPhoto[]>;
+  /** the look of the animal's head in run `name`'s fetched photo `file`, read on the CPU (`comfyui/read.py`), or null */
+  read(name: string, species: string, file: string): Promise<string | null>;
   /** paints `spec` as run `name` and returns its marked PNGs, one per seed in the spec's order */
   paint(name: string, spec: PaintSpec): Promise<string[]>;
 }
@@ -81,6 +83,25 @@ export function liveCropsArgs(name: string, detector: Detector): string[] {
   return ["compose", "-f", "comfyui/compose.yml", "run", "--rm", "--no-deps",
     "-e", `DETECT_PIPELINES=${detector}`, "-e", detector === "sam3" ? "MODEL_API_KEY" : "MODEL_API_KEY=",
     "--entrypoint", "python", "explore", "/home/comfy/harness/live_crops.py", name];
+}
+
+/** Compose hands the worker's own key to every explore container, so all but sam3's detection run with it blanked: a listing's photo never shares a container with it (ADR-0028 §6). */
+const NO_META_KEY = { MODEL_API_KEY: "" };
+
+/** The photo reader a dog's words get the look of its head from: Logan's blind read of batch 40b (ADR-0004 as amended 2026-11-04). */
+export const READER = "qwen3-vl-4b-instruct";
+
+/** Only the species Logan has judged the reader on: a cat keeps the listing's words until a cat batch has been looked at. */
+export const READER_SPECIES = ["dog"];
+
+/**
+ * `read.py` in the explore container on the CPU, its weights read offline from the models store, never a hosted reader
+ * (ADR-0004 as amended 2026-08-02). Never without its time limit, 600 s against a measured 80: a read that hangs holds the
+ * job's slot and its container, so every later job skips as busy and this one's photos are never forgotten (verify, 2026-11-04).
+ */
+export function readArgs(name: string, species: string, file: string): string[] {
+  return ["compose", "-f", "comfyui/compose.yml", "run", "--rm", "--no-deps", "-e", `READER=${READER}`, "-e", "OMP_NUM_THREADS=6",
+    "--entrypoint", "timeout", "explore", "-k", "30", "600", "python", "/home/comfy/harness/read.py", `/home/comfy/explore/${name}/read.json`, species, `held:${name}/photos/${file}`];
 }
 
 /** A photo `comfyui/live_crops.py` cut: an animal was chosen in it, and maybe its head. */
@@ -255,6 +276,7 @@ export async function generateArt(
     live?: boolean;
     /** the crew's detector, set on the worker explicitly (`ART_CREW_DETECTOR`); `owlv2` when unset */
     crewDetector?: Detector;
+    reader?: boolean;
     publish?: (keepsakeId: number) => Promise<void>;
   } = {},
 ): Promise<ArtOutcome> {
@@ -313,7 +335,17 @@ export async function generateArt(
       // and a photo whose subject stands in for its head (`live_crops.py`) still paints.
       const usable = [...cut].sort((a, b) => Number(b.head) - Number(a.head));
       if (usable.length === 0) throw new Error(`keepsake ${keepsakeId}: no photo with the animal in it`);
-      pngs = await painter.paint(name, listingSpec(table, name, species, words, usable.map((c) => c.file), keepsakeId));
+      let look: string | null = null;
+      if (opts.reader && READER_SPECIES.includes(species.toLowerCase())) {
+        // The photo that leads, whose head the painter reads too; a reader that fails costs its words, never the painting.
+        try {
+          look = await painter.read(name, species.toLowerCase(), usable[0].file);
+          if (!look) warning = "the photo reader gave no words, so the listing's alone";
+        } catch (err) {
+          warning = `the photo reader failed, so the listing's words alone: ${err instanceof Error ? err.message : String(err)}`;
+        }
+      }
+      pngs = await painter.paint(name, listingSpec(table, name, species, look ? `${words} ${look}` : words, usable.map((c) => c.file), keepsakeId));
     } finally {
       // The photos and everything cut from them go when the attempt ends, painted or not: they are fetched again for a retry (ADR-0022 as amended 2026-11-02).
       await painter.forget(name);
@@ -378,10 +410,10 @@ export function sharePublisher(db: () => Db, env = process.env): ((keepsakeId: n
   };
 }
 
-function run(cmd: string, args: string[], cwd: string, log: string): Promise<void> {
+function run(cmd: string, args: string[], cwd: string, log: string, env?: Record<string, string>): Promise<void> {
   return new Promise((resolveRun, reject) => {
     const out = createWriteStream(log, { flags: "a" });
-    const child = spawn(cmd, args, { cwd, stdio: ["ignore", "pipe", "pipe"] });
+    const child = spawn(cmd, args, { cwd, stdio: ["ignore", "pipe", "pipe"], env: env && { ...process.env, ...env } });
     child.stdout.pipe(out, { end: false });
     child.stderr.pipe(out, { end: false });
     let failed: Error | undefined;
@@ -521,9 +553,13 @@ export function guardPainter(root: string): Painter {
     },
     async forget(name) {
       // A failure here fails the job on purpose: the photos must go, and a retry fetches and paints again.
-      for (const dir of [join(explore, name, "photos"), join(explore, name, "detect"), join(comfyData(root), "input", "crew", name)]) {
+      // ComfyUI's output goes too, since each PNG embeds its prompt in its metadata, the reader's words with it.
+      for (const dir of [join(explore, name, "photos"), join(explore, name, "detect"), join(comfyData(root), "input", "crew", name), join(comfyData(root), "output", "explore", name)]) {
         rmSync(dir, { recursive: true, force: true });
       }
+      // The reader's words and the prompt that carries them are read from a shelter's photo too, so they go with it; the
+      // marked paintings stay, carrying no metadata, since the set is written from them after this (ADR-0004 as amended 2026-11-04).
+      for (const file of ["read.json", "spec.json", "runs.jsonl", "index.html"]) rmSync(join(explore, name, file), { force: true });
     },
     async crops(name, { photos, ...listing }, detector) {
       const dir = join(explore, name);
@@ -542,12 +578,18 @@ export function guardPainter(root: string): Painter {
       }
       return JSON.parse(readFileSync(join(dir, "cut.json"), "utf8")) as CutPhoto[];
     },
+    async read(name, species, file) {
+      await run("docker", readArgs(name, species, file), root, join(explore, `${name}.log`), NO_META_KEY);
+      const read = JSON.parse(readFileSync(join(explore, name, "read.json"), "utf8")) as Record<string, { phrase: string | null }>;
+      return read[`held:${name}/photos/${file}`]?.phrase ?? null;
+    },
     async paint(name, spec) {
       const dir = join(explore, name);
       mkdirSync(dir, { recursive: true });
       writeFileSync(join(dir, "spec.json"), JSON.stringify(spec, null, 2) + "\n");
       const log = join(explore, `${name}.log`);
-      await run("comfyui/guard.sh", ["batch", name, "4"], root, log);
+      // The reader's weights sit in the VM's cache when a load starts, so the drop waits for the load's own floor (doc/infra.md, Home GPU).
+      await run("comfyui/guard.sh", ["batch", name, "4"], root, log, { WAIT_GB: String(LOAD_FREE_GB), ...NO_META_KEY });
       const fonts = realpathSync(join(root, "var", "fonts"));
       await run(
         "docker",
@@ -555,6 +597,7 @@ export function guardPainter(root: string): Painter {
           "--entrypoint", "python", "explore", "/home/comfy/harness/mark.py", name],
         root,
         log,
+        NO_META_KEY,
       );
       return paintedFor(readFileSync(join(dir, "runs.jsonl"), "utf8"), spec).map((output, i) => {
         if (!output) throw new Error(`${name}: seed ${spec.seeds[i]} was not painted; see ${log}`);
