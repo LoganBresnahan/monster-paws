@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { decodeEntities, tidyWhitespace, waitingTeaser } from "@/ui/text";
+import { decodeEntities, tidyWhitespace, waitingTeaser, withArticle, withPeriod } from "@/ui/text";
 
 /**
  * Cases taken from the 2026-09-04 RescueGroups corpus (ADR-0018), where 72% of
@@ -62,5 +62,26 @@ describe("waitingTeaser (ADR-0015 as amended 2026-10-05)", () => {
     expect(waitingTeaser(["LUCILLE", " RADAR "])).toBe("LUCILLE and RADAR are waiting…");
     expect(waitingTeaser([])).toBeNull();
     expect(waitingTeaser(["  "])).toBeNull();
+  });
+});
+
+describe("withArticle", () => {
+  it.each([
+    ["American Pit Bull Terrier", "an American Pit Bull Terrier"],
+    ["Akita", "an Akita"],
+    ["English Setter", "an English Setter"],
+    ["Beagle", "a Beagle"],
+    ["dog", "a dog"],
+    ["Husky", "a Husky"],
+    ["Eurasier", "a Eurasier"],
+  ])("%s reads %s", (word, expected) => {
+    expect(withArticle(word)).toBe(expected);
+  });
+});
+
+describe("withPeriod", () => {
+  it("adds a period only where there isn't one", () => {
+    expect(withPeriod("Happy Tails")).toBe("Happy Tails.");
+    expect(withPeriod("Happy Tails Inc.")).toBe("Happy Tails Inc.");
   });
 });

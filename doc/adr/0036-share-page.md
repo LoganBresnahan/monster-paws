@@ -96,7 +96,7 @@ reads published files, not the database.
     <token>` or `takedown --shelter <slug>`, with those keys plus `SHARE_BASE_URL=https://media.monsterpaws.org`, `CLOUDFLARE_ZONE_ID` and
     `CLOUDFLARE_PURGE_TOKEN`, deletes the manifest first, so the page goes at once, then every painting, and
     confirms each one reads back absent. It then purges the pages, the images and the files on the media
-    hostname. Cloudflare holds an image for up to a month, so a takedown isn't finished until the purge
+    hostname. Cloudflare holds an image for up to a day, so a takedown isn't finished until the purge
     runs: without the purge's keys the command says so and exits 2. It refuses to start without an https
     `SHARE_BASE_URL`, which would leave the media hostname's copies unpurged. A `--shelter` slug that matches
     nothing exits 2, so a typo can't read as a finished withdrawal.
@@ -109,11 +109,16 @@ reads published files, not the database.
     this. A preview bot arriving in that window may cache a card with no image, so don't share the link until
     GET answers 200.
 
-    The purge's 14 URLs are every URL our pages produce: the share page, four painting pages, four images, and
-    the media hostname's manifest and four JPEGs. A query string makes another entry at the edge, so the image
-    route answers one with an uncached 404. The media hostname can't refuse one, but its copies carry no
-    long cache header, and reaching them takes the token anyway. A crafted `/_next/image?url=/share/…` can leave
-    a copy in the container's optimizer cache for up to 4 hours. None of our pages produce one, so that is accepted.
+    The purge's 18 URLs are every URL our pages produce: the share page, four painting pages, four images and each
+    image with a bare `?`, and the media hostname's manifest and four JPEGs. A query string makes another entry at the
+    edge, so the image route answers one with the image and `no-store`: a purge then has nothing to miss, and a
+    platform that adds a query still gets its preview. A bare `?` can't be handled that way: Cloudflare caches it
+    separately, measured on a live image, but Next drops it before the route runs, measured on a production build,
+    so it gets the normal header. So it is in the purge, though whether Cloudflare's purge honours that form is
+    unmeasured, and the edge holds an image for a day rather than a month, which limits any copy a purge misses. The
+    media hostname can't refuse a query, but its copies carry no long cache header, and reaching them takes the token
+    anyway. `images.localPatterns` limits the optimizer to `/brand/**`, so
+    `/_next/image` can't keep a copy of a share image past a takedown.
 
 ## Consequences
 - A published painting is public to anyone holding the link, and a link can travel anywhere.

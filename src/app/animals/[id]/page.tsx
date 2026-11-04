@@ -11,7 +11,7 @@ import { getDb } from "@/db/client";
 import { speciesEmoji, TrackerPixel } from "@/ui/animal";
 import { AnimalGallery } from "@/ui/animal-gallery";
 import { agoInWords, formatDate } from "@/ui/dates";
-import { decodeEntities, tidyWhitespace } from "@/ui/text";
+import { decodeEntities, tidyWhitespace, withArticle, withPeriod } from "@/ui/text";
 import { SiteLogo } from "@/ui/site-logo";
 
 /**
@@ -80,9 +80,11 @@ export async function generateMetadata({
   // and a card is cached everywhere the link goes (ADR-0030).
   return {
     title: `${animal.name} — Monster Paws`,
-    description: `${animal.name} is a ${animal.breed ?? animal.species} looking for a home${
-      place ? ` in ${place}` : ""
-    }${animal.orgName ? `, listed by ${animal.orgName}` : ""}.`,
+    description: withPeriod(
+      `${animal.name} is ${withArticle(animal.breed ?? animal.species)} looking for a home${
+        place ? ` in ${place}` : ""
+      }${animal.orgName ? `, listed by ${animal.orgName}` : ""}`,
+    ),
   };
 }
 
@@ -246,7 +248,7 @@ export default async function AnimalPage({ params }: { params: Promise<{ id: str
       )}
 
       <p className="mt-4 text-sm text-muted">
-        Not affiliated with {org ?? "this shelter"}.{" "}
+        Not affiliated with {withPeriod(org ?? "this shelter")}{" "}
         <Link href="/claim" className="font-medium text-foreground underline">
           Is this your shelter? Claim it or remove your listings.
         </Link>

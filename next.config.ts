@@ -13,6 +13,8 @@ const nextConfig: NextConfig = {
   productionBrowserSourceMaps: true,
   // The webhook's path holds our secret, and the dev server prints every request
   // path to its terminal (ADR-0027 §4).
+  // Only the brand's files, never `/share`: the optimizer keeps its own copy for hours, which a takedown can't reach (ADR-0036).
+  images: { localPatterns: [{ pathname: "/brand/**", search: "" }] },
   logging: { incomingRequests: { ignore: [/\/api\/webhooks\/everyorg\//, /\/test-gift\//, /\/share\//, /\/unsubscribe\//] } },
 };
 

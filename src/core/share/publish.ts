@@ -140,7 +140,12 @@ export async function publishShare(
 export function purgeUrls(token: string, siteOrigin: string, publicBase?: string): string[] {
   const site = [
     sharePagePath(token),
-    ...PAINTING_NUMBERS.flatMap((n: PaintingNumber) => [paintingPagePath(token, n), paintingImagePath(token, n)]),
+    // The bare `?` too: Cloudflare caches it as its own entry, and Next hides it from the image route (ADR-0036).
+    ...PAINTING_NUMBERS.flatMap((n: PaintingNumber) => [
+      paintingPagePath(token, n),
+      paintingImagePath(token, n),
+      `${paintingImagePath(token, n)}?`,
+    ]),
   ].map((path) => `${siteOrigin}${path}`);
   if (!publicBase) return site;
   const base = publicBase.replace(/\/$/, "");

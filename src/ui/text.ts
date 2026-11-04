@@ -121,3 +121,14 @@ export function waitingTeaser(names: readonly string[]): string | null {
   if (shown.length === 2) return `${shown[0]} and ${shown[1]} are waiting…`;
   return `${shown.slice(0, -1).join(", ")}, and ${shown.at(-1)} are waiting…`;
 }
+
+/** "a" or "an" before a shelter's word, by sound where the spelling misleads: "an American", "a Eurasier". */
+export function withArticle(word: string): string {
+  const article = /^[aeiou]/i.test(word) && !/^(eu|uni|one)/i.test(word) ? "an" : "a";
+  return `${article} ${word}`;
+}
+
+/** Ends a sentence on a name that may already end in a period, so "Rescue Inc." never reads "Inc..". */
+export function withPeriod(text: string): string {
+  return text.endsWith(".") ? text : `${text}.`;
+}

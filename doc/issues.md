@@ -375,6 +375,12 @@ is the record, and a file of ticked boxes stops being read.
 
 ## Compliance
 
+- **`/claim` promises a deletion nothing does.** `src/app/claim/page.tsx:68` says "We remove the pages and delete
+  what we derived from your listings", but ADR-0029 §5's opt-out is a `SHELTER_EXCLUSIONS` entry that only hides
+  the animals, and no ADR or runbook says what gets deleted. `purgeDisplay` takes a whole source, not one shelter,
+  so it isn't that deletion as it stands. It's live. Either the deletion gets built or the sentence changes, and
+  that is Logan's call. Found 2026-11-04 by the verify chat.
+
 - **An older version of a crew photo stays in this repo's history.** A detail in it was blurred from the live
   files in `ec81e6c`, and removing the old version means rewriting history, which is Logan's call. Logan: "yeah
   i'll deal with the image later", which we read as this. The source photo also reached Meta's Model API.

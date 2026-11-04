@@ -241,11 +241,10 @@ describe("the painting's route (ADR-0036)", () => {
     expect(res.headers.get("cache-control")).toContain("s-maxage");
   });
 
-  it("refuses a query string, uncached, since a purge can't name that entry", async () => {
-    const res = await GET(new Request(`${url}?x=1`), ctx);
-    expect(res.status).toBe(404);
+  it.each(["?x=1", "?dpl=abc"])("serves %s uncached, since a purge can't name that entry", async (query) => {
+    const res = await GET(new Request(`${url}${query}`), ctx);
+    expect(res.status).toBe(200);
     expect(res.headers.get("cache-control")).toBe("no-store");
-    expect(fetch).not.toHaveBeenCalled();
   });
 });
 
@@ -298,10 +297,11 @@ describe("taking a share down (ADR-0036)", () => {
 
   it("purges the site's pages and images, and the source's own hostname when it has one", () => {
     const site = purgeUrls(TOKEN, "https://monsterpaws.org");
-    expect(site).toHaveLength(9);
+    expect(site).toHaveLength(13);
+    expect(site).toContain(`https://monsterpaws.org/share/${TOKEN}/2/painting.jpg?`);
     expect(site).toContain(`https://monsterpaws.org/share/${TOKEN}/2/painting.jpg`);
     const both = purgeUrls(TOKEN, "https://monsterpaws.org", "https://files.example/");
-    expect(both).toHaveLength(14);
+    expect(both).toHaveLength(18);
     expect(both).toContain(`https://files.example/share/${TOKEN}/manifest.json`);
     expect(both).toContain(`https://files.example/share/${TOKEN}/4.jpg`);
   });

@@ -160,11 +160,29 @@ test("a token nobody published, a malformed one and a fifth painting are 404s", 
     "/share/..%2F..%2Fetc%2Fpasswd0000",
     `${SHARE}/5`,
     `${SHARE}/5/painting.jpg`,
-    `${SHARE}/1/painting.jpg?x=1`,
     "/share/nobodyPublishedThis000/1/painting.jpg",
   ]) {
     expect((await request.get(path)).status(), path).toBe(404);
   }
+});
+
+test("a query on an image is served, and never cached, so a purge has nothing to miss", async ({ request }) => {
+  const plain = await request.get(`${SHARE}/1/painting.jpg`);
+  expect(plain.headers()["cache-control"]).toContain("s-maxage");
+  // Never a bare `?` here: Playwright's client drops it, and Next would hide it anyway (ADR-0036).
+  for (const query of ["?x=1", "?dpl=abc"]) {
+    const res = await request.get(`${SHARE}/1/painting.jpg${query}`);
+    expect(res.status(), query).toBe(200);
+    expect(res.headers()["content-type"], query).toBe("image/jpeg");
+    expect(res.headers()["cache-control"], query).toBe("no-store");
+  }
+});
+
+test("the optimizer serves the brand's files and refuses a share image", async ({ request }) => {
+  const optimized = (url: string) => `/_next/image?url=${encodeURIComponent(url)}&w=640&q=75`;
+  expect((await request.get(optimized("/brand/crew/beetle-painting.jpg"))).status()).toBe(200);
+  expect((await request.get(optimized("/brand/wordmark-v1.png"))).status()).toBe(200);
+  expect((await request.get(optimized(`${SHARE}/1/painting.jpg`))).status()).toBe(400);
 });
 
 test("a share page never says you give to get", async ({ page }) => {

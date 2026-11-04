@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
 export const metadata: Metadata = {
   title: "Demo — Monster Paws",
   description:
-    "Try sponsoring a shelter animal on Monster Paws with our crew: browse, sponsor, and see our thank-you arrive. No money moves.",
+    "Try sponsoring a shelter animal on Monster Paws with our crew: browse, sponsor, and see how we say thank you. No money moves.",
 };
 
 /**
