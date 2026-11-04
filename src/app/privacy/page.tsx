@@ -107,7 +107,7 @@ export default function PrivacyPage() {
         your Every.org receipt.
       </p>
 
-      <p className="mt-10 text-sm text-muted">Last changed 2 November 2026.</p>
+      <p className="mt-10 text-sm text-muted">Last changed 4 November 2026.</p>
     </main>
   );
 }

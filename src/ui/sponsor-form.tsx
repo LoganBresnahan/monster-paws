@@ -72,8 +72,8 @@ export function SponsorForm({
             </p>
           )}
           <p id="sponsor-email-help" className="mt-2 mb-6 text-sm text-muted">
-            Where we&apos;d send a painting of {name}, as our thank-you. We use it only for this donation, and erase it once it&apos;s
-            delivered unless you keep it in an account.{" "}
+            Where we&apos;d send a painting of {name}, as our thank-you. We use it only for this donation, and erase your address once the
+            painting is delivered unless you keep it in an account.{" "}
             <Link href="/privacy" className="underline hover:text-foreground">
               Privacy
             </Link>

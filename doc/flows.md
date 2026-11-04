@@ -732,11 +732,11 @@ else.
        │  SSH tunnel droplet → PG (the droplet is the trusted source;
        │  the house opens no port — outbound only)
        ▼                                        ── home boundary ──
-  src/worker/index.ts  WORKER_MODE=art           built for the demo in the dev
-       │   registerArtGenerate → generateArt    distro (ADR-0028 §6): one job at
-       │   (src/worker/art.ts); exits at once   a time. Planned: the worker
-       │   on any art fact · skips the nightly  container, prod WSL distro,
-       │   poll's window, a busy card and under "monsterpaws" user
+  src/worker/index.ts  WORKER_MODE=art           a host process on the dev distro,
+       │   registerArtGenerate → generateArt    one job at a time, as home_worker on
+       │   (src/worker/art.ts); exits at once   production (ADR-0004 as amended
+       │   on any art fact · skips the nightly  2026-11-04, oplog 0028). Planned:
+       │   poll's window, a busy card and under its own distro and Windows user
        │   22 GB free after the cache drop
        ▼
   a listing's photos  (built)                   fetched from the job's URLs to

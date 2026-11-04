@@ -5,15 +5,15 @@ Planned: 2026-11-04 · Run: —
 Why: real gifts to a shelter that holds a grant get a painting and an email (ADR-0035, ADR-0027 as amended 2026-11-02). Logan, to the moderator, 2026-11-03: "i want real donations working". Roadmap: Accounts and donating (item 4)
 Commit deployed: none new. The app and worker images are oplog 0025's, so this only changes `.env` and recreates those two.
 
-What changes on the droplet: five `.env` keys below, and `ART_SWEEP=on`; a roll of app and worker to read them. In Resend: a webhook, made by Logan. In `pass`: two new entries.
+What changes on the droplet: five `.env` keys below, and `ART_SWEEP=on`; a roll of app and worker to read them. In Resend: a webhook, made by Logan. In `pass`: two new entries. On this box: a hosts line, `generateHosts = false` in `/etc/wsl.conf`, and the art worker started, a host process under `home_worker`.
 
 What this opens: `/api/webhooks/resend` starts answering, signed requests only. `/unsubscribe` starts working. The sweep starts, and **it finds nothing to do while `SHELTERS` is empty**, so it writes no keepsake and sends no job. `EMAIL_SWEEP` stays unset here, so no mail goes out on its own, and with no keepsake there is nothing to mail.
 
-Who does what: **Logan gives the word for step 1, in the session that runs it.** Logan creates the key and the webhook in steps 2 and 3. Production steps run in one SSH session per step (the droplet's ufw `LIMIT` on 22/tcp).
+Who does what: **Logan gives the word for step 1, in the session that runs it.** Logan creates the key and the webhook in steps 2 and 3, and types the one sudo line in step 7. `paintings` starts its worker in step 8. Production steps run in one SSH session per step (the droplet's ufw `LIMIT` on 22/tcp).
 
 ## Prerequisites
 - [ ] Oplog 0025 has run: this needs migrations `0017` and `0018` and its image.
-- [ ] Oplog 0027 has run, and `paintings`' worker has taken a job on the dev database under the same options, so a job sent here has somewhere to go.
+- [ ] Oplog 0027 has run, and `paintings`' worker has taken a job on the dev database under the same options, so a job sent here has somewhere to go. Its queries fit the role: read 2026-11-04 in `src/worker/art.ts` and `src/core/share/keepsake.ts`, which select `keepsake`'s id and token and `keepsake_fact`, and insert into `keepsake_fact`, and nothing else.
 - [ ] Oplog 0026's domain answers: a real gift's art reaches the mail through `media.monsterpaws.org`.
 - [ ] `pass` unlocked by Logan.
 - [ ] Not within an hour of 06:00, 07:00 or 08:30 UTC, and nothing in the main checkout from 06:45 UTC until that night's log shows `== exit`.
@@ -73,9 +73,38 @@ Verify: the unsigned webhook 401; the unsubscribe 404; `on` and `0` from both co
 Stop if: a keepsake or a job exists: `ART_SWEEP` off first, by step 4's rollback.
 Rollback: step 5's.
 
+### 7. The database's name resolves to the tunnel, on this box
+The worker can't run in a container: `guardPainter` needs `docker`, `guard.sh`, `powershell.exe` and `wsl.exe`, and in `node:24-alpine` every job would fail. On the host it needs the database's own hostname to reach the tunnel, so TLS still verifies that name. WSL rewrites `/etc/hosts` at every distro start unless told not to. Logan types this, with `!`:
+
+    ! H=$(pass show digitalocean/pg-home-worker-url | head -n1 | sed -E 's#^.*@([^:/]+):.*#\1#'); sudo sed -i '/^\[network\]/a generateHosts = false' /etc/wsl.conf && printf '127.0.0.1 %s\n' "$H" | sudo tee -a /etc/hosts >/dev/null; unset H
+
+    ssh root@$IP 'cat monsterpaws/do-ca.crt' > ~/monsterpaws/var/do-ca.crt
+    nohup scripts/home-worker-tunnel.sh >> ~/monsterpaws/var/home-worker-tunnel.log 2>&1 &
+Never run `scripts/poll-via-home.sh` while this tunnel is up: it forwards the same local port. The hostname is in `/etc/hosts` and never printed.
+Verify: `grep -c generateHosts /etc/wsl.conf` prints 1; `DATABASE_URL=$(pass show digitalocean/pg-home-worker-url | head -n1) NODE_EXTRA_CA_CERTS=~/monsterpaws/var/do-ca.crt` and node's `pg` answers `select current_user` as `home_worker`, with verification on, by `node -e` from a checkout.
+Rollback: stop the tunnel; delete both lines with sudo.
+
+### 8. `paintings` starts the art worker
+From a checkout at topdog's tip, with the tunnel up. After this entry's queue exists, because with none it raises the error 8 times in 7 s to Better Stack. The store is its own: its `.database` marker binds it to production's database, and the demo's store is bound to `monsterpaws_demo`.
+
+    DATABASE_URL="$(pass show digitalocean/pg-home-worker-url | head -n1)" \
+    NODE_EXTRA_CA_CERTS=/home/oof/monsterpaws/var/do-ca.crt \
+    WORKER_MODE=art ART_STORE_DIR=/home/oof/monsterpaws/var/keepsakes-production \
+    SHARE_PUBLISH=on SHARE_WRITE_BUCKET=monsterpaws-media \
+    SHARE_WRITE_ENDPOINT="$(pass show cloudflare/r2-endpoint | head -n1)" \
+    SHARE_WRITE_ACCESS_KEY_ID="$(pass show cloudflare/r2-access-key-id | head -n1)" \
+    SHARE_WRITE_SECRET_ACCESS_KEY="$(pass show cloudflare/r2-secret-access-key | head -n1)" \
+    SENTRY_DSN="$(pass show betterstack/errors-dsn | head -n1)" \
+    RESCUEGROUPS_API_KEY= ART_SWEEP= ART_CREW_DETECTOR= \
+    nohup npm run worker >> var/explore/art-worker-production.log 2>&1 &
+Under `home_worker` it only calls `work`, with no `createQueue`, migrations or upkeep, and its pools at 2. It skips a job, without failing it, in the nightly quiet window, while a guard batch or ComfyUI runs, or under 22 GB free, and the sweep sends it again within the hour. It fetches a listing's photos only over https from `ART_PHOTO_HOSTS`, default `cdn.rescuegroups.org`.
+Verify: its first lines read `art store bound to database <name>`, then `art.generate registered (WORKER_MODE=art)`; no error in the log after 2 minutes; `pgboss.job` still holds 0 `art.generate` rows.
+Stop if: it reports permission denied: that's the role's grants, and it stops until they're read.
+Rollback: SIGTERM by PID. Its own shutdown runs.
+
 ## Run
 <filled in as it happens>
 
 ## Follow-ups
 - `doc/infra.md`'s registry: `resend/suppression-hmac-key`, `resend/webhook-signing-secret`, and the droplet's new keys.
-- Oplog 0029: Spencer's grant and go-live, Logan's first real gift, then one send by hand and `EMAIL_SWEEP=on` as its last step.
+- Oplog 0029: Spencer's grant and go-live; **the art worker restarted from a checkout with the grant's commit, since `keepsakeShare` reads `SHELTERS` from its own code and publish refuses otherwise, by `paintings`**; Logan's first real donation; then one send by hand and `EMAIL_SWEEP=on` as its last step.

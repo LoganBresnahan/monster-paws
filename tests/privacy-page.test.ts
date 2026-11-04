@@ -25,6 +25,10 @@ describe("the privacy page", () => {
     expect(text).not.toContain("still gets its painting");
   });
 
+  it("says when it last changed, so a change to these words moves the date too", () => {
+    expect(text).toContain("Last changed 4 November 2026");
+  });
+
   it("says donation, and never that a painting is the donor's", () => {
     expect(text).not.toMatch(/\bgifts?\b/i);
     expect(text).not.toContain("Your painting");

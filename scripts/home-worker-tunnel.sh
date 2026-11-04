@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # The art worker's way to production's Postgres (oplog 0027): 127.0.0.1:<port> here reaches the database from
 # the droplet, and the house opens no port. Never retry faster than this: the droplet's ufw LIMIT on 22/tcp bans
-# quick reconnects, and that ban would also lock out every deploy. Run the worker with the database's own hostname
-# resolving here, so TLS still verifies it: docker run --network host --add-host "$DB_HOST:127.0.0.1".
+# quick reconnects, and that ban would also lock out every deploy. The database's own hostname must resolve here so TLS
+# still verifies it: a line in /etc/hosts with generateHosts off (oplog 0028), or docker's --add-host for a one-off.
 set -euo pipefail
 KEY=$HOME/.ssh/monsterpaws-home-worker
 URL=$(pass show digitalocean/pg-home-worker-url | head -n1)

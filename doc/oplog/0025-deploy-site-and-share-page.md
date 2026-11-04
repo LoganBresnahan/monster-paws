@@ -101,7 +101,7 @@ Rollback: `IMAGE_TAG` back to step 1's sha, `up -d app worker`, after listing `/
     for p in / /animals /privacy /thanks /demo; do curl -s -o /dev/null -w "$p %{http_code}\n" https://monsterpaws.org$p; done
     T=$(head -c 16 /dev/urandom | base64 | tr '+/' '-_' | tr -d '=')
     for p in "/share/$T" "/share/$T/1" "/share/$T/1/painting.jpg" /share/short /share/..%2f..%2fetc; do curl -s -o /dev/null -w "share %{http_code}\n" "https://monsterpaws.org$p"; done
-    curl -s https://monsterpaws.org/privacy | grep -c "Your painting also gets its own page"
+    curl -s https://monsterpaws.org/privacy | grep -c "The painting also gets its own page"
     curl -s https://monsterpaws.org/demo/plum/sponsor | grep -c "Paying by bank"
     curl -s -o /dev/null -w "resend webhook %{http_code}\n" -X POST --data x https://monsterpaws.org/api/webhooks/resend
     curl -s -o /dev/null -w "unsubscribe, no token %{http_code}\n" https://monsterpaws.org/unsubscribe
