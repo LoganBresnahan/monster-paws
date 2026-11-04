@@ -55,8 +55,14 @@ Both answer 404, or the root 403, and neither lists anything. An unauthenticated
 Rollback: disconnect the domain on the same page. The bucket is private again, and Cloudflare's cached copies age out or get purged.
 
 ### 4. Publish one crew pet's set (`paintings`)
-    npm run share -- publish <as ADR-0036 gives it>
-Verify: each upload read back and compared by hash; `manifest.json` written last, holding exactly the name and kind; no EXIF, XMP or generator text in any JPEG;
+Both commands have only run against fakes, so this is their first real write. Run them on a throwaway set first, then publish the real one (ADR-0036 decision 10).
+Publishing takes `SHARE_WRITE_ENDPOINT`, `SHARE_WRITE_BUCKET=monsterpaws-media` and the media write pair:
+
+    npm run share -- publish <crew-slug> <4 files>
+It refuses a slug not in `CREW` and any size but 1216×832. Takedown also takes `SHARE_BASE_URL=https://media.monsterpaws.org`, `CLOUDFLARE_ZONE_ID` (the lookup in
+`doc/infra.md`'s Cloudflare section) and `CLOUDFLARE_PURGE_TOKEN` (`cloudflare/dns-token` has Cache Purge). Without the purge keys it deletes, says NOT PURGED and exits 2.
+Verify, throwaway set: published and read back, then `takedown`, then its `manifest.json` and a JPEG answer 404 with no credentials.
+Verify, real set: each upload read back and compared by hash; `manifest.json` written last, holding exactly the name and kind; no EXIF, XMP or generator text in any JPEG;
 once oplog 0025 has put the route live, `curl` of `/share/<token>` and its `painting.jpg` with a bot's user agent answers 200, and the page's `og:image` is that
 painting's.
 Rollback: `npm run share -- takedown`, which deletes the objects and purges Cloudflare.
@@ -65,7 +71,7 @@ Rollback: `npm run share -- takedown`, which deletes the objects and purges Clou
 <filled in as it happens>
 
 ## Follow-ups
-- `doc/infra.md`: the media write pair's rows lose "not created yet", public access is recorded as on for media, and its diagram gains `media.monsterpaws.org`.
+- `doc/infra.md`: the media write pair's rows lose "not created yet", public access is recorded as on for media, and its diagram gains `media.monsterpaws.org` and loses "original photos" from this bucket. `doc/flows.md`'s keepsake-art box stops sending a donor's art here until ADR-0036's rules are settled.
 - `SHARE_BASE_URL=https://media.monsterpaws.org` in the droplet's `.env`, in oplog 0025.
 - Before a real donor's painting is ever published: the takedown rule, the `/privacy` line and telling shelters (ADR-0036). Photos held for painting go somewhere
   private, never here (ADR-0035 decision 11).
