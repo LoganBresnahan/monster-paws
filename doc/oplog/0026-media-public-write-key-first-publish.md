@@ -65,7 +65,11 @@ painting's.
 Rollback: `npm run share -- takedown`, which deletes the objects and purges Cloudflare.
 
 ## Run
-<filled in as it happens>
+Steps 1 to 3, 2026-11-04 00:07 to 00:08 UTC, by the moderator; Logan connected the domain with minimum TLS 1.2. Step 4 waits on its prerequisites.
+
+- **Step 1:** 0 objects and 0 bytes, read before the domain served anything.
+- **Step 2:** the worker pair wrote, read and deleted `probe/0026`. `rclone rcat` reported a 501 though the object landed, and `rclone copyto` needed a second attempt, both with `RCLONE_S3_NO_CHECK_BUCKET=true`, because a token scoped to objects can't check a bucket. The share tool's own PUT is what step 4 proves.
+- **Step 3:** for about the first minute every request answered 403 with Cloudflare's `error code: 1014`, then it cleared by itself at 00:08:08. Root 404 and a missing key 404, with no listing in the body. The probe answered 200 with no credentials, and to `Twitterbot/1.0` and `facebookexternalhit/1.1`. TLS 1.0 and 1.1 are refused, 1.2 connects. After the delete: 404, and the bucket back to 0 objects.
 
 ## Follow-ups
 - The dedicated media write pair in `doc/infra.md` still comes with the real home worker, because the pair used here can also write the corpus.
