@@ -1,5 +1,5 @@
 import { defineConfig } from "@playwright/test";
-import { E2E_DATABASE_URL, E2E_PORT } from "./e2e/env";
+import { E2E_DATABASE_URL, E2E_PORT, E2E_SHARE_FIXTURE_PORT } from "./e2e/env";
 
 /**
  * E2E against the PRODUCTION build, reading the seeded `monsterpaws_e2e`
@@ -40,6 +40,7 @@ export default defineConfig({
           HOSTNAME: "127.0.0.1",
           EVERYORG_ENV: "production",
           EVERYORG_WEBHOOK_TOKEN: "e2e-token",
+          SHARE_BASE_URL: `http://127.0.0.1:${E2E_SHARE_FIXTURE_PORT}`,
         },
       },
 });

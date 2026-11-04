@@ -249,3 +249,9 @@ bounces thats fine, if they actually went through the process their intentions w
   oplog entry. The address stays out of reports and logs (ADR-0010 as amended 2026-11-02).
 - A spam complaint from an address that gave nothing, a real gift delayed behind unconfirmed ones, or the daily check
   showing a flood: decision 7's numbers go back to Logan.
+
+## Note (2026-11-03): question 2 and the share page (proposed, ADR-0036)
+
+Question 2's answer stands for `/thanks`: that page never shows the painting. Its "there are no public
+paintings" no longer holds for a keepsake published under ADR-0036, whose page has its own token, never
+this ADR's.

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { SiteFooter } from "@/ui/site-footer";
+import { SITE_OPEN_GRAPH, SITE_ORIGIN } from "@/ui/site";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -22,15 +23,17 @@ const DESCRIPTION =
  * Never put a title, description, url or images here, and never set
  * `openGraph` on a page: Next fills the card's title and description from
  * each page's own at the end, and a page-level `openGraph` replaces this
- * whole object, image included. The image is `opengraph-image.jpg` beside
- * this file, built by `npm run og:image`; `metadataBase` makes its URL
- * production's on every environment.
+ * whole object, image included. The one sanctioned exception is `/share`, whose
+ * card is the painting itself and which spreads `SITE_OPEN_GRAPH` (ADR-0036).
+ * The image is `opengraph-image.jpg` beside this file, built by
+ * `npm run og:image`; `metadataBase` makes its URL production's on every
+ * environment.
  */
 export const metadata: Metadata = {
-  metadataBase: new URL("https://monsterpaws.org"),
+  metadataBase: new URL(SITE_ORIGIN),
   title: TITLE,
   description: DESCRIPTION,
-  openGraph: { siteName: TITLE, locale: "en_US", type: "website" },
+  openGraph: SITE_OPEN_GRAPH,
   twitter: { card: "summary_large_image" },
 };
 

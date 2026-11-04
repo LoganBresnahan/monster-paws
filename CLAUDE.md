@@ -213,6 +213,10 @@ the monthly check in infra.md's Recurring ops.
   `send --wave <name>` rehearsed into Mailpit and rolled back, `--live` only
   with the Gmail pair, a terminal and the wave's name typed back; the flow is
   in `doc/flows.md`
+- `npm run share -- publish <crew-slug> <4 paintings> | takedown <token>` — a
+  keepsake's public page (ADR-0036): publish re-encodes from pixels alone, reads
+  each upload back by hash and writes the manifest last; takedown deletes the
+  files and purges Cloudflare. Crew only; real writes go under an oplog entry
 - `npm run db:up` — local Postgres via `docker-compose.dev.yml`
   (pgvector/pg16 image — same extensions as production)
 - `npm run db:generate` / `npm run db:migrate` — Drizzle migrations

@@ -1,3 +1,9 @@
+/** Production's origin, on every environment: a card's image URL and a share link must always name it (ADR-0030). */
+export const SITE_ORIGIN = "https://monsterpaws.org";
+
+/** The card's fields every page shares; a page that sets `openGraph` replaces all of them, so it spreads these (ADR-0030). */
+export const SITE_OPEN_GRAPH = { siteName: "Monster Paws", locale: "en_US", type: "website" } as const;
+
 /** The address every public "contact us" points at — forwarded to a person (doc/infra.md, Email Routing). */
 export const CONTACT_EMAIL = "hello@monsterpaws.org";
 

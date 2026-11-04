@@ -237,3 +237,10 @@ reaches its donation through it, and may have none. The token page never shows a
 paintings" stand. How the grant is read after a withdrawal is its question 4. A photo is held at the first signal, per listing, even for a gift still waiting for a place
 (ADR-0035 decisions 7 and 11). What we tell people becomes "can still get its painting" (its question 7); this ADR's
 "still gets" stays as recorded.
+
+## Amendment (2026-11-03): a public page for a published keepsake (proposed, ADR-0036)
+
+ADR-0036 puts a published keepsake's paintings on a public page at an unguessable URL. For anything
+published there, that reverses "Nothing is taken down, because there are no public paintings" above,
+which keeps its wording as the record. A takedown there is ADR-0036's decision 11. It is crew only until
+Logan decides what a withdrawal or a rights objection does to a shared painting.

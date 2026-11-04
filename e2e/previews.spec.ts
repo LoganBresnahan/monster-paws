@@ -59,3 +59,16 @@ for (const [name, pathOf] of PAGES) {
     expect(jpegDimensions(await res.body())).toEqual([1216, 832]);
   });
 }
+
+// Next may stream metadata into <body> for an agent off its bot list, and a card
+// fetcher reading only <head> would then see no card. A page that awaits the same
+// data as its metadata stays in <head>; this fails if that ever stops (ADR-0036).
+test("an agent off Next's bot list gets an animal's card in <head>", async ({ request, seed }) => {
+  const res = await request.get(`/animals/${seed.exact}`, {
+    headers: { "user-agent": "Mozilla/5.0 (compatible; Bluesky Cardyb/1.1; +mailto:support@bsky.app)" },
+  });
+  const html = await res.text();
+  const head = html.slice(0, html.indexOf("</head>"));
+  expect(head).toContain('property="og:image"');
+  expect(head).toContain('name="description"');
+});

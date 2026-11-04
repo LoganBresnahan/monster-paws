@@ -922,3 +922,50 @@ run needs a person at a terminal.
                  (exclusionProblems) under consent/, the opted_out row here
                  (ADR-0029 as amended 2026-10-27)
 ```
+
+## Share page — a keepsake's own URL, no donor on it (ADR-0036)
+
+Built 2026-11-03, proposed. Crew only, and nothing is published for real yet. `SHARE_BASE_URL` is
+`monsterpaws-media`, public through `https://media.monsterpaws.org` (oplog 0026); only the loader knows it.
+
+```
+  a person with the write key                   four paintings, a CREW slug
+       │  npm run share -- publish
+       ▼
+  encodePainting                                pixels only, 1216×832 or refused
+       │
+       ▼
+  publishShare  →  the share source             share/<token>/1…4.jpg, each read
+       │  (newShareToken: 128 bits)             back by hash; manifest.json last,
+       │                                        { name, kind } and nothing else
+       ▼
+  the email's link  (planned, the emails chat)  https://monsterpaws.org/share/<token>
+
+
+  a visitor, or a preview bot
+       │
+       ▼
+  Cloudflare                                    caches painting.jpg, never the pages
+       │
+       ▼
+  /share/<token>        SharePage               the four, noindex, no cookie
+  /share/<token>/<n>    SharePaintingPage       one, its own og:image; ShareActions:
+       │                                        Save, four links, navigator.share
+       │  loadShare  ←  isShareToken            a bad token never builds a URL
+       ▼
+  shareSourceFromEnv  →  createHttpShareSource  GET SHARE_BASE_URL/share/<token>/…
+       │                                        404 = not published; else reported
+       │  parseManifest                         keeps name and kind only
+       ▼
+  /share/<token>/<n>/painting.jpg               our route, X-Robots-Tag: noindex
+
+
+  npm run share -- takedown <token>
+       │
+       ▼
+  deleteShare                                   manifest first, then the paintings,
+       │                                        each read back as absent
+       ▼
+  purgeCloudflare  (purgeUrls)                  pages, images, the source's own URLs;
+                                                no keys: says NOT PURGED, exits 2
+```

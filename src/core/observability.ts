@@ -12,7 +12,7 @@ export interface ReportingEnv {
   release: string | undefined;
 }
 
-const SECRET_IN_PATH = /(\/api\/webhooks\/everyorg\/|\/test-gift\/)[^"/?#\s\\]+/g;
+const SECRET_IN_PATH = /(\/api\/webhooks\/everyorg\/|\/test-gift\/|\/share\/)[^"/?#\s\\]+/g;
 const EMAIL_ADDRESS = /[^\s"<>(),;:\\/?&=]+(?:@|%40)[^\s"'<>(),;:\\/?&=]+\.[^\s"'<>(),;:\\/?&=]+/g;
 /** Drizzle ends a failed query's message with its parameters, and on the donor tables those are an intent id or an address. */
 const QUERY_PARAMS = /\bparams: .*/g;

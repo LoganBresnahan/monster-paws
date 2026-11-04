@@ -2,15 +2,18 @@ import type { FullConfig } from "@playwright/test";
 import { closeDb, getDb } from "@/db/client";
 import { truncateCorpus } from "../tests/support/db";
 import { prepareDatabase } from "../tests/support/global-setup";
-import { E2E_DATABASE_URL } from "./env";
+import { E2E_DATABASE_URL, E2E_SHARE_FIXTURE_PORT } from "./env";
 import { SEEDED, seedE2eCorpus } from "./seed";
+import { startShareFixture } from "./share-fixture";
 
 /**
  * Create, migrate, empty and reseed `monsterpaws_e2e`, then prove the server
  * under test reads it (ADR-0017 as amended 2026-09-28). The web server is
  * already up when this runs — Playwright starts it first.
  */
-export default async function globalSetup(config: FullConfig): Promise<void> {
+export default async function globalSetup(config: FullConfig): Promise<() => Promise<void>> {
+  // Lives in this runner process; the server under test reads it at request time.
+  const stopShareFixture = await startShareFixture(E2E_SHARE_FIXTURE_PORT);
   await prepareDatabase(E2E_DATABASE_URL);
   const db = getDb(E2E_DATABASE_URL);
   try {
@@ -33,4 +36,5 @@ export default async function globalSetup(config: FullConfig): Promise<void> {
   } finally {
     await closeDb();
   }
+  return stopShareFixture;
 }
