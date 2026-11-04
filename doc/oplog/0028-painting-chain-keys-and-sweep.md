@@ -14,7 +14,7 @@ Who does what: **Logan gives the word for step 1, in the session that runs it.**
 ## Prerequisites
 - [ ] Oplog 0025 has run: this needs migrations `0017` and `0018` and its image.
 - [ ] Oplog 0027 has run (done, 2026-11-04), and `paintings`' worker has taken a job on the dev database under the same options, so a job sent here has somewhere to go. Its queries fit the role: read 2026-11-04 in `src/worker/art.ts` and `src/core/share/keepsake.ts`, which select `keepsake`'s id and token and `keepsake_fact`, insert into `keepsake_fact`, and call `pg_advisory_xact_lock` and `current_database()`, and nothing else.
-- [ ] `ART_PHOTO_HOSTS` is on topdog, since step 8 runs from its tip. As of 2026-11-04 it exists only uncommitted on `lora`, and without it `fetchPhotos` takes any https host and follows redirects.
+- [x] `ART_PHOTO_HOSTS` is on topdog, in `0b587cc`, so step 8's checkout must be at or after it. Before it, `fetchPhotos` took any https host and followed redirects.
 - [ ] Oplog 0026's domain answers: a real gift's art reaches the mail through `media.monsterpaws.org`.
 - [ ] `pass` unlocked by Logan.
 - [ ] Not within an hour of 06:00, 07:00 or 08:30 UTC, and nothing in the main checkout from 06:45 UTC until that night's log shows `== exit`.
