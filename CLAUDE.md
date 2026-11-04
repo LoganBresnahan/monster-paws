@@ -29,7 +29,7 @@ only — do not build from it.
 - Image pipeline: FLUX.2 [klein] 4B reads the photo's grown subject and head
   crops as references, and the style lives in the prompt, not a LoRA
   (workflow `comfyui/workflows/klein-v1.api.json`; klein only, on a
-  landscape canvas, every keepsake a head-and-shoulders portrait, no
+  landscape canvas, every keepsake a three-quarter portrait from the chest up, no
   fallback painter; ADR-0004 as amended 2026-10-15 and 2026-11-03),
   developed in ComfyUI and run on a GPU
   in Logan's home — the same pg-boss worker, registered for
