@@ -1,9 +1,9 @@
-# 0030: Deploy `<SHA>` — the wording and fixes, before the claimed-shelter wave
+# 0030: Deploy `83b2bc9` — the wording and fixes, before the claimed-shelter wave
 
 Status: planned
 Planned: 2026-11-04 · Run: —
 Why: Logan wants the claimed-shelter wave sent this morning, Chicago time, with a link to `/privacy`: "we need to deploy before we send these emails" (to the `emails` session, relayed by the moderator). This image fixes the line he'll link to. Roadmap: Accounts and donating (item 4), Shelter consent (item 5)
-Commit deployed: `<SHA>`, topdog's tip once the `emails` session's wording commit lands, named by the moderator. This entry follows in its own push so the image tag is the code commit.
+Commit deployed: `83b2bc9`, with the `emails` session's wording and `/privacy`'s Sponsor-button line, named by the moderator. This entry follows in its own push so the image tag is the code commit.
 
 What changes on the droplet: the app and worker images. No `.env`, Caddy, compose or DNS change, and no migration unless the prerequisite below says otherwise.
 
@@ -12,10 +12,10 @@ What this opens: nothing. `SHELTERS` stays empty, so there's no Sponsor button a
 Who does what: **Logan gives the word for step 1, in the session that runs it.** The outreach wave's `send --live` is his, after this. Production steps run in one SSH session per step (the droplet's ufw `LIMIT` on 22/tcp).
 
 ## Prerequisites
-- [ ] CI green on `<SHA>`: `verify`, `images`, `sourcemaps`.
-- [ ] Ship bar on `<SHA>`, in a temporary checkout at exactly that sha: vitest twice, typecheck, `npm run e2e`.
-- [ ] e2e against the published app image, Every.org set to production. The published worker image boots on a throwaway database.
-- [ ] `git diff --name-status 0989a18 <SHA> -- public drizzle Caddyfile docker-compose.prod.yml` read: no file in `public/` changed in place, so no purge; no new migration; no config change. If any did, this entry gains that step before step 1.
+- [x] CI green on `83b2bc9`: `verify`, `images`, `sourcemaps`, run 41853891768.
+- [x] Ship bar on `83b2bc9`, in a temporary checkout at exactly that sha, 2026-11-04 15:04 to 15:11 UTC: vitest 911 of 911 twice with `--maxWorkers=2`, typecheck clean, `npm run e2e` 59 of 59.
+- [x] e2e against the published app image, Every.org set to production, 2026-11-04 15:12 UTC: 46 passed in 11.0 s, 13 skipped under `PW_BASE_URL`; `/privacy` clear of "gift", "account" and "stop taking donations", `/claim` holds its line, `/test-gift` 404. The published worker image booted on a throwaway database: up after 24 s, 0 fatal lines, no `art.generate` queue.
+- [x] `git diff --name-status 0989a18 83b2bc9 -- public drizzle Caddyfile docker-compose.prod.yml` read, 2026-11-04: it prints nothing, so no purge, no migration and no config change. 19 migrations at this sha.
 - [ ] `pass` unlocked by Logan.
 - [ ] Not within an hour of 06:00, 07:00 or 08:30 UTC, and the night's log shows `== exit`.
 - [ ] The moderator holds the card.
@@ -32,10 +32,10 @@ Rollback: n/a — the record.
 
 ### 2. Pull the release, one SSH session; nothing restarts
     ssh root@$IP 'cd monsterpaws && git pull --ff-only &&
-      sed -i "s/^IMAGE_TAG=.*/IMAGE_TAG=<FULL SHA>/" .env &&
+      sed -i "s/^IMAGE_TAG=.*/IMAGE_TAG=83b2bc901e68e87b251d3f1a8e98ba228b5481d7/" .env &&
       docker compose -f docker-compose.prod.yml pull app worker &&
       docker compose -f docker-compose.prod.yml config --images'
-Verify: the checkout at this entry's commit; app and worker resolve to `<SHA>` and are pulled; all three still run the old containers.
+Verify: the checkout at this entry's commit; app and worker resolve to `83b2bc9` and are pulled; all three still run the old containers.
 Rollback: `IMAGE_TAG` back to step 1's sha; `git checkout <step 1's sha>`, then `git checkout topdog` later.
 
 ### 3. The timed roll, with a POST every half second
@@ -44,7 +44,7 @@ Rollback: `IMAGE_TAG` back to step 1's sha; `git checkout <step 1's sha>`, then 
     sleep 5; date -u +%T; ssh root@$IP 'cd monsterpaws && time docker compose -f docker-compose.prod.yml up -d app worker'; date -u +%T; wait $L
     cut -d' ' -f1 roll.log | sort | uniq -c; sort -k2 -n roll.log | tail -1
     curl -fsS https://monsterpaws.org/api/health
-Verify: every line is 404, the slowest under 30 s; health 200 on `<SHA>`; Caddy not recreated; the worker up 20 s on with no `fatal`.
+Verify: every line is 404, the slowest under 30 s; health 200 on `83b2bc9`; Caddy not recreated; the worker up 20 s on with no `fatal`.
 Stop if: any 5xx, or the worker restarting.
 Rollback: `IMAGE_TAG` back to step 1's sha, `up -d app worker`, after listing `/spool`.
 
