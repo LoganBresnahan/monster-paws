@@ -1,7 +1,7 @@
 # 0021: Remove Logan's test gifts, and close `/test-gift`
 
-Status: planned
-Planned: 2026-11-04 · Run: —
+Status: run
+Planned: 2026-11-04 · Run: 2026-11-04, 04:30 to 04:31 UTC
 Why: ADR-0027 as amended 2026-11-02: a gift with no animal doesn't belong in the totals, and its rows go before Spencer's button opens, found only by `animal_external_id = 'test-gift'` and never by slug or EIN, which Spencer's real gifts will share. Logan, directly, 2026-11-04: "yes clean up test donations". His earlier word on the totals, 2026-11-02: "yes delete the test stats rows". Roadmap: Accounts and donating (item 4)
 
 What changes: production's rows below, deleted in one transaction; `EVERYORG_TEST_PAGE_SECRET` out of the droplet's `.env`, and app and worker recreated to read that, so the page answers 404. Its code goes in oplog 0029's image.
@@ -13,9 +13,9 @@ Who does what: **Logan gave the word above, to the session running this.** Produ
 ## Prerequisites
 - [x] Read 2026-11-04 04:29 UTC, counts only: 4 intents, all `test-gift` and all `source = manual`, 2 of them closed; 2 donations, both theirs; 2 `donation_stats` rows, both theirs; 5 payloads, ids 1, 2, 35, 36 and 37, of which 2 name these intents; 5 decisions; 0 `sign_in_links` on them; 0 keepsakes.
 - [x] The three payloads that stay are oplog 0019's proof and oplog 0023's two proofs: no `partner_donation_id` on a `test-gift` intent, no donor in them.
-- [ ] `pass` unlocked by Logan.
-- [ ] Not within an hour of 06:00, 07:00 or 08:30 UTC.
-- [ ] The moderator told first.
+- [x] `pass` unlocked by Logan.
+- [x] Not within an hour of 06:00, 07:00 or 08:30 UTC.
+- [x] The moderator told first.
 
 ## Steps
 
@@ -64,7 +64,11 @@ Verify: the key counts `0`; `test-gift 404`; both containers up; health 200 on t
 Rollback: the secret is in `pass` as before, if it's wanted back: add its line and `up -d app worker`.
 
 ## Run
-<filled in as it happens>
+**Step 1, 04:30 UTC.** `BEGIN`, 4 intents and 2 payloads selected, `DELETE` 2 donations, 2 decisions, 2 payloads, 2 stats and 4 intents, the guard passed, `COMMIT`. After: `intents 0`, `donations 0`, `stats 0`, payloads 1, 36 and 37, none naming an intent, and their decisions `before_this_table`, `unparsable` and `unparsable`.
+
+**Step 2, 04:31 UTC.** The key counts `0`. `up -d app worker` took 1.94 s, with no POST loop this time, and Caddy's hold was measured in oplogs 0023 and 0025. `test-gift 404` with the real secret. Both containers up; health 200 on `0989a18`. `.env.before-0021` removed, since it held the secret.
+
+**The bank gift** still had no webhook when this ran: not among the payloads read at 04:29 UTC. Nothing failed, and nothing was rolled back.
 
 ## Follow-ups
 - `/test-gift`'s code leaves in oplog 0029's image, and `doc/plans/adr-0027-accounts-build-plan.md`'s carry-in closes with it.
