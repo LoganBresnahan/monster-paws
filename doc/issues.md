@@ -50,13 +50,6 @@ is the record, and a file of ticked boxes stops being read.
 
 ## UI
 
-- **"How it works" cuts off the end of the painting's mark.** The "Our thank-you" card
-  in `src/app/page.tsx` shows Ducky's painting with `object-cover` in a 4:3
-  frame, which trims the sides of the 1216×832 canvas, so the corner reads
-  "monsterpaws.org · 2" instead of "monsterpaws.org · 2026". It did this before
-  the portraits too. Cosmetic: the whole mark shows on the crew card above it
-  and in the lightbox. Found 2026-11-04 looking at the new portraits.
-
 - **The production server logs "The destination stream closed early"** when a
   page is closed mid-response: three times in one e2e run (2026-10-26, 20/20
   green) and once in dev on `/animals`. It is the browser hanging up on a
@@ -64,13 +57,6 @@ is the record, and a file of ticked boxes stops being read.
   reach Better Stack in production. Decide whether to filter it there or quiet
   it at the source before the launch's error reporting goes live. Found
   2026-10-26.
-- **The browse disclaimer says more than the rule does.** "We show animals
-  their shelter has kept up to date" reads as "updated recently". The rule
-  (`visibleAnimals`, ADR-0015 as amended) is: in the source's live listings as
-  of our last poll (within 8 days), and edited by the shelter within the last
-  **2 years**. Proposed precise wording: "We only show animals that are still
-  in their shelter's live listings and whose listing the shelter has updated in
-  the last two years." Logan to choose. Found 2026-10-02.
 
 ## Ops
 

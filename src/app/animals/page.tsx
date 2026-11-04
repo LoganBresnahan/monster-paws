@@ -235,7 +235,8 @@ export default async function BrowsePage({
 
       <p className="mt-12 text-sm text-muted">
         Listings refresh at most once a day, so ours can be behind a shelter&apos;s — always
-        confirm with them before making plans. We show animals their shelter has kept up to date;
+        confirm with them before making plans. We only show animals that are still in their
+        shelter&apos;s live listings and whose listing the shelter has updated in the last two years;
         nothing here says &ldquo;available now&rdquo;.
       </p>
     </main>

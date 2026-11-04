@@ -635,7 +635,6 @@ slice or change build order.
             - light-only theme (ADR-0016 as amended 2026-10-02); the hand
               cursor on buttons and dropdowns.
             Still open, folded into the launch dogfood:
-            - the browse disclaimer wording (`doc/issues.md`, UI);
             - the donation flow on paper — now item 4 itself, reviewed built;
             - "Meet the crew" moved to item 3c, 2026-10-05.
       - [ ] **Items 3c, 4 and 5's first grant are done** — a card can be

@@ -13,12 +13,13 @@ const HOW = [
 ];
 
 function HowVisual({ step }: { step: string }) {
-  const frame = "relative aspect-[4/3] w-full overflow-hidden rounded-[1rem] bg-background";
+  // The painting's own canvas, so its card shows the whole painting and its mark (ADR-0022).
+  const frame = "relative aspect-[1216/832] w-full overflow-hidden rounded-[1rem] bg-background";
   switch (step) {
     case "Find":
       return (
         <div className={frame}>
-          <Image src="/brand/crew/ducky-photo.jpg" alt="" fill sizes="(min-width: 1024px) 215px, (min-width: 640px) 45vw, 90vw" className="object-cover" />
+          <Image src="/brand/crew/ducky-photo.jpg" alt="" fill sizes="(min-width: 1024px) 215px, (min-width: 640px) 45vw, 90vw" className="object-cover object-bottom" />
           <span className="absolute bottom-2 left-2 rounded-full bg-card/90 px-2.5 py-1 text-xs shadow">
             <span className="font-bold">Ducky</span> · Pit Bull mix
           </span>
