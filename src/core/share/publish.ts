@@ -26,12 +26,26 @@ export interface ObjectStore {
  */
 export const SHARE_BUCKET = "monsterpaws-media";
 
+const ACCOUNT_HOST = /^[0-9a-f]{32}\.r2\.cloudflarestorage\.com$/;
 const SHARE_KEY = /^share\/[A-Za-z0-9_-]{22}\/(manifest\.json|[1-4]\.jpg)$/;
 
 export interface R2StoreConfig {
   endpoint: string;
   accessKeyId: string;
   secretAccessKey: string;
+}
+
+/**
+ * The bare account host, https, or nothing: a path or a bucket subdomain here would name another
+ * bucket whatever `SHARE_BUCKET` says, and this pair can reach the corpus (ADR-0036).
+ */
+function accountOrigin(endpoint: string): string {
+  const url = URL.canParse(endpoint) ? new URL(endpoint) : null;
+  const bare = url && url.protocol === "https:" && ACCOUNT_HOST.test(url.hostname) && !url.port;
+  if (!bare || url.pathname !== "/" || url.search || url.hash || url.username || url.password) {
+    throw new Error("SHARE_WRITE_ENDPOINT must be exactly https://<account-id>.r2.cloudflarestorage.com");
+  }
+  return url.origin;
 }
 
 export function createR2ObjectStore(config: R2StoreConfig, fetchImpl: typeof fetch = fetch): ObjectStore {
@@ -41,7 +55,7 @@ export function createR2ObjectStore(config: R2StoreConfig, fetchImpl: typeof fet
     service: "s3",
     region: "auto",
   });
-  const base = `${config.endpoint.replace(/\/$/, "")}/${SHARE_BUCKET}`;
+  const base = `${accountOrigin(config.endpoint)}/${SHARE_BUCKET}`;
   const send = async (key: string, init: RequestInit) => {
     // Exact keys, never a prefix check: `share/../..` would normalize into another bucket (ADR-0036).
     if (!SHARE_KEY.test(key)) throw new Error(`not a share key: ${key}`);

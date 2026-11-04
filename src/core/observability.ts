@@ -12,7 +12,8 @@ export interface ReportingEnv {
   release: string | undefined;
 }
 
-const SECRET_IN_PATH = /(\/api\/webhooks\/everyorg\/|\/test-gift\/|\/share\/|\/unsubscribe\/)[^"/?#\s\\]+/g;
+// `\bshare\/`, never `\/share\/`: an object key has no leading slash, and share errors name one (ADR-0036).
+const SECRET_IN_PATH = /(\/api\/webhooks\/everyorg\/|\/test-gift\/|\bshare\/|\/unsubscribe\/)[^"/?#\s\\]+/g;
 const EMAIL_ADDRESS = /[^\s"<>(),;:\\/?&=]+(?:@|%40)[^\s"'<>(),;:\\/?&=]+\.[^\s"'<>(),;:\\/?&=]+/g;
 /** Drizzle ends a failed query's message with its parameters, and on the donor tables those are an intent id or an address. */
 const QUERY_PARAMS = /\bparams: .*/g;

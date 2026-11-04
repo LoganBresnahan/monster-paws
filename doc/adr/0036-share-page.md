@@ -24,7 +24,7 @@ reads published files, not the database.
    image. Not on `/thanks`, which Logan ruled out, and not under `/demo/`, which `robots.ts` closes.
 2. **Its own token.** 128 random bits as 22 base64url characters, never the intent id or the `/thanks`
    token. It is checked against `^[A-Za-z0-9_-]{22}$` before any key or URL is built, and error reports
-   scrub it (`SECRET_IN_PATH`).
+   scrub it (`SECRET_IN_PATH`), in an object key as well as a URL path.
 3. **Nothing about the donor.** No login and no cookie. The manifest holds the animal's name, its kind and
    its shelter where it has them, and `parseManifest` keeps those three fields whatever else a file holds,
    so an address, amount, intent id or donor name can't reach a page.
@@ -81,7 +81,8 @@ reads published files, not the database.
     in `pass`. Logan: "the cloudflare api tokens are already in pass. they are the generic named ones not
     models or vault. these apply to monsterpaws-corpus and monsterpaws-media". That pair can also write
     the corpus, so the bucket is the constant `SHARE_BUCKET`, the tool refuses any other
-    `SHARE_WRITE_BUCKET`, and it accepts only the exact keys of a share:
+    `SHARE_WRITE_BUCKET`, the endpoint must be exactly the account's host, since a path or a bucket
+    subdomain there would name another bucket, and it accepts only the exact keys of a share:
 
         SHARE_WRITE_ENDPOINT="$(pass show cloudflare/r2-endpoint | head -n1)" \
         SHARE_WRITE_ACCESS_KEY_ID="$(pass show cloudflare/r2-access-key-id | head -n1)" \

@@ -21,6 +21,7 @@ import {
 import { scrubEvent } from "@/core/observability";
 
 const TOKEN = "abcdefghij_klmnopq-rst";
+const ENDPOINT = "https://0123456789abcdef0123456789abcdef.r2.cloudflarestorage.com";
 
 function memoryStore(failReadBack = false) {
   const objects = new Map<string, Uint8Array>();
@@ -187,7 +188,7 @@ describe("the write store (ADR-0036)", () => {
   function recording() {
     const urls: string[] = [];
     const store = createR2ObjectStore(
-      { endpoint: "https://account.r2.example/", accessKeyId: "id", secretAccessKey: "secret" },
+      { endpoint: `${ENDPOINT}/`, accessKeyId: "id", secretAccessKey: "secret" },
       async (input) => {
         urls.push(input instanceof Request ? input.url : String(input));
         return new Response("ok", { status: 200 });
@@ -202,7 +203,7 @@ describe("the write store (ADR-0036)", () => {
     await store.get(manifestKey(TOKEN));
     await store.delete(paintingKey(TOKEN, 1));
     expect(urls).toHaveLength(3);
-    for (const url of urls) expect(url.startsWith(`https://account.r2.example/monsterpaws-media/share/${TOKEN}/`)).toBe(true);
+    for (const url of urls) expect(url.startsWith(`${ENDPOINT}/monsterpaws-media/share/${TOKEN}/`)).toBe(true);
   });
 
   it.each([
@@ -217,6 +218,34 @@ describe("the write store (ADR-0036)", () => {
     await expect(store.put(key, new Uint8Array([1]), "text/plain")).rejects.toThrow(/not a share key/);
     await expect(store.delete(key)).rejects.toThrow(/not a share key/);
     expect(urls).toEqual([]);
+  });
+});
+
+describe("the write endpoint (ADR-0036)", () => {
+  const config = (endpoint: string) => ({ endpoint, accessKeyId: "id", secretAccessKey: "secret" });
+
+  it.each([
+    [`${ENDPOINT}/monsterpaws-corpus`],
+    [`${ENDPOINT}/monsterpaws-corpus/`],
+    ["https://monsterpaws-corpus.0123456789abcdef0123456789abcdef.r2.cloudflarestorage.com"],
+    ["http://0123456789abcdef0123456789abcdef.r2.cloudflarestorage.com"],
+    [`${ENDPOINT}:8443`],
+    [`${ENDPOINT}?bucket=monsterpaws-corpus`],
+    [`${ENDPOINT}#monsterpaws-corpus`],
+    ["https://user:pass@0123456789abcdef0123456789abcdef.r2.cloudflarestorage.com"],
+    ["https://0123456789abcdef0123456789abcdef.r2.cloudflarestorage.com.evil.example"],
+    ["https://files.example"],
+    ["not a url"],
+    [""],
+  ])("refuses %s, before anything is sent", (endpoint) => {
+    expect(() => createR2ObjectStore(config(endpoint), () => {
+      throw new Error("sent");
+    })).toThrow(/SHARE_WRITE_ENDPOINT must be exactly/);
+  });
+
+  it("accepts the bare account host, with or without a trailing slash", () => {
+    expect(() => createR2ObjectStore(config(ENDPOINT))).not.toThrow();
+    expect(() => createR2ObjectStore(config(`${ENDPOINT}/`))).not.toThrow();
   });
 });
 
@@ -268,5 +297,40 @@ describe("error reports (ADR-0036)", () => {
     const scrubbed = JSON.stringify(scrubEvent(event));
     expect(scrubbed).not.toContain(TOKEN);
     expect(scrubbed).toContain("/share/<secret>/2/painting.jpg");
+  });
+
+  // The real messages, which name an object key with no leading slash, so a path-only scrub misses them.
+  async function messageOf(failing: () => Promise<unknown>): Promise<string> {
+    const err = await failing().then(
+      () => {
+        throw new Error("expected a failure");
+      },
+      (e: Error) => e,
+    );
+    return err.message;
+  }
+
+  it("never carry a token from the source's or the store's own failures", async () => {
+    const refused = createHttpShareSource("https://files.example", async () => new Response(null, { status: 403 }));
+    const malformed = createHttpShareSource("https://files.example", async () => new Response("{}", { status: 200 }));
+    const store = createR2ObjectStore(
+      { endpoint: ENDPOINT, accessKeyId: "id", secretAccessKey: "secret" },
+      async () => new Response(null, { status: 500 }),
+    );
+    const messages = await Promise.all([
+      messageOf(() => refused.manifest(TOKEN)),
+      messageOf(() => refused.painting(TOKEN, 2)),
+      messageOf(() => malformed.manifest(TOKEN)),
+      messageOf(() => store.put(paintingKey(TOKEN, 1), new Uint8Array([1]), "image/jpeg")),
+      messageOf(() => store.get(manifestKey(TOKEN))),
+      messageOf(() => store.delete(paintingKey(TOKEN, 3))),
+    ]);
+    for (const message of messages) {
+      // Guards the test itself: these must be the messages that name the key.
+      expect(message).toContain(TOKEN);
+      const scrubbed = JSON.stringify(scrubEvent({ message, exception: { values: [{ value: message }] } }));
+      expect(scrubbed).not.toContain(TOKEN);
+      expect(scrubbed).toContain("share/<secret>");
+    }
   });
 });
