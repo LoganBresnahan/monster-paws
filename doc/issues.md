@@ -371,6 +371,11 @@ is the record, and a file of ticked boxes stops being read.
 
 ## Compliance
 
+- **An older version of a crew photo stays in this repo's history.** A detail in it was blurred from the live
+  files in `ec81e6c`, and removing the old version means rewriting history, which is Logan's call. Logan: "yeah
+  i'll deal with the image later", which we read as this. The source photo also reached Meta's Model API.
+  Logan, 2026-11-04: "Its fine all the personal info is just mine for all photos". Found 2026-11-04.
+
 - **1,404 animals (2.2%) render their organization's name with no link home** —
   the source publishes no usable URL for them, and we never assemble one
   (ADR-0015 as amended). Under the terms' link-back promise this is the honest

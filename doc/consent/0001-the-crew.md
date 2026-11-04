@@ -35,7 +35,7 @@
 
 | Pet | Painting (Logan's pick) | Made by |
 | --- | --- | --- |
-| Plum | batch 38d, 015 | klein-v1, as painted: three-quarter view, collarless words |
+| Plum | batch 38g, 011 | klein-v1, as painted: three-quarter view, collarless words |
 | Marty | batch 37a, 004 | klein-v1, as painted: colour reworded as batch 11b |
 | Beetle | batch 35a, 039 | klein-v1, as painted |
 | Stacey | batch 37a, 020 | klein-v1, as painted |
