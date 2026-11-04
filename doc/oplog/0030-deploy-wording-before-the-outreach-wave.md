@@ -1,7 +1,7 @@
 # 0030: Deploy `83b2bc9` — the wording and fixes, before the claimed-shelter wave
 
-Status: planned
-Planned: 2026-11-04 · Run: —
+Status: run
+Planned: 2026-11-04 · Run: 2026-11-04, 15:14 to 15:17 UTC
 Why: Logan wants the claimed-shelter wave sent this morning, Chicago time, with a link to `/privacy`: "we need to deploy before we send these emails" (to the `emails` session, relayed by the moderator). This image fixes the line he'll link to. Roadmap: Accounts and donating (item 4), Shelter consent (item 5)
 Commit deployed: `83b2bc9`, with the `emails` session's wording and `/privacy`'s Sponsor-button line, named by the moderator. This entry follows in its own push so the image tag is the code commit.
 
@@ -16,9 +16,9 @@ Who does what: **Logan gives the word for step 1, in the session that runs it.**
 - [x] Ship bar on `83b2bc9`, in a temporary checkout at exactly that sha, 2026-11-04 15:04 to 15:11 UTC: vitest 911 of 911 twice with `--maxWorkers=2`, typecheck clean, `npm run e2e` 59 of 59.
 - [x] e2e against the published app image, Every.org set to production, 2026-11-04 15:12 UTC: 46 passed in 11.0 s, 13 skipped under `PW_BASE_URL`; `/privacy` clear of "gift", "account" and "stop taking donations", `/claim` holds its line, `/test-gift` 404. The published worker image booted on a throwaway database: up after 24 s, 0 fatal lines, no `art.generate` queue.
 - [x] `git diff --name-status 0989a18 83b2bc9 -- public drizzle Caddyfile docker-compose.prod.yml` read, 2026-11-04: it prints nothing, so no purge, no migration and no config change. 19 migrations at this sha.
-- [ ] `pass` unlocked by Logan.
-- [ ] Not within an hour of 06:00, 07:00 or 08:30 UTC, and the night's log shows `== exit`.
-- [ ] The moderator holds the card.
+- [x] `pass` unlocked by Logan.
+- [x] Not within an hour of 06:00, 07:00 or 08:30 UTC, and the night's log shows `== exit`.
+- [x] The moderator holds the card: read free at 15:13 UTC, load 1.1.
 
 ## Steps
 
@@ -60,7 +60,17 @@ Verify: six pages 200; `test-gift` and the unknown share 404; the first `/privac
 Rollback: step 3's.
 
 ## Run
-<filled in as it happens>
+Logan, directly, in the session that ran it: "deploy after it passes". The checks passed, and the moderator confirmed the card and box at 15:13 UTC. Commit deployed `83b2bc9`, from the checkout at `4445141`.
+
+**Step 1, 15:14 UTC.** `IMAGE_TAG` `0989a18cf020f1211dde8a2d8dd2e24c1ef4ea2a`, the rollback. Checkout `11a07f1`. `ART_SWEEP 1`, `EMAIL_SWEEP 0`, `WORKER_MODE 0`. Health 200 on `0989a18`.
+
+**Step 2, 15:14 UTC.** Checkout `4445141`; app and worker pulled at `83b2bc901e68e87b251d3f1a8e98ba228b5481d7`; all three still on the old containers.
+
+**Step 3, 15:15 UTC.** The roll took 4.45 s by `time`, 15:15:25 to 15:15:31. 180 POSTs, 180 `404`, **no 5xx**, slowest 11.39 s. Health 200 on `83b2bc9`. Caddy not recreated, up 15 hours. The worker still up about a minute on, with 0 `fatal` lines.
+
+**Step 4, 15:16 to 15:17 UTC.** `/`, `/animals`, `/privacy`, `/claim`, `/thanks` and `/demo` all 200. `test-gift` 404; an unknown share token 404. `/privacy` holds no "gift", "account" or "stop taking donations", and holds "The painting also gets its own page". `/claim` holds "We work with the shelters whose animals you can sponsor". `keepsake 0`, sends `0`, `art.generate` jobs `0`. Better Stack, a count only: 0 reports in the last 15 minutes.
+
+Nothing failed, and nothing was rolled back. Logan's own read of `/privacy` before he links it, and his wave, are his, and come after this entry.
 
 ## Follow-ups
 - Logan's claimed-shelter wave, by `npm run outreach -- send --live`, only by him.

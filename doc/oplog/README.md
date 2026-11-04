@@ -39,7 +39,7 @@ is an ADR; the daily numbers brief is `doc/ops/` (ADR-0010 as amended).
 | [0027](0027-home-worker-role-and-tunnel-key.md) | The art worker's way in: the `home_worker` role and a restricted tunnel key | run | 2026-11-04 |
 | [0028](0028-painting-chain-keys-and-sweep.md) | The painting chain's keys and the keepsake sweep on, with no shelter to paint for | run | 2026-11-04 |
 | [0029](0029-spencer-grant-and-go-live.md) | Spencer's grant, the Sponsor button opens, and the first real donation | planned | — |
-| [0030](0030-deploy-wording-before-the-outreach-wave.md) | Deploy the wording and fixes, before the claimed-shelter wave | planned | — |
+| [0030](0030-deploy-wording-before-the-outreach-wave.md) | Deploy `83b2bc9`: the wording and fixes, before the claimed-shelter wave | run | 2026-11-04 |
 
 ## Entry format
 
