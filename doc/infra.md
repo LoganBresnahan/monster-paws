@@ -143,7 +143,7 @@ Authorization header (verified 2026-08-17). Check that a poll returns animals.
 | Entry | What it is | What it's for | Lands in |
 | --- | --- | --- | --- |
 | `resend/api-key` | Sending-only API key, domain `monsterpaws.org` (DKIM verified 2026-07-30) | Outbound email as hello@monsterpaws.org: the painting email (ADR-0027 as amended 2026-11-02), later donor updates (roadmap item 8). Cannot read mail or change the domain | droplet `.env` when the painting email's droplet carry-ins land (doc/roadmap.md); by hand in a local `.env` for a live run, never by `env:dev` |
-| `resend/webhook-signing-secret` | *not created yet.* Made by Logan in Resend's dashboard, since the API key is sending-only, for `https://monsterpaws.org/api/webhooks/resend` | `RESEND_WEBHOOK_SECRET`: verifies Resend's events. Unset, the route answers 404 | droplet `.env` |
+| `resend/webhook-signing-secret` | Made by Logan in Resend's dashboard, since the API key is sending-only, for `https://monsterpaws.org/api/webhooks/resend` | `RESEND_WEBHOOK_SECRET`: verifies Resend's events. Unset, the route answers 404 | droplet `.env` |
 | `resend/suppression-hmac-key` | Created by Logan 2026-11-03. 64 random characters. Losing it loses the never-mail list, because a digest can't be recomputed under another key | `EMAIL_SUPPRESSION_KEY`: the keyed digests in `email_suppressions` and the unsubscribe link. No key, no send (ADR-0035). Never on the GPU box | `env:dev`; droplet `.env` with the above |
 
 ```sh
@@ -199,6 +199,7 @@ during a roll, and the `webhook_spool` volume, shared by app and worker, takes d
 worker to replay each minute (ADR-0027 as amended 2026-11-03; live since oplog 0023, 2026-11-04).
 
 The droplet's `.env` also holds `SHARE_BASE_URL=https://media.monsterpaws.org`, where `/share/<token>` reads its published files (ADR-0036, oplog 0025).
+Since oplog 0028 it also holds `EMAIL_SUPPRESSION_KEY`, `RESEND_API_KEY`, `RESEND_WEBHOOK_SECRET`, `EMAIL_LIVE=production`, `EMAIL_ART_SOURCE=media` and `ART_SWEEP=on`. The art worker and its tunnel are plain processes on this box (ADR-0004 as amended 2026-11-04): a reboot stops both, and oplog 0028's steps 7 and 8 start them again.
 
 | Entry | What it is | What it's for | Lands in |
 | --- | --- | --- | --- |
