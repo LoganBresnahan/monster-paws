@@ -419,5 +419,4 @@ for people when they donate. i think its fine. I will send the email myself". So
 confirmation and third-party disclosure rest, for this grant, on those words and on painting at home. A shelter's photos don't go to
 Meta's API: its answer to that question was never given, so SAM 3.1 stays on the crew and real gifts use the local detector.
 
-**If it withdraws:** the newer rule, in which a gift already made can still get its painting. Logan: "use the newer rule for spencers". Its
-notice is the link to `/privacy` in his next email, with no extra sentences: "no in the next email to her we will just link the privacy page".
+**If it withdraws:** the newer rule, in which a gift already made can still get its painting. Logan: "use the newer rule for spencers".

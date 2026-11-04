@@ -3,7 +3,7 @@
 Status: planned
 Planned: 2026-11-04 · Run: —
 Why: "beetle painting is the backup, i want real donations working" (Logan, to the moderator, 2026-11-03), on a plain yes from Spencer Pet Rescue: "all we need is a yes from her and its good enough. shes an admin of the shelter she runs the every.org page. she already knows the plan about making art for people when they donate. i think its fine. I will send the email myself" (Logan, in the `emails` session, 2026-11-03). Roadmap: Accounts and donating (item 4)
-Commit deployed: `<SHA>`, named by the moderator once Spencer's reply is in and the fixes below have landed. This entry follows in its own push so the image tag is the code commit.
+Commit deployed: `2377033`, named by the moderator with Spencer's reply in. This entry follows in its own push so the image tag is the code commit.
 
 What changes on the droplet: the app and worker images; any new migration; one `shelter_nonprofits` row; `EMAIL_SWEEP=on`, last. On this box: the art worker restarted from a checkout holding the grant.
 
@@ -13,20 +13,21 @@ Who does what: **Logan gives the word for step 1 and for the donation in step 8 
 
 ## Prerequisites
 - [x] **Spencer's yes:** "Yes you may", at 15:29:35 UTC on 2026-11-04, from Kristen, answering "may we use the photos in your listings to make art of your animals for your donors?". Read by the `emails` session, which checked DKIM, SPF and DMARC as passing, and that those words are all she wrote. Its `evidence` line is in the registry, with the hash read again here against the raw file.
-- [ ] Logan's link to `/privacy` has gone to Kristen, before the button opens (the moderator is reminding him).
-- [ ] The commit on `<SHA>` holds, together:
+- [x] The commit on `2377033` holds, together:
   - The registry entry in `src/core/shelters.ts`: slug `spencer-pet-rescue`, `shelterExternalIds: ["rescuegroups:org:11756"]`, checked by a person, one `digify` grant with its words as `basis` and `<Message-ID> sha256:<hex>` as `evidence`.
   - An ADR-0028 amendment on §5 and §6: a listing's photo under this grant, citing the reply.
   - An ADR-0004 note: Logan's words above change what its photo-rights confirmation and disclosure rest on, and they name that.
-  - Spencer's withdrawal term: the newer rule, "A gift already made can still get its painting", from Logan directly: "use the newer rule for spencers". The thread shows the older term, "we stop painting, take the paintings down and delete the photos", and her notice is his next email linking `/privacy`, with no extra sentences (Logan, to the moderator: "no in the next email to her we will just link the privacy page"). **Read `/privacy`'s withdrawal and public-page lines before he links it.**
+  - Spencer's withdrawal term: the newer rule, "A gift already made can still get its painting", from Logan directly: "use the newer rule for spencers". The thread shows the older term, "we stop painting, take the paintings down and delete the photos".
   - The go-live: the footer's "Donations coming soon!" and `/animals/[id]`'s "When sponsoring opens" sentence removed.
-- [ ] That image also holds `37f1ce1`, `604a76c`, `e018831`, the `emails` session's fixes and the plural `/thanks` lines, and "We stop taking donations" reworded.
-- [ ] `paintings`' fixes to the head-fallback path and its log throttle are on topdog, for step 7's checkout.
-- [ ] CI green on `<SHA>`. Ship bar on `<SHA>`, in a temporary checkout at exactly that sha: vitest twice, typecheck, `npm run e2e`.
-- [ ] e2e against the published app image, Every.org set to production. The published worker image boots on a throwaway database.
-- [ ] Any new migration rehearsed on a scratch restore of the newest dump, then dropped.
-- [ ] `git diff 12c451f <SHA> -- Caddyfile docker-compose.prod.yml` prints nothing, or this entry gains the step.
-- [ ] Every.org's API read on the day: `spencer-pet-rescue`'s `hasAdmin` and `donationsEnabled` both true, and its EIN `86-1172833`, as read on 2026-11-02.
+- [x] That image also holds `37f1ce1`, `604a76c`, `e018831`, the `emails` session's fixes and the plural `/thanks` lines, and "We stop taking donations" reworded: each read at the sha.
+- [x] `paintings`' fixes to the head-fallback path and its log throttle are on topdog, for step 7's checkout: it reports its export at `a081344`, holding the grant and `993a4cb`.
+- [x] CI green on `2377033`: `verify`, `images`, `sourcemaps`, run 41860066512.
+- [x] Ship bar on `2377033`, in a temporary checkout at exactly that sha, 2026-11-04 15:40 to 15:47 UTC: vitest 917 of 917 twice with `--maxWorkers=2`, typecheck clean, `npm run e2e` 59 of 59.
+- [x] e2e against the published app image, Every.org set to production, 2026-11-04 15:47 UTC: 46 passed in 10.8 s, 13 skipped under `PW_BASE_URL`; the footer's line gone, `/test-gift` 404. The published worker image booted on a throwaway database: up after 24 s, 0 fatal lines, no `art.generate` queue.
+- [x] No new migration: 19 at this sha, the same as production, read.
+- [x] `git diff 12c451f 2377033 -- Caddyfile docker-compose.prod.yml` prints nothing, read; nothing in `public/` changed since `83b2bc9`, so no purge.
+- [x] Disk clear for the pull: 12G free after oplog 0031.
+- [x] Every.org's API read on the day, 2026-11-04 15:51 UTC: `spencer-pet-rescue`'s `hasAdmin` and `donationsEnabled` both true, and its EIN `86-1172833`, as read on 2026-11-02.
 - [ ] A listing with Commons-tested painting behaviour: `paintings`' Commons run passed on a listing-shaped job.
 - [ ] `pass` unlocked by Logan.
 - [ ] Not within an hour of 06:00, 07:00 or 08:30 UTC, and nothing in the main checkout from 06:45 UTC until that night's log shows `== exit`.
@@ -70,10 +71,10 @@ Rollback: n/a — a read.
 
 ### 3. Pull the release, one SSH session; nothing restarts
     ssh root@$IP 'cd monsterpaws && git pull --ff-only &&
-      sed -i "s/^IMAGE_TAG=.*/IMAGE_TAG=<FULL SHA>/" .env &&
+      sed -i "s/^IMAGE_TAG=.*/IMAGE_TAG=2377033e774f05c3f17cdd24afb6a9b21ac34780/" .env &&
       docker compose -f docker-compose.prod.yml pull app worker &&
       docker compose -f docker-compose.prod.yml config --images'
-Verify: the checkout at this entry's commit; app and worker resolve to `<SHA>` and are pulled; all three still run the old containers.
+Verify: the checkout at this entry's commit; app and worker resolve to `2377033` and are pulled; all three still run the old containers.
 Rollback: `IMAGE_TAG` back to step 1's sha; `git checkout <step 1's sha>`, then `git checkout topdog` later.
 
 ### 4. Migrate if there's anything new, while the old images serve
@@ -94,7 +95,7 @@ Both are needed for a Sponsor button: the row does nothing without the grant in 
     sleep 5; date -u +%T; ssh root@$IP 'cd monsterpaws && time docker compose -f docker-compose.prod.yml up -d app worker'; date -u +%T; wait $L
     cut -d' ' -f1 roll.log | sort | uniq -c; sort -k2 -n roll.log | tail -1
     curl -fsS https://monsterpaws.org/api/health
-Verify: `INSERT 0 1`; every line 404, the slowest under 30 s; health 200 on `<SHA>`; the worker up 20 s on with no `fatal`.
+Verify: `INSERT 0 1`; every line 404, the slowest under 30 s; health 200 on `2377033`; the worker up 20 s on with no `fatal`.
 Stop if: any 5xx, or the worker restarting.
 Rollback: `IMAGE_TAG` back to step 1's sha and `up -d app worker`, after listing `/spool`. **That closes the button**, since the old image holds no grant; the row stays and does nothing.
 
@@ -114,7 +115,7 @@ Stop if: another shelter's Sponsor page answers 200. Roll back.
 Rollback: step 5's.
 
 ### 7. `paintings` restarts the worker from a checkout holding the grant
-`keepsakeShare` reads `SHELTERS` from its own code, and publish refuses without this. SIGTERM by PID, then 0028's step 8 command, from an export of `<SHA>` or later.
+`keepsakeShare` reads `SHELTERS` from its own code, and publish refuses without this. SIGTERM by PID, then 0028's step 8 command, from an export of `2377033` or later.
 Verify: its two first lines; no error after 2 minutes; 1 connection as `home_worker`.
 Rollback: SIGTERM. Gifts wait, and the sweep alerts after 30 minutes.
 
