@@ -11,8 +11,8 @@ What changes: public access on `monsterpaws-media` through `media.monsterpaws.or
 Cloudflare DNS record; one crew pet's set under `share/<token>/`. Nothing on the droplet, in its `.env` or in the database: `SHARE_BASE_URL` reaches the
 droplet in oplog 0025.
 
-What this opens: anything in the bucket, to anyone who has its key. The bucket lists nothing through a custom domain, and a token can't be guessed. **Never
-put a photo held for painting in this bucket, or a shelter animal's painting, until Logan has decided what a withdrawal does to a shared painting (ADR-0036).**
+What this opens: anything in the bucket, to anyone who has its key. The bucket lists nothing through a custom domain, and a token can't be guessed. **Never put a photo held for painting in this bucket.** Public access is
+bucket-wide. A shelter animal's painting may go here under ADR-0036 decision 4, whose takedown rule covers a withdrawal; this entry publishes only a crew pet's.
 
 Who does what: **Logan does step 3 in the Cloudflare dashboard**, because our tokens can't configure a bucket: `cloudflare/r2-token` answered 403 on the
 bucket's domain settings, 2026-11-03 23:56 UTC, and `doc/infra.md` says the same. The moderator runs steps 1 and 2 and step 3's check. `paintings` runs step 4.
@@ -77,5 +77,5 @@ Steps 1 to 3, 2026-11-04 00:07 to 00:08 UTC, by the moderator; Logan connected t
 - The dedicated media write pair in `doc/infra.md` still comes with the real home worker, because the pair used here can also write the corpus.
 - `doc/infra.md`: public access is recorded as on for media, and its diagram gains `media.monsterpaws.org` and loses "original photos" from this bucket. `doc/flows.md`'s keepsake-art box stops sending a donor's art here until ADR-0036's rules are settled.
 - `SHARE_BASE_URL=https://media.monsterpaws.org` in the droplet's `.env`, in oplog 0025.
-- Before a real donor's painting is ever published: the takedown rule, the `/privacy` line and telling shelters (ADR-0036). Photos held for painting go somewhere
+- A real donor's set publishes through the handler under ADR-0036, not this entry. Photos held for painting go somewhere private, never here (ADR-0035 decision 11).
   private, never here (ADR-0035 decision 11).
