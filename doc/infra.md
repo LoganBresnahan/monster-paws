@@ -672,36 +672,41 @@ expected to hold, not yet seen across a start:
 
 While the worker is down a paid donation waits and nothing is lost: the sweep sends its job again within the hour, and the "waiting past 30 minutes" alert fires. Nothing else alerts.
 
-**Inside the nightly window** (06:45 UTC until that night's `== exit`): if `pgrep -f poll-nightly` answers, wait for its `== exit` first. If nothing answers and the log has no `== exit`, the restart killed the poll,
-so run `scripts/poll-nightly.sh` from the main checkout. It reads nothing from `pass` and appends to the same log. The worker's own gate opens at 10:00 UTC whatever the log says.
+**Inside the nightly window** (06:45 UTC until that night's `== exit`), read `var/nightly/$(date -u +%F).log`. If `pgrep -f '^[^ ]*bash [^ ]*poll-nightly'` answers, wait for its `== exit`. If it doesn't, and the log has `== nightly poll` with no `== exit`, the restart killed the poll, so start it again: `cd ~/monsterpaws && setsid nohup scripts/poll-nightly.sh > /dev/null 2>&1 < /dev/null &`. It writes its own log, takes about 40 minutes, and reads nothing from `pass`. If the log has no `== nightly poll`, it never started, and the task runs it once Logan is signed in (`StartWhenAvailable`): a second one would lose on the port and write an `== exit 1` that opens the worker's gate during the real poll. The worker's own gate opens at 10:00 UTC whatever the log says.
 
 Each step below is one Bash call, with its own `cd`: a `cd` outside the session's folders doesn't carry to the next call, and a worker started from the main checkout would pick up its `.env`.
 
 0. **Logan** reopens this session, then unlocks `pass` in a WSL terminal: `pass show digitalocean/api-token | wc -c`, which must print more than 0. Its pinentry is curses, so `!` in a session may not be able to ask. The tunnel and the worker read `pass` only when they start.
 1. `cd ~/monsterpaws && npm run db:up`. Verify: `docker ps` shows both up. The sessions' tests and the dev site need them; production doesn't.
 2. `/gpu-health`: read-only apart from the smoke, and it reads the crash that caused the restart, if there was one.
-3. Nothing is already running, the hosts line held, and an export of topdog's tip exists. It has to hold every shelter in `SHELTERS`, because the worker reads them from its own code and publish refuses otherwise. Its `node_modules` is its own, so no chat's worktree can change it:
+3. Nothing is already running, the hosts line held, and which export to use. That's the one the worker last ran from (`var/art-worker-export`), so a restart doesn't quietly put new code on production's paintings. A new export of topdog's tip is made only when there is none or `SHELTERS` has changed, because the worker reads the shelters from its own code and publish refuses otherwise; say so if you make one, because it hasn't painted yet. Its `node_modules` is its own, so no chat's worktree can change it. Give this call a long timeout for `npm ci`:
 
        if pgrep -f '^[^ ]*bash [^ ]*home-worker-tunnel|[m]onsterpaws-home-worker|[s]rc/worker/index'; then echo "ALREADY RUNNING: stop here"; fi
        grep -c generateHosts /etc/wsl.conf   # 1
        H=$(pass show digitalocean/pg-home-worker-url | head -n1 | sed -E 's#^.*@([^:/]+):.*#\1#'); grep -c "^127.0.0.1 $H\$" /etc/hosts; unset H   # 1, and the name is never printed
-       cd ~/monsterpaws && S=$(git rev-parse --short=7 topdog) && E=~/monsterpaws-art-$S && if [ ! -d "$E" ]; then
-         mkdir "$E" && git archive topdog | tar -x -C "$E" && echo "$S" > "$E/EXPORTED_FROM" && ln -s ~/monsterpaws/var "$E/var" && (cd "$E" && npm ci); fi; echo "$E"
+       cd ~/monsterpaws || exit 1; E=$(cat var/art-worker-export 2>/dev/null)
+       if [ -z "$E" ] || [ ! -f "$E/EXPORTED_FROM" ] || ! git diff --quiet "$(cat "$E/EXPORTED_FROM")" topdog -- src/core/shelters.ts; then
+         S=$(git rev-parse --short=7 topdog); E=~/monsterpaws-art-$S; P="$E.partial"; rm -rf "$P"
+         if [ ! -d "$E" ]; then mkdir "$P" && git archive topdog | tar -x -C "$P" && echo "$S" > "$P/EXPORTED_FROM" && touch "$P/comfyui/gpu.env" && ln -s ~/monsterpaws/var "$P/var" && (cd "$P" && npm ci) && mv "$P" "$E"; fi
+       fi; echo "$E"
 
    If the two greps don't print 1, oplog 0028's step 7 has the sudo line, and it's Logan's to type.
 4. The tunnel, from that export, in a session of its own so it outlives the chat that started it (`setsid`, not yet proved across a chat closing):
 
-       cd ~/monsterpaws-art-<sha> && echo "== start $(date -u +%FT%TZ)" >> ~/monsterpaws/var/home-worker-tunnel.log
+       cd ~/monsterpaws-art-<sha> || exit 1
+       echo "== start $(date -u +%FT%TZ)" >> ~/monsterpaws/var/home-worker-tunnel.log
        setsid nohup scripts/home-worker-tunnel.sh >> ~/monsterpaws/var/home-worker-tunnel.log 2>&1 < /dev/null &
 
    Verify from the same folder, a moment later. It must print `home_worker`; a healthy tunnel writes nothing to its log, so the log proves nothing:
 
-       cd ~/monsterpaws-art-<sha> && DATABASE_URL="$(pass show digitalocean/pg-home-worker-url | head -n1)" NODE_EXTRA_CA_CERTS=/home/oof/monsterpaws/var/do-ca.crt node -e 'const {Client}=require("pg");const c=new Client({connectionString:process.env.DATABASE_URL});c.connect().then(()=>c.query("select current_user u")).then(r=>{console.log(r.rows[0].u);return c.end()}).catch(e=>{console.error(e.code||e.message);process.exit(1)})'
+       cd ~/monsterpaws-art-<sha> || exit 1
+       DATABASE_URL="$(pass show digitalocean/pg-home-worker-url | head -n1)" NODE_EXTRA_CA_CERTS=/home/oof/monsterpaws/var/do-ca.crt node -e 'const {Client}=require("pg");const c=new Client({connectionString:process.env.DATABASE_URL});c.connect().then(()=>c.query("select current_user u")).then(r=>{console.log(r.rows[0].u);return c.end()}).catch(e=>{console.error(e.code||e.message);process.exit(1)})'
 
    Never run `scripts/poll-via-home.sh` while it's up: it forwards the same local port.
 5. The art worker, from the same export, as one worker, never two:
 
-       cd ~/monsterpaws-art-<sha> && echo "== start $(date -u +%FT%TZ)" >> var/explore/art-worker-production.log
+       cd ~/monsterpaws-art-<sha> || exit 1
+       echo "== start $(date -u +%FT%TZ)" >> var/explore/art-worker-production.log
        DATABASE_URL="$(pass show digitalocean/pg-home-worker-url | head -n1)" \
        NODE_EXTRA_CA_CERTS=/home/oof/monsterpaws/var/do-ca.crt \
        WORKER_MODE=art ART_STORE_DIR=/home/oof/monsterpaws/var/keepsakes-production \
@@ -713,7 +718,7 @@ Each step below is one Bash call, with its own `cd`: a `cd` outside the session'
        RESCUEGROUPS_API_KEY= ART_SWEEP= \
        setsid nohup npm run worker >> var/explore/art-worker-production.log 2>&1 < /dev/null &
 
-   Verify after 2 minutes, reading only this start, because the log is appended: `tac var/explore/art-worker-production.log | sed '/^== start /q' | tac` shows `art store bound to database <name>` and `art.generate registered (WORKER_MODE=art)`, and no error. `DATABASE_URL not set — idling` means `pass` was locked, and `[worker] fatal` means the tunnel. Stop it with SIGTERM to `pgrep -nf '[s]rc/worker/index'`.
+   Verify after 2 minutes, reading only this start, because the log is appended: `tac ~/monsterpaws/var/explore/art-worker-production.log | sed '/^== start /q' | tac` shows `art store bound to database <name>` and `art.generate registered (WORKER_MODE=art)`. npm's banner and `.env not found` aren't errors. `DATABASE_URL not set — idling` means `pass` was locked, and `[worker] fatal` means the tunnel. Then record it: `echo ~/monsterpaws-art-<sha> > ~/monsterpaws/var/art-worker-export`. Stop it with SIGTERM to `pgrep -nf '[s]rc/worker/index'`.
 6. **Logan** reopens the other chats he wants. `git worktree list` names their checkouts.
 
 Then keep Windows' heavy apps light while donations may come in: a paint starts only with 22 GB free after the cache drop, which `comfyui/guard.sh drop` prints. `guard.sh mem` reads before the drop and can read low.
