@@ -217,6 +217,10 @@ the monthly check in infra.md's Recurring ops.
   keepsake's public page (ADR-0036): publish re-encodes from pixels alone, reads
   each upload back by hash and writes the manifest last; takedown deletes the
   files and purges Cloudflare. Crew only; real writes go under an oplog entry
+- `npm run email -- list | send-owed [--keepsake <id>]` — the painting email by
+  hand (ADR-0035 as amended 2026-11-03): Mailpit unless `EMAIL_LIVE` is set, and
+  it prints no address. With `EMAIL_SWEEP=on` the worker sends these itself; this
+  is the by-hand tool
 - `npm run db:up` — local Postgres via `docker-compose.dev.yml`
   (pgvector/pg16 image — same extensions as production)
 - `npm run db:generate` / `npm run db:migrate` — Drizzle migrations

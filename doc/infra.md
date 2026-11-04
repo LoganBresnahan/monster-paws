@@ -142,7 +142,9 @@ Authorization header (verified 2026-08-17). Check that a poll returns animals.
 
 | Entry | What it is | What it's for | Lands in |
 | --- | --- | --- | --- |
-| `resend/api-key` | Sending-only API key, domain `monsterpaws.org` (DKIM verified 2026-07-30) | Outbound email as hello@monsterpaws.org: donor updates (roadmap item 8). Cannot read mail or change the domain | droplet `.env` when item 8 lands |
+| `resend/api-key` | Sending-only API key, domain `monsterpaws.org` (DKIM verified 2026-07-30) | Outbound email as hello@monsterpaws.org: the painting email (ADR-0027 as amended 2026-11-02), later donor updates (roadmap item 8). Cannot read mail or change the domain | droplet `.env` when the painting email's droplet carry-ins land (doc/roadmap.md); by hand in a local `.env` for a live run, never by `env:dev` |
+| `resend/webhook-signing-secret` | *not created yet.* Made by Logan in Resend's dashboard, since the API key is sending-only, for `https://monsterpaws.org/api/webhooks/resend` | `RESEND_WEBHOOK_SECRET`: verifies Resend's events. Unset, the route answers 404 | droplet `.env` |
+| `resend/suppression-hmac-key` | *not created yet.* 64 random characters. Losing it loses the never-mail list, because a digest can't be recomputed under another key | `EMAIL_SUPPRESSION_KEY`: the keyed digests in `email_suppressions` and the unsubscribe link. No key, no send (ADR-0035). Never on the GPU box | `env:dev`; droplet `.env` with the above |
 
 ```sh
 curl -s https://api.resend.com/emails -H "Authorization: Bearer $(pass show resend/api-key)" \

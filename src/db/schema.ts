@@ -545,8 +545,37 @@ export const keepsakeFact = pgTable(
  */
 export const emailSuppressions = pgTable("email_suppressions", {
   emailHmac: text("email_hmac").primaryKey(),
-  reason: text("reason").$type<"bounce" | "complaint">().notNull(),
+  reason: text("reason").$type<"bounce" | "complaint" | "unsubscribe">().notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+/**
+ * One row per keepsake's painting email, holding no address (ADR-0035). The claim is written
+ * before the send, so a crash can only under-mail, and a row with `sent_at` is never mailed again,
+ * however Resend's `email.delivered` turns out. Never a `keepsake_fact`: a purge is a delete by basis,
+ * so the sweep would read a purged row as unsent and mail again.
+ */
+export const paintingEmailSends = pgTable("painting_email_sends", {
+  keepsakeId: integer("keepsake_id")
+    .primaryKey()
+    .references(() => keepsake.id),
+  claimedAt: timestamp("claimed_at", { withTimezone: true }).notNull(),
+  sentAt: timestamp("sent_at", { withTimezone: true }),
+  providerId: text("provider_id"),
+  /** set when the provider refused for good: the sweep leaves it for a person, who deletes the row to retry */
+  refusedCode: text("refused_code"),
+});
+
+/**
+ * One row per Resend delivery, keyed on `svix-id`, which a retry keeps. Never add the event's `to`:
+ * the row must hold no donor, so it can outlive the address it reports on (ADR-0027 as amended 2026-11-02).
+ */
+export const resendWebhookEvents = pgTable("resend_webhook_events", {
+  svixId: text("svix_id").primaryKey(),
+  eventType: text("event_type").notNull(),
+  /** Resend's own id for the mail, matched to `painting_email_sends.provider_id` */
+  emailId: text("email_id"),
+  receivedAt: timestamp("received_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
 /**

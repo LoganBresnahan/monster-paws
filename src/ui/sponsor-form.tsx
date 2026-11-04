@@ -46,7 +46,7 @@ export function SponsorForm({
               required
               autoComplete="email"
               maxLength={254}
-              aria-invalid={problem === "email" || undefined}
+              aria-invalid={problem === "email" || problem === "suppressed" || undefined}
               aria-describedby="sponsor-email-help"
               className="mt-2 block w-full rounded-cuddly border-2 border-paw/30 bg-background px-4 py-2 outline-none focus:border-leaf"
             />
@@ -54,6 +54,16 @@ export function SponsorForm({
           {problem === "email" && (
             <p role="alert" className="mt-2 text-sm font-semibold text-foreground">
               That doesn&apos;t look like an email address. Please check it.
+            </p>
+          )}
+          {problem === "suppressed" && (
+            <p role="alert" className="mt-2 text-sm font-semibold text-foreground">
+              We can&apos;t send email to that address, so {name}&apos;s painting wouldn&apos;t reach you. This can happen when
+              an earlier message bounced or was marked as spam. Please use another address, or write to{" "}
+              <a href="mailto:hello@monsterpaws.org" className="underline">
+                hello@monsterpaws.org
+              </a>{" "}
+              and we&apos;ll sort it out.
             </p>
           )}
           {problem === "retry" && (

@@ -261,3 +261,44 @@ To reach real gifts by the Meta deadline, a painting starts at the webhook alone
 A bank gift confirms days later, and Logan's own had no webhook after 4 minutes, so a bank donor would wait days: what this ADR set out to stop.
 Logan, to the moderator: "if not yes we can just do card and paypal right now". The donate link offers card and PayPal, and the sponsor page stops
 mentioning bank. **Slice C puts `bank` back in `method`, and the sentence with it:** "Paying by bank sends every cent."
+
+## Amendment (2026-11-03): what the painting email's build changed
+
+Built for the Meta demo's local chain (`src/core/email/`, `doc/plans/demo-chain-contract.md`). Everything here is
+the send's own detail, except the first, which changes decision 8.
+
+- **No key, no send, for any gift.** Decision 8 says that without the key "an unconfirmed mail waits and a confirmed one
+  still goes". A confirmed mail with no key can't be checked against the never-mail list, which breaks ADR-0027's "the
+  check runs before every send", so nothing goes. Agreed with the moderator, 2026-11-03.
+- **The unsubscribe link carries a mac over the digest.** Question 6's link carries the HMAC, and any POST to it writes a
+  permanent row. Without a mac, a stranger could fill `email_suppressions` with made-up digests.
+- **A claim is good for 23 hours.** Resend keeps an idempotency key for 24 (docs, read 2026-11-03), so a send with an unknown
+  outcome retries under the same key for 23 hours, then stops and reports. A second attempt past the key's life could
+  mail twice. A refusal that left nothing clears the claim, so its window starts again, and a refusal that can't be
+  retried holds the row for a person.
+- **The sent record is `painting_email_sends`, never a `keepsake_fact`.** Facts are deleted by basis, and the sweep would
+  read a deleted record as unsent and mail again.
+- **The images go inline, as JPEG attachments.** A link would need a public URL for every painting, and a remote `path`
+  has no stated fetch time. Resend's limit is 40MB per email after Base64 and its batch endpoint takes no attachments, so
+  it's one POST per email. Inline images "may be rejected by some clients (especially webmail)", so the text says they're
+  attached.
+- **Live mail takes a named value.** Mailpit is the default. `EMAIL_LIVE=1` needs `RESEND_API_KEY` and
+  `EMAIL_LIVE_ALLOWED_TO`, and neither is filled by `env:dev`, since a sweep with a live key could mail any address in a
+  dev database. `EMAIL_LIVE=production` is the droplet's, to anyone.
+- **No hold on the first day's mail.** Nothing goes on its own without `EMAIL_SWEEP=on`, and production runs with it on. A
+  hold for a person to see the four paintings first was proposed, and Logan declined it, to the moderator, 2026-11-03: "no i
+  wont look before the first day emails. they will just go out and hopefully we do a good job. i can review the images from
+  the media bucket throughout the day". `npm run email -- list | send-owed --keepsake <id>` stays as the by-hand tool.
+- **Art comes from one of two named sources.** `EMAIL_ART_SOURCE=media` reads the published copy on
+  `media.monsterpaws.org` by `share_token`, since home paints and the droplet mails and real paintings go on the share page
+  (Logan, 2026-11-03: "yes real paintings on the share page is what we want"). `store` reads the local store, for the crew's
+  rehearsal. Taken down means unreadable, so a painting is never mailed from a stale copy. `EMAIL_SHARE_LINKS=off` leaves the
+  Share button out, for a rehearsal with no published page.
+- **The webhook is verified by hand, with no new dependency.** Svix's scheme is a few lines of `node:crypto`, and a test runs
+  Svix's own published vector. Neither Svix's nor Resend's docs state a tolerance (read 2026-11-03), so ours is 5 minutes.
+  Its row holds the `svix-id`, the type and Resend's mail id, never the event's `to`.
+- **The mail cleans a listing's name for its own words.** A listing's name is as published, such as "Sparrow (Courtesy Post)
+  Foster or Adopt Me!" or "A310627". `spokenAnimalName` keeps what reads as a name, and when none survives the mail says
+  "the animal you chose" and still sends. The keepsake's `name` fact stays as published.
+- **A complaint is a person's stop, so it covers the inbox,** like an unsubscribe, and erases every gift of it. ADR-0027 didn't
+  say which digest. Only a permanent bounce writes a row: the docs' `Temporary` type never does.

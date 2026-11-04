@@ -45,7 +45,12 @@ Check items off as they ship.
      top level; a new session on every sign-in, plus revocation and sign-out.
      Verify: no raw token at rest, no session fixation, expiry and revocation
      checked on every read path.
-   - [ ] `resend-transactional-email` — medium, moderate. One sender fixed to
+   - [ ] `resend-transactional-email` — medium, moderate. Built and dark (`src/core/email/`, ADR-0035 as amended 2026-11-03):
+     the sender, Mailpit by default; the suppression check and its keyed digests; the unsubscribe
+     route, acting only on POST; the painting email; `painting_email_sends`; the signed webhook, with
+     its suppressions and its erase on `email.delivered`; the sponsor page's refusal. Left (doc/roadmap.md):
+     the droplet's keys and Resend's webhook, sign-in mail's own sender, and taking an erased address off
+     Resend's list. One sender fixed to
      monsterpaws.org; sign-in mail through its own sender, which takes no
      other content; List-Unsubscribe and List-Unsubscribe-Post on everything
      else; a suppression check before every send; the signed bounce and

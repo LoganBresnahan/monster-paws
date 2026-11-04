@@ -13,6 +13,10 @@ import { createRescueGroupsAdapter, rescueGroupsNormalizer } from "@/core/ingest
 import { eraseAbandonedAddresses } from "@/core/donate/intent";
 import { ART_GENERATE, ART_QUEUE_OPTIONS, sweepKeepsakes } from "@/core/keepsake";
 import { sweepWebhookSpool } from "@/core/donate/webhook-replay";
+import { artReaderFromEnv } from "@/core/email/art-source";
+import { runPaintingEmailTick } from "@/core/email/painting-sweep";
+import { chooseEmailSender } from "@/core/email/sender";
+import { suppressionKey } from "@/core/email/suppression";
 import { webhookSweepAlerts } from "@/worker/webhook-sweep";
 import { gateAlert, INGEST_POLL, planIngestPoll } from "@/worker/ingest-poll";
 import { heartbeatPing, INGEST_POLL_RETRY } from "@/worker/heartbeat";
@@ -162,6 +166,53 @@ async function startKeepsakeSweep(boss: PgBoss): Promise<() => void> {
   return () => clearInterval(timer);
 }
 
+const EMAIL_SWEEP_MS = 60_000;
+
+/**
+ * Only with `EMAIL_SWEEP=on`, which the droplet's compose must never set until the painting email's
+ * carry-ins land: nothing there erases an address on delivery yet (doc/roadmap.md, ADR-0035).
+ */
+function startPaintingEmailSweep(): () => void {
+  if (process.env.EMAIL_SWEEP !== "on") return () => {};
+  try {
+    if (!suppressionKey()) throw new Error("EMAIL_SUPPRESSION_KEY is not set");
+    chooseEmailSender();
+    artReaderFromEnv();
+  } catch (err) {
+    // Said once at boot, in its own words: these name a setting, never a value or an address.
+    const problem = err instanceof Error ? err.message : "unknown";
+    console.error(`[worker] EMAIL_SWEEP=on but not started: ${problem}`);
+    Sentry.captureMessage(`painting email sweep not started: ${problem}`, { level: "error", tags: { job: "painting_email.sweep" } });
+    return () => {};
+  }
+  let running = false;
+  const timer = setInterval(async () => {
+    if (running) return;
+    running = true;
+    try {
+      const report = await runPaintingEmailTick(getDb(DATABASE_URL));
+      const { via, sent, noAddress, suppressed, stale, held, incomplete, artUnreadable, failures } = report;
+      const failed = Object.keys(failures).length > 0;
+      if (sent + noAddress + suppressed + stale + held + incomplete + artUnreadable > 0 || failed) {
+        console.log(JSON.stringify({ event: "painting_email.sweep", ...report, via }));
+      }
+      if (failed || stale > 0) {
+        Sentry.captureMessage(`painting email sweep: ${stale} stale, failures ${Object.keys(failures).join(",") || "none"}`, {
+          level: "error",
+          tags: { job: "painting_email.sweep" },
+        });
+      }
+    } catch (err) {
+      // The code alone: a failed query's message can carry its parameters, here an address (ADR-0010).
+      Sentry.captureMessage(`painting email sweep failed: ${failureCode(err)}`, { level: "error", tags: { job: "painting_email.sweep" } });
+      console.error(`[worker] painting email sweep failed: ${failureCode(err)}`);
+    } finally {
+      running = false;
+    }
+  }, EMAIL_SWEEP_MS);
+  return () => clearInterval(timer);
+}
+
 async function main() {
   if (!DATABASE_URL) {
     // Pre-database deploys (landing only): idle instead of crash-looping so
@@ -183,6 +234,7 @@ async function main() {
   await registerIngestPoll(boss);
   await registerAddressErasure(boss);
   const stopWebhookSweep = startWebhookSweep();
+  const stopPaintingEmailSweep = startPaintingEmailSweep();
   const stopKeepsakeSweep = await startKeepsakeSweep(boss);
 
   // Job registrations land with their features:
@@ -193,6 +245,7 @@ async function main() {
 
   const shutdown = async () => {
     stopWebhookSweep();
+    stopPaintingEmailSweep();
     stopKeepsakeSweep();
     await boss.stop();
     await Sentry.close(2000);

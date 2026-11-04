@@ -56,6 +56,7 @@ describe("error reports never carry the webhook's path secret or an address (ADR
     const scrubbed = JSON.stringify(scrubEvent({ request: { url: "https://monsterpaws.org/test-gift/abc123?problem=form" } }));
     expect(scrubbed).not.toContain("abc123");
     expect(scrubbed).toContain("/test-gift/<secret>?problem=form");
+    expect(JSON.stringify(scrubEvent({ request: { url: "https://monsterpaws.org/unsubscribe/abc-def/confirm" } }))).toContain("/unsubscribe/<secret>/confirm");
   });
 
   it("survives an address right after an escaped newline, which a multipart body always has", () => {

@@ -629,17 +629,30 @@ after it, if at all.
        │                            it showed, if it is in the cookie, in place of a
        │                            second email
        ▼
-  art email                         (planned, droplet sweep) confirmed first, never
+  art email                         sendOwedPaintings(), ADR-0035: isSuppressed() on
+       │                            both digests, no key no send; a painting_email_sends claim
+       │                            before the send, Idempotency-Key painting-email-<keepsake>;
+       │                            to donor_email: all four paintings inline, a Share link to
+       │                            /share/<token>, one-click unsubscribe; the gift's only
+       │                            email. art-source: the store, or the media hostname by token.
+       │                            Mailpit by default; EMAIL_LIVE=1 Resend to one allowed address;
+       │                            production on the droplet. Only EMAIL_SWEEP=on sends on its own;
+       │                            otherwise npm run email -- send-owed. (planned) confirmed first, never
        │                            counted; unconfirmed oldest first, at most 3 cycles a
-       │                            rolling day per email, a short-lived HMAC list; to donor_email:
-       │                            all four paintings, one-click unsubscribe, a link to
-       │                            make an account
-       │                            that signs nobody in; the gift's only email
+       │                            rolling day per email, a short-lived HMAC list; a link to
+       │                            make an account that signs nobody in
+       │
+       │  unsubscribe → GET /unsubscribe/<token> writes nothing, leads to a page with a button;
+       │  POST (RFC 8058, or the button) → unsubscribe(): email_suppressions on the inbox's
+       │  digest, donor_email null on every gift of that inbox
        ▼
-  donor_email erased                (planned) no account: on Resend's email.delivered
-       │                            or email.bounced, never email.sent: null on the
-       │                            intent, and the address off Resend's list; a
-       │                            suppression stays
+  donor_email erased                POST /api/webhooks/resend → verifyResendSignature() over
+       │                            the raw body → receiveResendEvent(), one resend_webhook_events
+       │                            row per svix-id, no address in it. No account: null on
+       │                            email.delivered, never email.sent. A permanent email.bounced
+       │                            writes the exact digest and erases this gift's; email.complained
+       │                            writes the inbox's and erases all of it. A suppression stays.
+       │                            (planned) the address off Resend's list
        ▼
   claim                             (planned) email → sign_in_links → passkey;
                                     donation_intents.account_id set; from here the

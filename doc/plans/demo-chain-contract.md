@@ -64,7 +64,7 @@ under the token before the mail can use it.
 
 ## The email
 
-A keepsake with four `art` facts and no row in `emails`' sent table (migration 0019) is ready to send. The sent
+A keepsake with four `art` facts and no sent row in `painting_email_sends` (migration 0018) is ready to send. The sent
 record isn't a `keepsake_fact`, because those are deleted by basis. The address is `donation_intents.donor_email`,
 through `keepsake.intent_id`. No amount goes in the mail, and it doesn't say money arrived (ADR-0035 decision 10).
 

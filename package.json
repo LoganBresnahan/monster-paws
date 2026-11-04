@@ -18,6 +18,7 @@
     "outreach": "tsx --env-file-if-exists=.env src/worker/outreach-cli.ts",
     "demo": "tsx --env-file-if-exists=.env scripts/demo.ts",
     "share": "tsx --env-file-if-exists=.env src/worker/share-cli.ts",
+    "email": "tsx --env-file-if-exists=.env src/worker/email-cli.ts",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "env:dev": "scripts/env-dev.sh",

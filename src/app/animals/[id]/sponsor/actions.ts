@@ -12,6 +12,7 @@ import {
   withIntent,
 } from "@/core/donate/intent";
 import { donateConfigFromEnv, donateLink, parseDonateAmount } from "@/core/donate/link";
+import { isSuppressed, suppressionKey } from "@/core/email/suppression";
 import { failureCode } from "@/core/observability";
 import { getDb } from "@/db/client";
 
@@ -42,6 +43,21 @@ export async function startSponsorship(formData: FormData): Promise<void> {
   // Say so, then let them carry on: a gift to the shelter of an animal that just
   // left is still a good gift (ADR-0015 as amended 2026-10-01).
   if (!sponsorable.listed && formData.get("seenUnlisted") !== "1") redirect(`${page}/sponsor?amount=${amount}`);
+
+  // Refused before any money moves: we can't mail it, so a gift would pay for a painting that can't
+  // arrive (ADR-0027 as amended 2026-11-02, decision 7). With no key nothing is mailed yet, so there is
+  // nothing to refuse.
+  const suppressionHmacKey = suppressionKey();
+  let suppressed = false;
+  try {
+    suppressed = suppressionHmacKey !== null && (await isSuppressed(db, donorEmail, suppressionHmacKey));
+  } catch (err) {
+    const code = failureCode(err);
+    console.error(`[sponsor] suppression not checked: ${code}`);
+    Sentry.captureMessage(`sponsor suppression not checked: ${code}`, { level: "error" });
+    redirect(`${page}/sponsor?amount=${amount}&problem=retry`);
+  }
+  if (suppressed) redirect(`${page}/sponsor?amount=${amount}&problem=suppressed`);
 
   let intentId: string;
   try {
