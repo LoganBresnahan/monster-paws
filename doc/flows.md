@@ -411,7 +411,7 @@ Browse (`/animals`) is the same predicate, one page at a time.
 
 ```
   request /animals?species=&state=&age=     rendered PER REQUEST — filters and
-           &sex=&zip=&miles=&shelter=&after=
+           &sex=&zip=&miles=&shelter=&sponsorable=&after=
        │                                    the cursor are search params, so
        │                                    there is no URL set to revalidate
        │                                    (ADR-0015 as amended). Fresher than
@@ -425,7 +425,11 @@ Browse (`/animals`) is the same predicate, one page at a time.
        │                                    loadShelterZips: a BrowseScope that
        │                                    narrows the grid, the page and the
        │                                    random pick alike. An unplaceable
-       │                                    zip limits nothing and says so
+       │                                    zip limits nothing and says so.
+       │                                    ?sponsorable=1 → the shelters from
+       │                                    sponsorableShelterIds, taken only when
+       │                                    one lists a visible animal (ADR-0015
+       │                                    as amended 2026-11-04)
        ▼
   loadFacetGrid(db, asOf, scope)            one aggregate over the VISIBLE set:
        │                                    (species, state, age, sex, count),
@@ -470,17 +474,20 @@ Browse (`/animals`) is the same predicate, one page at a time.
        │                                    amended 2026-10-26; no breed menu)
        ├─ shelter = $ / left(zip,5) in (…)  the scope; an empty zip list is an
        │                                    empty page, never the whole country
-       ├─ sort = parseSort(?sort)           newest (default) | longest — ADR-0015
-       │                                    as amended 2026-10-05; newest also
-       │                                    requires listed_at, which desc would
-       │                                    otherwise put first when null
+       ├─ sort = parseSort(?sort,           newest (default) | longest — ADR-0015
+       │    defaultSort(query))             as amended 2026-10-05; both but longest
+       │                                    require listed_at, which desc would
+       │                                    otherwise put first when null.
+       │                                    sponsorable is the default on a plain
+       │                                    list that offers it, never in a URL
+       │                                    (ADR-0015 as amended 2026-11-04)
        ├─ (listed_at, id) >|< (cursor)      keyset, forward only: an offset window
        │                                    shifts as animals are adopted out and
        │                                    silently skips whoever crosses a page
        │                                    boundary. `id` is the tiebreaker the
        │                                    backfill's shared timestamps need
-       ├─ leadingShelters(sponsorable)      the plain default list only: any sort
-       │                                    or filter a person picks gets [], which
+       ├─ leadingShelters(sponsorable)      Sponsorable first only: any other sort
+       │                                    or a filter gets [], which
        │                                    is the query above exactly. Otherwise
        │                                    walk() reads shelter in (…) and then
        │                                    the rest (null included), two reads on

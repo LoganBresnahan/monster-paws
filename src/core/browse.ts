@@ -10,6 +10,7 @@ import { DEFAULT_SORT, NO_FILTERS, type BrowseFilters, type BrowseSort, type Fac
 export {
   BROWSE_SORTS,
   DEFAULT_SORT,
+  defaultSort,
   parseSort,
   type BrowseSort,
   facetOptions,
@@ -151,6 +152,8 @@ export function parseCursor(raw: string | null | undefined): BrowseCursor | null
 export interface BrowseScope {
   shelter: string | null;
   zips: readonly string[] | null;
+  /** the sponsorable filter's shelters, from `sponsorableShelterIds` and never typed by a visitor (ADR-0015 as amended 2026-11-04) */
+  sponsorable?: readonly string[] | null;
 }
 
 export const NO_SCOPE: BrowseScope = { shelter: null, zips: null };
@@ -161,6 +164,9 @@ function scopeParts(scope: BrowseScope): SQL[] {
   if (scope.zips) {
     // The first five characters: 668 visible animals carry a zip+4 or longer.
     parts.push(scope.zips.length ? inArray(sql`left(${animals.postalCode}, 5)`, [...scope.zips]) : sql`false`);
+  }
+  if (scope.sponsorable) {
+    parts.push(scope.sponsorable.length ? inArray(animals.shelterExternalId, [...scope.sponsorable]) : sql`false`);
   }
   return parts;
 }
@@ -193,7 +199,7 @@ function matchingParts(
  * `animals_status_listed_idx` is shaped for.
  */
 function beyond(sort: BrowseSort, side: "after" | "before", row: BrowseCursor): SQL {
-  const descending = sort === "newest";
+  const descending = sort !== "longest";
   const greater = (side === "after") !== descending;
   return greater
     ? sql`(${animals.listedAt}, ${animals.id}) > (${row.listedAt}, ${row.id})`
@@ -212,7 +218,7 @@ function sortWhere(
   // Newest-first descends, where Postgres puts a null date FIRST: an animal no
   // source dated would lead the page. RescueGroups dates every visible animal
   // today; a source that does not needs its own decision, not the top slot.
-  if (sort === "newest") parts.push(isNotNull(animals.listedAt));
+  if (sort !== "longest") parts.push(isNotNull(animals.listedAt));
   return parts;
 }
 
@@ -227,8 +233,8 @@ export interface BrowsePage {
 }
 
 /**
- * Whose animals lead the list: only the plain default list's, because any sort or filter a person
- * picks keeps today's order, and an empty answer is today's query exactly (ADR-0015 as amended 2026-11-04).
+ * Whose animals lead the list: only under Sponsorable first with no filter, because any other sort
+ * or filter keeps today's order, and an empty answer is today's query exactly (ADR-0015 as amended 2026-11-04).
  */
 function leadingShelters(
   sponsorable: readonly string[],
@@ -237,13 +243,14 @@ function leadingShelters(
   scope: BrowseScope,
 ): readonly string[] {
   const picked =
-    sort !== DEFAULT_SORT ||
+    sort !== "sponsorable" ||
     filters.species ||
     filters.state ||
     filters.age ||
     filters.sex ||
     scope.shelter !== null ||
-    scope.zips !== null;
+    scope.zips !== null ||
+    Boolean(scope.sponsorable);
   return picked ? [] : sponsorable;
 }
 
@@ -255,7 +262,7 @@ export type BrowsePosition = { after: BrowseCursor } | { before: BrowseCursor } 
 
 /**
  * One page of browse, newest-listed first by default, with `sponsorable` shelters' animals ahead
- * of the rest on the plain list. Measured 2026-09-04 on the live
+ * of the rest under Sponsorable first. Measured 2026-09-04 on the live
  * 64k corpus: 0.55 ms unfiltered at page one, 8.8 ms for a deep cursor with
  * species+state — the filters are not in the sort index, so that number grows
  * with depth into the sort and is the one to re-EXPLAIN if browse slows.

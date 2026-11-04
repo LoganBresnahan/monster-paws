@@ -96,23 +96,28 @@ export function facetOptions(cells: readonly FacetCell[], filters: BrowseFilters
 /**
  * Browse orders (ADR-0015 as amended 2026-10-05). The first is the default and
  * is never written into a URL. Never add an order that ranks animals by
- * appeal: these sort by the source's listing date and nothing else (bright line 1). The plain
- * default list also puts sponsorable shelters first, a fact about the shelter and never about
- * the animal (ADR-0015 as amended 2026-11-04).
+ * appeal: these sort by the source's listing date and nothing else (bright line 1).
  */
 export const BROWSE_SORTS = [
   { value: "newest", label: "Newest first" },
   { value: "longest", label: "Longest waiting" },
 ] as const;
 
-export type BrowseSort = (typeof BROWSE_SORTS)[number]["value"];
+/**
+ * The plain list's default once a shelter can be sponsored, a fact about the shelter and never
+ * about the animal. Never in a URL and never read from one, so no link can ask for it where a
+ * filter is on (ADR-0015 as amended 2026-11-04).
+ */
+export const SPONSORABLE_SORT = { value: "sponsorable", label: "Sponsorable first" } as const;
+
+export type BrowseSort = (typeof BROWSE_SORTS)[number]["value"] | typeof SPONSORABLE_SORT.value;
 
 export const DEFAULT_SORT: BrowseSort = BROWSE_SORTS[0].value;
 
 /** An unknown value is the default, never an error: a sort is a shared URL. */
-export function parseSort(raw: string | null | undefined): BrowseSort {
+export function parseSort(raw: string | null | undefined, fallback: BrowseSort = DEFAULT_SORT): BrowseSort {
   const match = BROWSE_SORTS.find((s) => s.value === raw);
-  return match ? match.value : DEFAULT_SORT;
+  return match ? match.value : fallback;
 }
 
 export const ZIP_CODE = /^\d{5}$/;
@@ -133,6 +138,22 @@ export interface BrowseQuery extends BrowseFilters {
   miles: Radius;
   shelter: string | null;
   sort: BrowseSort;
+  /** only animals a Sponsor button can be offered for (ADR-0015 as amended 2026-11-04) */
+  sponsorable?: boolean;
+  /** a sponsorable shelter lists a visible animal, so the filter and the sort are offered; never in a URL */
+  sponsorableFirst?: boolean;
+}
+
+/** What a list with no sort picked is sorted by: sponsorable first only on the plain list, because any filter keeps today's order. */
+export function defaultSort(query: Omit<BrowseQuery, "sort">): BrowseSort {
+  const picked =
+    query.species || query.state || query.age || query.sex || query.zip || query.shelter || query.sponsorable;
+  return query.sponsorableFirst && !picked ? SPONSORABLE_SORT.value : DEFAULT_SORT;
+}
+
+/** A sort left at its default stays at the default, so taking off the last filter returns to the plain list, never to a pick nobody made. */
+export function keepingDefaultSort(current: BrowseQuery, next: BrowseQuery): BrowseQuery {
+  return next.sort === defaultSort(current) ? { ...next, sort: defaultSort(next) } : next;
 }
 
 /**
@@ -151,6 +172,7 @@ export function browseSearch(query: BrowseQuery): URLSearchParams {
     if (query.miles !== DEFAULT_RADIUS) out.set("miles", String(query.miles));
   }
   if (query.shelter) out.set("shelter", query.shelter);
-  if (query.sort !== DEFAULT_SORT) out.set("sort", query.sort);
+  if (query.sponsorable) out.set("sponsorable", "1");
+  if (query.sort !== defaultSort(query) && query.sort !== SPONSORABLE_SORT.value) out.set("sort", query.sort);
   return out;
 }

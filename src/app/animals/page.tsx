@@ -3,11 +3,13 @@ import Link from "next/link";
 import {
   BROWSE_PAGE_SIZE,
   STATE_CODE,
+  defaultSort,
   loadBrowsePage,
   loadCardDisplay,
   loadFacetGrid,
   loadShelter,
   loadShelterZips,
+  NO_SCOPE,
   parseCursor,
   parseSort,
   type BrowseFilters,
@@ -17,7 +19,7 @@ import {
 } from "@/core/browse";
 import { sponsorableShelterIds } from "@/core/donate/intent";
 import { donateConfigFromEnv } from "@/core/donate/link";
-import { browseSearch, parseRadius, ZIP_CODE, type BrowseQuery } from "@/core/facets";
+import { browseSearch, keepingDefaultSort, parseRadius, ZIP_CODE, type BrowseQuery } from "@/core/facets";
 import { zipPoint, zipsWithin } from "@/core/geo";
 import { getDb } from "@/db/client";
 import { AnimalCard, speciesEmoji } from "@/ui/animal";
@@ -118,20 +120,32 @@ export default async function BrowsePage({
   const miles = parseRadius(one(params.miles));
   const origin = zip ? zipPoint(zip) : null;
   const zips = origin ? zipsWithin(origin, miles, await loadShelterZips(db, asOf)) : null;
-  const scope: BrowseScope = { shelter: shelter?.id ?? null, zips };
-  const scoped = scope.shelter !== null || scope.zips !== null;
+  // The Sponsor button's own gate: with no config there is no button, so nothing leads and
+  // nothing is offered, and a filter that would open empty isn't taken (ADR-0015 as amended 2026-11-04).
+  const donateConfig = donateConfigFromEnv();
+  const sponsorable = donateConfig ? await sponsorableShelterIds(db, { ...donateConfig, asOf }) : [];
+  const offerSponsorable =
+    sponsorable.length > 0 && (await loadFacetGrid(db, asOf, undefined, { ...NO_SCOPE, sponsorable })).length > 0;
+  const sponsorableOnly = offerSponsorable && one(params.sponsorable) === "1";
+  const scope: BrowseScope = { shelter: shelter?.id ?? null, zips, sponsorable: sponsorableOnly ? sponsorable : null };
+  const scoped = scope.shelter !== null || scope.zips !== null || sponsorableOnly;
 
   const grid = await loadFacetGrid(db, asOf, undefined, scope);
   // A pick is kept when the whole visible set offers it, not only this scope: a
   // dog search that narrows to a zip with no dogs shows "none near you", never
   // silently every animal nearby.
   const filters = filtersFrom(params, scoped ? await loadFacetGrid(db, asOf) : grid);
-  const sort = parseSort(typeof params.sort === "string" ? params.sort : null);
-  const query: BrowseQuery = { ...filters, zip: origin ? zip : null, miles, shelter: scope.shelter, sort };
+  const unsorted = {
+    ...filters,
+    zip: origin ? zip : null,
+    miles,
+    shelter: scope.shelter,
+    sponsorable: sponsorableOnly,
+    sponsorableFirst: offerSponsorable,
+  };
+  const sort = parseSort(typeof params.sort === "string" ? params.sort : null, defaultSort(unsorted));
+  const query: BrowseQuery = { ...unsorted, sort };
 
-  // The Sponsor button's own gate: with no config there is no button, so nothing leads (ADR-0015 as amended 2026-11-04).
-  const donateConfig = donateConfigFromEnv();
-  const sponsorable = donateConfig ? await sponsorableShelterIds(db, { ...donateConfig, asOf }) : [];
   const page = await loadBrowsePage(db, filters, positionFrom(params), asOf, undefined, sort, scope, undefined, sponsorable);
   const teaser = waitingTeaser(page.nextNames);
   const display = await loadCardDisplay(
@@ -148,7 +162,9 @@ export default async function BrowsePage({
       <p className="mt-2 max-w-2xl text-muted">
         {sort === "longest"
           ? "Longest-waiting first — the ones who have been listed the longest come before everyone else."
-          : "Newest listings first — new faces every day."}{" "}
+          : sort === "sponsorable"
+            ? "Animals you can sponsor first, then the newest listings."
+            : "Newest listings first — new faces every day."}{" "}
         Every animal here is real, and every listing links back to the shelter that published it.
       </p>
 
@@ -160,7 +176,7 @@ export default async function BrowsePage({
             <span className="inline-flex items-center gap-2 rounded-full bg-leaf/15 px-4 py-1.5 font-semibold text-leaf-deep">
               Animals from {shelter.name ?? "one shelter"}
               <Link
-                href={hrefWith({ ...query, shelter: null })}
+                href={hrefWith(keepingDefaultSort(query, { ...query, shelter: null }))}
                 aria-label={`Show animals from every shelter, not only ${shelter.name ?? "this one"}`}
                 className="rounded-full px-1.5 text-lg leading-none hover:bg-leaf/20"
               >

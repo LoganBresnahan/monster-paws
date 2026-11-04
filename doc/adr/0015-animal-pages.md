@@ -829,3 +829,43 @@ grant in oplog 0029: "go live together".
 - Sponsorable animals fill the first pages and the list stops showing new faces,
   the reason the 2026-10-05 amendment chose newest first.
 - Logan wants them first inside a filter: `leadingShelters` is the one place.
+
+## Amendment (2026-11-04, later): a filter for animals that can be sponsored
+
+Logan, the same day: "a navigation to "/animals" with no filters shows donatable
+animals first. other filters keep doing what they do. we also probably need a
+sponserable filter". The first two sentences are the amendment above.
+
+### Decisions
+1. **A "Can be sponsored" checkbox, `?sponsorable=1`**, is part of the scope, so it
+   narrows the list, the menu counts and "Surprise me" alike. It joins the filtered
+   views robots.ts keeps crawlers off (ADR-0024).
+2. **The URL says only yes.** The shelters always come from
+   `sponsorableShelterIds`, the Sponsor button's gate, so a visitor can't name
+   any, and every animal under the filter has a button.
+3. **It's offered only when a sponsorable shelter lists a visible animal.**
+   Anywhere else there is no checkbox and a typed `?sponsorable=1` is dropped, so
+   a filter never opens a page that is empty for a reason nobody can see.
+4. **No count beside it.** The menus' counts are promises about the page they
+   open, but a small number here would read as scarcity (bright line 3).
+5. **It's a pick, so the list under it is plain date order** and the leading group
+   doesn't apply. Every animal in it would be in that group anyway.
+6. **"Sponsorable first" is a third sort, and "Newest first" is true again.**
+   Logan's pick, "Add a third option". It's the default on the plain list once a
+   shelter is offered and is never in a URL, so a link can't ask for it under a
+   filter. On that list `?sort=newest` is written and reads as plain date order.
+   Under a filter the menu is today's two options with today's URLs. This replaces
+   the consequence above that there was no date-ordered list without a filter. A
+   sort left at its default stays at the default, so taking off the last filter
+   returns to the plain list and never to a pick nobody made.
+7. **The top line says what the list does.** Under Sponsorable first: "Animals you
+   can sponsor first, then the newest listings." Everywhere else it's today's line.
+   Logan chose both this and "Can be sponsored", replacing the consequence above that
+   the page keeps its old line.
+
+### Consequences (added)
+- A pick that leaves nothing, such as a state with no sponsorable animal, shows the
+  page's "No animals match" line, as a zip with no dogs does. The form can't clear
+  that pick itself, because its grid has no shelter in it.
+- e2e has no sponsorable shelter, so it pins only the absent case. The checked case
+  is pinned at `loadBrowsePage` and was looked at in a browser.

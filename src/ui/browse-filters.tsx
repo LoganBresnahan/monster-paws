@@ -15,10 +15,12 @@ import {
 } from "react";
 import {
   BROWSE_SORTS,
-  DEFAULT_SORT,
   RADII,
+  SPONSORABLE_SORT,
   browseSearch,
+  defaultSort,
   facetOptions,
+  keepingDefaultSort,
   type BrowseFilters,
   type BrowseQuery,
   type BrowseSort,
@@ -68,7 +70,7 @@ function hrefFor(query: BrowseQuery): string {
 
 /** "Surprise me" draws inside every pick and the scope; the sort means nothing to a random draw. */
 function randomHref(query: BrowseQuery): string {
-  const search = browseSearch({ ...query, sort: DEFAULT_SORT });
+  const search = browseSearch({ ...query, sort: defaultSort(query) });
   return search.size ? `/animals/random?${search}` : "/animals/random";
 }
 
@@ -157,7 +159,8 @@ export function BrowseFilterForm({ grid, query: fromUrl }: { grid: readonly Face
 
   useEffect(() => () => clearTimeout(timer.current), []);
 
-  function apply(next: BrowseQuery) {
+  function apply(changed: BrowseQuery) {
+    const next = keepingDefaultSort(query, changed);
     setQuery(next);
     if (!start) return;
     clearTimeout(timer.current);
@@ -182,7 +185,9 @@ export function BrowseFilterForm({ grid, query: fromUrl }: { grid: readonly Face
     fromUrl.sex ||
     fromUrl.zip ||
     fromUrl.shelter ||
-    fromUrl.sort !== DEFAULT_SORT;
+    fromUrl.sponsorable ||
+    fromUrl.sort !== defaultSort(fromUrl);
+  const sorts = defaultSort(query) === SPONSORABLE_SORT.value ? [SPONSORABLE_SORT, ...BROWSE_SORTS] : BROWSE_SORTS;
 
   return (
     <form method="get" action="/animals" className="mt-8 flex flex-wrap items-end gap-4">
@@ -258,13 +263,27 @@ export function BrowseFilterForm({ grid, query: fromUrl }: { grid: readonly Face
           onChange={(e) => apply({ ...query, sort: e.target.value as BrowseSort })}
           className={control}
         >
-          {BROWSE_SORTS.map((option) => (
+          {sorts.map((option) => (
             <option key={option.value} value={option.value}>
               {option.label}
             </option>
           ))}
         </select>
       </label>
+
+      {query.sponsorableFirst && (
+        <label className="flex items-center gap-2 pb-2.5 text-sm font-medium">
+          <input
+            type="checkbox"
+            name="sponsorable"
+            value="1"
+            checked={query.sponsorable ?? false}
+            onChange={(e) => apply({ ...query, sponsorable: e.target.checked })}
+            className="h-4 w-4 accent-leaf"
+          />
+          Can be sponsored
+        </label>
+      )}
 
       {/* The shelter view rides along with every change; only its chip's ✕ leaves it. */}
       {query.shelter && <input type="hidden" name="shelter" value={query.shelter} />}

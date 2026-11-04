@@ -19,6 +19,7 @@ import {
   type BrowseFilters,
   type BrowseScope,
   type BrowseSort,
+  defaultSort,
 } from "@/core/browse";
 import { loadAnimalDetail } from "@/core/animals";
 import type { ShelterExclusion } from "@/core/shelters";
@@ -315,11 +316,12 @@ describe.skipIf(SKIP_DB_TESTS)("ADR-0015 browse page", () => {
   }
 
   describe("sponsorable animals lead the plain list (ADR-0015 as amended 2026-11-04)", () => {
+    const NO_QUERY = { ...NO_FILTERS, zip: null, miles: 25 as const, shelter: null };
     const OPEN = "rescuegroups:org:1";
     const OTHER = "rescuegroups:org:2";
     const pad = (i: number) => String(i).padStart(2, "0");
     const loadPlain = (position: Parameters<typeof loadBrowsePage>[2], sponsorable: readonly string[] = [OPEN]) =>
-      loadBrowsePage(db, NO_FILTERS, position, NOW, [], "newest", NO_SCOPE, [], sponsorable);
+      loadBrowsePage(db, NO_FILTERS, position, NOW, [], "sponsorable", NO_SCOPE, [], sponsorable);
     /** Every sponsorable animal is listed before all the rest, so only the group can put them first; the rest alternate a shelter and none. */
     const seedGroups = (ahead: number, rest: number) =>
       seed([
@@ -375,6 +377,7 @@ describe.skipIf(SKIP_DB_TESTS)("ADR-0015 browse page", () => {
         const page = await loadPlain(null, sponsorable);
         expect(names(page)).toEqual(today.slice(0, BROWSE_PAGE_SIZE));
         expect(page.nextCursor).toMatch(/^[^,]+,\d+$/);
+        expect(page).toEqual(await loadBrowsePage(db, NO_FILTERS, null, NOW, [], "newest", NO_SCOPE, [], []));
       }
     });
 
@@ -382,6 +385,7 @@ describe.skipIf(SKIP_DB_TESTS)("ADR-0015 browse page", () => {
       await seedGroups(3, BROWSE_PAGE_SIZE + 1);
       const picks: [BrowseFilters, BrowseSort, BrowseScope][] = [
         [NO_FILTERS, "longest", NO_SCOPE],
+        [NO_FILTERS, "newest", NO_SCOPE],
         [{ ...NO_FILTERS, species: "dog" }, "newest", NO_SCOPE],
         [{ ...NO_FILTERS, state: "TX" }, "newest", NO_SCOPE],
         [NO_FILTERS, "newest", { shelter: OPEN, zips: null }],
@@ -392,6 +396,39 @@ describe.skipIf(SKIP_DB_TESTS)("ADR-0015 browse page", () => {
         const picked = await loadBrowsePage(db, filters, null, NOW, [], sort, scope, [], [OPEN]);
         expect(picked).toEqual(today);
       }
+      // Sponsorable first never leads under a filter, however the sort got there.
+      const dogs = { ...NO_FILTERS, species: "dog" };
+      expect(await loadBrowsePage(db, dogs, null, NOW, [], "sponsorable", NO_SCOPE, [], [OPEN])).toEqual(
+        await loadBrowsePage(db, dogs, null, NOW, [], "newest", NO_SCOPE, [], []),
+      );
+    });
+
+    it("the filter narrows the list, the counts and the random pick to those shelters, in plain date order", async () => {
+      await seedGroups(3, 4);
+      const scope = { ...NO_SCOPE, sponsorable: [OPEN] };
+      const page = await loadBrowsePage(db, NO_FILTERS, null, NOW, [], defaultSort({ ...NO_QUERY, sponsorable: true, sponsorableFirst: true }), scope, [], [OPEN]);
+      expect(names(page)).toEqual(["S00", "S01", "S02"]);
+      expect(page.nextCursor).toBeNull();
+      const cells = await loadFacetGrid(db, NOW, [], scope);
+      expect(cells.reduce((n, cell) => n + cell.count, 0)).toBe(3);
+      const picked = await pickRandomAnimalId(db, NO_FILTERS, NOW, [], scope);
+      expect(page.animals.map((a) => a.id)).toContain(picked);
+    });
+
+    it("the filter's pages walk by date with unmarked cursors, because it is a pick", async () => {
+      await seedGroups(BROWSE_PAGE_SIZE + 2, 2);
+      const scope = { ...NO_SCOPE, sponsorable: [OPEN] };
+      const one = await loadBrowsePage(db, NO_FILTERS, null, NOW, [], "newest", scope, [], [OPEN]);
+      expect(one.nextCursor).toMatch(/^[^,]+,\d+$/);
+      expect(await loadBrowsePage(db, NO_FILTERS, null, NOW, [], "sponsorable", scope, [], [OPEN])).toEqual(one);
+      const two = await loadBrowsePage(db, NO_FILTERS, { after: parseCursor(one.nextCursor)! }, NOW, [], "newest", scope, [], [OPEN]);
+      expect(names(two)).toEqual([`S${pad(BROWSE_PAGE_SIZE)}`, `S${pad(BROWSE_PAGE_SIZE + 1)}`]);
+    });
+
+    it("the filter with no shelters is an empty page, never the whole country", async () => {
+      await seedGroups(1, 1);
+      const page = await loadBrowsePage(db, NO_FILTERS, null, NOW, [], "newest", { ...NO_SCOPE, sponsorable: [] }, [], []);
+      expect(page.animals).toEqual([]);
     });
 
     it("reads a cursor from before the change as a row in the rest", async () => {

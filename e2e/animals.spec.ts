@@ -207,6 +207,18 @@ test.describe("ADR-0015 browse filters — counts as you pick", () => {
     expect(await page.locator("main a[href^='/animals/'] h3").count()).toBeGreaterThan(2);
   });
 
+  // The seed's claimed shelter has no grant, so nothing here can be sponsored (ADR-0015 as amended 2026-11-04).
+  test("with nothing sponsorable there's no sponsorable filter or sort, and a typed one is dropped", async ({ page }) => {
+    await page.goto("/animals");
+    const plain = await page.locator("main a[href^='/animals/'] h3").allTextContents();
+    await expect(page.getByLabel("Can be sponsored")).toHaveCount(0);
+    await expect(page.locator("select[name=sort] option")).toHaveText(["Newest first", "Longest waiting"]);
+    await expect(page.getByText("Newest listings first")).toBeVisible();
+    await page.goto("/animals?sponsorable=1");
+    await expect(page.getByLabel("Can be sponsored")).toHaveCount(0);
+    expect(await page.locator("main a[href^='/animals/'] h3").allTextContents()).toEqual(plain);
+  });
+
   test("Surprise me opens a random animal's page, inside the picked filters", async ({ page }) => {
     await page.goto("/animals");
     const state = (await page.locator("select[name=state] option").allTextContents()).at(1)!;

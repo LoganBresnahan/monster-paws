@@ -35,6 +35,7 @@ export default function robots(): MetadataRoute.Robots {
           "/animals?*sex=",
           "/animals?*zip=",
           "/animals?*shelter=",
+          "/animals?*sponsorable=",
           "/animals/random",
           // The demo's inner pages are its crew walking the real flow, never
           // listings; only its first page is worth a search result (ADR-0028

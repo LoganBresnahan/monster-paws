@@ -1,4 +1,6 @@
 import { loadShelterZips, pickRandomAnimalId, STATE_CODE, type BrowseScope } from "@/core/browse";
+import { sponsorableShelterIds } from "@/core/donate/intent";
+import { donateConfigFromEnv } from "@/core/donate/link";
 import { browseSearch, DEFAULT_SORT, parseRadius, ZIP_CODE } from "@/core/facets";
 import { zipPoint, zipsWithin } from "@/core/geo";
 import { getDb } from "@/db/client";
@@ -26,13 +28,18 @@ export async function GET(request: Request) {
   const rawZip = one("zip");
   const miles = parseRadius(one("miles"));
   const origin = rawZip && ZIP_CODE.test(rawZip) ? zipPoint(rawZip) : null;
+  // Never the visitor's list of shelters, only the Sponsor button's own gate (ADR-0015 as amended 2026-11-04).
+  const donateConfig = one("sponsorable") === "1" ? donateConfigFromEnv() : null;
+  const sponsorable = donateConfig ? await sponsorableShelterIds(db, { ...donateConfig, asOf }) : [];
+  const sponsorableOnly = sponsorable.length > 0;
   const scope: BrowseScope = {
     shelter: one("shelter"),
     zips: origin ? zipsWithin(origin, miles, await loadShelterZips(db, asOf)) : null,
+    sponsorable: sponsorableOnly ? sponsorable : null,
   };
 
   const id = await pickRandomAnimalId(db, filters, asOf, undefined, scope);
-  const back = browseSearch({ ...filters, zip: origin ? rawZip : null, miles, shelter: scope.shelter, sort: DEFAULT_SORT });
+  const back = browseSearch({ ...filters, zip: origin ? rawZip : null, miles, shelter: scope.shelter, sort: DEFAULT_SORT, sponsorable: sponsorableOnly });
 
   return new Response(null, {
     status: 307,
