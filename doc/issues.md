@@ -81,8 +81,7 @@ is the record, and a file of ticked boxes stops being read.
   into the suites, and an amendment to ADR-0017. Found by the donate stream.
 
 - **A gift arriving while the droplet is down, or lost with its disk, goes unrecorded.** Caddy's hold and the spool
-  cover a deploy and a database failover (ADR-0027 as amended 2026-11-03), and production has neither until oplog 0023
-  runs. A spool file still dies with the droplet's disk, a delivery while the droplet is down reaches nothing, and
+  cover a deploy and a database failover (ADR-0027 as amended 2026-11-03, live since oplog 0023). A spool file still dies with the droplet's disk, a delivery while the droplet is down reaches nothing, and
   Every.org didn't retry the one failed delivery we saw (oplog 0018). ADR-0035's return signal and daily check partly
   cover a painting, not the money record. `createPool` still sets no connection timeout, so a vanished database host can
   hold pool slots until TCP gives up, and all ten slots exhausted is untested. Found by the donate stream, from payload

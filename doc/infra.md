@@ -194,7 +194,7 @@ The production webhook is a separate setup with its own three entries
 domain: `https://monsterpaws.org/api/webhooks/everyorg/$(pass show everyorg/webhook-secret)`,
 through the same edge, Caddy and app as the site (ADR-0027 as amended 2026-11-02). Caddy holds a request up to 30 s
 during a roll, and the `webhook_spool` volume, shared by app and worker, takes deliveries the database can't, for the
-worker to replay each minute (ADR-0027 as amended 2026-11-03; live with oplog 0023).
+worker to replay each minute (ADR-0027 as amended 2026-11-03; live since oplog 0023, 2026-11-04).
 
 | Entry | What it is | What it's for | Lands in |
 | --- | --- | --- | --- |

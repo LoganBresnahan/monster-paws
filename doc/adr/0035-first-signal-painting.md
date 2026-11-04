@@ -100,8 +100,7 @@ bounces thats fine, if they actually went through the process their intentions w
 11. **The photo is held at the first signal, on the droplet, per listing and outside decision 7's total,** so nothing is
     held for a checkout nobody finished, and a gift waiting for a place or a webhook can't lose its photo when the dog is
     adopted (ADR-0022 as amended 2026-11-02). A flood costs one hold per sponsorable listing, not one per gift. RescueGroups resets every connection from the droplet (ADR-0033) and the photos are on
-    `cdn.rescuegroups.org` (ADR-0006), so this is unmeasured: oplog 0023 reads a HEAD from the droplet
-    first. All of a listing's photos unless `paintings` says the painter needs fewer.
+    `cdn.rescuegroups.org` (ADR-0006), and oplog 0023 read a HEAD from the droplet on 2026-11-04: 200 in 0.46 s, one photo, no reset. All of a listing's photos unless `paintings` says the painter needs fewer.
 
 ### Proven before it counts
 - Simultaneous token hits, a webhook and two sweeps give one keepsake, and a re-sent job paints nothing twice.

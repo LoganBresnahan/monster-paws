@@ -1,7 +1,7 @@
 # 0023: Deploy `12c451f` — the webhook survives a roll and a database failover
 
-Status: planned
-Planned: 2026-11-03 · Run: —
+Status: run
+Planned: 2026-11-03 · Run: 2026-11-04, 00:24 to 00:30 UTC
 Why: ADR-0027 as amended 2026-11-03 (decision 8 is this entry's order). Aim: live before 2026-11-10 00:15 UTC, since
 DigitalOcean's maintenance window still reads pending. Roadmap: Accounts and donating (item 4)
 Commit deployed: `12c451f` (`verify`, `images` and `sourcemaps` green, CI run 41717322836), this entry following in its own push so the image tag is the code commit
@@ -44,10 +44,10 @@ Production steps run in one SSH session per step (the droplet's ufw `LIMIT` on 2
       checkout's `var/dumps/`, then dropped, 2026-11-03 21:52 UTC: 0 restore errors, 12 to 17 migrations, animals 112123 before and
       after. That dump holds no webhook rows, so the backfill rests on a scratch database migrated to 0015 first (3 rows, the same
       times, 0 undecided), and step 2 reads production's rows.
-- [ ] `pass` unlocked by Logan.
-- [ ] Not within an hour of 06:00, 07:00 or 08:30 UTC, and nothing in the main checkout from 06:45 UTC until that night's log
+- [x] `pass` unlocked by Logan.
+- [x] Not within an hour of 06:00, 07:00 or 08:30 UTC, and nothing in the main checkout from 06:45 UTC until that night's log
       shows `== exit`.
-- [ ] The dev box free: nobody on `:3100`/`:3200` or `monsterpaws_e2e`, no batch on the card.
+- [x] The dev box free: nobody on `:3100`/`:3200` or `monsterpaws_e2e`, no batch on the card.
 
 ## Steps
 
@@ -160,7 +160,35 @@ deploy: it goes to ADR-0035 and the plan's slice D.
 Rollback: n/a — reads.
 
 ## Run
-<filled in as it happens>
+Logan, directly, in the session that ran it: "you can accept adr0035 and run oplog 0023 pass is unlocked". The moderator held the card: batch 38f's
+guard came down, then its go at 00:23 UTC, with `:3100` and `:3200` free. This session read 0 guards and 0 listeners at 00:24. Commit deployed `12c451f`,
+as planned, from the checkout at `3bcb2dd`. The moderator pushed `7177dfa` at 00:26, after step 3, under Logan's standing word to it, and the droplet's
+checkout stays at `3bcb2dd`.
+
+**Changed from the steps above, on the verifier's read through the moderator, none as a new commit, since origin had to stay put for step 3:**
+- Step 2 and every later `psql` ran with `-v ON_ERROR_STOP=1`, so a failed read couldn't pass as silence.
+- Step 5 read `http://127.0.0.1:2019/config/`, not `localhost`: in `caddy:2-alpine`, BusyBox `wget` tries only `::1` for that name, while admin listens on `127.0.0.1`.
+- Step 7's curl took its URL from stdin (`curl -K -`), so the secret never sat on its command line. `psql "$DATABASE_URL"` still shows that password in the droplet's `ps` for its moment, as 0019's did.
+- Step 7 also dropped one proof file in `/spool`, because the direct delivery is decided by the route and never touches the sweep. **So this entry wrote two rows and not one.**
+
+**Step 1.** `IMAGE_TAG` `cc8ca3289890b10d99f99dbbbc004d0999af3c20`, the rollback. Checkout `fcbc5a6`. App and worker on `cc8ca32`, Caddy `caddy:2-alpine`; 0 `webhook_spool` volumes; health 200 on `cc8ca32`.
+
+**Step 2, 00:24 UTC.** No `no-donation` line. No row after id 35, so **Logan's bank gift, submitted 14:30 UTC on 2026-11-03, had no webhook after about 9 h 54 min.** 3 payloads.
+
+**Step 3, 00:24 to 00:25 UTC.** Checkout `3bcb2dd`, app and worker pulled at `12c451f8588136b877cdb48976c686ff20dc3228`, all three containers still old.
+
+**Step 4, 00:25 UTC.** npm notices hid the success line again, so the read-back is the proof: 17 migrations; `before_this_table 3`, equal to step 2; 0 undecided; health 200 on `cc8ca32`.
+
+**Step 5, 00:25 to 00:26 UTC.** Gap 2,240 ms. `"try_duration":30000000000`. Health 200 through Cloudflare on `cc8ca32`.
+
+**Step 6, 00:26 UTC.** The roll took 3.06 s by `time`, 00:26:22 to 00:26:26. 180 POSTs, 180 `404`, **no 5xx**, slowest 9.47 s. Health 200 on `12c451f`. Caddy not recreated.
+
+**Step 7, 00:28 to 00:30 UTC.** `proof 200`. App and worker each printed `/spool` and `0`. Newest row id 36, `unparsable`, decided in 0.066 s; 0 undecided; no `fatal`.
+The proof file went in at 00:28:23. My script stopped right after writing it, because `docker compose exec -T` took the rest of the heredoc as its own stdin, so the file was read back in step 8's session, and nothing was harmed. The sweep logged `"replayed":1` and then `"decided":{"unparsable":1}`; id 37, `unparsable`, decided 72 s after its received time; 0 files; 0 undecided. Both rows stay: append-only, no donor in them. Better Stack wasn't read for the expected `everyorg webhook kept, not acted on: unparsable` reports.
+
+**Step 8, 00:28 UTC.** `/`, `/animals`, `/privacy`, `/thanks` and `/demo` all 200; wording count 1. **Photo HEAD from the droplet: 200 in 0.46 s**, one read of one photo: `cdn.rescuegroups.org` didn't reset the droplet, as `api.rescuegroups.org` does (ADR-0033). Health 200 on `12c451f` at the end.
+
+Nothing failed, and nothing was rolled back. No delivery was seen during step 5's gap, and this entry doesn't show that none arrived: the only marker would be Every.org's own record.
 
 ## Follow-ups
 - Tick `webhook-hardening` in the plan, and record the droplet's roll and any 5xx in ADR-0027's Measured limits by a new note.

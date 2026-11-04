@@ -565,6 +565,9 @@ up. The clock keeps deliveries safe meanwhile and the 10-minute report fires, bu
 - **`lb_retry_match` with `request_buffers` on the webhook's path.** Not needed yet: measured above. It stays the fix if oplog
   0023 shows a delivery cut during a roll on the droplet.
 
+On the droplet, through Cloudflare, oplog 0023, 2026-11-04: Caddy's restart, a 2,240 ms gap with no hold; the roll, 3.06 s, 180 POSTs at 2 a second, all
+404, no 5xx, slowest 9.47 s; a delivery through the spool recorded 72 s after its received time. `lb_retry_match` wasn't needed.
+
 ### Revisit triggers
 - Every.org documents a retry, or says how long it waits: the hold and the clock are set against it.
 - A file outlives the report's 10 minutes on production.

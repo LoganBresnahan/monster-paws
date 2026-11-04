@@ -136,7 +136,7 @@ Check items off as they ship.
      bounced gift's thank-you page says so and takes a new address, which
      `correctDonorEmail` refuses today because the old one is erased.
 
-   - [ ] `webhook-hardening` (slice B; ADR-0027 as amended 2026-11-03) — medium, moderate ⚠ verify. Changes nothing
+   - [x] `webhook-hardening` (slice B; ADR-0027 as amended 2026-11-03) — medium, moderate ⚠ verify. Changes nothing
      a donor sees; ships ahead of C and D, migration 0016, oplog 0023. Caddy's hold; the store's own clock; the spool
      volume; store split from decide; the decisions table with production's rows backfilled as decided; the
      droplet-only replay job, reporting a file older than 10 minutes. Verify: a spooled row equals a direct one, the
