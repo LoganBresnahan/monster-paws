@@ -50,7 +50,7 @@ export const revalidate = 0;
 export const metadata: Metadata = {
   title: "Animals — Monster Paws",
   description:
-    "Real animals waiting in real shelters, newest listings first. Every listing links back to the shelter that published it.",
+    "Real animals waiting in real shelters. Every listing links back to the shelter that published it.",
 };
 
 /**
