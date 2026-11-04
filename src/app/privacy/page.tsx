@@ -39,7 +39,7 @@ export default function PrivacyPage() {
 
       <h2 className={heading}>When you sponsor an animal</h2>
       <ul className={list}>
-        <li>We ask for your email so we can send you the painting. We use it only for this gift.</li>
+        <li>We ask for your email so we can try to send you our thank-you painting. We use it only for this donation.</li>
         <li>
           We pass it to Every.org so you don&apos;t have to type it twice. Every.org handles your payment and receipt,
           and we never see your card. Their privacy policy covers what they hold, and they keep their own donation
@@ -49,7 +49,7 @@ export default function PrivacyPage() {
         <li>We set one cookie, so this browser can show your thank-you page. It lasts {INTENT_COOKIE_DAYS} days.</li>
       </ul>
       <p className={paragraph}>
-        Your painting is our thank-you, and it should reach your inbox once it&apos;s ready. In rare cases, an error or
+        The painting is our thank-you, and it should reach your inbox once it&apos;s ready. In rare cases, an error or
         something out of our control can stop one being made or sent. If that happens, write to{" "}
         <a href={`mailto:${CONTACT_EMAIL}`} className="underline hover:text-foreground">
           {CONTACT_EMAIL}
@@ -60,11 +60,11 @@ export default function PrivacyPage() {
       <h2 className={heading}>What we keep, and for how long</h2>
       <ul className={list}>
         <li>
-          Your email, until your painting has been delivered, and then we erase it. There&apos;s no date for paintings
-          yet. If you start a gift and don&apos;t finish it, we erase it after {ABANDONED_AFTER_DAYS} days.
+          Your email, until the painting has been delivered, and then we erase it. If you start a donation and don&apos;t
+          finish it, we erase it after {ABANDONED_AFTER_DAYS} days.
         </li>
         <li>
-          Your gift&apos;s record (the amount, date, shelter and Every.org&apos;s charge id), until you ask us to delete
+          Your donation&apos;s record (the amount, date, shelter and Every.org&apos;s charge id), until you ask us to delete
           it. Once your email is erased, nothing in it says who you are.
         </li>
         <li>Totals with nothing about you in them (animal, shelter, amount and day). We keep these permanently, even if you ask us to delete everything else.</li>
@@ -74,22 +74,22 @@ export default function PrivacyPage() {
         </li>
       </ul>
 
-      <h2 className={heading}>Your painting&apos;s own page</h2>
+      <h2 className={heading}>The painting&apos;s own page</h2>
       <p className={paragraph}>
-        Your painting also gets its own page, so you can share it. Anyone with the link can open that page. It shows the
+        The painting also gets its own page, so you can share it. Anyone with the link can open that page. It shows the
         painting and the animal&apos;s name, and nothing about you. We take it down if you ask, or if the shelter withdraws
-        permission. The paintings in your email stay yours either way.
+        permission. Paintings we&apos;ve already emailed you stay in your inbox either way.
       </p>
 
       <h2 className={heading}>If a shelter withdraws permission</h2>
       <p className={paragraph}>
-        We stop offering gifts for its animals. A gift already made can still get its painting, and we delete the photos once
-        those are done. Keepsakes already given to donors, meaning the animal&apos;s name, breed, age and painting, stay
-        with those donors.
+        We stop taking donations for its animals and take down their public pages. For a donation already made, we still try
+        to paint our thank-you, and we delete the photos once that&apos;s done. Paintings already sent, with the animal&apos;s
+        name, breed and age, can&apos;t be recalled.
       </p>
 
       <h2 className={heading}>If you make an account</h2>
-      <p className={paragraph}>We keep your email and your gifts until you delete it.</p>
+      <p className={paragraph}>We keep your email and your donations until you delete it.</p>
 
       <h2 className={heading}>Who helps us</h2>
       <p className={paragraph}>

@@ -58,7 +58,7 @@ export function SponsorForm({
           )}
           {problem === "suppressed" && (
             <p role="alert" className="mt-2 text-sm font-semibold text-foreground">
-              We can&apos;t send email to that address, so {name}&apos;s painting wouldn&apos;t reach you. This can happen when
+              We can&apos;t send email to that address, so our thank-you wouldn&apos;t reach you. This can happen when
               an earlier message bounced or was marked as spam, or you unsubscribed. Please use another address, or write to{" "}
               <a href="mailto:hello@monsterpaws.org" className="underline">
                 hello@monsterpaws.org
@@ -72,7 +72,7 @@ export function SponsorForm({
             </p>
           )}
           <p id="sponsor-email-help" className="mt-2 mb-6 text-sm text-muted">
-            Where we&apos;ll send {name}&apos;s painting. We use it only for this gift, and erase it once the painting is
+            Where we&apos;d send a painting of {name}, as our thank-you. We use it only for this donation, and erase it once it&apos;s
             delivered unless you keep it in an account.{" "}
             <Link href="/privacy" className="underline hover:text-foreground">
               Privacy

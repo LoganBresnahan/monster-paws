@@ -90,16 +90,15 @@ export default async function SponsorPage({
           <p className="mt-2 text-sm leading-relaxed text-muted">
             To {shelter} through Every.org, a nonprofit that sends it on and emails your tax receipt.{" "}
             <span className="font-semibold text-foreground">We keep $0.</span> With a
-            card, the processor&apos;s fee comes out of your gift, not on top of it: about 30¢ plus 2%, so about 40¢ of
-            a $5 gift.
+            card, the processor&apos;s fee comes out of your donation, not on top of it: about 30¢ plus 2%, so about 40¢ of
+            a $5 donation.
           </p>
         </div>
         <div className="rounded-cuddly border-2 border-paw/20 bg-card p-5">
-          <h2 className="font-bold">What about a keepsake?</h2>
+          {/* Only a shelter's grant reaches this page on production, so this can't promise a painting early (ADR-0006 decision 6). */}
+          <h2 className="font-bold">Our thank-you</h2>
           <p className="mt-2 text-sm leading-relaxed text-muted">
-            We&apos;re still teaching our painter, so there&apos;s no watercolour of {name} yet and no date for one. When
-            it&apos;s ready we&apos;ll email it to you. We can&apos;t promise updates on {name}, only that your donation
-            reaches {shelter}.
+            As our thank-you, we try to paint {name} and email you the paintings.
           </p>
         </div>
       </section>
