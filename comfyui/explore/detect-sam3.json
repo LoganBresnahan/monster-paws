@@ -1,0 +1,56 @@
+{
+  "_": "The crew for the sam3 pipeline (ADR-0028): every photo Logan approved for Meta on 2026-11-04, which is SAM3_APPROVED in detect.py. Listings copied from detect.json and detect-crew2.json. These photos were seen when the rules were written, so nothing measured on this set may be called blind.",
+  "listings": {
+    "Plum": {
+      "species": "dog",
+      "colour": "grey",
+      "subject": "Plum, the grey cane corso puppy",
+      "photos": [
+        "crew:Plum/PXL_20250410_144425752.jpg",
+        "crew:Plum/PXL_20250422_224206531.jpg",
+        "crew:Plum/PXL_20250422_224209397.jpg",
+        "crew:Plum/PXL_20250423_185424061.PORTRAIT.jpg",
+        "crew:Plum/PXL_20250423_185435181.PORTRAIT.jpg"
+      ]
+    },
+    "Ducky": {
+      "species": "dog",
+      "colour": "tan",
+      "subject": "Ducky, the tan pit bull mix",
+      "photos": [
+        "crew:Ducky/PXL_20241027_160550748.jpg",
+        "crew:Ducky/PXL_20241229_195311064.RAW-01.COVER.jpg",
+        "crew:Ducky/PXL_20250411_123028993.jpg",
+        "crew:Ducky/PXL_20250415_182318586.PORTRAIT.jpg",
+        "crew:Ducky/PXL_20250621_160612271.PORTRAIT.jpg"
+      ]
+    },
+    "Beetle": {
+      "species": "dog",
+      "colour": "black and tan",
+      "subject": "Beetle, the black and tan bloodhound",
+      "photos": [
+        "crew:Beetle/IMG_2931.jpg",
+        "crew:Beetle/IMG_3545.jpg"
+      ]
+    },
+    "Stacey": {
+      "species": "cat",
+      "colour": "brown tabby",
+      "subject": "Stacey, the brown tabby cat",
+      "photos": [
+        "crew:Stacey/IMG_3110.jpg",
+        "crew:Stacey/IMG_20200516_211507.jpg"
+      ]
+    },
+    "Marty": {
+      "species": "cat",
+      "colour": "white",
+      "subject": "Marty, the cream flame point cat",
+      "photos": [
+        "crew:Marty/PXL_20210107_162942931.jpg",
+        "crew:Marty/IMG_4288.JPG"
+      ]
+    }
+  }
+}

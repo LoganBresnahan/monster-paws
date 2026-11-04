@@ -735,7 +735,8 @@ Built for the Meta demo in the dev distro against the dev Postgres
 crew pet or a listing whose shelter holds a `digify` grant: `WORKER_MODE=art`
 through the guard to four marked JPEGs and their art facts, then the share
 tool's publish. Planned for production: roadmap item 4, the tunnel and the home
-account below. The photo never leaves a machine we control; the job waits
+account below. The photo never leaves a machine we control, except the crew photos Logan approved,
+on the `meta` branch only (ADR-0028); the job waits
 for the box, never the other way round. Both workers are the same binary —
 the droplet's never registers `art.generate`, the home's registers nothing
 else.
@@ -775,6 +776,12 @@ else.
        │   none in that photo · head inside it  out; a crew pet with
        │                                        ART_DETECT=live, otherwise batch
        │                                        11's crops (keepsake-crew.json)
+       │
+       │   `meta` only, DETECT_PIPELINES=sam3   ── leaves the home ──
+       │   (ADR-0028): SAM 3.1 instead of       POST api.meta.ai/v1/responses
+       │   OWLv2, one phrase a call, sam3_boxes from sam3_post(): SAM3_APPROVED
+       │   keeps each raw reply for replay;     photos only, pixels alone,
+       │   SAM 2.1 still outlines               store: false, model checked
        ▼
   comfyui/guard.sh batch keepsake-<id> 4        built (demo): the spec beside the
        │   explore.py's klein-v1 reference2     run, var/explore/<run>/spec.json;

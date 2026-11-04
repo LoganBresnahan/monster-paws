@@ -59,6 +59,8 @@ services:
       DETECT_OUT: ${DETECT_OUT:-/home/comfy/explore/detect}
       DETECT_SPEC: ${DETECT_SPEC:-detect.json}
       DETECT_PIPELINES: ${DETECT_PIPELINES:-owlv2}
+      # Meta branch only, from `pass` at run time and never a file (ADR-0028).
+      MODEL_API_KEY: ${MODEL_API_KEY:-}
     volumes:
       - ./:/home/comfy/harness:ro
       - ../var/crew:/home/comfy/crew:ro

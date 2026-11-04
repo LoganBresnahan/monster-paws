@@ -18,8 +18,32 @@ the delineation table in `README.md`.
   amended 2026-10-26, decision 2). The README table, the first frame and
   the git history are the whole answer.
 - **A shelter's yes by 10-30?** *Status:* (pending; replies to the 10-23 ask)
-- **The Model API terms, read in full:** do outputs feed training? Needed
-  only if Muse Image or Glimmer output trains anything. *Status:* (unread)
+- **The Model API terms:** read at source 2026-11-04: Terms of Service (last
+  updated 2026-10-09), Data Commitments, Model Designation policy. The content,
+  retention, training and restriction sections were read closely, and payments,
+  disputes and the exhibits skimmed; the Privacy Policy and the Global Processor
+  Terms were not read.
+  - **Training:** SAM 3.1 is a Standard Model, so what we send doesn't train
+    Meta's models (5.1). That holds on a plain Model API key: Logan: "i made it
+    under meta model api -> api keys section". A Muse Code subscription would
+    default to Contributor (3.3).
+  - **Retention has no end date** (4.4). Content may also develop Meta's safety
+    systems (4.1) and be reviewed by a person (10.3). Calls set `store: false`,
+    which turns off the response being stored, not those.
+  - **Outputs** may not train a competing model (10.1(ix)); evaluating and
+    benchmarking our own systems is allowed. Publishing benchmarks to promote a
+    competing product isn't (10.1(xi)), so the video promotes nothing against
+    SAM 3.1.
+- **Which photos go to Meta:** Logan, 2026-11-04: "i'm okay for all the crew
+  except for the plum photo called downloadfile or something", then "bro i said
+  DO NOT send the plum download file". `SAM3_APPROVED` in `comfyui/detect.py`
+  is the 16 photos he was asked about, without that one; any other photo stops
+  the run before a call. We warrant our rights in every input (4.1), so Commons
+  photos stay out too, and real gifts to Spencer don't go because it hasn't been
+  asked.
+- **The deadline:** 21:00 ET on 11-04, which is 02:00 UTC on 11-05, as ADR-0028
+  says. Logan, relayed by the moderator session: "Submissions are due tomorrow:
+  Nov 4th at 9:00 PM ET".
 
 ## Phases
 
@@ -48,36 +72,61 @@ the delineation table in `README.md`.
    - [ ] `/gpu-health` before the window, and the card idle.
 
 1. **10-27 → 10-29 — the `sam3` pipeline, measured once**
-   - [ ] `sam3-client` — medium, moderate. In `comfyui/detect.py`, a `sam3`
-     entry for `DETECT_PIPELINES`: one Responses call per (photo, phrase),
-     `stream: false`, `metadata.include_confidence: "true"`, the image as a
-     base64 data URL; records parsed from the `<0f>` grammar
-     (`meta-sam-parser`, pinned, or a 40-line parser of our own if the
-     package drags dependencies into the explore image); the **raw
-     response cached per (photo, phrase)** beside OWLv2's raw boxes, so
-     rules change without another API call and the whole run replays
-     offline. Zero matches is a normal result and an empty pool for that
-     phrase. Trap: one noun phrase per call — a list returns nothing.
-   - [ ] `sam3-prompts` — low. The same four asks as OWLv2, one call each:
-     the species, the species with its colour, the species' head, the other
-     common species. Masks come from the API, so SAM 2.1 is skipped for
-     this pipeline and the measured-colour vote reads the API mask.
-   - [ ] `sam3-rules` — medium. The candidate rules and the six votes run
-     unchanged on sam3's pool; floors re-derived from its confidence scale
-     on set1 only (the seen set), never on blind4. Record every floor and
-     why in this file.
-   - [ ] `sam3-measure` — medium, verify. Run owlv2 and sam3 on set1,
-     holdout and blind3 (seen; for debugging), then **once** on blind4,
-     both pipelines, same photos, same listings. Table here: chosen-right
-     per set, margins, head-box hits, seconds a photo, dollars. Whichever
-     wins blind4 paints the demo; the loser is still in the video as the
-     comparison. If sam3 wins, ADR-0026's revisit trigger fires for the
-     open-weight question — on topdog, later, not here.
-   - [ ] `sam3-crops` — low. The chosen box and head box into the existing
-     crop step; the crew painted by klein-v1 on the home card from sam3's
-     crops (`comfyui/guard.sh batch`, the usual rules). These are the demo
-     cards and the pre-painted set for the finals.
+   - [x] `sam3-client`. In `comfyui/detect.py`, a `sam3` entry for
+     `DETECT_PIPELINES`: one Responses call per (photo, phrase), `stream: false`,
+     `store: false`, `metadata.include_confidence: "true"`, re-encoded pixels as
+     a base64 data URL, stdlib only. Boxes come from our own small parser; masks
+     aren't decoded yet, so `meta-sam-parser` isn't needed. Each raw reply is kept
+     per (image, phrase) in `sam3-raw/`, so a run replays offline with no key. A
+     reply from any model but `sam-3.1` is refused, because the terms make that
+     check ours. `comfyui/sam3_test.py` proves the refusals against a stub server.
+   - [x] `sam3-prompts`. "a {species}", "a {colour} {species}", "the head of a
+     {species}" and "a {other}", one call each. "and" in a colour works ("a black
+     and tan dog") despite the docs' warning. The head phrase scored highest on
+     Beetle's two photos (0.93, 0.91, against 0.87, 0.65 for "a dog head"), with
+     the same box. **Changed from this plan:** SAM 2.1 still outlines sam3's boxes
+     (Logan, to the moderator: "first lets just develop on sam 2.1"), so masks
+     from the API are the later step; the raw replies already hold them.
+   - [x] `sam3-rules`. Candidate rules and votes run unchanged. `FLOOR["sam3"]`
+     is 0.0: the lowest box in 74 calls was 0.52 ("a white cat"), the lowest "a
+     {species}" 0.86, and no false box appeared, so there's nothing to tune and a
+     floor could only empty a pool and break always-one (ADR-0026). A real false
+     box would change this. sam3 has its own second look on crops, so OWLv2 never
+     decides a sam3 close call; no photo here has needed it yet, so that path has
+     only run against the stub.
+   - [x] `sam3-measure`, **changed: crew only, and not blind.** `detect-blind4.json`
+     was never built, and set1, holdout and blind3 hold Commons photos, which
+     can't go to Meta. The table below is on `detect-sam3.json`, photos the rules
+     have already seen. Don't call it blind in the video or the write-up. Logan
+     chose SAM 3.1 for the demo before this ran, so it decides nothing.
+   - [ ] `sam3-crops`. `crops.py` runs on sam3's output (16 grown boxes in
+     `grown.json`). The painting goes through `paintings`' glue. `Plum/downloadfile.jpg`,
+     one of Plum's two in `keepsake-crew.json`, is refused, and Logan chose to
+     replace it: "i guess we need to get rid of the download photo and regenerate
+     the plum photos". His other five photos already run on sam3.
    - README: "sam3 pipeline, prompts, measurement, crops" with commits.
+
+   **Measured 2026-11-04, 16 crew photos, seen by the rules, boxes read by
+   Claude on the sheets (Logan hasn't checked them):**
+
+   | | SAM 3.1 | OWLv2 |
+   |---|---|---|
+   | The listing's animal chosen | 16 of 16 | 16 of 16 |
+   | Box visibly cuts the animal | 0 | at least 5 |
+   | Head box on the head | 15, 1 missing | 14, 1 on the rump, 1 missing |
+   | IoU with a hand-drawn box, 4 photos | 0.85, 0.76, 0.73, 0.73 | 0.78, 0.77, 0.72, 0.70 |
+   | Time | 0.4 to 1.7 s a call, about 5 s a photo | 63 s for the 16, about 4 s a photo |
+   | Money | $0.0025 a call, $0.01 a photo | none |
+
+   The clearest five for OWLv2: `Beetle/IMG_3545` (no head, and its head box on the rump),
+   `Stacey/IMG_3110` (the cat split into three, head and shoulders chosen),
+   `Stacey/IMG_20200516` (head and chest), `Ducky/PXL_20241027` (hindquarters),
+   `Ducky/PXL_20250621` (snout, and no head box). SAM 3.1's missing head is
+   `Ducky/PXL_20250411`, which the painter doesn't read. That photo's hand-drawn
+   box doesn't sit on the dog in the upright photo (0.27 and 0.23), so it's left
+   out of the IoU row. SAM 2.1's outline on `Marty/IMG_4288` bleeds onto the head
+   of the person behind him, which is a reason to try the API's masks. 74 calls
+   on these photos plus 2 on a generated image, $0.19.
 
 2. **10-30 — the decision, and the open-models session**
    - [ ] `decision-10-30` — Logan. A shelter's grant in hand → the stretch:

@@ -107,6 +107,12 @@ curl -s -H "Authorization: Bearer $(pass show cloudflare/r2-token)" \
 Verified 2026-09-29, read side: the worker pair reads media + corpus and 403s
 on the vault; the vault pair reads the vault and 403s on both others.
 
+### Meta Model API (ADR-0028) — `meta` branch only
+
+| Entry | What it is | Used for | Where it goes |
+|---|---|---|---|
+| `meta/api-key` | Model API key, made by Logan in the dashboard under Model API, API keys, never a Muse Code subscription key (terms 3.3 would make every call Contributor) | SAM 3.1 calls from `comfyui/detect.py`, the `sam3` pipeline | `MODEL_API_KEY` in the environment of one run, `MODEL_API_KEY="$(pass show meta/api-key \| head -n1)"`; never a file, and never topdog's compose or `.env.example` |
+
 ### Home worker (ADR-0004 as amended 2026-10-05) — *none created yet*
 
 The GPU box runs with a scoped runtime set only; `pass` holds the master

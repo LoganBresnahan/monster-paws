@@ -7,6 +7,8 @@ listings in explore/detect.json (or DETECT_SPEC, beside it):
     npm run explore:detect               # every stage; detector boxes, masks and embeddings are cached
     npm run explore:detect -- --fresh    # recompute every stage
     DETECT_PIPELINES=owlv2,grounding-dino,pooled   # the comparison runs; OWLv2 alone is the default
+    MODEL_API_KEY="$(pass show meta/api-key | head -n1)" DETECT_PIPELINES=sam3 DETECT_SPEC=detect-sam3.json npm run explore:detect
+                                         # SAM 3.1 through Meta's Model API, approved crew photos only (ADR-0028)
 
 Stages: OWLv2 is asked for the listing's species, its colour, its head and
 the other common species, and its raw boxes are cached at a low floor so
@@ -23,11 +25,17 @@ DETECT_OUT (default var/explore/detect/): an overlay per photo per
 pipeline, a sheet per pipeline, a head-crop sheet, results.jsonl.
 """
 import argparse
+import base64
 import hashlib
+import io
 import json
 import os
+import random
+import re
 import sys
 import time
+import urllib.error
+import urllib.request
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
@@ -42,7 +50,8 @@ PIPELINES = os.environ.get("DETECT_PIPELINES", "owlv2").split(",")
 LONG_SIDE = 1600
 
 # A box is a candidate only at this score and at RELATIVE of the photo's best box, or a leaf can outscore the animal (ADR-0026).
-FLOOR = {"owlv2": 0.06, "grounding-dino": 0.18}
+# SAM 3.1 has none: its lowest box in 74 calls was 0.52 and it drew no false box on the crew, so a floor could only empty a pool and break always-one (ADR-0026, ADR-0028).
+FLOOR = {"owlv2": 0.06, "grounding-dino": 0.18, "sam3": 0.0}
 RELATIVE = 0.3
 
 # Dog and cat listings are checked against each other, never other species: OWLv2 calls a chinchilla a cat (ADR-0026).
@@ -252,6 +261,131 @@ def grounding_dino(photos: dict) -> dict:
     return found
 
 
+SAM3_URL = "https://api.meta.ai/v1/responses"
+SAM3_MODEL = "sam-3.1"
+SAM3_BOX = re.compile(r"<\|box;((?:[a-z0-9]+=[0-9.]+;?)+)\|>")
+
+# Only these photos ever go to Meta, which may keep them with no end date and takes our warranty on each (Model API terms 4.1, 4.4; ADR-0028).
+# Logan, 2026-11-04: "i'm okay for all the crew except for the plum photo called downloadfile". Never add a shelter's or a Commons photo.
+SAM3_APPROVED = frozenset(f"crew:{photo}" for photo in (
+    "Plum/PXL_20250410_144425752.jpg", "Plum/PXL_20250422_224206531.jpg", "Plum/PXL_20250422_224209397.jpg",
+    "Plum/PXL_20250423_185424061.PORTRAIT.jpg", "Plum/PXL_20250423_185435181.PORTRAIT.jpg",
+    "Ducky/PXL_20241027_160550748.jpg", "Ducky/PXL_20241229_195311064.RAW-01.COVER.jpg", "Ducky/PXL_20250411_123028993.jpg",
+    "Ducky/PXL_20250415_182318586.PORTRAIT.jpg", "Ducky/PXL_20250621_160612271.PORTRAIT.jpg",
+    "Beetle/IMG_2931.jpg", "Beetle/IMG_3545.jpg",
+    "Stacey/IMG_3110.jpg", "Stacey/IMG_20200516_211507.jpg",
+    "Marty/PXL_20210107_162942931.jpg", "Marty/IMG_4288.JPG",
+))
+
+
+def sam3_jpeg(im) -> bytes:
+    """The pixels and nothing else: rebuilt from raw bytes, because Pillow carries a JPEG comment over from `info` (ADR-0028)."""
+    from PIL import Image
+    buf = io.BytesIO()
+    Image.frombytes("RGB", im.size, im.tobytes()).save(buf, "JPEG", quality=90)
+    return buf.getvalue()
+
+
+def sam3_post(jpeg: bytes, phrase: str) -> dict:
+    """One Responses call for one noun phrase, as a comma list returns nothing; a reply from any other model is refused."""
+    api_key = os.environ.get("MODEL_API_KEY")
+    if not api_key:
+        raise SystemExit('sam3: MODEL_API_KEY is not set; pass it at run time from `pass show meta/api-key | head -n1`, never from a file')
+    body = json.dumps({
+        "model": SAM3_MODEL,
+        "input": [{"type": "message", "role": "user", "content": [
+            {"type": "input_text", "text": phrase},
+            {"type": "input_image", "image_url": "data:image/jpeg;base64," + base64.b64encode(jpeg).decode()},
+        ]}],
+        "stream": False,
+        "store": False,
+        "metadata": {"include_confidence": "true", "mask_encoding": "one_bit"},
+    }).encode()
+    request = urllib.request.Request(SAM3_URL, data=body, headers={
+        "Authorization": f"Bearer {api_key}", "Content-Type": "application/json", "User-Agent": "monsterpaws-detect"})
+    for attempt in range(6):
+        try:
+            with urllib.request.urlopen(request, timeout=180) as answer:
+                reply = json.load(answer)
+            break
+        except urllib.error.HTTPError as e:
+            detail = e.read()[:400]
+            if e.code not in (429, 500, 503) or attempt == 5:
+                raise SystemExit(f"sam3: HTTP {e.code} on {phrase!r}: {detail!r}")
+            wait = float(e.headers.get("Retry-After") or 2 ** attempt)
+        except (urllib.error.URLError, TimeoutError) as e:
+            if attempt == 5:
+                raise SystemExit(f"sam3: no answer on {phrase!r}: {e}")
+            wait = 2 ** attempt
+        print(f"  sam3 retry {attempt + 1} in {wait:.0f}s on {phrase!r}", flush=True)
+        time.sleep(wait + random.random())
+    # The API may route to a Contributor Model, whose content Meta trains on, and checking is on us (Model API terms, preamble and section 6; ADR-0028).
+    if reply.get("model") != SAM3_MODEL:
+        raise SystemExit(f"sam3: refused a reply from model {reply.get('model')!r}, expected {SAM3_MODEL}")
+    if reply.get("status") != "completed":
+        raise SystemExit(f"sam3: {phrase!r} ended {reply.get('status')!r}: {reply.get('error')!r}")
+    return reply
+
+
+def sam3_text(reply: dict) -> str:
+    return "".join(part.get("text", "") for item in reply.get("output", []) if item.get("type") == "message"
+                   for part in item.get("content", []) if part.get("type") == "output_text")
+
+
+def sam3_parse(text: str, size: tuple) -> list[dict]:
+    """Every record's box and confidence, in the image's own pixels; an empty text is zero matches, a normal result."""
+    found = []
+    for fields in SAM3_BOX.findall(text):
+        f = dict(field.split("=", 1) for field in fields.rstrip(";").split(";"))
+        sx, sy = size[0] / int(f["w"]), size[1] / int(f["h"])
+        found.append({"box": [float(f["x1"]) * sx, float(f["y1"]) * sy, float(f["x2"]) * sx, float(f["y2"]) * sy], "score": float(f["c"])})
+    return found
+
+
+def sam3_boxes(ref: str, im, phrase: str) -> list[dict]:
+    """A phrase's matches on an approved photo or its crop, with the raw reply kept per (image, phrase) so a run replays offline for free."""
+    if ref not in SAM3_APPROVED:
+        raise SystemExit(f"sam3: refused {ref}: only photos Logan approved go to Meta (ADR-0028)")
+    jpeg = sam3_jpeg(im)
+    digest = hashlib.sha256(SAM3_MODEL.encode() + b"\0" + phrase.encode() + b"\0" + jpeg).hexdigest()[:16]
+    path = OUT / "sam3-raw" / f"{Path(ref.split(':', 1)[1]).stem}__{digest}.json"
+    if path.exists():
+        reply = json.loads(path.read_text())["reply"]
+    else:
+        reply = sam3_post(jpeg, phrase)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps({"ref": ref, "phrase": phrase, "size": im.size, "reply": reply}))
+    return sam3_parse(sam3_text(reply), im.size)
+
+
+def sam3_ask(ref: str, im, species: str, colour: str) -> dict:
+    """The four asks, one phrase a call, matched to the species' boxes at IoU 0.5 as grounding_dino matches its two."""
+    matches = sam3_boxes(ref, im, f"a {species}")
+    coloured = sam3_boxes(ref, im, f"a {colour} {species}")
+    heads = sam3_boxes(ref, im, f"the head of a {species}")
+    rivals = [r for o in others(species) for r in sam3_boxes(ref, im, f"a {o}")]
+
+    def best(pool: list[dict], box) -> float:
+        return max([r["score"] for r in pool if iou(r["box"], box) >= 0.5], default=0.0)
+
+    return {
+        "species": [{"box": m["box"], "species": m["score"], "colour_prompt": best(coloured, m["box"]), "other": best(rivals, m["box"])}
+                    for m in matches],
+        "heads": sorted(heads, key=lambda h: -h["score"])[:30],
+    }
+
+
+def sam3(photos: dict) -> dict:
+    refused = sorted({ref for listing, ref, im in photos.values() if ref not in SAM3_APPROVED})
+    if refused:
+        raise SystemExit(f"sam3: nothing sent; these aren't approved for Meta (ADR-0028): {refused}")
+    found = {}
+    for k, (listing, ref, im) in photos.items():
+        found[k] = sam3_ask(ref, im, listing["species"], listing["colour"])
+        print(f"  sam3 {k}: {len(found[k]['species'])} boxes, {len(found[k]['heads'])} heads", flush=True)
+    return found
+
+
 def rtdetr(photos: dict) -> dict:
     import torch
     from transformers import AutoImageProcessor, RTDetrV2ForObjectDetection
@@ -428,14 +562,20 @@ def totals(cands: list[dict]) -> None:
         c["total"] = sum(WEIGHTS[v] * norm[v][i] for v in votes) / sum(WEIGHTS[v] for v in votes)
 
 
-def closer_look(im, listing: dict, box) -> dict:
-    """OWLv2 again on the candidate's own crop, where the colour words have fewer pixels to bind to:
+def closer_look(im, listing: dict, box, sam3_ref: str | None = None) -> dict:
+    """The detector again on the candidate's own crop, where the colour words have fewer pixels to bind to:
     the best box covering most of the crop gives the candidate's species, colour and other-species scores."""
     pad = 0.1 * max(box[2] - box[0], box[3] - box[1])
     x0, y0 = max(0, int(box[0] - pad)), max(0, int(box[1] - pad))
     x1, y1 = min(im.width, int(box[2] + pad)), min(im.height, int(box[3] + pad))
     crop = im.crop((x0, y0, x1, y1))
-    found = owl_ask(crop, listing["species"], listing["colour"], 0.0)["species"]
+    if sam3_ref:
+        found = sam3_ask(sam3_ref, crop, listing["species"], listing["colour"])["species"]
+        # Unlike OWLv2 at floor 0, SAM 3.1 can answer nothing, and nothing on the animal's own crop is its vote.
+        if not found:
+            return {"species": 0.0, "colour_prompt": 0.0, "other": 0.0}
+    else:
+        found = owl_ask(crop, listing["species"], listing["colour"], 0.0)["species"]
     whole = [c for c in found if area(c["box"]) > 0.4 * crop.width * crop.height] or found
     best = max(whole, key=lambda c: c["species"])
     return {"species": best["species"], "colour_prompt": best["colour_prompt"], "other": best["other"]}
@@ -474,9 +614,9 @@ def score(listings: dict, photos: dict, cands_by: dict, sam: dict, emb: dict, tr
             if margin is not None and margin < CLOSE and name != "grounding-dino":
                 before = order[0]
                 for i in order[:2]:
-                    lk = f"{k}|{box_id(cands[i]['box'])}"
+                    lk = f"{k}|{box_id(cands[i]['box'])}" if name != "sam3" else f"sam3|{k}|{box_id(cands[i]['box'])}"
                     if lk not in looks:
-                        looks[lk] = closer_look(im, listing, cands[i]["box"])
+                        looks[lk] = closer_look(im, listing, cands[i]["box"], ref if name == "sam3" else None)
                     cands[i].update(looks[lk])
                     cands[i]["species_margin"] = cands[i]["species"] / (cands[i]["species"] + cands[i]["other"]) if cands[i]["species"] > 0 else 0.0
                 pair = [cands[i] for i in order[:2]]
@@ -622,7 +762,12 @@ def main() -> None:
                 truth[k] = box["subject"]
     print(f"{len(photos)} photos, {len(listings)} listings, {len(truth)} with a hand-drawn subject box; pipelines {PIPELINES}", flush=True)
 
-    raw = {"owlv2": cached("owlv2-raw-v4", args.fresh, lambda: owlv2(photos))}
+    raw = {}
+    if any(p in PIPELINES for p in ("owlv2", "pooled")):
+        raw["owlv2"] = cached("owlv2-raw-v4", args.fresh, lambda: owlv2(photos))
+    # Not through cached(): sam3_boxes keeps every raw reply, so parsing again costs nothing and --fresh never pays Meta twice.
+    if "sam3" in PIPELINES:
+        raw["sam3"] = sam3(photos)
     if any(p in PIPELINES for p in ("grounding-dino", "pooled")):
         raw["grounding-dino"] = cached("grounding-dino-raw", args.fresh, lambda: grounding_dino(photos))
     rt = cached("rtdetr", args.fresh, lambda: rtdetr(photos))
