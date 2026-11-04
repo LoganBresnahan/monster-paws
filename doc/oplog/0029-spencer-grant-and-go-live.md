@@ -1,7 +1,7 @@
 # 0029: Spencer's grant, the Sponsor button opens, and the first real donation
 
-Status: planned
-Planned: 2026-11-04 · Run: —
+Status: run
+Planned: 2026-11-04 · Run: 2026-11-04, 22:14 to 22:37 UTC
 Why: "beetle painting is the backup, i want real donations working" (Logan, to the moderator, 2026-11-03), on a plain yes from Spencer Pet Rescue: "all we need is a yes from her and its good enough. shes an admin of the shelter she runs the every.org page. she already knows the plan about making art for people when they donate. i think its fine. I will send the email myself" (Logan, in the `emails` session, 2026-11-03). Roadmap: Accounts and donating (item 4)
 Commit deployed: `221b6cd`, named by the moderator: Spencer's grant from `2377033`, the new default sort on `/animals`, together on Logan's word: "go live together", and Cat Town's exclusion. Rollback: `dea83ba`. This entry follows in its own push so the image tag is the code commit.
 
@@ -29,10 +29,10 @@ Who does what: **Logan gives the word for step 1 and for the donation in step 8 
 - [x] Disk clear for the pull: 12G free after oplog 0031.
 - [x] Every.org's API read on the day, 2026-11-04 15:51 UTC: `spencer-pet-rescue`'s `hasAdmin` and `donationsEnabled` both true, and its EIN `86-1172833`, as read on 2026-11-02.
 - [x] A listing with Commons-tested painting behaviour: `paintings` ran one listing-shaped job through the real `generateArt` at `a081344`, on its own database, 2026-11-04 15:54 to 15:57 UTC: painted in 209 s, four JPEGs and four art facts, the photos deleted. Its first try skipped on memory at 20.2 GB.
-- [ ] `pass` unlocked by Logan.
-- [ ] Not within an hour of 06:00, 07:00 or 08:30 UTC, and nothing in the main checkout from 06:45 UTC until that night's log shows `== exit`.
-- [ ] The moderator holds the card, and the art worker and tunnel are up: `pgrep -fc '[m]onsterpaws-home-worker'` prints 1.
-- [ ] The deadline: a yes by about 22:00 UTC leaves room before 2026-11-05 02:00 UTC. After that Logan decides, and the crew backup stands.
+- [x] `pass` unlocked by Logan.
+- [x] Not within an hour of 06:00, 07:00 or 08:30 UTC, and nothing in the main checkout from 06:45 UTC until that night's log shows `== exit`.
+- [x] The moderator rechecked at 22:13 UTC: no ComfyUI, guard, build or test, Windows 25.9 GB free, load 1.05. The tunnel and the art worker were up.
+- [x] The deadline: run from 22:14 UTC, well before 2026-11-05 02:00 UTC.
 
 ## Steps
 
@@ -155,7 +155,42 @@ Verify: `1`; the worker up; its log shows no `EMAIL_SWEEP=on but not started`; `
 Rollback: delete the line, `up -d worker`, and mail stops.
 
 ## Run
-<filled in as it happens>
+Logan, directly, in the session that ran it: "deploy 0029", then "i did it" for the donation, then "send". The moderator confirmed the card and box at 22:13 UTC, with origin at `bc0e6c5`. Commit deployed `221b6cd`; the rollback `dea83ba`, which keeps Cat Town's opt-out.
+
+**Changed from the steps above:**
+- **Order:** the image rolled first with no row, then `paintings` restarted the worker, then the row. So the button never opened on the old worker from `08f3dde`, which held no grant or reader. The moderator proposed the same, and step 7 ran between 5's roll and its row.
+- Step 1 made no `.env.before-0029`. The rollback is `IMAGE_TAG` and, after step 11, deleting `EMAIL_SWEEP`.
+- Step 4 had nothing to migrate: 19 migrations, read back.
+- **Step 6 read "another shelter" twice.** The first pick, the lowest available id, isn't listed, so it answered 404. The second, from the live listing, read as planned.
+- Step 6 didn't read the donate link's `method` and token, because that would mean submitting a form, which mints an intent. The donation in step 8 proves them.
+- **Step 10 ran two of its three checks.** The takedown would have taken Logan's set down, so it's left for a throwaway set.
+- Step 0 and the share link went through the session's scratchpad. The link went to Logan's clipboard and was never printed.
+
+**Step 0, 22:14 UTC.** `r2:monsterpaws-vault/consent/rescuegroups:org:11756-2026-11-04.eml`, the hash read back starting `302eaa800a84e56d`, the registry's.
+
+**Step 1, 22:14 UTC.** `IMAGE_TAG` `dea83ba2f2726b96e7922afe4ce5843be4d4f345`. Checkout `4445141`. `/` 56%. `ART_SWEEP 1`, `EMAIL_SWEEP 0`, `WORKER_MODE 0`, `EMAIL_LIVE 1`. Health 200 on `dea83ba`.
+
+**Step 2, 22:14 UTC.** `nonprofits 0`, 11 of Spencer's animals available, `intents 0`, `keepsakes 0`, `sends 0`, `suppressions 0`, `migrations 19`.
+
+**Step 3, 22:15 UTC.** Checkout `bc0e6c5`; app and worker pulled at `221b6cdb5c97a8b731011b62807f1f11623f937f`; all three on the old containers; `/` 61%.
+
+**Step 5, the roll, 22:16 UTC.** 3.85 s by `time`, 22:16:15 to 22:16:20. 180 POSTs, 180 `404`, **no 5xx**, slowest 10.91 s. Health 200 on `221b6cd`. Worker up, 0 `fatal`. With no row: Spencer's sponsor page 404, no partner lines, and no sort words.
+
+**Step 7, 22:18 UTC, by `paintings`.** The old worker, from `08f3dde`, stopped by SIGTERM in about 2 s. The new one started 22:18:13 UTC from `/home/oof/monsterpaws-art-ab34160`, PID 3615708, in its own session, reading `art store bound to database defaultdb` and `art.generate registered (WORKER_MODE=art)`. 0 errors two minutes on.
+
+**Step 5, the row, 22:20:54 UTC.** 1 `home_worker` connection, 0 jobs, `nonprofits` 0. `INSERT 0 1`: `rescuegroups:org:11756 spencer-pet-rescue 86-1172833 claimed`. **The button opened here.**
+
+**Step 6, 22:21 UTC.** `/`, `/animals`, `/privacy`, `/claim` and `/thanks` all 200. Spencer's animal 200, its sponsor page 200, a Sponsor link on it. **The first 11 cards on `/animals` are Spencer's 11**, "Sponsorable first" and "Can be sponsored" both show. Another shelter's listed animal: page 200, sponsor page 404, no Sponsor link, "has not partnered" still there. Cat Town's animal and sponsor pages 404. `/test-gift` 404. Partner lines on Spencer's page `0`. Footer `0`. Sponsor wording present, "Paying by bank" `0`. `/privacy` clean. 0 intents. Better Stack 0 reports.
+
+**Step 8, Logan's donation, 22:23 to 22:29 UTC.** The intent was created at 22:23:31 and closed at 22:23:56 UTC, for one of Spencer's animals. Payload 38, PayPal, $2: `recorded`, 14.2 s after its `donationDate`, decided in 0.10 s. The keepsake was written at 22:24:31 UTC, 35 s after the close, with 6 facts on `grant:spencer-pet-rescue:digify` and no photo field. One `art.generate` job carrying 1 photo was created and taken at 22:24:31 and completed at 22:28:51, **4 m 20 s**, 0 retries. 4 `art` facts. Its four JPEGs answer 200 at `media.monsterpaws.org`, and the share page 200. Windows had 26.3 GB free at 22:22 UTC. Better Stack: 0 reports in 20 minutes, so no "painted with a warning" and no "the photo reader gave no words". The share link went to Logan's clipboard, and his next word was "send".
+
+**Step 9, 22:34 UTC.** `send-owed --keepsake 1`: `{"sent":1,…,"via":"resend"}`. `painting_email_sends`: claimed 22:34:48.024, sent 22:34:48.698, a provider id, no refusal. Resend's `email.delivered` row at 22:34:51 UTC. **`donor_email` held: `0`**, so the address was erased on delivery. 0 suppressions. 0 reports.
+
+**Step 10, 22:36 UTC.** `/share/<token>/1/painting.jpg?x=1`: 200, `cache-control: no-store`. The optimizer on that image: 400.
+
+**Step 11, 22:36 UTC.** `EMAIL_SWEEP` counts `1`, and the worker was recreated, up 20 s on with 0 `not started` or `fatal` lines, printing `on`. `npm run email -- list` shows nothing owed. Health 200 on `221b6cd`. **From here a painting mails itself.**
+
+Nothing failed, and nothing was rolled back.
 
 ## Follow-ups
 - The day's watch: the mint count, Better Stack, and Logan reading the bucket's new sets.

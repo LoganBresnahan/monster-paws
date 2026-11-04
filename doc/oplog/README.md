@@ -38,7 +38,7 @@ is an ADR; the daily numbers brief is `doc/ops/` (ADR-0010 as amended).
 | [0026](0026-media-public-write-key-first-publish.md) | `monsterpaws-media` goes public through `media.monsterpaws.org`, and one crew pet's set is published for the Meta demo's share page (ADR-0036) | run | 2026-11-04 |
 | [0027](0027-home-worker-role-and-tunnel-key.md) | The art worker's way in: the `home_worker` role and a restricted tunnel key | run | 2026-11-04 |
 | [0028](0028-painting-chain-keys-and-sweep.md) | The painting chain's keys and the keepsake sweep on, with no shelter to paint for | run | 2026-11-04 |
-| [0029](0029-spencer-grant-and-go-live.md) | Spencer's grant, the Sponsor button opens, and the first real donation | planned | — |
+| [0029](0029-spencer-grant-and-go-live.md) | Deploy `221b6cd`: Spencer's grant, the Sponsor button opens, and the first real donation | run | 2026-11-04 |
 | [0030](0030-deploy-wording-before-the-outreach-wave.md) | Deploy `83b2bc9`: the wording and fixes, before the claimed-shelter wave | run | 2026-11-04 |
 | [0031](0031-remove-old-images.md) | Remove old images from the droplet, before oplog 0029 pulls another | run | 2026-11-04 |
 | [0032](0032-deploy-cat-town-opt-out.md) | Deploy `dea83ba`: Cat Town's opt-out, ahead of the go-live | run | 2026-11-04 |
