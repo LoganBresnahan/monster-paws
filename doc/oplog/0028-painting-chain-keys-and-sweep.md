@@ -5,11 +5,11 @@ Planned: 2026-11-04 · Run: —
 Why: real gifts to a shelter that holds a grant get a painting and an email (ADR-0035, ADR-0027 as amended 2026-11-02). Logan, to the moderator, 2026-11-03: "i want real donations working". Roadmap: Accounts and donating (item 4)
 Commit deployed: none new. The app and worker images are oplog 0025's, so this only changes `.env` and recreates those two.
 
-What changes on the droplet: five `.env` keys below, and `ART_SWEEP=on`; a roll of app and worker to read them. In Resend: a webhook, made by Logan. In `pass`: two new entries. On this box: a hosts line, `generateHosts = false` in `/etc/wsl.conf`, and the art worker started, a host process under `home_worker`.
+What changes on the droplet: five `.env` keys below, and `ART_SWEEP=on`; a roll of app and worker to read them. In Resend: a webhook, made by Logan. In `pass`: one new entry, its signing secret. On this box: a hosts line, `generateHosts = false` in `/etc/wsl.conf`, and the art worker started, a host process under `home_worker`.
 
 What this opens: `/api/webhooks/resend` starts answering, signed requests only. `/unsubscribe` starts working. The sweep starts, and **it finds nothing to do while `SHELTERS` is empty**, so it writes no keepsake and sends no job. `EMAIL_SWEEP` stays unset here, so no mail goes out on its own, and with no keepsake there is nothing to mail.
 
-Who does what: **Logan gives the word for step 1, in the session that runs it.** Logan creates the key and the webhook in steps 2 and 3, and types the one sudo line in step 7. `paintings` starts its worker in step 8. Production steps run in one SSH session per step (the droplet's ufw `LIMIT` on 22/tcp).
+Who does what: **Logan gives the word for step 1, in the session that runs it.** Logan creates the webhook in step 3, and types the one sudo line in step 7. `paintings` starts its worker in step 8. Production steps run in one SSH session per step (the droplet's ufw `LIMIT` on 22/tcp).
 
 ## Prerequisites
 - [ ] Oplog 0025 has run: this needs migrations `0017` and `0018` and its image.
@@ -29,13 +29,13 @@ Who does what: **Logan gives the word for step 1, in the session that runs it.**
 Verify: `SHARE_BASE_URL` counts `1`, every other key `0`; health 200 on 0025's sha. Only names are read.
 Rollback: n/a — the record.
 
-### 2. Logan makes the never-mail key
-This key is permanent: losing it loses the never-mail list, because a digest made under a new key matches nothing.
+### 2. Read that the never-mail key exists
+Logan created `resend/suppression-hmac-key` on 2026-11-03 (`doc/infra.md`). **Never make a new one:** losing it loses the never-mail list, because a digest made under a new key matches nothing, and nothing has been written under it on production yet, but this is the key the entry below puts there.
 
-    openssl rand -hex 32 | pass insert -m resend/suppression-hmac-key >/dev/null
     pass show resend/suppression-hmac-key | head -n1 | wc -c
-Verify: 65. It exists nowhere else yet. `doc/infra.md`'s registry gains it in this entry's commit of Run.
-Rollback: `pass rm -f resend/suppression-hmac-key`, only before step 4.
+Verify: 65, 64 characters and a newline. Only its length is read.
+Stop if: it's missing. Ask Logan; nothing here makes one.
+Rollback: n/a — a read.
 
 ### 3. Logan makes the webhook in Resend's dashboard
 `https://monsterpaws.org/api/webhooks/resend`, subscribed to `email.delivered`, `email.bounced`, `email.complained`, `email.suppressed` and `email.failed`. The last two do nothing until oplog 0029's image, and are subscribed here so that nobody has to come back to the dashboard. He copies the signing secret to `pass` by `pass insert -m resend/webhook-signing-secret`, and it's never pasted into a chat.
@@ -107,5 +107,5 @@ Rollback: SIGTERM by PID. Its own shutdown runs.
 <filled in as it happens>
 
 ## Follow-ups
-- `doc/infra.md`'s registry: `resend/suppression-hmac-key`, `resend/webhook-signing-secret`, and the droplet's new keys.
+- `doc/infra.md`'s registry: `resend/webhook-signing-secret`, and the droplet's new keys.
 - Oplog 0029: Spencer's grant and go-live; **the art worker restarted from a checkout with the grant's commit, since `keepsakeShare` reads `SHELTERS` from its own code and publish refuses otherwise, by `paintings`**; Logan's first real donation; then one send by hand and `EMAIL_SWEEP=on` as its last step.
