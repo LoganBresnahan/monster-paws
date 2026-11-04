@@ -198,6 +198,8 @@ through the same edge, Caddy and app as the site (ADR-0027 as amended 2026-11-02
 during a roll, and the `webhook_spool` volume, shared by app and worker, takes deliveries the database can't, for the
 worker to replay each minute (ADR-0027 as amended 2026-11-03; live since oplog 0023, 2026-11-04).
 
+The droplet's `.env` also holds `SHARE_BASE_URL=https://media.monsterpaws.org`, where `/share/<token>` reads its published files (ADR-0036, oplog 0025).
+
 | Entry | What it is | What it's for | Lands in |
 | --- | --- | --- | --- |
 | `everyorg/staging-webhook-token` | The staging webhook's token, shown at creation | The donate link's `webhook_token` parameter, which makes Every.org POST that donation to our webhook. Rides in a URL every donor sees — an identifier, not a secret | local `.env` `EVERYORG_WEBHOOK_TOKEN` via `npm run env:dev` |
