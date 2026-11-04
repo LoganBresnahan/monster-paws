@@ -3917,6 +3917,70 @@ we have a vision model".
   harness agrees: a mean 0.584 on 38e–38f, against 0.572 for the close
   head and 0.581 for batch 35's portrait on the same dogs.
 
+### Batch 39a — the close-ups (Claude, 2026-11-04; Logan's eye decides)
+
+The 40% rule's look (ADR-0004 as amended 2026-11-03, later 2026-11-04): a
+headless photo's subject stands in for its head only when the detector's
+subject fills 40% of the frame, and the number is provisional until Logan
+has seen where a stand-in stops being a painting of the dog. Five Commons
+dogs whose head the detector didn't choose, each painted as a one-photo
+listing with its subject standing in, **the rule lifted for this batch
+alone** (`live_crops.CLOSE_UP = 0` in a one-off `python -c`, the code
+unchanged): `3625Pongpong-Bail-Santo-Tomas-La-Union-67` (5% of the frame,
+the detector's subject the dog's rear half), `Akiki3-1-of-1` (27%),
+`Dog-Friend-2595637875` (38%, just under), `Viljo-koirarannalla-19` (41%,
+just over), `Aht-blue2` (75%). Detected as a listing is, no colour; the
+shares and the missing heads were the same as October's. Words as a
+listing's kind and species, no sex; `storybook_bust34` at the crew table's
+four seeds, exactly as `listingSpec` builds them. Spec
+`comfyui/explore/batch39a.json`; 20 of 20 painted under the guard
+(14:56–15:04 UTC), marked as the handler marks.
+
+| Dog | Share | Likeness, mean of 4 |
+| --- | --- | --- |
+| Pongpong | 5% | 0.388 |
+| Akiki3 | 27% | 0.612 |
+| Dog-Friend | 38% | 0.530 |
+| Viljo-19 | 41% | 0.552 |
+| Aht-blue2 | 75% | 0.621 |
+
+- **Only Pongpong scores apart**, by 0.14 or more, but the harness compares
+  the painting with the whole photo, which for Pongpong is mostly road and
+  tricycle, and it can't tell a rear half from a head. Claude hasn't looked
+  at the paintings. Logan's ticks decide, and they are yours to overrule.
+- The page: `var/explore/index-all/close-ups-39.html`, blind (the dogs as
+  A–E in a random order, no shares shown; the key in
+  `var/explore/closeups39-blind/key.json`). Per painting "a painting of this
+  dog" or "the wrong part of the dog", and per dog "I'd send these four to
+  a donor".
+
+### Batch 39a — Logan's read of the close-ups (2026-11-04)
+
+Logan's ticks saved as `var/explore/index-all/close-ups-39-picks-2026-11-04.txt`,
+decoded through `var/explore/closeups39-blind/key.json`; with them: "i think
+it did really well but the ears were just wrong for most dogs so i had a hard
+time deciding if i would choose them to send. maybe this is more of a visual
+model problem".
+
+| Dog | Share | A painting of this dog | The wrong part | Would send the four |
+| --- | --- | --- | --- | --- |
+| Pongpong (A) | 5% | 0 of 4 | 4 of 4 | no |
+| Akiki3 (B) | 27% | 0 of 4 | 0 of 4 | no |
+| Dog-Friend (D) | 38% | 0 of 4 | 0 of 4 | no |
+| Viljo-19 (C) | 41% | 4 of 4 | 0 of 4 | yes |
+| Aht-blue2 (E) | 75% | 1 of 4 | 0 of 4 | yes |
+
+- **The line holds on this look:** the far-off dog is the wrong part every
+  time; the two sets he would send are the two above 40%, and none below.
+- **Akiki3 and Dog-Friend were left unticked both ways:** not the wrong
+  part, and not a painting of that dog either. His words name the ears, which
+  were wrong for most dogs on both sides of the line, so what failed between
+  27% and 40% reads as likeness, not the crop; whether the stand-in costs the
+  ears (its "head" reference is the whole dog) is not yet separated from the
+  words klein is given.
+- Five dogs, one photo each: what it shows is the line's direction, not
+  where between 5% and 41% the line belongs.
+
 ### Batches 14a–14b — Logan's picks (2026-10-28)
 
 "I might be picky but I know what these dogs look like." His likeness

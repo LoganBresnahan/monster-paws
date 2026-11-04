@@ -1,0 +1,74 @@
+{
+  "_": "Batch 39a \u2014 the close-up rule's look (ADR-0004 as amended 2026-11-03, later 2026-11-04): five Commons dogs whose head the detector didn't choose in October, from 5% of the frame to 75% (verify's shares: Pongpong 5%, Akiki3 27%, Dog-Friend 38%, Viljo-19 41%, Aht-blue2 75%), each painted as a one-photo listing with its subject standing in for the head, the 40% rule lifted for this batch alone, so Logan can see where a stand-in stops being a painting of the dog. Logan, to the moderator, 2026-11-04: \"okay i agree (probably need to see and test this tomorrow with commons photos)\". Words as a listing's kind and species, no sex (Commons doesn't say); the crew table's prompt and four seeds, exactly as listingSpec builds them.",
+  "animals": {
+    "b39a-pongpong": {
+      "kind": "dog",
+      "describe": "mixed breed dog",
+      "one": [
+        "3625Pongpong-Bail-Santo-Tomas-La-Union-67.jpg"
+      ]
+    },
+    "b39a-akiki3": {
+      "kind": "dog",
+      "describe": "azawakh dog",
+      "one": [
+        "Akiki3-1-of-1.jpg"
+      ]
+    },
+    "b39a-dogfriend": {
+      "kind": "dog",
+      "describe": "husky mix dog",
+      "one": [
+        "Dog-Friend-2595637875.jpg"
+      ]
+    },
+    "b39a-viljo19": {
+      "kind": "dog",
+      "describe": "nova scotia duck tolling retriever dog",
+      "one": [
+        "Viljo-koirarannalla-19.jpg"
+      ]
+    },
+    "b39a-ahtblue2": {
+      "kind": "dog",
+      "describe": "american hairless terrier dog",
+      "one": [
+        "Aht-blue2.jpg"
+      ]
+    }
+  },
+  "photos": [
+    "one"
+  ],
+  "crops": [
+    "grownsubject"
+  ],
+  "aspect": [
+    "landscape"
+  ],
+  "describe": [
+    "listing"
+  ],
+  "families": [
+    "kleinbfl8"
+  ],
+  "graphs": [
+    "reference2"
+  ],
+  "prompts": [
+    "storybook_bust34"
+  ],
+  "denoise": [],
+  "weights": [],
+  "weight_types": [],
+  "end_at": [],
+  "seeds": [
+    23,
+    333,
+    1111,
+    3000
+  ],
+  "heads": [
+    "grownhead"
+  ]
+}

@@ -331,6 +331,40 @@ subject alone. A head the detector misses is a gap in the grown-head
 recipe, and an animal photographed only in profile may be the usual
 case for it.
 
+## The missing heads (Claude, 2026-11-04; Logan decides)
+
+Batch 39a (`base-model-candidates.md`) left the question of why so many photos
+get no head at all. Read from the detection set's own output
+(`var/explore/detect-lora`: `results.jsonl`, `cache/owlv2-raw-v4.json`,
+`grown.json`), 46 of 121 photos have no head chosen, and **in every one of
+the 46, OWLv2's best "head" inside the dog was the dog's own box** (ratio
+1.0), which the 70% rule rightly refuses. OWLv2 scores every box against
+every query, so the whole animal also answers "the head of a dog".
+
+- **25 of the 46:** no head-sized box above OWLv2's 0.05 floor anywhere. The
+  head is visible in the photos read so far (all five of batch 39a's), so
+  this is OWLv2 being weak at a part of an animal, not a missing head.
+- **21 of the 46:** a smaller head box above the floor, refused only because
+  under 80% of it lies inside the detector's own box. **In 7 of them it lies
+  96–100% inside the grown subject** (the SAM outline): the detector's box
+  cuts the head, its outline doesn't. `Viljo-koirarannalla-19`, painted with
+  a stand-in in 39a, is one (0.79 inside the box, 1.0 inside the outline),
+  as are `Viljo-koirarannalla-16`, `Himalayan-sheep-dog-1`,
+  `Franz-sische-Bulldogge-in-Paris-20060505-RM-` (0.80 exactly, refused by
+  the strict `> 0.8`), `Bucuresti-Romania-…`, `12-ITALY-campo-di-grano-…`
+  and `163Villages-sitios-…`. Not yet looked at as crops.
+- **`3625Pongpong-Bail-Santo-Tomas-La-Union-67`:** OWLv2 found its head
+  (0.139) entirely outside the chosen box, which is the rear half; the
+  outline didn't reach it either.
+- The rest of the 21 are boxes wholly outside the dog and its outline,
+  another animal's or nothing's.
+
+So the stand-in mostly covers a weak head finder, not close-ups. Two levers,
+neither tried: test the head against the grown subject instead of the
+detector's box (7 heads back, after a look at their crops), and a head finder
+that reads the photo, which is the local photo reader's job too
+(`base-model-candidates.md`, "A local photo reader").
+
 ## Open
 
 Each is a roadmap item 4 carry-in.
