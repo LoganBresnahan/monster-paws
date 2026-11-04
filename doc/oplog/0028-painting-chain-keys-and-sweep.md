@@ -37,7 +37,7 @@ Verify: 65. It exists nowhere else yet. `doc/infra.md`'s registry gains it in th
 Rollback: `pass rm -f resend/suppression-hmac-key`, only before step 4.
 
 ### 3. Logan makes the webhook in Resend's dashboard
-`https://monsterpaws.org/api/webhooks/resend`, subscribed to `email.delivered`, `email.bounced` and `email.complained`. He copies the signing secret to `pass` by `pass insert -m resend/webhook-signing-secret`, and it's never pasted into a chat.
+`https://monsterpaws.org/api/webhooks/resend`, subscribed to `email.delivered`, `email.bounced`, `email.complained`, `email.suppressed` and `email.failed`. The last two do nothing until oplog 0029's image, and are subscribed here so that nobody has to come back to the dashboard. He copies the signing secret to `pass` by `pass insert -m resend/webhook-signing-secret`, and it's never pasted into a chat.
 Verify: `pass show resend/webhook-signing-secret | head -n1 | grep -c '^whsec_'` prints 1.
 Rollback: delete the webhook; `pass rm -f resend/webhook-signing-secret`.
 

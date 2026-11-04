@@ -14,10 +14,10 @@ Who does what: **Logan gives the word for step 1, in the session that runs it.**
 
 ## Prerequisites
 - [x] Logan's words for `/privacy`'s share-page line are in, 2026-11-04 ("yes" to the draft, directly), and pinned by `tests/privacy-page.test.ts`.
-- [ ] CI green on `9d297c9`: `verify`, `images`, `sourcemaps`. Both `images` and `sourcemaps` before rolling (ADR-0010 as amended 2026-09-30).
-- [ ] Ship bar on `9d297c9`: vitest twice, typecheck, `npm run e2e`.
+- [x] CI green on `9d297c9`: `verify`, `images`, `sourcemaps`, run 41749267318, read by the moderator. Both `images` and `sourcemaps` before rolling (ADR-0010 as amended 2026-09-30).
+- [x] Ship bar on `9d297c9`, in a temporary checkout at exactly that sha, 2026-11-04 00:53 to 00:59 UTC: vitest 779 of 779 twice, typecheck clean, `npm run e2e` 50 of 50. The moderator's `verify` chat reviewed it and found nothing that blocks this entry; its findings on the email and share page go to their owners as commits after this sha.
 - [x] `git diff 12c451f 9d297c9 -- Caddyfile docker-compose.prod.yml` prints nothing, read 2026-11-04. If it prints, this entry gains Caddy's restart or a compose step before step 1.
-- [ ] e2e against the published app image, Every.org set to production. Tell the moderator first. `e2e/share.spec.ts` skips under `PW_BASE_URL`, so step 6 covers the share routes live.
+- [x] e2e against the published app image, Every.org set to production, moderator told first, 2026-11-04 00:59 UTC: 40 passed in 12.0 s, 10 skipped, all in `e2e/share.spec.ts`, which skips under `PW_BASE_URL`, so step 6 covers the share routes live. `/privacy` holds the new line.
 
       docker run --rm -d --name mp-e2e --network host \
         -e DATABASE_URL=postgres://monsterpaws:monsterpaws@localhost:5432/monsterpaws_e2e \
@@ -25,7 +25,7 @@ Who does what: **Logan gives the word for step 1, in the session that runs it.**
         ghcr.io/loganbresnahan/monster-paws-app:9d297c9d9f37942eb9939512d9b4039695979854
       PW_BASE_URL=http://127.0.0.1:3200 npm run e2e:prod
       docker stop mp-e2e
-- [ ] Migrations `0017` and `0018` rehearsed on a scratch restore of the newest dump, then dropped: read back at 19, animals unchanged. The dump may hold fewer than production's 17, as 0023's held 12.
+- [x] Migrations `0017` and `0018` rehearsed on a scratch restore of the newest dump, then dropped, 2026-11-04 01:01 UTC: 0 restore errors, 12 to 19 migrations (the dump predates production's 17), animals 112123 before and after, `keepsake` holds `id`, `intent_id`, `share_token` and `snapshotted_at`, and `painting_email_sends` and `resend_webhook_events` are empty.
 - [ ] `pass` unlocked by Logan.
 - [ ] Not within an hour of 06:00, 07:00 or 08:30 UTC, and nothing in the main checkout from 06:45 UTC until that night's log shows `== exit`.
 - [ ] The dev box free: nobody on `:3100`/`:3200` or `monsterpaws_e2e`, no batch on the card. The moderator holds the card.
