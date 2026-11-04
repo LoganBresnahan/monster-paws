@@ -132,7 +132,7 @@ Check items off as they ship.
      share; before Spencer's button opens, and before `snapshotKeepsake` or `art.generate`
      ship, or a worker could pick up a gift with no animal), and the go-live commit removing the footer's "Donations
      coming soon!" and `/animals/[id]`'s "When sponsoring opens" sentence, each with no
-     replacement (Logan, 2026-11-02). Carry-in for the art path: a gift already recorded
+     replacement (Logan, 2026-11-02). A granted shelter's animal page already drops "has not partnered" and "Not affiliated" (`isPartnerShelter`), and `/claim`'s "not affiliated" waits on his words. Carry-in for the art path: a gift already recorded
      is painted after a withdrawal, reading the grant as of the gift's date and a photo
      held from the gift (ADR-0022 as amended 2026-11-02). Holding the photo ships with the
      first real Sponsor button, not with the painter: a dog adopted before the painter runs

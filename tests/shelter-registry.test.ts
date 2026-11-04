@@ -11,6 +11,7 @@ import {
   sourceOf,
   type Grant,
   type ShelterEntry,
+  isPartnerShelter
 } from "@/core/shelters";
 
 const grant = (over: Partial<Grant> & Pick<Grant, "permission">): Grant => ({
@@ -171,5 +172,31 @@ describe("shelter registry (ADR-0006 as amended)", () => {
       "duplicate slug 'happy-tails-rescue'",
       "happy-tails-rescue/display: grantedAt 'whenever' is not an ISO date",
     ]);
+  });
+});
+
+describe("a partner shelter, whichever it is", () => {
+  const registry: readonly ShelterEntry[] = [
+    {
+      slug: "happy-tails",
+      name: "Happy Tails",
+      siteUrl: "https://example.org",
+      listingsUrl: "https://example.org/dogs",
+      tier: "aggregator",
+      goldenFixture: null,
+      shelterExternalIds: ["rescuegroups:org:1"],
+      grants: [{ permission: "digify", grantedAt: "2026-01-01", revokedAt: "2026-06-01", granter: "A Person", basis: "yes", evidence: "<a@b> sha256:0" }],
+    },
+  ];
+
+  it("is one holding a digify grant now, so a withdrawal brings the page's lines back", () => {
+    expect(isPartnerShelter("rescuegroups:org:1", new Date("2026-03-01"), registry)).toBe(true);
+    expect(isPartnerShelter("rescuegroups:org:1", new Date("2026-07-01"), registry)).toBe(false);
+  });
+
+  it("is never one with no grant or no key, which is every shelter today", () => {
+    expect(isPartnerShelter("rescuegroups:org:2", new Date("2026-03-01"), registry)).toBe(false);
+    expect(isPartnerShelter(null, new Date("2026-03-01"), registry)).toBe(false);
+    expect(isPartnerShelter("rescuegroups:org:1")).toBe(false);
   });
 });

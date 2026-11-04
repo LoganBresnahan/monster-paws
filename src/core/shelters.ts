@@ -111,6 +111,15 @@ export function hasGrant(
   return shelter.grants.some((g) => g.permission === permission && isActive(g, asOf));
 }
 
+/** A shelter that has said yes, whichever it is: its pages stop saying it hasn't partnered with us, and a withdrawal brings those lines back (Logan, 2026-11-04). */
+export function isPartnerShelter(
+  shelterExternalId: string | null,
+  asOf: Date = new Date(),
+  registry: readonly ShelterEntry[] = SHELTERS,
+): boolean {
+  return shelterExternalId !== null && hasGrant(shelterByExternalId(shelterExternalId, registry), "digify", asOf);
+}
+
 export function sheltersWithGrant(
   permission: Permission,
   asOf: Date = new Date(),

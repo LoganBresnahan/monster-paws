@@ -127,7 +127,7 @@ describe.skipIf(SKIP_DB_TESTS)("the thank-you page", () => {
     it("once sent, says it's on its way, with no form and no Saved. from a stale URL", async () => {
       await sendRow({ sentAt: new Date() });
       const html = await render({ saved: "1" });
-      expect(html).toContain("on its way");
+      expect(html).toContain("paintings are on their way");
       expect(html).not.toContain("Saved.");
       expect(html).not.toContain("Not the right address");
       expect(html).not.toContain('name="email"');
@@ -165,7 +165,7 @@ describe.skipIf(SKIP_DB_TESTS)("the thank-you page", () => {
       const html = await render();
       expect(html).toContain("Once Every.org confirms your donation, we&#x27;ll try to paint");
       expect(html).toContain(ADDRESS);
-      expect(html).toContain("the only place we&#x27;d send it");
+      expect(html).toContain("the only place we&#x27;d send them");
       expect(html).not.toContain("still teaching");
     });
 
@@ -189,7 +189,9 @@ describe.skipIf(SKIP_DB_TESTS)("the thank-you page", () => {
       });
       expect(outcome).toBe("recorded");
       const html = await render();
-      expect(html).toContain("As our thank-you, we&#x27;re painting");
+      expect(html).toContain("As our thank-you, we&#x27;re trying to paint");
+      expect(html).toContain("email the paintings to");
+      expect(html).toContain("the only place we&#x27;d send them");
       expect(html).toContain(ADDRESS);
       expect(html).not.toContain("still teaching");
     });

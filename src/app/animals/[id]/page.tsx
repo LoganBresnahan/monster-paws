@@ -7,6 +7,7 @@ import { loadShelter } from "@/core/browse";
 import { sponsorNonprofit } from "@/core/donate/intent";
 import { donateConfigFromEnv } from "@/core/donate/link";
 import { isDisplayLicensed, pickLicensedDisplay } from "@/core/display";
+import { isPartnerShelter } from "@/core/shelters";
 import { getDb } from "@/db/client";
 import { speciesEmoji, TrackerPixel } from "@/ui/animal";
 import { AnimalGallery } from "@/ui/animal-gallery";
@@ -91,6 +92,7 @@ export async function generateMetadata({
 export default async function AnimalPage({ params }: { params: Promise<{ id: string }> }) {
   const asOf = new Date();
   const { animal, identities, display } = await load((await params).id);
+  const partner = isPartnerShelter(animal.shelterExternalId);
 
   const licensed = pickLicensedDisplay(display, asOf);
   // Driven by the RescueGroups row itself, NOT by whichever row won
@@ -205,14 +207,16 @@ export default async function AnimalPage({ params }: { params: Promise<{ id: str
           {!canSponsor &&
             ` When sponsoring opens, a donation for ${animal.name} will go to ${org ?? "their shelter"}, and we keep $0 — we never hold the money.`}
         </p>
-        <p className="mt-4 text-sm text-muted">
-          {org ?? "This shelter"} has not partnered with us yet, so we can&apos;t promise updates
-          on {animal.name} — only that the donation reaches them.
-          {/* The verified-tier promise (signed care updates) belongs to roadmap
-              item 7. Do not branch on "verified" before shelters can be: a
-              branch nothing can take is a promise waiting to be made by
-              accident. */}
-        </p>
+        {!partner && (
+          <p className="mt-4 text-sm text-muted">
+            {org ?? "This shelter"} has not partnered with us yet, so we can&apos;t promise updates
+            on {animal.name} — only that the donation reaches them.
+            {/* The verified-tier promise (signed care updates) belongs to roadmap
+                item 7. Do not branch on "verified" before shelters can be: a
+                branch nothing can take is a promise waiting to be made by
+                accident. */}
+          </p>
+        )}
         {shelter && shelter.count > 1 && (
           <Link
             href={`/animals?shelter=${encodeURIComponent(shelter.id)}`}
@@ -247,12 +251,14 @@ export default async function AnimalPage({ params }: { params: Promise<{ id: str
         </p>
       )}
 
-      <p className="mt-4 text-sm text-muted">
-        Not affiliated with {withPeriod(org ?? "this shelter")}{" "}
-        <Link href="/claim" className="font-medium text-foreground underline">
-          Is this your shelter? Claim it or remove your listings.
-        </Link>
-      </p>
+      {!partner && (
+        <p className="mt-4 text-sm text-muted">
+          Not affiliated with {withPeriod(org ?? "this shelter")}{" "}
+          <Link href="/claim" className="font-medium text-foreground underline">
+            Is this your shelter? Claim it or remove your listings.
+          </Link>
+        </p>
+      )}
 
       {tracker && <TrackerPixel src={tracker} />}
     </main>

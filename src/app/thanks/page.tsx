@@ -118,7 +118,7 @@ export default async function ThanksPage({
 
       {mailGone && (
         <p className="mt-4 text-muted">
-          {name}&apos;s painting is on its way to your inbox. If it doesn&apos;t arrive, check your spam folder or Promotions tab, or write to{" "}
+          {name}&apos;s paintings are on their way to your inbox. If they don&apos;t arrive, check your spam folder or Promotions tab, or write to{" "}
           <a className="underline" href={`mailto:${CONTACT_EMAIL}`}>
             {CONTACT_EMAIL}
           </a>
@@ -148,16 +148,16 @@ export default async function ThanksPage({
         <p className="mt-4 text-muted">
           {donation ? (
             <>
-              As our thank-you, we&apos;re painting {name} now, and we&apos;ll email it to{" "}
-              <span className="font-semibold text-foreground">{donorEmail}</span> when it&apos;s ready.
+              As our thank-you, we&apos;re trying to paint {name} now, and we&apos;ll email the paintings to{" "}
+              <span className="font-semibold text-foreground">{donorEmail}</span> when they&apos;re ready.
             </>
           ) : (
             <>
-              Once Every.org confirms your donation, we&apos;ll try to paint {name} as our thank-you and email it to{" "}
+              Once Every.org confirms your donation, we&apos;ll try to paint {name} as our thank-you and email the paintings to{" "}
               <span className="font-semibold text-foreground">{donorEmail}</span>.
             </>
           )}{" "}
-          Please check that&apos;s right: it&apos;s the only place we&apos;d send it.
+          Please check that&apos;s right: it&apos;s the only place we&apos;d send them.
         </p>
       )}
 
