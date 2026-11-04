@@ -112,11 +112,7 @@ function crewSnapshot(pet: CrewPet): Snapshot {
 }
 
 /** The grant as of `created_at`, when the button was open, never today's or the charge's: a confirmed gift started under a live grant always paints (ADR-0035 question 4). */
-async function listingSnapshot(
-  db: Db,
-  gift: { source: Source; externalId: string; createdAt: Date },
-  registry: readonly ShelterEntry[],
-): Promise<Snapshot | null> {
+async function grantedAnimal(db: Db, gift: { source: Source; externalId: string; createdAt: Date }, registry: readonly ShelterEntry[]) {
   const [animal] = await db
     .select({ name: animals.name, species: animals.species, breed: animals.breed, ageGroup: animals.ageGroup, sex: animals.sex, shelterExternalId: animals.shelterExternalId })
     .from(animalIdentities)
@@ -125,7 +121,18 @@ async function listingSnapshot(
     .limit(1);
   if (!animal?.shelterExternalId) return null;
   const shelter = shelterByExternalId(animal.shelterExternalId, registry);
-  if (!shelter || !hasGrant(shelter, "digify", gift.createdAt)) return null;
+  return shelter && hasGrant(shelter, "digify", gift.createdAt) ? { animal, shelter } : null;
+}
+
+
+async function listingSnapshot(
+  db: Db,
+  gift: { source: Source; externalId: string; createdAt: Date },
+  registry: readonly ShelterEntry[],
+): Promise<Snapshot | null> {
+  const found = await grantedAnimal(db, gift, registry);
+  if (!found) return null;
+  const { animal, shelter } = found;
   const facts: [string, string | null][] = [
     [FACT.name, animal.name],
     [FACT.species, animal.species],
@@ -173,6 +180,23 @@ export async function snapshotKeepsake(
     );
     return row.id;
   });
+}
+
+/** The snapshot's own rule, so a page can never say we're painting for a gift the sweep would refuse (ADR-0006 decision 6). */
+export async function intentPaints(db: Db, intentId: string, registry: readonly ShelterEntry[] = SHELTERS): Promise<boolean> {
+  const [gift] = await db
+    .select({ source: donationIntents.animalSource, externalId: donationIntents.animalExternalId, createdAt: donationIntents.createdAt })
+    .from(donationIntents)
+    .where(eq(donationIntents.id, intentId))
+    .limit(1);
+  if (!gift) return false;
+  return Boolean(crewPetOf(gift.source, gift.externalId) ?? (await grantedAnimal(db, gift, registry)));
+}
+
+/** For the page a mail already linked to, and never before it went: the token 404s until its set is published (ADR-0036). */
+export async function shareTokenOfIntent(db: Db, intentId: string): Promise<string | null> {
+  const [row] = await db.select({ shareToken: keepsake.shareToken }).from(keepsake).where(eq(keepsake.intentId, intentId)).limit(1);
+  return row?.shareToken ?? null;
 }
 
 const SWEEP_BATCH = 100;

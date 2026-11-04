@@ -36,6 +36,6 @@ test("the privacy page is reached from the footer and states what it promises", 
 
 test("the thank-you page shows a browser with no cookie no gift", async ({ page }) => {
   await page.goto("/thanks");
-  await expect(page.getByText("find a gift from this browser")).toBeVisible();
+  await expect(page.getByText("find a donation from this browser")).toBeVisible();
   await expect(page.getByText("Bookmark this page")).toHaveCount(0);
 });

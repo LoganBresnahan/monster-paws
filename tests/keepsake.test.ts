@@ -14,7 +14,9 @@ import {
   crewExternalId,
   FACT,
   grantBasis,
+  intentPaints,
   mintShareToken,
+  shareTokenOfIntent,
   snapshotKeepsake,
   sweepKeepsakes,
   type SendArtJob,
@@ -124,6 +126,14 @@ describe.skipIf(SKIP_DB_TESTS)("the keepsake sweep (ADR-0035 decisions 6 and 9)"
       [FACT.sourcePhoto]: { pet: "plum", photo: null },
     });
     expect(new Set(facts.map((fact) => fact.basis))).toEqual(new Set([CREW_BASIS]));
+  });
+
+  it("reads a keepsake's share token through its intent, and none before it exists", async () => {
+    const id = await recorded("manual", crewExternalId("plum"));
+    expect(await shareTokenOfIntent(db, id)).toBeNull();
+    await sweepKeepsakes(db, send);
+    const [row] = await db.select({ token: keepsake.shareToken }).from(keepsake);
+    expect(await shareTokenOfIntent(db, id)).toBe(row.token);
   });
 
   it("leaves a share token that is each keepsake's own", async () => {
@@ -287,6 +297,17 @@ describe.skipIf(SKIP_DB_TESTS)("the keepsake sweep (ADR-0035 decisions 6 and 9)"
       await db.delete(animalIdentities);
       expect(await sweepKeepsakes(db, send, new Date(), granted("2026-01-01"))).toEqual({ written: 0, sent: 0, stalled: 0, failures: [] });
       expect(await sweepKeepsakes(db, send, LATER, granted("2026-01-01"))).toEqual({ written: 0, sent: 0, stalled: 1, failures: [] });
+    });
+
+    it("tells a page the sweep's own answer on whether this gift paints", async () => {
+      await listing();
+      const id = await recorded("rescuegroups", "rg-7");
+      expect(await intentPaints(db, id, [])).toBe(false);
+      expect(await intentPaints(db, id, granted("2026-01-01"))).toBe(true);
+      expect(await intentPaints(db, id, granted("2026-12-01"))).toBe(false);
+      expect(await intentPaints(db, await recorded("manual", "test-gift"), granted("2026-01-01"))).toBe(false);
+      expect(await intentPaints(db, await recorded("manual", crewExternalId("plum")))).toBe(true);
+      expect(await intentPaints(db, "no-such-intent")).toBe(false);
     });
 
     it("never touches another shelter's gift", async () => {

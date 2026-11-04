@@ -8,6 +8,7 @@ import { INTENT_COOKIE, INTENT_COOKIE_DAYS, intentDonorEmail, intentIdsOf, inten
 import { donationsForIntents } from "@/core/donate/webhook";
 import { paintingMailState } from "@/core/email/painting-state";
 import { isSuppressed, suppressionKey } from "@/core/email/suppression";
+import { intentPaints, shareTokenOfIntent } from "@/core/keepsake";
 import { getDb } from "@/db/client";
 import { animalDisplay, animals } from "@/db/schema";
 import { speciesEmoji, TrackerPixel } from "@/ui/animal";
@@ -44,7 +45,7 @@ export default async function ThanksPage({
       <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col px-6 py-12 text-center">
         <SiteLogo />
         <h1 className="mt-10 text-4xl font-bold">Thank you! 💛</h1>
-        <p className="mt-3 text-lg text-muted">We can&apos;t find a gift from this browser. Every.org emails a receipt for each one.</p>
+        <p className="mt-3 text-lg text-muted">We can&apos;t find a donation from this browser. Every.org emails a receipt for each one.</p>
         <Link href="/animals" className={button}>
           See adoptable animals
         </Link>
@@ -61,6 +62,10 @@ export default async function ThanksPage({
   const blocked = mail === "not-sent" && Boolean(donorEmail) && key !== null && (await isSuppressed(db, donorEmail!, key));
   // The form only while a new address can still change where the mail goes (ADR-0027 as amended 2026-11-02, decision 4).
   const takesAddress = mail === "bounced" || (mail === "not-sent" && Boolean(donorEmail));
+  // Never say we're painting for a donation the sweep would refuse, as a test gift or an ungranted listing would be (ADR-0006 decision 6).
+  const paints = await intentPaints(db, subject.intentId);
+  // Only once the mail has gone: the page 404s until its set is published (ADR-0036).
+  const shareToken = mail === "sent" ? await shareTokenOfIntent(db, subject.intentId) : null;
   const { problem, saved } = await searchParams;
   const name = subject.name ?? "your animal";
   const shelter = subject.org ?? donation?.nonprofitName ?? "the shelter";
@@ -86,7 +91,7 @@ export default async function ThanksPage({
       ) : (
         <>
           <p role="status" className="mt-3 text-lg text-muted">
-            We&apos;re waiting for Every.org to confirm your gift to {shelter}. This page updates when it does.
+            We&apos;re waiting for Every.org to confirm your donation to {shelter}. This page updates when it does.
           </p>
           <WaitingRefresh />
         </>
@@ -107,17 +112,25 @@ export default async function ThanksPage({
 
       {mail === "bounced" && (
         <p role="status" className="mt-4 font-semibold text-foreground">
-          We couldn&apos;t deliver {name}&apos;s painting to the address you gave. Tell us a new one and we&apos;ll send it again.
+          We couldn&apos;t deliver {name}&apos;s painting to the address you gave. Tell us a new one and we&apos;ll try again.
         </p>
       )}
 
       {mailGone && (
         <p className="mt-4 text-muted">
-          {name}&apos;s painting is on its way to your inbox. If it doesn&apos;t arrive, check your spam folder or write to{" "}
+          {name}&apos;s painting is on its way to your inbox. If it doesn&apos;t arrive, check your spam folder or Promotions tab, or write to{" "}
           <a className="underline" href={`mailto:${CONTACT_EMAIL}`}>
             {CONTACT_EMAIL}
           </a>
           .
+        </p>
+      )}
+
+      {shareToken && (
+        <p className="mt-2 text-muted">
+          <Link className="underline hover:text-foreground" href={`/share/${shareToken}`}>
+            You can view the paintings here.
+          </Link>
         </p>
       )}
 
@@ -131,7 +144,24 @@ export default async function ThanksPage({
         </p>
       )}
 
-      {mail === "not-sent" && (
+      {mail === "not-sent" && paints && donorEmail && !blocked && (
+        <p className="mt-4 text-muted">
+          {donation ? (
+            <>
+              As our thank-you, we&apos;re painting {name} now, and we&apos;ll email it to{" "}
+              <span className="font-semibold text-foreground">{donorEmail}</span> when it&apos;s ready.
+            </>
+          ) : (
+            <>
+              Once Every.org confirms your donation, we&apos;ll try to paint {name} as our thank-you and email it to{" "}
+              <span className="font-semibold text-foreground">{donorEmail}</span>.
+            </>
+          )}{" "}
+          Please check that&apos;s right: it&apos;s the only place we&apos;d send it.
+        </p>
+      )}
+
+      {mail === "not-sent" && !paints && (
         <p className="mt-4 text-muted">
           We&apos;re still teaching our painter, so there&apos;s no watercolour of {name} yet and no date for one.
           {donorEmail && !blocked && (
@@ -146,7 +176,7 @@ export default async function ThanksPage({
 
       {problem === "sent" && (
         <p role="alert" className="mt-2 text-sm font-semibold text-foreground">
-          Your painting had already gone out, so that change wasn&apos;t saved. If it doesn&apos;t arrive, write to {CONTACT_EMAIL}.
+          {name}&apos;s painting had already gone out, so that change wasn&apos;t saved. If it doesn&apos;t arrive, write to {CONTACT_EMAIL}.
         </p>
       )}
 
@@ -189,7 +219,7 @@ export default async function ThanksPage({
           )}
           {(problem === "suppressed" || blocked) && (
             <p role="alert" className="mt-2 font-semibold text-foreground">
-              We can&apos;t send email to that address, so {name}&apos;s painting wouldn&apos;t reach you. This can happen when an
+              We can&apos;t send email to that address, so our thank-you wouldn&apos;t reach you. This can happen when an
               earlier message bounced or was marked as spam, or you unsubscribed. Please use another address, or write to {CONTACT_EMAIL} and
               we&apos;ll sort it out.
             </p>
@@ -205,8 +235,8 @@ export default async function ThanksPage({
       {/* The URL carries no id, so a bookmark works only where the cookie lives: never promise more than this (ADR-0027 as amended 2026-11-02). */}
       {takesAddress && (
         <p className="mt-4 text-sm text-muted">
-          Bookmark this page until your painting arrives, so you can change the address if you need to. This page only
-          lasts {INTENT_COOKIE_DAYS} days after your gift, and only in this browser.
+          Bookmark this page for now, so you can change the address if you need to. This page only
+          lasts {INTENT_COOKIE_DAYS} days after your donation, and only in this browser.
         </p>
       )}
 

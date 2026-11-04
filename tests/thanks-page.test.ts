@@ -3,6 +3,8 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import ThanksPage from "@/app/thanks/page";
 import { intentRef } from "@/core/donate/intent";
+import { receiveWebhook } from "@/core/donate/webhook";
+import { crewExternalId } from "@/core/keepsake";
 import { closeDb, type Db } from "@/db/client";
 import { keepsake, paintingEmailSends, emailSuppressions, animalDisplay, animalIdentities, animals, donationIntents } from "@/db/schema";
 import { exactDigest } from "@/core/email/suppression";
@@ -77,7 +79,7 @@ describe.skipIf(SKIP_DB_TESTS)("the thank-you page", () => {
     const html = await render();
     expect(html).not.toContain(ADDRESS);
     expect(html).not.toContain("Bookmark");
-    expect(html).toContain("find a gift");
+    expect(html).toContain("find a donation");
   });
 
   it("never says money moved until the webhook recorded it", async () => {
@@ -90,7 +92,7 @@ describe.skipIf(SKIP_DB_TESTS)("the thank-you page", () => {
     const html = await render();
     expect(html).toContain(ADDRESS);
     expect(html).toContain("the only place we");
-    expect(html).toContain("only lasts 30 days after your gift, and only in this browser");
+    expect(html).toContain("only lasts 30 days after your donation, and only in this browser");
     expect(html).not.toContain(INTENT);
   });
 
@@ -143,6 +145,86 @@ describe.skipIf(SKIP_DB_TESTS)("the thank-you page", () => {
     it("says a late change wasn't saved, in the words that are true", async () => {
       await sendRow({ sentAt: new Date() });
       expect(await render({ problem: "sent" })).toContain("wasn&#x27;t saved");
+    });
+  });
+
+  describe("whether it says we're painting (ADR-0006 decision 6, Logan's words of 2026-11-04)", () => {
+    const CREW_PET = async () => {
+      await db.update(donationIntents).set({ animalSource: "manual", animalExternalId: crewExternalId("plum") }).where(eq(donationIntents.id, INTENT));
+      await db.insert(animalIdentities).values({ animalId, source: "manual", externalId: crewExternalId("plum"), lastSeenAt: RECENT, sourceUpdatedAt: RECENT });
+    };
+
+    it("keeps today's words for a donation the sweep would refuse, which is all of production until a grant", async () => {
+      const html = await render();
+      expect(html).toContain("still teaching our painter");
+      expect(html).not.toContain("our thank-you");
+    });
+
+    it("says it will try once Every.org confirms, for a donation not yet confirmed", async () => {
+      await CREW_PET();
+      const html = await render();
+      expect(html).toContain("Once Every.org confirms your donation, we&#x27;ll try to paint");
+      expect(html).toContain(ADDRESS);
+      expect(html).toContain("the only place we&#x27;d send it");
+      expect(html).not.toContain("still teaching");
+    });
+
+    it("says we're painting now, once it's confirmed", async () => {
+      await CREW_PET();
+      const { outcome } = await receiveWebhook(db, {
+        body: JSON.stringify({
+          event: "donation.completed",
+          chargeId: "charge-1",
+          partnerDonationId: INTENT,
+          toNonprofit: { slug: "happy-tails", ein: "364219778", name: "Happy Tails" },
+          amount: "25",
+          netAmount: "24.15",
+          currency: "USD",
+          frequency: "ONCE",
+          donationDate: "2026-11-03T12:00:00.000Z",
+          paymentMethod: "STRIPE",
+        }),
+        headers: [],
+        secrets: {},
+      });
+      expect(outcome).toBe("recorded");
+      const html = await render();
+      expect(html).toContain("As our thank-you, we&#x27;re painting");
+      expect(html).toContain(ADDRESS);
+      expect(html).not.toContain("still teaching");
+    });
+
+    it("promises no painting to an address on the never-mail list", async () => {
+      await CREW_PET();
+      vi.stubEnv("EMAIL_SUPPRESSION_KEY", "test-key");
+      await db.insert(emailSuppressions).values({ emailHmac: exactDigest(ADDRESS, "test-key"), reason: "bounce" });
+      const html = await render();
+      vi.unstubAllEnvs();
+      expect(html).toContain("our thank-you wouldn&#x27;t reach you");
+      expect(html).not.toContain("we&#x27;ll try to paint");
+    });
+  });
+
+  describe("the link to the paintings (ADR-0036)", () => {
+    const TOKEN = "abcdefghijklmnopqrstuv";
+    const keepsakeWith = async (sentAt: Date | null) => {
+      const [row] = await db.insert(keepsake).values({ intentId: INTENT, shareToken: TOKEN, snapshottedAt: RECENT }).returning({ id: keepsake.id });
+      await db.insert(paintingEmailSends).values({ keepsakeId: row.id, claimedAt: RECENT, sentAt });
+    };
+
+    it("shows only once the mail has gone, since it's a 404 before the set is published", async () => {
+      expect(await render()).not.toContain("/share/");
+      await keepsakeWith(null);
+      expect(await render()).not.toContain("/share/");
+      await db.update(paintingEmailSends).set({ sentAt: RECENT });
+      const html = await render();
+      expect(html).toContain(`href="/share/${TOKEN}"`);
+      expect(html).toContain("You can view the paintings here.");
+    });
+
+    it("says where else to look, in the words he approved", async () => {
+      await keepsakeWith(RECENT);
+      expect(await render()).toContain("check your spam folder or Promotions tab, or write to");
     });
   });
 
