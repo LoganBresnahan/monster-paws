@@ -74,7 +74,7 @@ Rollback: `ssh root@$IP 'cp ~/.ssh/authorized_keys.before-0027 ~/.ssh/authorized
     echo "command: [$(ssh $K root@$IP 'echo RAN' 2>&1 | head -1 | cut -c1-40)]"; sleep 8
     scp -i ~/.ssh/monsterpaws-home-worker -o BatchMode=yes -o IdentitiesOnly=yes root@$IP:/etc/hostname /tmp/0027-got 2>&1 | head -1 | cut -c1-40; ls /tmp/0027-got 2>/dev/null || echo "nothing copied"; sleep 8
     timeout 6 ssh $K -N -o ExitOnForwardFailure=yes -R 127.0.0.1:18080:127.0.0.1:22 root@$IP 2>&1 | head -1 | cut -c1-70
-Verify: `command: []` with no `RAN`; nothing copied; the `-R` is refused. The root key still works: the next step uses it.
+Verify: `command: []` with no `RAN`; nothing copied; the `-R` on 18080 is refused. The root key still works: the next step uses it. `-R` on `127.0.0.1:9`, the one port the line names because `none` isn't accepted, did open on the throwaway server, 2026-11-04 01:06 UTC: it reaches the key holder only if something on the droplet connects to port 9, and nothing does.
 Stop if: `RAN` appears or a file copies. Run step 3's rollback before anything else.
 
 ### 5. The role, with its password straight into `pass`

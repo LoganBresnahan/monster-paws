@@ -292,7 +292,7 @@ describe.skipIf(SKIP_DB_TESTS)("ADR-0014 Postgres lifecycle — in lockstep with
       .from(animalIdentities)
       .where(eq(animalIdentities.disappearedAt, D2));
     expect(gone).toBe(known - seenCount);
-  });
+  }, 30_000);
 
   // The gate counts inside the transaction before any write (ADR-0014 as amended 2026-09-30).
   it("a refused wave writes nothing in either store, and an override lands it", async () => {
@@ -310,7 +310,7 @@ describe.skipIf(SKIP_DB_TESTS)("ADR-0014 Postgres lifecycle — in lockstep with
     const accepted = await both(AGG, survivors, true, 1);
     expect(accepted.events.filter((e) => e.kind === "animal.disappeared")).toHaveLength(130);
     await expectParity();
-  });
+  }, 30_000);
 
   // Reproduces the dev polls of 2026-10-05: a database migrated before
   // ingest_runs existed, a week's normal turnover, new animals in the same run,

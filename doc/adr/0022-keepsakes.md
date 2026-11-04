@@ -203,7 +203,8 @@ to make the painting."
   (ADR-0002 as amended 2026-11-02, ADR-0029 §5).
 - **A gift recorded before it still gets its painting.** The painter reads the grant as of the
   gift's date, never today's: `hasGrant` takes `asOf` for this. Consent was on record when the
-  gift was made.
+  gift was made. ADR-0035 question 4 makes that date the intent's `created_at`, when the button was
+  open, so a charge just after a withdrawal still paints.
 - **The photos we hold for painting are deleted when the last painting owed is done,** not on
   the day of the withdrawal.
 - **Nothing is taken down, because there are no public paintings** (Logan, 2026-11-02). This

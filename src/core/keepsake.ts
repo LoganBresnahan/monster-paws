@@ -2,6 +2,7 @@ import { randomBytes } from "node:crypto";
 import { resolve, sep } from "node:path";
 import { and, asc, count, eq, gte, inArray, isNotNull, isNull, lt, ne, notExists, or, sql, type SQL } from "drizzle-orm";
 import { pickLicensedDisplay } from "@/core/display";
+import { failureCode } from "@/core/observability";
 import type { DisplayPhoto } from "@/core/ingest/pipeline";
 import { hasGrant, SHELTERS, shelterByExternalId, type ShelterEntry } from "@/core/shelters";
 import type { Source } from "@/core/sources";
@@ -185,6 +186,8 @@ export interface KeepsakeSweepReport {
   sent: number;
   /** paid gifts past 30 minutes with no art, whether the box is off, the photo is gone or a job keeps failing: nothing else says so */
   stalled: number;
+  /** a code per kind of row that threw this tick, and never its message, which can carry a query's parameters (ADR-0010) */
+  failures: string[];
 }
 
 async function listingPhotos(db: Db, source: Source, externalId: string, asOf: Date, registry: readonly ShelterEntry[]): Promise<DisplayPhoto[]> {
@@ -253,9 +256,14 @@ export async function sweepKeepsakes(
   const cutoff = asOf.getTime() - STALLED_MS;
   let written = 0;
   let stalled = 0;
+  const failures = new Set<string>();
   for (const { id, closedAt } of pending) {
-    if ((await snapshotKeepsake(db, id, asOf, registry)) !== null) written += 1;
-    else if (closedAt && closedAt.getTime() < cutoff) stalled += 1;
+    try {
+      if ((await snapshotKeepsake(db, id, asOf, registry)) !== null) written += 1;
+      else if (closedAt && closedAt.getTime() < cutoff) stalled += 1;
+    } catch (err) {
+      failures.add(failureCode(err));
+    }
   }
 
   // Unlimited, because only a paid gift gets here, so nothing can flood it, and a limit would let stuck keepsakes starve the rest.
@@ -282,12 +290,16 @@ export async function sweepKeepsakes(
   let sent = 0;
   for (const { id, closedAt, snapshottedAt, source, externalId } of owed) {
     if ((closedAt ?? snapshottedAt).getTime() < cutoff) stalled += 1;
-    const data: ArtGenerateJob = { keepsakeId: id };
-    if (!crewPetOf(source, externalId)) {
-      data.photos = await listingPhotos(db, source, externalId, asOf, registry);
-      if (data.photos.length === 0) continue;
+    try {
+      const data: ArtGenerateJob = { keepsakeId: id };
+      if (!crewPetOf(source, externalId)) {
+        data.photos = await listingPhotos(db, source, externalId, asOf, registry);
+        if (data.photos.length === 0) continue;
+      }
+      if (await send(ART_GENERATE, data, artJobOptions(id))) sent += 1;
+    } catch (err) {
+      failures.add(failureCode(err));
     }
-    if (await send(ART_GENERATE, data, artJobOptions(id))) sent += 1;
   }
 
   // A listing's identity row gone means no shelter to read and no pending row, so this count is all that would ever say so.
@@ -308,5 +320,5 @@ export async function sweepKeepsakes(
         ne(donationIntents.animalSource, CREW_SOURCE),
       ),
     );
-  return { written, sent, stalled: stalled + lost };
+  return { written, sent, stalled: stalled + lost, failures: [...failures] };
 }

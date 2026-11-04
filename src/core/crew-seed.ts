@@ -1,5 +1,5 @@
 import { and, eq } from "drizzle-orm";
-import { createIntent, loadSponsorable } from "@/core/donate/intent";
+import { createIntent, loadSponsorable, parseDonorEmail } from "@/core/donate/intent";
 import { receiveWebhook } from "@/core/donate/webhook";
 import { crewExternalId } from "@/core/keepsake";
 import type { Db } from "@/db/client";
@@ -93,6 +93,8 @@ export async function seedCrew(db: Db, nonprofit: DemoNonprofit, asOf: Date = ne
 export async function rehearsalGift(db: Db, slug: string, donorEmail: string): Promise<string> {
   const pet = crewPet(slug);
   if (!pet) throw new Error(`no crew pet '${slug}'`);
+  const address = parseDonorEmail(donorEmail);
+  if (!address) throw new Error("that doesn't look like an email address");
   const [identity] = await db
     .select({ animalId: animalIdentities.animalId })
     .from(animalIdentities)
@@ -102,7 +104,7 @@ export async function rehearsalGift(db: Db, slug: string, donorEmail: string): P
   const sponsorable = await loadSponsorable(db, identity.animalId, { everyorgEnv: "staging" });
   if (!sponsorable) throw new Error("the crew has no nonprofit");
 
-  const intentId = await createIntent(db, sponsorable, donorEmail);
+  const intentId = await createIntent(db, sponsorable, address);
   const [nonprofit] = await db.select().from(shelterNonprofits).where(eq(shelterNonprofits.shelterExternalId, CREW_SHELTER));
   const body = JSON.stringify({
     event: "donation.completed",

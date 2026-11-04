@@ -146,13 +146,18 @@ async function startKeepsakeSweep(boss: PgBoss): Promise<() => void> {
   await boss.createQueue(ART_GENERATE, ART_QUEUE_OPTIONS);
   let running = false;
   let lastStalledAlert = 0;
+  let lastFailureAlert = 0;
   const timer = setInterval(async () => {
     if (running) return;
     running = true;
     try {
       const report = await sweepKeepsakes(getDb(DATABASE_URL), (name, data, options) => boss.send(name, { ...data }, options));
-      if (report.written > 0 || report.sent > 0 || report.stalled > 0) console.log(JSON.stringify({ event: "keepsake.sweep", ...report }));
+      if (report.written > 0 || report.sent > 0 || report.stalled > 0 || report.failures.length > 0) console.log(JSON.stringify({ event: "keepsake.sweep", ...report }));
       const now = Date.now();
+      if (report.failures.length > 0 && now - lastFailureAlert >= WEBHOOK_REPEAT_ALERT_MS) {
+        lastFailureAlert = now;
+        Sentry.captureMessage(`keepsake sweep rows failed: ${report.failures.join(", ")}`, { level: "error", tags: { job: "keepsake.sweep" } });
+      }
       if (report.stalled > 0 && now - lastStalledAlert >= WEBHOOK_REPEAT_ALERT_MS) {
         lastStalledAlert = now;
         Sentry.captureMessage(`paid paintings waiting past 30 minutes: ${report.stalled}`, { level: "error", tags: { job: "keepsake.sweep" } });
