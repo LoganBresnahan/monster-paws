@@ -29,7 +29,7 @@ Submitted 2026-11-04 with real donations live: Spencer Pet Rescue's button open,
 - [ ] Windows' memory setting: try `autoMemoryReclaim=dropCache`, with a `wsl --shutdown` and `/gpu-health` after. It's optional, and the restart list in `doc/infra.md` follows it.
 - [ ] Turn on MFA for your Cloudflare login, if it isn't already. It's the one item in Cloudflare's Security Insights that matters (`doc/issues.md`, Ops).
 - [ ] Say go on oplog 0033: minimum TLS 1.2 and a one-day HSTS, written and ready, with a small donation after it if you want the webhook proved. Bot Fight Mode stays off (oplog 0018), so archive that suggestion.
-- [ ] Look in Resend's dashboard to see whether open tracking is on (`doc/issues.md`, Ops).
+- [x] Look in Resend's dashboard to see whether open tracking is on. "i don't see any open tracking in their dash", and the painting email's links don't go through `links.`.
 
 **Tests owed**
 - [ ] A real low-memory run of the memory wait, which has only had fake readings (`doc/issues.md`, Ops). Takes the card for a few minutes.

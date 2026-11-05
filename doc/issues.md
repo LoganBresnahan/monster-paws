@@ -85,11 +85,6 @@ is the record, and a file of ticked boxes stops being read.
   read that first, or scope a rule to the media host alone. HSTS (oplog 0033) already covers browsers that have seen `media` over HTTPS,
   if step 3 shows the header there.
 
-- **`links.monsterpaws.org` is Resend's tracking record, and whether open tracking is on isn't known.** The painting email's links
-  don't go through it (Logan looked, 2026-11-04), so click tracking isn't rewriting share links. Our Resend key is send-only and can't
-  read the domain's settings, and the webhook has only recorded `email.delivered`, so opens are unread either way. Logan can see it in
-  Resend's dashboard. If it's on, turn it off or say so on `/privacy`.
-
 - **Cloudflare doesn't cache `/_next/image`, and the droplet's image cache should empty on every deploy.** Read from outside on
   2026-11-04: the crew images answer `cf-cache-status: DYNAMIC` with `x-nextjs-cache: HIT` (about 0.17 s for 57 KB) and
   `max-age=14400`, so Next and browsers cache them, but each new visitor's requests still reach the droplet, up to 23 on the home
