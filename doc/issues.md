@@ -69,6 +69,27 @@ is the record, and a file of ticked boxes stops being read.
 
 ## Ops
 
+- **The Cloudflare login has no MFA, according to Cloudflare's Security Insights.** Scanned 2026-10-31, so it may be out of date.
+  That login controls the DNS, the media and backup buckets and the tunnels, so whoever got into it could redirect the whole site,
+  webhooks included. Logan's to turn on. The social accounts have had 2FA from day one (ADR-0032); this one should match.
+
+- **The zone's minimum TLS is 1.0 and no host sends HSTS.** The main site really does answer over TLS 1.0 and 1.1, though the Insights
+  scan only flagged `staging-hooks`. Oplog 0033 is written and waits on Logan's go: minimum TLS 1.2 and a one-day HSTS, with no
+  subdomains. Low risk; the one thing only a real delivery can prove is that Every.org's client still lands.
+
+- **`media.monsterpaws.org` answers over plain HTTP, and Always Use HTTPS stays off for the zone until renewals are understood.** The
+  main site and `www` already redirect at Caddy, and the media files are public, so the stakes here are low. The zone-wide switch is
+  the risk: Caddy may renew the origin's certificate over HTTP through Cloudflare, Cloudflare's docs don't say what the switch does to
+  that path, and community reports conflict (searched 2026-11-05). A failure would be silent until the certificate ran out, and then
+  Full (strict) would take down the site and the webhook together. The cert's expiry and how Caddy renews it haven't been read. Either
+  read that first, or scope a rule to the media host alone. HSTS (oplog 0033) already covers browsers that have seen `media` over HTTPS,
+  if step 3 shows the header there.
+
+- **`links.monsterpaws.org` is Resend's tracking record, and whether open tracking is on isn't known.** The painting email's links
+  don't go through it (Logan looked, 2026-11-04), so click tracking isn't rewriting share links. Our Resend key is send-only and can't
+  read the domain's settings, and the webhook has only recorded `email.delivered`, so opens are unread either way. Logan can see it in
+  Resend's dashboard. If it's on, turn it off or say so on `/privacy`.
+
 - **Cloudflare doesn't cache `/_next/image`, and the droplet's image cache should empty on every deploy.** Read from outside on
   2026-11-04: the crew images answer `cf-cache-status: DYNAMIC` with `x-nextjs-cache: HIT` (about 0.17 s for 57 KB) and
   `max-age=14400`, so Next and browsers cache them, but each new visitor's requests still reach the droplet, up to 23 on the home

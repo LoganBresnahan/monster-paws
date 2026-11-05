@@ -42,6 +42,7 @@ is an ADR; the daily numbers brief is `doc/ops/` (ADR-0010 as amended).
 | [0030](0030-deploy-wording-before-the-outreach-wave.md) | Deploy `83b2bc9`: the wording and fixes, before the claimed-shelter wave | run | 2026-11-04 |
 | [0031](0031-remove-old-images.md) | Remove old images from the droplet, before oplog 0029 pulls another | run | 2026-11-04 |
 | [0032](0032-deploy-cat-town-opt-out.md) | Deploy `dea83ba`: Cat Town's opt-out, ahead of the go-live | run | 2026-11-04 |
+| [0033](0033-minimum-tls-and-short-hsts.md) | Cloudflare's minimum TLS to 1.2, and a one-day HSTS | planned | — |
 
 ## Entry format
 

@@ -504,6 +504,9 @@ ssh root@$IP 'sed -i "s/^#\?PasswordAuthentication.*/PasswordAuthentication no/;
 #   in AI assistants' answers is donor acquisition, and we aggregate public
 #   listings ourselves; do not flip in a settings cleanup. AI Labyrinth off
 #   (moot without blocks). security.txt served from public/.well-known/.
+# - Cloudflare's Security Insights keeps listing Bot Fight Mode and AI Labyrinth
+#   as suggestions: both stay off, for the reasons above. `links.` is Resend's
+#   CNAME, DNS-only. Always Use HTTPS stays off for the zone (doc/issues.md, Ops).
 # - More deliberate OFFs (2026-07-30) — posture: we hold no payments and
 #   WANT our images spread. Script monitoring off (no payment forms ever —
 #   card entry is Every.org's PCI scope). Hotlink Protection off (hotlinked
