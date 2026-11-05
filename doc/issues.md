@@ -69,6 +69,19 @@ is the record, and a file of ticked boxes stops being read.
 
 ## Ops
 
+- **Cloudflare doesn't cache `/_next/image`, and the droplet's image cache should empty on every deploy.** Read from outside on
+  2026-11-04: the crew images answer `cf-cache-status: DYNAMIC` with `x-nextjs-cache: HIT` (about 0.17 s for 57 KB) and
+  `max-age=14400`, so Next and browsers cache them, but each new visitor's requests still reach the droplet, up to 23 on the home
+  page. `docker-compose.prod.yml` gives the app no volume for `.next/cache`, so after a deploy the first visitors should wait for
+  re-encoding (not measured). Animal photos on `/animals` come from RescueGroups' CDN and aren't affected. Fine at today's traffic;
+  it matters in a spike, most if we deploy during one. A Cloudflare cache rule would fix it, but Next picks the format from the
+  browser's `Accept` header and the free plan may not keep a copy per format, so test that before turning it on. Low priority.
+
+- **The main site has no `/sitemap.xml`.** It answers 404: `src/app/robots.ts` exists and there's no sitemap route. Cloudflare
+  counted 22 requests for that path in the 24 hours to 2026-11-04, 11 of them on the media host, and how many were real crawlers
+  isn't known. Search engines can only find animal pages through links until there is one. It must list public pages only, never a
+  `/share/` or `/thanks` token. Low priority.
+
 - **Real donations depend on this one box staying up, and nothing says when the worker dies.** The art worker and its tunnel are
   plain processes on the home box: a reboot, a freeze or Windows signing out stops them, and they don't come back by themselves
   (`doc/infra.md`, "After a restart of this box", never yet run end to end). A paid donation then waits, and the only alert is
