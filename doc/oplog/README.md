@@ -43,6 +43,7 @@ is an ADR; the daily numbers brief is `doc/ops/` (ADR-0010 as amended).
 | [0031](0031-remove-old-images.md) | Remove old images from the droplet, before oplog 0029 pulls another | run | 2026-11-04 |
 | [0032](0032-deploy-cat-town-opt-out.md) | Deploy `dea83ba`: Cat Town's opt-out, ahead of the go-live | run | 2026-11-04 |
 | [0033](0033-minimum-tls-and-short-hsts.md) | Cloudflare's minimum TLS to 1.2, and a one-day HSTS | planned | — |
+| [0034](0034-rerun-nightly-2026-11-08.md) | Rerun the nightly of 2026-11-08, which failed on two SSH drops and a RescueGroups 500 | planned | — |
 
 ## Entry format
 
