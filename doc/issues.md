@@ -213,6 +213,11 @@ is the record, and a file of ticked boxes stops being read.
   recover"): nothing is hunted unless a night fails on three drops, and then
   0016's follow-up tells WSL's path from the rest. Found by the moderator
   session 2026-11-02.
+  The nightly of 2026-11-08 dropped twice more: `ssh` exited 255 at 07:09:44
+  and 07:27:52 UTC, with the proxy healthy to the end both times. The
+  droplet's sshd log wasn't read for these. Its third attempt failed on a
+  RescueGroups 500 instead (the next entry), so the night falls short of
+  three drops. It is still four drops since 2026-10-30.
 
 - **One bad page still costs a whole attempt, and the log cannot say why.**
   The nightly now retries the whole run, and the proxy no longer cuts a
@@ -223,8 +228,12 @@ is the record, and a file of ticked boxes stops being read.
   logged the single word `terminated`. Neither fix is built (read 2026-11-04
   at `0989a18`). When it is, a page whose fetch or body read fails is fetched
   again (the same page, never a skipped one, ADR-0014), and the CLI prints
-  `err.cause` as well. Not on the eve of a night's poll: the whole-run retry
-  has recovered every time so far.
+  `err.cause` as well. Not on the eve of a night's poll.
+  The nightly of 2026-11-08 failed on this. After two SSH drops, its third
+  and last attempt reached page 616, where RescueGroups answered `500
+  Internal Server Error` after 60 s. That ended the run at 07:55:30 UTC with
+  `/api/health` stale and Better Stack's monitor 4995794 down. A retry of
+  that one page would likely have finished the night.
   Smaller: each failed attempt pings `/fail`, so a night that completes on
   a retry opens a Better Stack incident and closes it, as 2026-11-02 did
   (read in oplog 0016). Pinging only on the
