@@ -217,7 +217,19 @@ is the record, and a file of ticked boxes stops being read.
   and 07:27:52 UTC, with the proxy healthy to the end both times. The
   droplet's sshd log wasn't read for these. Its third attempt failed on a
   RescueGroups 500 instead (the next entry), so the night falls short of
-  three drops. It is still four drops since 2026-10-30.
+  three drops. Oplog 0034's rerun that afternoon dropped twice more, at
+  17:09:45 (page ~522) and 17:15:13 UTC (page ~8), and completed on its
+  third attempt. That makes six drops since 2026-10-30, four of them on
+  2026-11-08.
+  A lead, not a cause: three of the six fell at hh:09:39–45 UTC (11-02
+  07:09:39, 11-08 07:09:44 and 17:09:45), on runs that started at different
+  times. At 17:09:22 UTC, 23 s before that last drop, Windows started three
+  maintenance tasks together: `\Microsoft\Windows\DiskCleanup\SilentCleanup`,
+  `\Microsoft\Windows\MemoryDiagnostic\ProcessMemoryDiagnosticEvents` and
+  Visual Studio's `BackgroundDownload`. Task Scheduler's history is off, so
+  what ran before the 07:09 drops can't be read. Turning that history on (an
+  admin step on Logan's account) would let the next drop be matched against
+  it. 0016's follow-up stays the test that settles where the bytes change.
 
 - **One bad page still costs a whole attempt, and the log cannot say why.**
   The nightly now retries the whole run, and the proxy no longer cuts a
