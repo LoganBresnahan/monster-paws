@@ -56,9 +56,9 @@ export interface ShelterEntry {
  * table is deferred to roadmap item 4/7 and stays a mechanical migration as
  * long as `slug` remains the natural key.
  *
- * Spencer Pet Rescue is the one grant so far. Logan decided what it rests on, recorded in ADR-0028 as
- * amended 2026-11-04: its yes answers one question, and the photo-rights confirmation wasn't separately answered.
- * An entry without a grant is a shelter we may not scrape or paint.
+ * Spencer Pet Rescue's yes answers one question, and the photo-rights confirmation wasn't separately answered:
+ * Logan decided it was enough (ADR-0028 as amended 2026-11-04). C.A.R.E.'s yes answers both (ADR-0028 as amended
+ * 2026-11-09). An entry without a grant is a shelter we may not scrape or paint.
  */
 export const SHELTERS: readonly ShelterEntry[] = [
   {
@@ -76,6 +76,25 @@ export const SHELTERS: readonly ShelterEntry[] = [
         granter: "Kristen, admin of Spencer Pet Rescue, who runs its Every.org page",
         basis: 'Asked "may we use the photos in your listings to make art of your animals for your donors?", answered "Yes you may".',
         evidence: "<CAPMTWd_UEmoBKeTJ=E-ToR_juzQPHHCM1swBP6ADaBEEyE_zvg@mail.gmail.com> sha256:302eaa800a84e56de1236c1585ada4c803dc8e0d356e319676cde0117c0965a7",
+      },
+    ],
+  },
+  {
+    slug: "care4pets",
+    name: "Cat/Canine Assistance, Referral & Education",
+    siteUrl: "https://www.care4pets.org",
+    listingsUrl: "https://www.care4pets.org",
+    tier: "aggregator",
+    goldenFixture: null,
+    shelterExternalIds: ["rescuegroups:org:4821"],
+    grants: [
+      {
+        permission: "digify",
+        grantedAt: "2026-11-08T02:56:50Z",
+        granter: "Mary, signing for C.A.R.E. from the shelter's own address",
+        basis:
+          'Asked "May we paint your animals from the photos in your listings?" and to "confirm the photos are yours to license", answered "Thank you and sure, go ahead and paint away. Yes, these are all our images to share."',
+        evidence: "<1a1b9165453.2afd294c3474891.900162816372033612@care4pets.org> sha256:c9f54770b64c6ba9cd9bfa519b498ffe26f087737a1b62b13ce2f33ebce77275",
       },
     ],
   },

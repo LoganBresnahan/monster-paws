@@ -424,3 +424,16 @@ Meta's API: its answer to that question was never given, so SAM 3.1 stays on the
 ## Amendment (2026-11-04, later): the video closes on the table
 
 Logan, on the video's first slide: "it should start directly with monster paws", then "how about we just move it to right before the last slide. no need to change the other slides". So the video opens on the product, and the built-in-the-hackathon table shows right before its close. That changes the 2026-10-26 amendment's "the video opens on the same table"; the README's table and the git history stand. He had the rule's words in front of him when he chose: "Failure to clearly identify your original contributions will result in immediate disqualification."
+
+## Amendment (2026-11-09): C.A.R.E.'s grant, the second
+
+Logan, 2026-11-09: "another shelter wants to allow us to paint ... so we need to get them sponserable pronto". His email of
+2026-11-04 to C.A.R.E. (Cat/Canine Assistance, Referral & Education, Sherman Oaks, CA) asked "May we paint your animals from the
+photos in your listings?", said the photos go to third-party services, asked them to "confirm the photos are yours to license", and
+gave the newer withdrawal term. Mary, signing for C.A.R.E. from the shelter's own address, 2026-11-08 02:56:50 UTC: "Thank you and
+sure, go ahead and paint away. Yes, these are all our images to share." DKIM, SPF and DMARC pass for `care4pets.org`. That is the
+second `digify` grant in `src/core/shelters.ts`, under the 2026-11-04 amendment above, which covers any shelter holding one.
+
+Unlike Spencer's, this yes answers both questions, so ADR-0004 as amended 2026-08-02's photo-rights confirmation rests on her own
+words. Its photos still don't go to Meta's API: painting stays at home and real gifts use the local detector. **If it withdraws:**
+the newer rule, the one the email gave.
