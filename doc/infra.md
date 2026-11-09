@@ -374,6 +374,17 @@ rclone_r2() { # $1 = worker|vault|models, rest = rclone args
 #      rclone_r2 vault  rcat r2:monsterpaws-vault/<key>
 # (`lsd r2:` and `mkdir` both need account scope — see 5b; with a
 # bucket-scoped key they 403 or, with NO_CHECK_BUCKET, no-op silently.)
+# Consent evidence (ADR-0029 as amended 2026-10-27): a shelter's raw reply,
+# saved by Gmail's "Download message", goes to the vault under consent/ and
+# never into the repo, since it holds both addresses. Its Message-ID and hash
+# are the registry's `evidence`, computed by `evidenceOf`
+# (src/core/outreach/evidence.ts):
+#   rclone_r2 vault copyto <reply.eml> "r2:monsterpaws-vault/consent/<shelter key>-<YYYY-MM-DD>.eml"
+#   rclone_r2 vault cat "r2:monsterpaws-vault/consent/<shelter key>-<YYYY-MM-DD>.eml" | sha256sum
+# The read-back hash must equal the registry's. Expect a 501 on the first
+# attempt (5c's trap). An oplog entry names this helper and never spells the
+# variables out: 0029's spelled-out copy lacked NO_CHECK_BUCKET, and oplog
+# 0035, copying it, got 403s.
 # Gotcha hit during setup: a freshly-activated R2 account returns TLS
 # handshake failures on its S3 endpoint for a few minutes — wait, don't debug.
 
@@ -719,9 +730,17 @@ Each step below is one Bash call, with its own `cd`: a `cd` outside the session'
        SHARE_WRITE_SECRET_ACCESS_KEY="$(pass show cloudflare/r2-secret-access-key | head -n1)" \
        SENTRY_DSN="$(pass show betterstack/errors-dsn | head -n1)" \
        RESCUEGROUPS_API_KEY= ART_SWEEP= \
-       setsid nohup npm run worker >> var/explore/art-worker-production.log 2>&1 < /dev/null &
+       setsid sh -c 'echo $$ > ~/monsterpaws/var/art-worker.sid; exec nohup npm run worker' >> var/explore/art-worker-production.log 2>&1 < /dev/null &
 
-   Verify after 2 minutes, reading only this start, because the log is appended: `tac ~/monsterpaws/var/explore/art-worker-production.log | sed '/^== start /q' | tac` shows `art store bound to database <name>` and `art.generate registered (WORKER_MODE=art)`. npm's banner and `.env not found` aren't errors. `DATABASE_URL not set — idling` means `pass` was locked, and `[worker] fatal` means the tunnel. Then record it: `echo ~/monsterpaws-art-<sha> > ~/monsterpaws/var/art-worker-export`. Stop it with SIGTERM to `pgrep -nf '[s]rc/worker/index'`. To run it without the photo reader, add `ART_READER=off` to its line and start it again: a dog's words go back to the listing's, with no code change (ADR-0004 as amended 2026-11-04).
+   `var/art-worker.sid` holds the worker's session: the shell writes its own PID, which is the new session's ID, and `exec` hands that PID on to npm, whether or not `setsid` forked. `$!` would name the forked parent, which has already exited (tested 2026-11-09). Verify after 2 minutes, reading only this start, because the log is appended: `tac ~/monsterpaws/var/explore/art-worker-production.log | sed '/^== start /q' | tac` shows `art store bound to database <name>` and `art.generate registered (WORKER_MODE=art)`. npm's banner and `.env not found` aren't errors. `DATABASE_URL not set — idling` means `pass` was locked, and `[worker] fatal` means the tunnel. Then record it: `echo ~/monsterpaws-art-<sha> > ~/monsterpaws/var/art-worker-export`. To run it without the photo reader, add `ART_READER=off` to its line and start it again: a dog's words go back to the listing's, with no code change (ADR-0004 as amended 2026-11-04).
+
+   **Stop it by its session, never by a search.** `pgrep -f` reads every command line on the box, the shell running the search included, so it can name that shell or a chat's own worker as well as this one. Oplog 0035's stop signalled its own shell first, and the worker ran on. Stop it only between jobs, when the session's list shows no `guard.sh batch`:
+
+       S=$(cat ~/monsterpaws/var/art-worker.sid); ps -o pid=,args= -s "$S"
+       P=$(pgrep -s "$S" -f '/node_modules/\.bin/tsx '); [ "$(echo $P | wc -w)" = 1 ] && kill -TERM $P
+       for i in $(seq 1 60); do pgrep -s "$S" > /dev/null || break; sleep 1; done; pgrep -s "$S" > /dev/null && echo "STILL RUNNING" || echo stopped
+
+   The first line must list `npm run worker`, `sh -c tsx …` and the worker's node processes. Anything else means the file is stale, so read `ps` by hand. SIGTERM to the tsx process runs the worker's own shutdown, which took about 2 s in oplog 0035. To move it onto new code without a box restart, as a new grant needs because publish reads `SHELTERS` from the worker's own code: step 3's export, this stop, then step 5.
 6. **Logan** reopens the other chats he wants. `git worktree list` names their checkouts.
 
 Then keep Windows' heavy apps light while donations may come in: a paint starts only with 22 GB free after the cache drop, which `comfyui/guard.sh drop` prints. `guard.sh mem` reads before the drop and can read low.

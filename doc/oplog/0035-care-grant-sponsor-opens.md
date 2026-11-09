@@ -1,7 +1,7 @@
 # 0035: Deploy `a933820`: C.A.R.E.'s grant, and the Sponsor button opens on its animals
 
-Status: planned
-Planned: 2026-11-09 · Run: —
+Status: run
+Planned: 2026-11-09 · Run: 2026-11-09 03:23 – 03:43 UTC
 Why: ADR-0028 as amended 2026-11-09, ADR-0002 as amended 2026-11-02, ADR-0015 as amended 2026-11-04. Logan: "another shelter wants to allow us to paint ... so we need to get them sponserable pronto. ... i suppose their animals should slot in with spencers in the order they were listed"
 Commit deployed: `a933820` (`a9338201cc5077bc39dd3ad3edf9776fc1ea99f2`). Rollback: `221b6cd`. This entry follows in its own push, so the image tag is the code commit.
 
@@ -148,8 +148,49 @@ Rollback: not applicable.
 
 ## Run
 
-(Filled in while running.)
+Run by Claude on Logan's word: "lets just get this deploy done so donations can open for them". From `~/monsterpaws` at `124bdb3`, with a clean tree, from 03:23 UTC.
+
+**Prerequisites, 03:23 UTC.**
+- **Ship bar:** vitest passed 1,000 of 1,000 twice here, 03:08 to 03:12 UTC. CI run 42555134018 on `a933820` was green in all three jobs. `verify` ran typecheck, vitest 1,000 of 1,000 twice and e2e (60 passed in 17.7 s); `images` and `sourcemaps` also passed.
+- **The local `npm run e2e` didn't run.** The kernel's OOM killer stopped `next build` in the main checkout at 31 GB resident, before it compiled, so CI's run on the same sha is the e2e record.
+- **The local typecheck:** its two errors are in `.next/dev/types/validator.ts`, a dev server's stale types for a page since deleted. `tsc` outside `.next/` is clean.
+- **The export:** `/home/oof/monsterpaws-art-a933820` holds `git archive a933820` and `EXPORTED_FROM`, with `d15dd23`'s `node_modules` hard-linked and `var` linked. Hard-linking replaces infra.md's `npm ci` and is safe here because the `package-lock.json` is the same. Its `src/` differs from `d15dd23`'s only in `src/core/shelters.ts`.
+- **The rest:** `pass` was unlocked. No ComfyUI, guard, build or test was running, and the art worker sat idle after keepsake 5's `painted`. On Logan's word, before the run, an orphaned `next-server` from 2026-10-27 was stopped: it listened on :3199, its parent was gone, and it ran from the main checkout.
+
+**Changed from the steps above:**
+- **Step 0's command had no `RCLONE_S3_NO_CHECK_BUCKET=true`**, because it was copied from 0029's text, and it got `AccessDenied` 403 three times. The bucket-scoped key can't check the bucket, so rclone falls back to creating it. The rerun went through infra.md's `rclone_r2 vault`, after confirming the two endpoint entries are identical. 0029's session had added the flag without recording it, and 0032 had recorded it. infra.md now holds this copy (5, R2), and the README's rules say why.
+- **Step 2's `pgrep -f` matched the shell running the step**, whose command line holds the pattern. So `kill` signalled that shell first, the shell died, and the worker never got the signal. The worker was stopped by its exact PID instead. infra.md's restart list now records the worker's session at start and stops it by that.
+
+**Step 0, 03:23 to 03:24 UTC.** The three 403s are described above. Through the helper, the first attempt got a 501, infra.md 5c's trap, and the second succeeded. `r2:monsterpaws-vault/consent/rescuegroups:org:4821-2026-11-08.eml` holds 14,743 bytes, and its hash read back as `c9f54770b64c6ba9…`, the registry's.
+
+**Step 1, 03:24 UTC.** `IMAGE_TAG` was `221b6cdb5c97a8b731011b62807f1f11623f937f` and the checkout `bc0e6c5`; app and worker ran `221b6cd`, up 4 days. 9.5 GB free. `ART_SWEEP`, `EMAIL_SWEEP` and `EMAIL_LIVE` counted `1`, `WORKER_MODE` `0`, and health was 200 on `221b6cd`. `.env.before-0035` was written.
+
+**Step 2, 03:24 to 03:29 UTC.** The first stop killed only its own shell, as described above: 3636078 ran on, with no new log line. SIGTERM went to 3636078 at 03:25:21; it exited in about 2 s, with no `d15dd23` process left. At 03:25:42 the worker started from `/home/oof/monsterpaws-art-a933820` under `setsid`. It logged `art store bound to database defaultdb` and `art.generate registered (WORKER_MODE=art)`, as tsx PID 329911 in session 329899, and nothing after those by 03:29.
+
+**Step 3, 03:26 to 03:27 UTC.** The checkout moved to `124bdb3` and `IMAGE_TAG` to `a9338201cc5077bc39dd3ad3edf9776fc1ea99f2`. Both images were pulled, the migration count stayed 19, the old containers kept serving, and 8.2 GB was free.
+
+**Step 4, 03:27 to 03:29 UTC.** `INSERT 0 1`. C.A.R.E.'s sponsor page, for animal 14894, answered `404` before the roll. The roll started at 03:27:40 and took 3.26 s by `time`. The 180 POSTs all got `404`, with no 5xx and the slowest at 9.98 s. Health answered 200 on `a933820`, up 82 s. At 03:29 app and worker were up, with 0 `fatal` or `error` lines in the worker's log.
+
+**Step 5, 03:29 to 03:30 UTC.**
+- **Animals used:** C=14894, S=35652, O=85887. O is `rescuegroups:org:11644`, neither shelter.
+- **Pages:** `/`, `/animals`, `/privacy`, `/animals/14894`, both sponsor pages and `/animals/85887` answered 200, and the other shelter's sponsor page 404.
+- **Wording:** the partner lines counted `0` on C.A.R.E.'s page and `1` on the other, the sponsor wording `3`, and the page's Sponsor link `1`. The Sort menu offers Sponsorable first.
+- **Order:** page one's 24 cards, read back against the database, are Spencer's 11 (listed 2026-07-22 to 2026-09-02), then C.A.R.E.'s 13 (2025-11-10 back to 2012-04-01), in falling `listed_at`, with no other shelter. The two shelters don't mix on the page because every C.A.R.E. listing is older than every Spencer one.
+- **Rows:** `shelter_nonprofits` holds both rows, `claimed`.
+- **The donate link wasn't read here.** The sponsor form's server action builds Every.org's URL at submit, which mints an intent. Logan's donations in step 7 read it, and were his own look at C.A.R.E.'s listings.
+
+**Step 6, 03:30 UTC.** `error-report-counts.mjs now-1h now` returned no results. The droplet's logs since the roll had 0 lines naming `shelters` or `care4pets`, a keepsake error, or `fatal`.
+
+**Step 7, 03:33 to 03:43 UTC: Logan made two donations to C.A.R.E. animals.**
+- **The donations:** both $2, once, to `care4pets`, at 03:33:22 and 03:34:17. The webhooks recorded 2, and both intents closed within 31 s.
+- **The keepsakes:** keepsake 6 is BO, a dog, snapshotted at 03:33:55. Keepsake 7 is Bamboo, a cat, at 03:34:55. Every fact sits on basis `grant:care4pets:digify`.
+- **The paintings:** the art worker painted 6 with `published: true`, then 7, a cat, without the reader, with `published: true` by 03:42:06. Each has 4 art facts.
+- **The emails:** 6 was sent at 03:38:56 and delivered at 03:38:59; 7 was sent at 03:42:56 and delivered at 03:42:59.
+- **After:** both `art.generate` jobs completed, with 0 open intents. About 9 minutes passed from the first donation to the second delivery.
+
+**Step 8.** This commit holds the roadmap's go-live line, `doc/infra.md`'s two procedures and the README's rule. `var/art-worker-export` now names `/home/oof/monsterpaws-art-a933820`, and `var/art-worker.sid` holds 329899.
 
 ## Follow-ups
 - `.env.before-0035` is deleted once the deploy has held a day, since it holds secrets.
-- `/home/oof/monsterpaws-art-d15dd23` stays until the new worker has painted once, then goes with the older exports.
+- `/home/oof/monsterpaws-art-d15dd23` can go with the older exports: the new worker has painted twice.
+- The main checkout's build running out of memory, in `doc/issues.md` once its cause is read.

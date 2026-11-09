@@ -14,7 +14,7 @@ slice or change build order.
 
 ### Logan's list after the hackathon (2026-11-04)
 
-Submitted 2026-11-04 with real donations live: Spencer Pet Rescue's button open, card and PayPal donations painting and mailing with no one touching them (oplog 0029). Production is on `221b6cd`, and the art worker runs from `~/monsterpaws-art-d15dd23`. `meta` is frozen at `173182b` as what the judges read, so new work goes on topdog. Tick or delete these as they're done.
+Submitted 2026-11-04 with real donations live: Spencer Pet Rescue's button open, card and PayPal donations painting and mailing with no one touching them (oplog 0029). C.A.R.E.'s button opened 2026-11-09 (oplog 0035). Production is on `a933820`, and the art worker runs from `~/monsterpaws-art-a933820`. `meta` is frozen at `173182b` as what the judges read, so new work goes on topdog. Tick or delete these as they're done.
 
 **Dates**
 - [ ] Nov 8, 23:59 ET: Most Viral closes, if the demo was posted on X. Nov 9, 12:00 ET: closing ceremony and live finals. Nov 16: Community Vote results.

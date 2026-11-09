@@ -44,7 +44,7 @@ is an ADR; the daily numbers brief is `doc/ops/` (ADR-0010 as amended).
 | [0032](0032-deploy-cat-town-opt-out.md) | Deploy `dea83ba`: Cat Town's opt-out, ahead of the go-live | run | 2026-11-04 |
 | [0033](0033-minimum-tls-and-short-hsts.md) | Cloudflare's minimum TLS to 1.2, and a one-day HSTS | planned | — |
 | [0034](0034-rerun-nightly-2026-11-08.md) | Rerun the nightly of 2026-11-08, which failed on two SSH drops and a RescueGroups 500 — complete on the third attempt after two more drops, 63,014 in 22 min, health green | run | 2026-11-08 |
-| [0035](0035-care-grant-sponsor-opens.md) | Deploy `a933820`: C.A.R.E.'s grant, and the Sponsor button opens on its animals | planned | — |
+| [0035](0035-care-grant-sponsor-opens.md) | Deploy `a933820`: C.A.R.E.'s grant, and the Sponsor button opens on its animals — open, and Logan's two donations painted and delivered | run | 2026-11-09 |
 
 ## Entry format
 
@@ -82,3 +82,7 @@ Rules:
 - Once `Status: run`, the file is frozen. Fix a mistake in a new entry.
 - A procedure that appears in three entries graduates into `infra.md` or a
   skill (ADR-0023).
+- An entry records one run and is never a template. A step that runs a
+  procedure `infra.md` holds names it there, and copies nothing from an older
+  entry, whose text may not be what ran: 0029's vault copy wasn't, and 0035
+  copied it.
