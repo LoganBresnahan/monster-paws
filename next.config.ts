@@ -8,6 +8,9 @@ const nextConfig: NextConfig = {
   // the standalone server one directory deeper than the Dockerfile copies it
   // from, so a local build stops matching the image (ADR-0007).
   outputFileTracingRoot: __dirname,
+  // Never in the image: two routes' traces pick up every file Tailwind scans, and this keeps them, and var/'s paintings, out of
+  // the server bundle; it can't stop Turbopack reading what it has traced (ADR-0007).
+  outputFileTracingExcludes: { "/*": ["var/**", "doc/**", "tests/**", "e2e/**", "scripts/**", "comfyui/**"] },
   // Emitted for the source-map upload and deleted before the image is
   // assembled — never served (ADR-0010 as amended 2026-09-30).
   productionBrowserSourceMaps: true,

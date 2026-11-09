@@ -69,36 +69,6 @@ is the record, and a file of ticked boxes stops being read.
 
 ## Ops
 
-- **A production build in the main checkout reads `var/` into memory and dies, and two routes' standalone traces carry repo
-  files no server needs.**
-  - **What happened:** oplog 0035's local `npm run e2e` was killed by the kernel's OOM killer at 31 GB resident, before it
-    compiled. CI builds the same commit in a clean checkout at about 2.3 GB.
-  - **What was measured, 2026-11-09, by the moderator:** builds ran under a 14 GB cap in the main checkout and in a throwaway
-    export of `a933820`.
-    - The main checkout reaches the cap within 9 to 55 s. Its page cache and its anonymous memory climb together at about
-      1.7 GB/s, so file contents are read and kept.
-    - Every `var/` file held open, model weights among them, belongs to the `next-build` process itself. The PostCSS and
-      Tailwind workers stay under 110 MB, and Tailwind run alone reports no `var/` file.
-    - The export builds at about 2.3 GB. With a sparse replica of `var/` (the same names and sizes, no contents), it climbs to
-      the cap the same way.
-    - With only `var/`'s small folders, the export's build completes, and the `/thanks` page's and the Every.org webhook
-      route's `.nft.json` each list exactly the 395 `var/` files it read. `var/keepsakes-production`, the production paintings,
-      is among them.
-    - So in this checkout, Next's server-file tracing pulls `var/` (98 GB, mostly `var/comfyui`) into those two routes'
-      standalone output, and the build reads every traced file.
-  - **The same two traces carry Tailwind's file list:** 263 of their 283 non-`node_modules` repo files are the files Tailwind
-    reports it scanned. That puts 82 `doc/` files, 67 of `tests/`, 23 of `scripts/`, 17 of `comfyui/` and 2 of `e2e/` into
-    `.next/standalone`, which the Dockerfile copies into the production app image. Nothing secret, since the repo is public,
-    but none of it is runtime.
-  - **Ruled out, each by a build:** the old `.next` (moved aside, it still died), `.env`, `.git`, `node_modules` (the same
-    packages and versions as `npm ci`), `.claude/settings.local.json` and the other untracked files, and symlinks (`var/` has
-    none, and a `var` symlink isn't followed).
-  - **Not read:** which rule picks the `var/` files. It isn't all of them, it isn't the files named in traced docs, and it
-    isn't a templated path in the code.
-  - **Until it's fixed:** the main checkout can't build for production, and its builds would put the paintings in
-    `.next/standalone`. Ship bars build in a fresh export, as 0029 did. CI's images are unaffected, because its checkout has
-    no `var/`.
-
 - **The Cloudflare login has no MFA, according to Cloudflare's Security Insights.** Scanned 2026-10-31, so it may be out of date.
   That login controls the DNS, the media and backup buckets and the tunnels, so whoever got into it could redirect the whole site,
   webhooks included. Logan's to turn on. The social accounts have had 2FA from day one (ADR-0032); this one should match.

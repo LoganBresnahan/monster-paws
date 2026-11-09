@@ -1,6 +1,5 @@
 import { randomUUID } from "node:crypto";
 import { mkdir, open, readdir, readFile, rename, stat, unlink } from "node:fs/promises";
-import path from "node:path";
 
 /**
  * Deliveries the database couldn't take, one file each, on a volume app and worker share
@@ -32,7 +31,9 @@ const UNFINISHED_KEPT_MS = 60 * 60 * 1000;
  */
 export async function spoolDelivery(dir: string, row: StoredDelivery): Promise<void> {
   await mkdir(dir, { recursive: true, mode: 0o700 });
-  const name = path.join(dir, `${row.receivedAt.getTime()}-${randomUUID()}`);
+  // Never `path.join` a spool path: the build's tracer reads a join onto this unknown directory as files in the project, and in
+  // a checkout holding var/ it read gigabytes of it into memory until the build died.
+  const name = `${dir}/${row.receivedAt.getTime()}-${randomUUID()}`;
   const handle = await open(`${name}${UNFINISHED}`, "wx", 0o600);
   try {
     await handle.writeFile(JSON.stringify(row));
@@ -74,7 +75,8 @@ export async function readSpool(dir: string, asOf: Date = new Date()): Promise<S
   }
   const entries: SpoolEntry[] = [];
   for (const name of names.sort()) {
-    const file = path.join(dir, name);
+    // Never `path.join` here either, for the same reason as in `spoolDelivery`.
+    const file = `${dir}/${name}`;
     if (name.endsWith(UNFINISHED)) {
       if (asOf.getTime() - (await stat(file)).mtimeMs > UNFINISHED_KEPT_MS) await unlink(file);
     } else if (name.endsWith(FILE)) {
