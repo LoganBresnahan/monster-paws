@@ -6,6 +6,7 @@
  */
 import * as Sentry from "@sentry/node";
 import { PgBoss } from "pg-boss";
+import { sql } from "drizzle-orm";
 import { getDb } from "@/db/client";
 import { createPgStages } from "@/core/ingest/pg";
 import { runIngest } from "@/core/ingest/pipeline";
@@ -20,7 +21,7 @@ import { chooseEmailSender } from "@/core/email/sender";
 import { suppressionKey } from "@/core/email/suppression";
 import { webhookSweepAlerts } from "@/worker/webhook-sweep";
 import { gateAlert, INGEST_POLL, planIngestPoll } from "@/worker/ingest-poll";
-import { heartbeatPing, INGEST_POLL_RETRY } from "@/worker/heartbeat";
+import { ART_HEARTBEAT_MS, artHeartbeat, heartbeatPing, INGEST_POLL_RETRY } from "@/worker/heartbeat";
 import { failureCode, reportingOptions } from "@/core/observability";
 
 // First, before any job can throw. Context lines stay ON here, unlike the app
@@ -287,6 +288,16 @@ async function registerArtGenerate(boss: PgBoss) {
   console.log(`[worker] ${ART_GENERATE} registered (WORKER_MODE=art)`);
 }
 
+/** Never give the dev box's chain this URL: a beat from there would hide production's worker being down (ADR-0010 as amended 2026-11-11). */
+function startArtHeartbeat(): () => void {
+  const url = process.env.HEARTBEAT_ART_WORKER_URL;
+  if (!url) return () => {};
+  const beat = () => artHeartbeat(url, () => getDb(DATABASE_URL).execute(sql`select 1`), ping);
+  void beat().then((sent) => console.log(`[worker] art heartbeat every ${ART_HEARTBEAT_MS / 60_000} minutes; first beat ${sent ? "sent" : "held, the database did not answer"}`));
+  const timer = setInterval(() => void beat(), ART_HEARTBEAT_MS);
+  return () => clearInterval(timer);
+}
+
 async function main() {
   if (!DATABASE_URL) {
     // Pre-database deploys (landing only): idle instead of crash-looping so
@@ -333,6 +344,7 @@ async function main() {
   const stopWebhookSweep = artOnly ? () => {} : startWebhookSweep();
   const stopPaintingEmailSweep = artOnly ? () => {} : startPaintingEmailSweep();
   const stopKeepsakeSweep = await startKeepsakeSweep(boss);
+  const stopArtHeartbeat = artOnly ? startArtHeartbeat() : () => {};
 
   // Job registrations land with their features:
   //   attestation.publish — sign + R2 mirror (roadmap item 7)
@@ -340,6 +352,7 @@ async function main() {
   const shutdown = async () => {
     // First, since pg-boss aborts a job only after its graceful timeout: a job holding its slot for memory ends now, and the sweep sends it again.
     artStopping.abort();
+    stopArtHeartbeat();
     stopWebhookSweep();
     stopPaintingEmailSweep();
     stopKeepsakeSweep();

@@ -842,7 +842,9 @@ else.
                                                 a re-roll (bright line 3)
 
   box asleep / down      → the job waits; no Replicate fallback by default
-                           (it would re-open the §2 disclosure)
+                           (it would re-open the §2 disclosure); the art
+                           worker's heartbeat alerts within 15 minutes
+                           (ADR-0010 as amended 2026-11-11)
   anatomy LoRA training  → a rented DigitalOcean GPU per job
                            (scripts/gpu-rental.sh train), on pairs of
                            Commons dogs only (comfyui/pairs.py), never a
@@ -867,6 +869,9 @@ and CI's e2e send nothing.
         │                                 │                     heartbeatPing():
         │                                 │                     success → URL
         │                                 │                     final fail → /fail
+        │                                 │                     artHeartbeat() (art
+        │                                 │                     worker only): select 1
+        │                                 │                     answered → URL, 5 min
         ▼                                 ▼                          │        │
   reportingOptions() — one settings object: tracing 0, no PII,       │        │
   release = build sha, tags.component   (src/core/observability.ts)  │        │
@@ -874,7 +879,9 @@ and CI's e2e send nothing.
         └──────── envelope ───────────────┴──────────────────────────┘        │
                           ▼                                                   ▼
             Better Stack Errors  app `monsterpaws`          heartbeat 499765 (armed
-            resolves frames by debug ID ◄─┐                  by oplog 0010)
+            resolves frames by debug ID ◄─┐                  by oplog 0010); the art
+                                          │                  worker's, 10 min grace
+                                          │                  (planned, oplog 0037)
                                           │
   CI: images ─ Docker build stamps debug IDs offline (scripts/sourcemaps.sh inject)
       └─ --target sourcemaps export ─► sourcemaps job: upload, retry ≤ 6 until

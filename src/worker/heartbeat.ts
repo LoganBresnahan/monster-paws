@@ -31,3 +31,38 @@ export function heartbeatPing(
   if (outcome === "success") return url;
   return attempt.retryCount >= attempt.retryLimit ? `${url.replace(/\/$/, "")}/fail` : null;
 }
+
+/**
+ * The art worker's beat. Better Stack's heartbeat has this period and a 10-minute grace, so a dead worker or tunnel
+ * alerts within 15 minutes, before a waiting painting's 30 (ADR-0010 as amended 2026-11-11).
+ */
+export const ART_HEARTBEAT_MS = 5 * 60 * 1000;
+export const ART_HEARTBEAT_DB_TIMEOUT_MS = 30_000;
+
+/**
+ * Pings only once the database has answered through the tunnel: a live process behind a dead tunnel paints nothing,
+ * so it must go as quiet as a dead one (ADR-0010 as amended 2026-11-11).
+ */
+export async function artHeartbeat(
+  url: string | undefined,
+  databaseAnswers: () => Promise<unknown>,
+  ping: (url: string) => Promise<void>,
+  timeoutMs: number = ART_HEARTBEAT_DB_TIMEOUT_MS,
+): Promise<boolean> {
+  if (!url) return false;
+  let timer: NodeJS.Timeout | undefined;
+  try {
+    await Promise.race([
+      databaseAnswers(),
+      new Promise<never>((_, reject) => {
+        timer = setTimeout(() => reject(new Error("the database did not answer in time")), timeoutMs);
+      }),
+    ]);
+  } catch {
+    return false;
+  } finally {
+    clearTimeout(timer);
+  }
+  await ping(url);
+  return true;
+}

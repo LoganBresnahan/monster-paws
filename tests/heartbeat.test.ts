@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { heartbeatPing, INGEST_POLL_RETRY } from "@/worker/heartbeat";
+import { ART_HEARTBEAT_DB_TIMEOUT_MS, ART_HEARTBEAT_MS, artHeartbeat, heartbeatPing, INGEST_POLL_RETRY } from "@/worker/heartbeat";
 
 const URL_ = "https://uptime.example.org/api/v1/heartbeat/abc";
 const last = { retryCount: 2, retryLimit: 2 };
@@ -33,5 +33,44 @@ describe("ADR-0010 poll heartbeat", () => {
     let worst = 0;
     for (let n = 0; n < INGEST_POLL_RETRY.retryLimit; n++) worst += INGEST_POLL_RETRY.retryDelay * 2 ** (n + 1);
     expect(worst).toBeLessThan(graceSeconds);
+  });
+});
+
+describe("ADR-0010 art worker heartbeat (as amended 2026-11-11)", () => {
+  const pinged = () => {
+    const urls: string[] = [];
+    return { urls, ping: async (url: string) => void urls.push(url) };
+  };
+
+  it("pings once the database has answered", async () => {
+    const p = pinged();
+    expect(await artHeartbeat(URL_, async () => [{ "?column?": 1 }], p.ping)).toBe(true);
+    expect(p.urls).toEqual([URL_]);
+  });
+
+  // A live process behind a dead tunnel paints nothing: it must go as quiet as a dead one.
+  it("stays silent when the database refuses", async () => {
+    const p = pinged();
+    expect(await artHeartbeat(URL_, async () => Promise.reject(new Error("ECONNREFUSED")), p.ping)).toBe(false);
+    expect(p.urls).toEqual([]);
+  });
+
+  it("stays silent when the database never answers", async () => {
+    const p = pinged();
+    expect(await artHeartbeat(URL_, () => new Promise(() => {}), p.ping, 20)).toBe(false);
+    expect(p.urls).toEqual([]);
+  });
+
+  it("never asks the database or pings without a configured URL (dev, CI)", async () => {
+    const p = pinged();
+    let asked = false;
+    expect(await artHeartbeat(undefined, async () => (asked = true), p.ping)).toBe(false);
+    expect(asked).toBe(false);
+    expect(p.urls).toEqual([]);
+  });
+
+  // Better Stack's grace is 10 minutes: a beat that waits out its whole timeout and the ping's 10 s still lands inside it.
+  it("lands every beat inside the 10-minute grace", () => {
+    expect(ART_HEARTBEAT_MS + ART_HEARTBEAT_DB_TIMEOUT_MS + 10_000).toBeLessThan(ART_HEARTBEAT_MS + 10 * 60 * 1000);
   });
 });

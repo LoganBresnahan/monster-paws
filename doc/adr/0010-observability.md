@@ -391,3 +391,44 @@ Action's multipart body always has that shape.
   So the stored reports age out, by about 2027-01-27 (Logan, 2026-11-03: "we will just wait it out").
 - Measured on production by oplog 0019's step 7: a real delivery through the running Next server reported no
   visitor's address, cookie, body or query string, and only the droplet's own address.
+
+## Amendment (2026-11-11): the art worker has a heartbeat of its own
+
+### Context
+Every paid donation is painted by the art worker on Logan's home box, which reaches production's database through a
+tunnel (ADR-0004 as amended 2026-10-05). Neither comes back by itself after the VM stops. On 2026-11-10 at 06:09 UTC,
+Windows Update installed WSL 3.0.5.0 and shut the VM down to do it. The worker was down for 34 hours, and nothing
+said so; it was found by `/gpu-health` (oplog 0036). The one alert that could have fired, the keepsake sweep's
+"paid paintings waiting past 30 minutes", needs a donation to be waiting, so a dead worker with no donor is silent.
+
+### Decision
+1. **The art worker pings its own Better Stack heartbeat**, `HEARTBEAT_ART_WORKER_URL`, every 5 minutes. Better Stack
+   holds it to a 5-minute period with a 10-minute grace, so a dead worker alerts within 15 minutes, by email, before
+   a waiting painting's 30.
+2. **A beat waits on the database.** Each beat first runs `select 1` through the worker's own pool, and so through the
+   tunnel, giving it 30 seconds. With no answer, it doesn't ping. A live process behind a dead tunnel paints nothing,
+   so it must go as quiet as a dead one. Pinging `/fail` instead would alert on a tunnel blip the next beat recovers
+   from.
+3. **Only the production art worker sets the URL.** The droplet's worker and the dev box's one-process chain never do:
+   a beat from anywhere else would hide production's worker being down.
+4. **A planned stop longer than the grace pauses the heartbeat first**, by API (`doc/infra.md`), and unpauses it once
+   the worker is back. An unplanned one is what it is for.
+
+### Consequences (added)
+- Turning the home box off, or a WSL update, now alerts within 15 minutes. That is correct, since nothing can be
+  painted, but it means the box being off is an incident and not a quiet state.
+- It uses one of the free tier's 10 heartbeats.
+- `/api/health` and the health monitor still say nothing about the home box: they read the poll, which the box also
+  runs, but only once a day.
+
+### Alternatives (added)
+- **The droplet's worker counts `home_worker`'s sessions** in `pg_stat_activity` and alerts when there are none. It
+  would prove the tunnel the same way, but it needs a droplet deploy and dies with the droplet, and a Better Stack
+  heartbeat already exists for exactly this.
+- **A timer in WSL that checks the worker's process** proves the process, not the tunnel, and it stops with the VM
+  it watches; it would alert only because it too had gone silent.
+
+### Revisit triggers (added)
+- The worker moves to the production Windows account or off this box: the heartbeat's URL moves with it.
+- Planned stops alert because nobody paused the heartbeat first: make pausing part of the stop in `doc/infra.md`'s
+  own commands.
