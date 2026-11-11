@@ -26,9 +26,9 @@ beside a batch).
 
 | line | healthy | act when |
 | --- | --- | --- |
-| events | none | any 6008/41 since the last check → a new crash: add its time to the freeze entry in `doc/issues.md`, Ops; a WHEA 1 at boot confirms the firmware record; a 130 within minutes before a crash is the S3 pattern |
+| events | none | any 6008/41 since the last check → a new crash: a new entry in `doc/issues.md`, Ops, read against infra.md's Home GPU freeze bullet (the last one closed 2026-11-11 after 16 clean days); a WHEA 1 at boot confirms the firmware record; a 130 within minutes before a crash is the S3 pattern |
 | compression | ~0 GB | several GB on an idle box preceded the October freezes |
-| ram | 2666 during the stability week | 3600 means XMP came back — say so |
+| ram | 2666, kept since the stability week closed (infra.md, Home GPU) | 3600 means XMP came back — say so |
 | arc driver | the version `comfyui/Dockerfile`'s runtime pins were chosen for | newer → re-read the pairing bullet and run the smoke before anything else |
 | .wslconfig | `memory=32GB`, `autoMemoryReclaim=disabled` | anything else → the sizing bullet in infra.md explains both |
 | guard | pool ≈ 1 GB, dedicated 0 with nothing running | pool > 4 GB at idle means a process is holding the leak — find it with `docker ps`, never raise the floor |

@@ -663,7 +663,7 @@ curl -X POST "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/purge_cache" \
 
 ## After a restart of this box
 
-Claude runs this list, on Logan's word that the box has restarted. The same list follows a `wsl --shutdown` or a freeze. Logan's parts are step 0 and reopening the chats,
+Claude runs this list, on Logan's word that the box has restarted. The same list follows a `wsl --shutdown`, a freeze, or a WSL update: Windows Update installs one unannounced and shuts the VM down to do it, which stopped the worker for 34 hours from 2026-11-10 06:09 UTC (WSL 3.0.5.0, oplog 0036). Logan's parts are step 0 and reopening the chats,
 which no session can do for him. Say "restart it" in the session running the list: a session's permission check can read the worker's start as a production deploy and refuse it
 until he has (oplog 0028's Run). The list has been read against the scripts but never run end to end; a rehearsal with `wsl --terminate monsterpaws-dev` would prove it, and would
 kill every chat, so that's his call.
@@ -932,9 +932,17 @@ What was load-bearing, in the order it was found:
   (2024-10-29), 2 × 32 GB DDR4 at 3600 MT/s (XMP), Arc A770 on 101.9034,
   a third-party "Virtual Display Driver" also loaded. No memory diagnostic
   has ever run. The leak and the driver made the GPU batches a second
-  trigger; they were never the cause. Actions are Logan's and listed in
-  `doc/issues.md`, Ops; until a week passes clean after them, treat every
-  freeze as the machine, and keep the guard for the load it adds.
+  trigger; they were never the cause. What ended them, all kept: BIOS 1836
+  (2026-10-10), the sticks at JEDEC 2666 with XMP off, sleep and PCIe
+  link-state power management off on AC, the dev apps' own switches off the
+  card (Windows Terminal's software rendering, VS Code's
+  `disable-hardware-acceleration`), and a DisplayPort dummy plug on the Arc
+  (2026-10-20, Windows names it `UGRC775`), so the card drives a display
+  instead of running headless and DWM composes on it: `dwm` at ~1% in
+  `/gpu-health`'s readout is that, not a stray app. Read 2026-11-11: no
+  unexpected shutdown, WHEA record or graphics-watchdog dump in the 16 days
+  since the 2026-10-26 boot, which closed the issue; the box never slept in
+  them. A new crash is a new entry in `doc/issues.md`, Ops.
 - **Switching LoRAs from image to image costs ~12 GB of host memory in one
   step after about five switches (2026-10-08 evening, batch 1b).** One LoRA
   held for six images: every counter flat at 14 s. LoRA changed every image
