@@ -880,8 +880,8 @@ and CI's e2e send nothing.
                           ▼                                                   ▼
             Better Stack Errors  app `monsterpaws`          heartbeat 499765 (armed
             resolves frames by debug ID ◄─┐                  by oplog 0010); the art
-                                          │                  worker's, 10 min grace
-                                          │                  (planned, oplog 0037)
+                                          │                  worker's 530311, 10 min
+                                          │                  grace (oplog 0037)
                                           │
   CI: images ─ Docker build stamps debug IDs offline (scripts/sourcemaps.sh inject)
       └─ --target sourcemaps export ─► sourcemaps job: upload, retry ≤ 6 until

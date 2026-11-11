@@ -46,7 +46,7 @@ is an ADR; the daily numbers brief is `doc/ops/` (ADR-0010 as amended).
 | [0034](0034-rerun-nightly-2026-11-08.md) | Rerun the nightly of 2026-11-08, which failed on two SSH drops and a RescueGroups 500 — complete on the third attempt after two more drops, 63,014 in 22 min, health green | run | 2026-11-08 |
 | [0035](0035-care-grant-sponsor-opens.md) | Deploy `a933820`: C.A.R.E.'s grant, and the Sponsor button opens on its animals — open, and Logan's two donations painted and delivered | run | 2026-11-09 |
 | [0036](0036-art-worker-back-after-wsl-update.md) | The art worker and its tunnel back up, after Windows Update's WSL 3.0.5.0 shut the box's VM down on 2026-11-10 — up at 16:23 UTC, and no painting was waiting | run | 2026-11-11 |
-| [0037](0037-art-worker-heartbeat.md) | The art worker's heartbeat armed, and the worker moved onto `dabbae7`, which pings it (ADR-0010 as amended 2026-11-11) | planned | — |
+| [0037](0037-art-worker-heartbeat.md) | The art worker's heartbeat armed, and the worker moved onto `dabbae7`, which pings it (ADR-0010 as amended 2026-11-11) — heartbeat `530311` up, the worker on `~/monsterpaws-art-e05447a` | run | 2026-11-11 |
 
 ## Entry format
 

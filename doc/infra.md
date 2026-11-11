@@ -236,6 +236,7 @@ create; a global one would only add cross-team, billing and usage access.
 | `betterstack/errors-dsn` | DSN of the Errors application `monsterpaws` (id `2778816`, `next_js_errors`, 90-day retention, linked to the GitHub repo), assembled as `https://<token>@<ingesting_host>/<id>` | Where the app and worker send errors through the Sentry SDK. Ingest-only, and public in the browser bundle by design — CI passes it to the image build as `NEXT_PUBLIC_SENTRY_DSN` | GH Actions secret `BETTERSTACK_ERRORS_DSN`; droplet `.env` `SENTRY_DSN` at the next deploy |
 | `betterstack/heartbeat-ingest-poll` | URL of heartbeat `499765`, "ingest.poll — RescueGroups daily 07:00 UTC": period 24h, grace 3h; armed by oplog 0010 (2026-10-29) | `scripts/bridge-poll-droplet.sh` pings it after each complete nightly bridge poll, `/fail` when the CLI exits non-zero (the worker's own job is unscheduled, `INGEST_POLL_SCHEDULE=off`); silence past the grace alerts. Secret, since anyone holding it can ping it and hide a real failure — and the API returns it in every read of the heartbeat, a PATCH's response included, so filter those with `jq` | droplet `.env` |
 | `betterstack/heartbeat-db-backup` | URL of heartbeat `518590`, "db backup — nightly 08:30 UTC": period 24h, grace 2h (created 2026-10-27 by oplog 0001) | `scripts/backup-db.sh` pings it after an upload over 1 MB lands in the R2 vault; silence past the grace means a night with no off-DO copy (ADR-0003 as amended 2026-10-26). Secret for the same reason as the poll's | droplet `.env.backup`, set by oplog 0001 |
+| `betterstack/heartbeat-art-worker` | URL of heartbeat `530311`, "art worker — home box, a beat every 5 min": period 5 min, grace 10 min; armed by oplog 0037 (2026-11-11) | The production art worker pings it every 5 minutes, and only once production's database has answered through the tunnel (ADR-0010 as amended 2026-11-11); silence past the grace emails | the art worker's start on the home box (After a restart of this box, step 5), never the droplet or the dev box's chain |
 | `betterstack/sql-host` | Host of the ClickHouse HTTP "SQL API" connection (team Monster Paws, created in the dashboard 2026-09-30 — a global token would be needed to create it by API) | Reading stored errors, stack frames and their source-map results: `scripts/betterstack-sql.sh` | dev only |
 | `betterstack/sql-username` | That connection's username (rotated 2026-09-30 after the first was pasted into a chat) | same | dev only |
 | `betterstack/sql-password` | That connection's password — shown once at creation, never retrievable. Read-only, IP-allowlisted to the dev machine's public address | same; if queries start failing, the home IP changed — update the allowlist | dev only |
@@ -665,8 +666,8 @@ curl -X POST "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/purge_cache" \
 
 Claude runs this list, on Logan's word that the box has restarted. The same list follows a `wsl --shutdown`, a freeze, or a WSL update: Windows Update installs one unannounced and shuts the VM down to do it, which stopped the worker for 34 hours from 2026-11-10 06:09 UTC (WSL 3.0.5.0, oplog 0036). Logan's parts are step 0 and reopening the chats,
 which no session can do for him. Say "restart it" in the session running the list: a session's permission check can read the worker's start as a production deploy and refuse it
-until he has (oplog 0028's Run). The list has been read against the scripts but never run end to end; a rehearsal with `wsl --terminate monsterpaws-dev` would prove it, and would
-kill every chat, so that's his call.
+until he has (oplog 0028's Run). The list ran end to end for the first time after the WSL update of 2026-11-10 (oplog 0036). The art worker's heartbeat emails within 15 minutes of
+any of these (ADR-0010 as amended 2026-11-11).
 
 ```
 comes back by itself                          doesn't
@@ -680,11 +681,11 @@ var/do-ca.crt, the exports
 production: it needs this box only to paint
   and for the nightly poll
 
-expected to hold, not yet seen across a start:
+held across a start (oplog 0036, after the WSL update):
   /etc/hosts's line and generateHosts = false (step 3 reads them)
 ```
 
-While the worker is down a paid donation waits and nothing is lost: the sweep sends its job again within the hour, and the "waiting past 30 minutes" alert fires. Nothing else alerts.
+While the worker is down a paid donation waits and nothing is lost: the sweep sends its job again within the hour, and the "waiting past 30 minutes" alert fires. The worker's own heartbeat, `530311`, emails within 15 minutes of it stopping or losing the tunnel, whether or not a donation is waiting (ADR-0010 as amended 2026-11-11).
 
 **Inside the nightly window** (06:45 UTC until that night's `== exit`), read `var/nightly/$(date -u +%F).log`. If `pgrep -f '^[^ ]*bash [^ ]*poll-nightly'` answers, wait for its `== exit`. If it doesn't, and the log has `== nightly poll` with no `== exit`, the restart killed the poll, so start it again: `cd ~/monsterpaws && setsid nohup scripts/poll-nightly.sh > /dev/null 2>&1 < /dev/null &`. It writes its own log, takes about 40 minutes, and reads nothing from `pass`. If the log has no `== nightly poll`, it never started, and the task runs it once Logan is signed in (`StartWhenAvailable`): a second one would lose on the port and write an `== exit 1` that opens the worker's gate during the real poll. The worker's own gate opens at 10:00 UTC whatever the log says.
 
@@ -729,18 +730,19 @@ Each step below is one Bash call, with its own `cd`: a `cd` outside the session'
        SHARE_WRITE_ACCESS_KEY_ID="$(pass show cloudflare/r2-access-key-id | head -n1)" \
        SHARE_WRITE_SECRET_ACCESS_KEY="$(pass show cloudflare/r2-secret-access-key | head -n1)" \
        SENTRY_DSN="$(pass show betterstack/errors-dsn | head -n1)" \
+       HEARTBEAT_ART_WORKER_URL="$(pass show betterstack/heartbeat-art-worker | head -n1)" \
        RESCUEGROUPS_API_KEY= ART_SWEEP= \
        setsid sh -c 'echo $$ > ~/monsterpaws/var/art-worker.sid; exec nohup npm run worker' >> var/explore/art-worker-production.log 2>&1 < /dev/null &
 
-   `var/art-worker.sid` holds the worker's session: the shell writes its own PID, which is the new session's ID, and `exec` hands that PID on to npm, whether or not `setsid` forked. `$!` would name the forked parent, which has already exited (tested 2026-11-09). Verify after 2 minutes, reading only this start, because the log is appended: `tac ~/monsterpaws/var/explore/art-worker-production.log | sed '/^== start /q' | tac` shows `art store bound to database <name>` and `art.generate registered (WORKER_MODE=art)`. npm's banner and `.env not found` aren't errors. `DATABASE_URL not set — idling` means `pass` was locked, and `[worker] fatal` means the tunnel. Then record it: `echo ~/monsterpaws-art-<sha> > ~/monsterpaws/var/art-worker-export`. To run it without the photo reader, add `ART_READER=off` to its line and start it again: a dog's words go back to the listing's, with no code change (ADR-0004 as amended 2026-11-04).
+   `var/art-worker.sid` holds the worker's session: the shell writes its own PID, which is the new session's ID, and `exec` hands that PID on to npm, whether or not `setsid` forked. `$!` would name the forked parent, which has already exited (tested 2026-11-09). Verify after 2 minutes, reading only this start, because the log is appended: `tac ~/monsterpaws/var/explore/art-worker-production.log | sed '/^== start /q' | tac` shows `art store bound to database <name>`, `art.generate registered (WORKER_MODE=art)` and `art heartbeat every 5 minutes; first beat sent`. A first beat `held` means the database didn't answer through the tunnel. npm's banner and `.env not found` aren't errors. `DATABASE_URL not set — idling` means `pass` was locked, and `[worker] fatal` means the tunnel. Then record it: `echo ~/monsterpaws-art-<sha> > ~/monsterpaws/var/art-worker-export`. To run it without the photo reader, add `ART_READER=off` to its line and start it again: a dog's words go back to the listing's, with no code change (ADR-0004 as amended 2026-11-04).
 
-   **Stop it by its session, never by a search.** `pgrep -f` reads every command line on the box, the shell running the search included, so it can name that shell or a chat's own worker as well as this one. Oplog 0035's stop signalled its own shell first, and the worker ran on. Stop it only between jobs, when the session's list shows no `guard.sh batch`:
+   **Stop it by its session, never by a search.** `pgrep -f` reads every command line on the box, the shell running the search included, so it can name that shell or a chat's own worker as well as this one. Oplog 0035's stop signalled its own shell first, and the worker ran on. Stop it only between jobs, when the session's list shows no `guard.sh batch`. A stop longer than 10 minutes opens an incident: for a planned one, pause heartbeat `530311` first (Better Stack's PATCH in this file, with `true`), and unpause it once step 5's first beat is sent:
 
        S=$(cat ~/monsterpaws/var/art-worker.sid); ps -o pid=,args= -s "$S"
        P=$(pgrep -s "$S" -f '/node_modules/\.bin/tsx '); [ "$(echo $P | wc -w)" = 1 ] && kill -TERM $P
        for i in $(seq 1 60); do pgrep -s "$S" > /dev/null || break; sleep 1; done; pgrep -s "$S" > /dev/null && echo "STILL RUNNING" || echo stopped
 
-   The first line must list `npm run worker`, `sh -c tsx …` and the worker's node processes. Anything else means the file is stale, so read `ps` by hand. SIGTERM to the tsx process runs the worker's own shutdown, which took about 2 s in oplog 0035. To move it onto new code without a box restart, as a new grant needs because publish reads `SHELTERS` from the worker's own code: step 3's export, this stop, then step 5.
+   The first line must list `npm run worker`, `sh -c tsx …` and the worker's node processes. Anything else means the file is stale, so read `ps` by hand. SIGTERM to the tsx process runs the worker's own shutdown, which took about 2 s in oplog 0035. To move it onto new code without a box restart, as a new grant needs because publish reads `SHELTERS` from the worker's own code: step 3's export, this stop, then step 5. For worker code other than `SHELTERS`, run step 3's export lines without their `if`, which skips them when `SHELTERS` is unchanged (oplog 0037).
 6. **Logan** reopens the other chats he wants. `git worktree list` names their checkouts.
 
 Then keep Windows' heavy apps light while donations may come in: a paint starts only with 22 GB free after the cache drop, which `comfyui/guard.sh drop` prints. `guard.sh mem` reads before the drop and can read low.

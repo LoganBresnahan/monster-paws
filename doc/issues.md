@@ -98,10 +98,11 @@ is the record, and a file of ticked boxes stops being read.
   isn't known. Search engines can only find animal pages through links until there is one. It must list public pages only, never a
   `/share/` or `/thanks` token. Low priority.
 
-- **Real donations depend on this one box staying up, and nothing says when the worker dies.** The art worker and its tunnel are
-  plain processes on the home box: a reboot, a freeze or Windows signing out stops them, and they don't come back by themselves
-  (`doc/infra.md`, "After a restart of this box", never yet run end to end). A paid donation then waits, and the only alert is
-  "waiting past 30 minutes". The nightly poll also needs Logan signed in. Who keeps it up after the hackathon is Logan's call
+- **Real donations depend on this one box staying up.** The art worker and its tunnel are
+  plain processes on the home box: a reboot, a freeze, a WSL update or Windows signing out stops them, and they don't come back by
+  themselves (`doc/infra.md`, "After a restart of this box"; a WSL update stopped them for 34 hours, oplog 0036). A paid donation
+  then waits; the worker's heartbeat now emails within 15 minutes (ADR-0010 as amended 2026-11-11, oplog 0037), but a person still
+  has to restart it. The nightly poll also needs Logan signed in. Who keeps it up after the hackathon is Logan's call
   (oplog 0029's follow-ups). Found 2026-11-04.
 
 - **The memory wait has only had fake readings.** Below 22 GB a job holds its slot for up to 30 minutes and paints when memory
